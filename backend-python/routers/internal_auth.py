@@ -2,11 +2,11 @@
 import os, time
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel, Field
-from .auth import hash_password, log_audit_event, norm_email, supabase, verify_password
+from .auth import TEAM_COOKIE_NAME, clear_auth_cookie, deliver_auth_token, hash_password, log_audit_event, norm_email, supabase, verify_password
 
 router=APIRouter(prefix="/api/internal/auth",tags=["Internal Auth"])
 bearer=HTTPBearer(auto_error=False)
@@ -53,10 +53,11 @@ def _load_staff_context(email):
         deps=sorted({x["department_id"] for x in (tr.data or []) if x.get("department_id")})
     return InternalStaffContext(staff_id=str(s["id"]),user_id=str(u["id"]),email=str(u["email"]).lower(),name=u.get("name"),job_title=s.get("job_title"),status=s["status"],roles=roles,department_ids=deps,team_ids=teams)
 
-def get_current_staff(creds:Optional[HTTPAuthorizationCredentials]=Depends(bearer)):
-    if not creds:raise HTTPException(401,"Not authenticated")
+def get_current_staff(creds:Optional[HTTPAuthorizationCredentials]=Depends(bearer), request: Request = None):
+    token_value = creds.credentials if creds else (request.cookies.get(TEAM_COOKIE_NAME) if request else None)
+    if not token_value:raise HTTPException(401,"Not authenticated")
     if len(JWT_SECRET)<32:raise HTTPException(500,"Internal authentication is not configured")
-    try:p=jwt.decode(creds.credentials,JWT_SECRET,algorithms=[ALGORITHM])
+    try:p=jwt.decode(token_value,JWT_SECRET,algorithms=[ALGORITHM])
     except JWTError:raise HTTPException(401,"Invalid or expired internal token")
     if p.get("context")!="internal" or p.get("account_type")!="staff":raise HTTPException(403,"Internal staff token required")
     email=(p.get("email") or p.get("sub") or "").lower().strip()
@@ -77,7 +78,7 @@ def require_internal_permission(permission):
     return dependency
 
 @router.post("/login")
-def internal_login(payload:InternalLoginRequest,request:Request):
+def internal_login(payload:InternalLoginRequest,request:Request,response:Response):
     email=norm_email(payload.email); found=_staff_by_email(email)
     if not found:
         legacy=supabase.table("admins").select("id,email,name,password_hash,role,is_active").eq("email",email).limit(1).execute()
@@ -106,7 +107,13 @@ def internal_login(payload:InternalLoginRequest,request:Request):
     token=jwt.encode({"sub":email,"email":email,"role":"staff","account_type":"staff","context":"internal","iat":now,"exp":now+int(os.getenv("TOKEN_TTL_SECONDS","86400"))},JWT_SECRET,algorithm=ALGORITHM)
     context=_load_staff_context(email)
     log_audit_event(action="internal_staff_login",email=email,account_type="staff",role="staff",request=request,metadata={"staff_id":context.staff_id})
-    return {"status":"success","token":token,"staff":context.model_dump()}
+    return deliver_auth_token(request, response, token, {"status":"success","token":token,"staff":context.model_dump()}, cookie_name=TEAM_COOKIE_NAME)
+
+@router.post("/logout")
+def internal_logout(response: Response):
+    clear_auth_cookie(response, TEAM_COOKIE_NAME)
+    return {"success": True}
+
 
 @router.get("/me")
 def internal_me(staff:InternalStaffContext=Depends(get_current_staff)):
