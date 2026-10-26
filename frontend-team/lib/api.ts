@@ -1,7 +1,7 @@
 const BASE = "";
 
 export const token = () =>
-  typeof window === "undefined" ? "" : sessionStorage.getItem("learnora_team_token") || "";
+  typeof window === "undefined" ? "" : sessionStorage.getItem("learnora_team_token") || "cookie-session";
 
 export const setToken = (_value: string) => {
   sessionStorage.setItem("learnora_team_token", "cookie-session");
