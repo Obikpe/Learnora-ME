@@ -414,60 +414,82 @@ def _hash_token(
 # LOGIN RATE LIMITING
 # ---------------------------------------------------------------------------
 
-_FAILS: dict[str, deque] = defaultdict(
-    deque
-)
+# Local storage is retained only for isolated development/unit tests.
+# Production authentication limits are stored in PostgreSQL so serverless instances
+# share the same counters. The table stores only SHA-256 bucket identifiers.
+_FAILS: dict[str, deque] = defaultdict(deque)
 
 MAX_FAILS = 5
 WINDOW = 900
 
 
-def _limited(
-    key: str,
-) -> bool:
+def _persistent_rate_limits_enabled() -> bool:
+    return APP_ENV == "production" or os.getenv("AUTH_RATE_LIMIT_BACKEND", "").strip().lower() == "postgres"
+
+
+def _rate_limit_digest(key: str) -> str:
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+def _rate_limit_rpc(name: str, key: str):
+    return supabase.rpc(name, {
+        "p_bucket_key": _rate_limit_digest(key),
+        "p_max_attempts": MAX_FAILS,
+        "p_window_seconds": WINDOW,
+    }).execute()
+
+
+def _limited(key: str) -> bool:
+    if _persistent_rate_limits_enabled():
+        try:
+            response = _rate_limit_rpc("check_auth_rate_limit", key)
+            data = getattr(response, "data", False)
+            if isinstance(data, bool):
+                return data
+            if isinstance(data, list) and data:
+                row = data[0]
+                if isinstance(row, dict):
+                    return bool(row.get("check_auth_rate_limit", row.get("limited", False)))
+            if isinstance(data, dict):
+                return bool(data.get("check_auth_rate_limit", data.get("limited", False)))
+            # An unexpected response must not silently disable authentication throttling.
+            return True
+        except Exception as exc:
+            print(f"Persistent auth rate-limit check failed: {type(exc).__name__}")
+            return True  # fail closed if the shared limiter is unavailable
 
     queue = _FAILS[key]
-
-    cutoff = (
-        time.time() - WINDOW
-    )
-
-    while (
-        queue
-        and queue[0] < cutoff
-    ):
-
+    cutoff = time.time() - WINDOW
+    while queue and queue[0] < cutoff:
         queue.popleft()
-
     if not queue:
-
-        _FAILS.pop(
-            key,
-            None,
-        )
-
+        _FAILS.pop(key, None)
         return False
-
     return len(queue) >= MAX_FAILS
 
 
-def _record_failure(
-    key: str,
-):
+def _record_failure(key: str):
+    if _persistent_rate_limits_enabled():
+        try:
+            _rate_limit_rpc("record_auth_rate_failure", key)
+            return
+        except Exception as exc:
+            print(f"Persistent auth rate-limit record failed: {type(exc).__name__}")
+            raise RuntimeError("Persistent authentication rate limiting is unavailable.") from exc
+    _FAILS[key].append(time.time())
 
-    _FAILS[key].append(
-        time.time()
-    )
 
-
-def _clear_failures(
-    key: str,
-):
-
-    _FAILS.pop(
-        key,
-        None,
-    )
+def _clear_failures(key: str):
+    if _persistent_rate_limits_enabled():
+        try:
+            supabase.rpc("clear_auth_rate_limit", {
+                "p_bucket_key": _rate_limit_digest(key),
+            }).execute()
+        except Exception as exc:
+            # Leaving a bucket in place is safer than accidentally resetting a lockout.
+            print(f"Persistent auth rate-limit clear failed: {type(exc).__name__}")
+        return
+    _FAILS.pop(key, None)
 
 
 # ---------------------------------------------------------------------------
@@ -688,10 +710,11 @@ def _build_verification_url(
     token: str,
 ) -> str:
 
+    # URL fragments are not sent in HTTP requests or Referer headers.
     return (
         f"{FRONTEND_URL}"
         f"{EMAIL_VERIFICATION_PATH}"
-        f"?token={token}"
+        f"#token={token}"
     )
 
 
@@ -792,10 +815,11 @@ def _build_password_reset_url(
     token: str,
 ) -> str:
 
+    # URL fragments are not sent in HTTP requests or Referer headers.
     return (
         f"{FRONTEND_URL}"
         f"{PASSWORD_RESET_PATH}"
-        f"?token={token}"
+        f"#token={token}"
     )
 
 

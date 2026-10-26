@@ -106,7 +106,10 @@ jobs:
             supabase/migrations/20261021183000_revoke_browser_table_grants.sql \
             supabase/migrations/20261021183500_process_creator_payout_atomically.sql \
             supabase/migrations/20261021184000_encrypt_cohort_date_of_birth.sql \
-            supabase/migrations/20261026100000_pin_cohort_assignment_function_search_paths.sql
+            supabase/migrations/20261026100000_pin_cohort_assignment_function_search_paths.sql \
+            supabase/migrations/20261026150000_shared_auth_rate_limits.sql \
+            supabase/migrations/20261026151000_shared_api_rate_limit.sql \
+            supabase/migrations/20261026152000_separate_creator_sales_permissions.sql
           do
             psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
@@ -225,6 +228,11 @@ jobs:
             psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
           echo "Legacy plus timestamped migration replay completed."
+
+      - name: Test shared authentication and API rate-limit RPCs
+        env:
+          LEGACY_REPLAY_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/legacy_replay_staging
+        run: psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/rate_limit_assertions.sql
 
       - name: Assert browser roles have no public table or sequence privileges
         env:
