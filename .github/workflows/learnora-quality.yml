@@ -2,7 +2,7 @@ name: Learnora quality checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, cohort-org-backend-reconciliation]
     paths:
       - "backend-python/**"
       - "frontend-v02/**"
