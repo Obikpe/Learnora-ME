@@ -250,3 +250,23 @@ All five source/target pairs had identical blob SHAs in the repository API. This
 PR #7 (`fix/learnora-audit-tenant-isolation`) and PR #8 (`cohort-org-backend-reconciliation`) remain open against `main`. GitHub's compare endpoint reports the branches as diverged (160 commits ahead / 230 behind for audit relative to cohort at the latest comparison). The audit branch includes important application guards and tests that are not fully ported into the cohort branch. **Do not merge either PR independently or merge the entire audit branch blindly.** Reconcile by reviewing and porting the specific guarded application changes and tests onto an integration branch, then run all CI against that combined tree.
 
 No live migration, production-data change, PR merge, or deployment was performed by these follow-up commits.
+
+
+## Security remediation status — read-only live inspection, 2026-10-26
+
+A fresh read-only catalog query against active Pheonix project `gihfupzvdpyrmynqgukz` found direct/inherited table privilege rows for browser roles on **53 public tables per role**: 371 privilege rows for `anon` and 371 for `authenticated`. The public relations inspected are owned by `postgres`; public-schema default ACLs also include browser-role entries under `postgres` and `supabase_admin`. This confirms that the risk is not hypothetical. No live grants or default ACLs were changed during this inspection.
+
+The release-candidate migration `20261021183000_revoke_browser_table_grants.sql` now revokes existing browser privileges from public tables/views, sequences and functions, removes browser-role default grants for the observed object-owner roles, and pins the legacy admin timestamp function search path. The rollback file under `supabase/rollback/` restores only the twelve legacy table grants from migration `20261020230906`; it is emergency-only and does not restore default ACLs. The CI replay assertion checks effective table/view, sequence and function privileges plus default ACLs against the replayed migration chain before the test harness applies its separate service-role adjustment.
+
+A guarded DOB backfill helper, `scripts/backfill_cohort_dob_encryption.py`, has also been added. It is dry-run by default and requires an explicit `--apply` flag to encrypt existing DOB values and clear plaintext. It has **not** been run against the live project. The migration and helper do not prove the backfill is complete; a zero-plaintext verification is required after a separately approved staging and production operation.
+
+### Remaining release blockers
+
+- The grant-remediation migration and CI assertions must pass on a clean run after the latest changes.
+- The two catalog-reconstructed migrations and five unverified historical sources still lack independently authenticated original source artifacts. Preserve their classification; do not describe them as original recoveries.
+- The audit and cohort branches remain divergent in history. Core audit changes (course-content access, AI quota handling, progress/team guards and regression tests) have overlapping files already present on the cohort branch, but a full merge-base/file-level reconciliation is still required before considering either branch for merge. Do not merge by blindly combining all 160/255 divergent commits.
+- In-memory rate-limit buckets remain per-process and can reset between serverless instances. This is a known residual risk; a shared store is a separate follow-up.
+- Browser token storage remains an application-wide bearer-token architecture concern. CSP/security headers are configured, but this does not make localStorage tokens equivalent to HttpOnly cookies.
+- Instructor submission/grade scope and immutable grade audit history still require a dedicated route-level review and regression tests before release.
+- Activation links use URL fragments in the current cohort flow, reducing server/referrer exposure compared with query strings, but all other activation flows should be checked independently.
+- No live database migration, DOB backfill, production deployment, or merge was performed.
