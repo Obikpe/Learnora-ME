@@ -97,7 +97,10 @@ jobs:
             supabase/migrations/20261021220321_process_creator_payout_atomically.sql \
             supabase/migrations/20261021220327_encrypt_cohort_date_of_birth.sql \
             supabase/migrations/20261021220333_cohort_login_rate_limits.sql \
-            supabase/migrations/20261021220849_revoke_trigger_function_browser_execute.sql
+            supabase/migrations/20261021220849_revoke_trigger_function_browser_execute.sql \
+            supabase/migrations/20261026150000_shared_auth_rate_limits.sql \
+            supabase/migrations/20261026151000_shared_api_rate_limit.sql \
+            supabase/migrations/20261026152000_separate_creator_sales_permissions.sql
           do
             psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
@@ -243,6 +246,11 @@ jobs:
             exit 1
           fi
           echo "Permission keys match the active catalog baseline; AI provider seed count matches; contract templates and clauses are empty as expected."
+
+      - name: Test shared authentication and API rate-limit RPCs
+        env:
+          LEGACY_REPLAY_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/legacy_replay_staging
+        run: psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/rate_limit_assertions.sql
 
       - name: Assert browser roles have no public-table privileges or unsafe defaults
         if: steps.legacy_replay.outcome == 'success' && steps.seed_check.outcome == 'success'
