@@ -7,21 +7,25 @@ on:
       - "backend-python/**"
       - "frontend-v02/**"
       - "frontend-team/**"
-      - ".github/workflows/learnora-quality.yml"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
   pull_request:
     branches: [main]
     paths:
       - "backend-python/**"
       - "frontend-v02/**"
       - "frontend-team/**"
-      - ".github/workflows/learnora-quality.yml"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
 
 concurrency:
-  group: learnora-quality-${{ github.ref }}
-  # Preserve required CI evidence: queue newer runs instead of cancelling active checks.
+  group: learnora-quality-${{ github.ref }}-${{ github.sha }}
+  # Keep each commit's CI evidence independent; later commits must not cancel this SHA.
   cancel-in-progress: false
 
 jobs:

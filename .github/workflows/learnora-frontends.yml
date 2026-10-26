@@ -1,14 +1,23 @@
 name: Learnora frontends
 on:
   push:
+    branches: [main]
     paths:
+      - "backend-python/**"
       - "frontend-v02/**"
       - "frontend-team/**"
-      - ".github/workflows/learnora-frontends.yml"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
   pull_request:
+    branches: [main]
     paths:
+      - "backend-python/**"
       - "frontend-v02/**"
       - "frontend-team/**"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
 jobs:
   build:
     runs-on: ubuntu-latest

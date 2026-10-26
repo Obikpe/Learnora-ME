@@ -1,14 +1,24 @@
 name: Cohort Learning Access Tests
 
 on:
-  pull_request:
+  push:
+    branches: [main]
     paths:
       - "backend-python/**"
-      - "supabase/migrations/**"
-      - "supabase/legacy_migrations/**"
-      - "supabase/baselines/**"
-      - "frontend-v02/app/dashboard/organisation/**"
-      - ".github/workflows/cohort-learning-tests.yml"
+      - "frontend-v02/**"
+      - "frontend-team/**"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend-python/**"
+      - "frontend-v02/**"
+      - "frontend-team/**"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 jobs:

@@ -2,15 +2,23 @@ name: Learnora backend regression tests
 
 on:
   pull_request:
+    branches: [main]
     paths:
       - "backend-python/**"
-      - ".github/workflows/learnora-backend-tests.yml"
+      - "frontend-v02/**"
+      - "frontend-team/**"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "backend-python/**"
-      - ".github/workflows/learnora-backend-tests.yml"
+      - "frontend-v02/**"
+      - "frontend-team/**"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
 
 jobs:
   unittest:

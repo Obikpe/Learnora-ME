@@ -2,14 +2,23 @@ name: Learnora Backend Verification
 
 on:
   push:
+    branches: [main]
     paths:
       - "backend-python/**"
-      - "supabase/migrations/**"
-      - ".github/workflows/learnora-backend.yml"
+      - "frontend-v02/**"
+      - "frontend-team/**"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
   pull_request:
+    branches: [main]
     paths:
       - "backend-python/**"
-      - "supabase/migrations/**"
+      - "frontend-v02/**"
+      - "frontend-team/**"
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/**"
 
 jobs:
   python-compile:
