@@ -18,7 +18,7 @@ class FrontendSecurityContractTests(unittest.TestCase):
 
     def test_email_token_pages_support_new_fragments_and_existing_query_links(self):
         for relative in ("frontend-v02/app/verify-email/page.tsx", "frontend-v02/app/reset-password/page.tsx"):
-            source = (ROOT.parent / relative).read_text(encoding="utf-8")
+            source = (ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(page=relative):
                 self.assertIn("window.location.hash", source)
                 self.assertIn("window.location.search", source)
