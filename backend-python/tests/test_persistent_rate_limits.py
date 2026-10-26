@@ -45,6 +45,16 @@ class PersistentRateLimitTests(unittest.TestCase):
         self.assertEqual(len(self.client.rpc.call_args_list[0].args[1]["p_bucket_key"]), 64)
 
 
+class SensitiveTokenUrlTests(unittest.TestCase):
+    def test_verification_and_reset_tokens_use_fragments_not_query_strings(self):
+        with patch.object(auth, "FRONTEND_URL", "https://learnora.example"):
+            verification = auth._build_verification_url("opaque-token")
+            reset = auth._build_password_reset_url("opaque-token")
+        for url in (verification, reset):
+            self.assertIn("#token=opaque-token", url)
+            self.assertNotIn("?token=", url)
+
+
 class DistributedApiMiddlewareTests(unittest.TestCase):
     def test_production_api_limit_is_shared_and_returns_429_when_limited(self):
         import asyncio
