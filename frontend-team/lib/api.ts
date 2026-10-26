@@ -1,4 +1,5 @@
-const BASE = (process.env.NEXT_PUBLIC_API_URL || "https://learnora-backend.vercel.app").replace(/\/$/, "");
+const DEFAULT_API_URL = process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://learnora-backend.vercel.app";
+const BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
 
 export const token = () =>
   typeof window === "undefined" ? "" : sessionStorage.getItem("learnora_team_token") || "";

@@ -50,7 +50,7 @@ origins = [
 ]
 
 if os.getenv("APP_ENV", "production").strip().lower() != "production":
-    origins.append("http://localhost:3000")
+    origins.extend(["http://localhost:3000", "http://localhost:3001"])
 
 internal_frontend = os.getenv("INTERNAL_FRONTEND_URL", "").rstrip("/")
 if internal_frontend and internal_frontend not in origins:
