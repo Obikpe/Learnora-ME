@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 # 1. LOAD ENV BEFORE ANYTHING THAT READS IT
 ENV_PATH = Path(__file__).parent / ".env"
-load_dotenv(dotenv_path=ENV_PATH, override=True)
+load_dotenv(dotenv_path=ENV_PATH, override=False)
 
 # 2. NOW import routers
 from routers import auth, grading, progress, billing, webhooks, community, grader, admin, organisations, organisation_members, courses, course_access, course_content, internal_auth, internal_staff, internal_teams, commercial, creator, lifecycle, learning_structure, media, access, organisation_teams, ai, creator_finance, evidence, internal_operations, internal_content, ai_profiles, public_directory, learner_onboarding, cohort_learners, cohort_learning, notifications as notifications_router
@@ -153,10 +153,7 @@ def api_ready():
     if not configured:
         return JSONResponse(
             status_code=503,
-            content={
-                "status": "not_ready",
-                "checks": {"configuration": "missing"},
-            },
+            content={"status": "not_ready"},
         )
 
     try:
@@ -168,13 +165,7 @@ def api_ready():
         print(f"Readiness database probe failed: {type(exc).__name__}")
         return JSONResponse(
             status_code=503,
-            content={
-                "status": "not_ready",
-                "checks": {"configuration": "ok", "database": "unavailable"},
-            },
+            content={"status": "not_ready"},
         )
 
-    return {
-        "status": "ready",
-        "checks": {"configuration": "ok", "database": "reachable"},
-    }
+    return {"status": "ready"}
