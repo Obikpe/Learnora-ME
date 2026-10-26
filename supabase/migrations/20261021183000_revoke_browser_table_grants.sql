@@ -6,6 +6,8 @@ BEGIN;
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM PUBLIC, anon, authenticated;
 REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC, anon, authenticated;
 REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon, authenticated;
+-- The FastAPI backend uses the service-role client for trusted server-side RPCs.
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 
 -- Keep the legacy admin timestamp trigger's name resolution explicit as well.
 ALTER FUNCTION public.update_admins_updated_at() SET search_path = pg_catalog, public;
