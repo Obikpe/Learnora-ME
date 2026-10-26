@@ -706,10 +706,11 @@ def _build_verification_url(
     token: str,
 ) -> str:
 
+    # URL fragments are not sent in HTTP requests or Referer headers.
     return (
         f"{FRONTEND_URL}"
         f"{EMAIL_VERIFICATION_PATH}"
-        f"?token={token}"
+        f"#token={token}"
     )
 
 
@@ -810,10 +811,11 @@ def _build_password_reset_url(
     token: str,
 ) -> str:
 
+    # URL fragments are not sent in HTTP requests or Referer headers.
     return (
         f"{FRONTEND_URL}"
         f"{PASSWORD_RESET_PATH}"
-        f"?token={token}"
+        f"#token={token}"
     )
 
 
