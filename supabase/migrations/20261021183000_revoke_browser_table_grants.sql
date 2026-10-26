@@ -4,6 +4,8 @@
 BEGIN;
 
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM PUBLIC, anon, authenticated;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC, anon, authenticated;
+REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon, authenticated;
 
 -- Keep the legacy admin timestamp trigger's name resolution explicit as well.
 ALTER FUNCTION public.update_admins_updated_at() SET search_path = pg_catalog, public;
