@@ -1,109 +1,66 @@
-# The Pheonix Analytics - How to Run (Frontend + Backend)
+# Learnora — Local Runbook
 
-## What you need installed
-- Node.js 18+ (https://nodejs.org)
-- Python 3.11+ (https://python.org)
+This runbook describes the current repository layout. It replaces older instructions that refer to the legacy `frontend/` and `backend-node/` runtime.
+
+## Prerequisites
+
+- Node.js and npm compatible with Next.js 14
+- Python 3.11+
 - Git
+- Access to a disposable Supabase/PostgreSQL test environment for database tests
 
-Check:
-```
-node -v
-python --version  # or python3 --version
-pip --version
-```
+## Install
 
-## 1. Setup (one time)
+From the repository root:
 
 ```bash
-# Unzip
-unzip the-pheonix-analytics-SECURE.zip
-cd the-pheonix-analytics
-
-# Copy env
-cp .env.example .env
-# Edit .env and put your Supabase keys (get from supabase.com dashboard)
-# For quick local test you can leave Paystack keys as sk_test_xxx
-
-# Install ALL packages
-npm install
-cd frontend && npm install && cd ..
-cd backend-node && npm install && cd ..
-pip install -r requirements.txt
-# or pip3 install -r requirements.txt
+npm run install:all
 ```
 
-## 2. Run for Test (you need BOTH frontend and backend running)
+Configure `backend-python/.env` from `backend-python/.env.example`. Do not commit real keys or passwords. For non-development execution, the backend requires a Supabase URL, a service/secret key, and a strong JWT secret.
 
-You need 3 terminals (or use npm run dev which runs all together):
+## Start Learnora ME and the API
 
-### Terminal 1 - Frontend (Next.js) :3000
+From the repository root:
+
 ```bash
-cd frontend
 npm run dev
-# Open http://localhost:3000
-# Landing: centered code hero, no card, no vertical line, smooth scroll
-# Library: 16 tracks, 85 courses
-# Pricing at end
-# Admin: http://localhost:3000/admin
 ```
 
-### Terminal 2 - Node Gateway :4000
+- Learnora ME: http://localhost:3000
+- FastAPI: http://localhost:8000
+
+The production API disables Swagger/OpenAPI documentation. For local development, the API docs are available at http://localhost:8000/docs only when `APP_ENV` is set to a non-production value and the backend environment is configured accordingly.
+
+## Start Learnora Teams
+
+In a second terminal:
+
 ```bash
-cd backend-node
-npm run dev
-# Runs Express secure gateway - handles webhooks, Q&A email alerts
-# Test: http://localhost:4000/ -> {status: Node Gateway secure alive}
+npm run dev:teams
 ```
 
-### Terminal 3 - Python Backend :8000 (FastAPI - main security gatekeeper)
+Learnora Teams uses port 3001 by default to avoid colliding with Learnora ME on port 3000. Configure its public API URL/rewrite settings for the local backend as required by the environment.
+
+## Build the frontends
+
 ```bash
-cd backend-python
-uvicorn main:app --reload --port 8000
-# Test: http://localhost:8000/ -> secure v2
-# Docs: http://localhost:8000/docs (Swagger with auth)
-# Video stream: GET /api/videos/{uuid}/stream with Authorization: Bearer <JWT> header - returns signed URL 2h + watermark
-# Grading: POST /api/grading/grade with {language, code} - sandboxed
+npm run build:me
+npm run build:teams
 ```
 
-### OR One command runs all 3:
-```bash
-# From root
-npm run dev
-# This uses concurrently to run frontend :3000 + node :4000 + python :8000 together
-```
+## Backend tests
 
-## 3. Supabase Setup (for real videos)
+Backend tests live under `backend-python/tests/`. Use the repository's GitHub Actions workflows as the canonical automated verification entry point. Database integration tests require the workflow's disposable PostgreSQL/PostgREST services and must not be pointed at production.
 
-1. Create project at supabase.com (free)
-2. SQL Editor -> paste content of supabase/migrations/001_initial.sql and run
-3. Copy URL, anon key, service_role key into .env
-4. Storage -> Create bucket 'videos' private (SQL already does it)
+Before accepting a result, check that all required workflows completed successfully for the same commit SHA. A cancelled, skipped, or stale run is not a pass.
 
-## 4. Testing Checklist
+## Supabase safety
 
-- [ ] http://localhost:3000 loads dark landing #151618 with glowing #FF8C00 logo centered (not side card)
-- [ ] No vertical line in header (logo transparent + 12px gap)
-- [ ] Scroll is smooth regular (no zoom jacking)
-- [ ] Library shows 85 courses, filter by 16 tracks works
-- [ ] http://localhost:3000/admin -> Video Manager, Private Accounts, Revenue, Q&A Inbox
-- [ ] http://localhost:8000/docs -> try /api/videos/{uuid}/stream without token -> should 401
-- [ ] http://localhost:4000/api/webhooks/paystack without signature -> 401 (secure)
+- Do not replay `supabase/legacy_migrations/001_initial.sql` through `015_learnora_ai_permissions.sql` against an existing database.
+- Do not run catalog-derived reconstruction fixtures as production migrations.
+- Do not fabricate migration-ledger entries or re-run seed/data migrations to make the ledger appear complete.
+- Validate schema, grants, default ACLs, RLS, policies, and security-definer functions in a disposable database first.
+- Production changes require an explicit migration plan, rollback/recovery plan, and authorised approval. Repository commits do not authorise production database changes.
 
-## 5. Deploy Zero Budget (when ready)
-
-- Frontend -> Vercel (import frontend folder, set NEXT_PUBLIC_* env)
-- Node Gateway -> Render free (root: backend-node, start: node index.js)
-- Python Backend -> Render free (root: backend-python, start: uvicorn main:app --host 0.0.0.0 --port $PORT)
-- Supabase -> already hosted
-
-## Security Notes (fixed)
-
-- RLS locked: lessons only for enrolled + trial active + private bypass
-- Paystack webhook verifies HMAC SHA512 signature
-- Python CORS strict whitelist, helmet headers
-- Grading sandboxed: --network none --memory 128m --pids-limit 64 --read-only --timeout 5s
-- JWT HttpOnly Secure SameSite Strict, Argon2id hashing
-- Body limit 10kb prevents DoS
-- All inputs validated with Pydantic / express-validator + bleach escape
-
-Questions? Open an issue or email admin.
+See [the roadmap](docs/ROADMAP.md) and [migration reconciliation report](docs/active-pheonix-migration-reconciliation.md) for current blockers.
