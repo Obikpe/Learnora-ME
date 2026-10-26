@@ -229,8 +229,11 @@ def _cookie_auth_origins() -> set[str]:
     }
     for value in (FRONTEND_URL, os.getenv("INTERNAL_FRONTEND_URL", "")):
         value = value.strip().rstrip("/")
-        if value:
-            origins.add(value)
+        if not value:
+            continue
+        if APP_ENV == "production" and not value.startswith("https://"):
+            continue
+        origins.add(value)
     if APP_ENV != "production":
         origins.add("http://localhost:3000")
     return origins
