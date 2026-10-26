@@ -1,6 +1,6 @@
 {
-  "name": "learnora-monorepo",
-  "version": "2.1.0",
+  "name": "the-pheonix-analytics-monorepo",
+  "version": "2.0.1-secure-fix",
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:me\" \"npm run dev:backend\"",
@@ -13,5 +13,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@paystack/inline-js": "^2.26.0"
   }
 }
