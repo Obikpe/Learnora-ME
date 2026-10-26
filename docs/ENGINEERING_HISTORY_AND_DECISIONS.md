@@ -240,3 +240,17 @@ Append entries using:
 - Result: <observed result>
 - Remaining risks: <explicit list>
 ```
+
+
+## 8. 2026-10-26 — Product engineering documentation created on main
+
+- **Branch:** `main` only. No branch was created or checked out for this documentation task.
+- **Product engineering specification:** [`docs/PRODUCT_ENGINEERING_SPEC.md`](PRODUCT_ENGINEERING_SPEC.md), created in commit `4a51d42bcd89a7137cfed9aee2b61f3f636b1375`.
+- **Roadmap:** [`docs/ROADMAP.md`](ROADMAP.md), created in commit `e66cb30270d792aaddf11e5b98afa5fa2e9d9727`.
+- **Engineering history/decision register:** this file was created in commit `ff8f933b3075a4fcb30011d6bfc231be749b08f6`.
+- **Repository entry point:** `README.md` links all three documents and the existing UX/migration records; updated in commit `b25e9b7443e5854cfec82a68ff50dcd5128cb11a`.
+- **Scope recorded:** application ownership and architecture; Learnora ME and Teams user groups/workflows; organisation/team/cohort/course access invariants; local setup; CI/release gates; security findings; migration provenance; schema/identity lineage; roadmap priorities and acceptance criteria.
+- **Verification:** GitHub main branch and recursive tree were queried after the writes. All three new Markdown files and the README are present on main; main head at verification was `b25e9b7443e5854cfec82a68ff50dcd5128cb11a`.
+- **Tests:** no application code or SQL was changed in this documentation task. No new workflow run for the documentation commits was visible at verification time; previously successful CI runs are historical and are not represented as tests of this documentation commit.
+- **Production impact:** no Supabase migration, data mutation, or deployment was performed.
+- **Remaining work:** implement and verify the P0–P6 roadmap. Documentation records the known risks but does not fix the underlying security/schema issues.
