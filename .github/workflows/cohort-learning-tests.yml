@@ -234,6 +234,33 @@ jobs:
           done
           echo "Legacy plus timestamped migration replay completed."
 
+      - name: Verify managed-role ACL fixture and rehearse authorised remediation
+        env:
+          LEGACY_REPLAY_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/legacy_replay_staging
+        run: |
+          set -euo pipefail
+          # The disposable replay must reproduce the known supabase_admin default
+          # ACL leak before remediation, otherwise this test is not exercising the
+          # production failure mode.
+          managed_acl_types="$(psql "$LEGACY_REPLAY_DATABASE_URL" -X -qAt -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT count(DISTINCT d.defaclobjtype)
+          FROM pg_default_acl d
+          CROSS JOIN LATERAL aclexplode(d.defaclacl) acl
+          LEFT JOIN pg_roles g ON g.oid = acl.grantee
+          WHERE d.defaclrole = (SELECT oid FROM pg_roles WHERE rolname = 'supabase_admin')
+            AND d.defaclnamespace IN (0, 'public'::regnamespace)
+            AND (acl.grantee = 0 OR g.rolname IN ('anon', 'authenticated'));
+          SQL
+          )"
+          if [[ "$managed_acl_types" -lt "3" ]]; then
+            echo "Expected the disposable fixture to reproduce browser defaults for tables, sequences, and functions; found $managed_acl_types object types."
+            exit 1
+          fi
+          # CI runs as the disposable database owner/superuser, so it can rehearse
+          # the same admin-only script that the hosted postgres role cannot run.
+          psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/ops/revoke_supabase_admin_browser_defaults.sql
+          echo "Managed-role default ACL remediation script completed in disposable replay."
+
       - name: Compare deterministic migration seed data
         id: seed_check
         if: steps.legacy_replay.outcome == 'success'
