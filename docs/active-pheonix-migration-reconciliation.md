@@ -1,6 +1,15 @@
 # Active Pheonix migration reconciliation — 2026-10-21
 
-## Safety and scope
+## Current status update — 26 October 2026
+
+The dated sections below preserve the earlier investigation record. This update supersedes any older statement that could be read as current PR status, but it does not rewrite historical observations.
+
+- Current application source is on `main` in `frontend-v02/` (Learnora ME), `frontend-team/` (Learnora Teams), and `backend-python/` (FastAPI). The root README and local runbook were corrected on 26 October; their setup commands still require a local run to verify.
+- Draft PRs #11, #12, and #13 are not merged. PR #13's latest recorded test set passed on its head commit `0b54f1cda55c7de548005cfcb515ad8c0c02ff2b`, but this is branch evidence, not main-branch evidence.
+- The current `main` browser API client still uses `localStorage` for `phx_token`, and normal authentication/global rate limiting still includes process-local state. The complete HttpOnly-cookie/shared-limiter implementation is not part of current `main`.
+- PR #13 adds migrations needed by its backend changes. Do not deploy those backend changes before the required migration set is reviewed and applied in the correct order. No production migration or deployment is authorised by this status note.
+- The managed `supabase_admin` default ACL issue remains a separate operator task; the connected role cannot change that managed role's defaults. A catalog check after authorised remediation is required.
+- Historical source provenance, Witstart identity-set mismatch, legacy-to-current object lineage, full schema diff, and browser-driven acceptance remain open until evidence is recorded.
 
 Target: active Pheonix Supabase project `gihfupzvdpyrmynqgukz`.
 
