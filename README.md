@@ -49,3 +49,14 @@ Landing: http://localhost:3000
 Library: #library
 Playground: #playground - runs via Python sandbox
 Pricing at end: geo-pricing Nigeria ₦12k, Africa $15, Global $29, 7-day trial card auth
+
+
+## Product engineering documentation
+
+The current product specification, implementation roadmap, and decision/history register for Learnora ME and Learnora Teams are maintained here:
+
+- [Product engineering specification](docs/PRODUCT_ENGINEERING_SPEC.md) — architecture, product boundaries, workflows, data invariants, security, local rebuild instructions and definition of done.
+- [Engineering roadmap](docs/ROADMAP.md) — prioritised P0–P6 work, dependencies and acceptance gates.
+- [Engineering history and decisions](docs/ENGINEERING_HISTORY_AND_DECISIONS.md) — actions recorded so far, architecture decisions, security findings, migration provenance and outstanding risks.
+- [UI/UX research and decisions](docs/learnora-ui-ux-research.md)
+- [Active schema and migration reconciliation](docs/active-pheonix-migration-reconciliation.md)
