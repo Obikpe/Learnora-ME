@@ -108,7 +108,8 @@ jobs:
             supabase/migrations/20261021184000_encrypt_cohort_date_of_birth.sql \
             supabase/migrations/20261026100000_pin_cohort_assignment_function_search_paths.sql \
             supabase/migrations/20261026150000_shared_auth_rate_limits.sql \
-            supabase/migrations/20261026151000_shared_api_rate_limit.sql
+            supabase/migrations/20261026151000_shared_api_rate_limit.sql \
+            supabase/migrations/20261026152000_separate_creator_sales_permissions.sql
           do
             psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
