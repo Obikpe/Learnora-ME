@@ -265,6 +265,21 @@ EMAIL_RE = re.compile(
 )
 
 
+def _escape_ilike_literal(value: str) -> str:
+    """Escape user-supplied email characters that are wildcards in LIKE filters.
+
+    Supabase/PostgREST ilike filters interpret pattern metacharacters. Email
+    lookups must be case-insensitive but must never let a login identifier
+    match a different account through %, _, or the PostgREST * wildcard.
+    """
+    return (
+        value.replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+        .replace("*", "\\*")
+    )
+
+
 def norm_email(
     email: str,
 ) -> str:
@@ -1167,7 +1182,7 @@ def _find_admin(
         )
         .ilike(
             "email",
-            email,
+            _escape_ilike_literal(email),
         )
         .limit(1)
         .execute()
@@ -1196,7 +1211,7 @@ def _find_user(
         )
         .ilike(
             "email",
-            email,
+            _escape_ilike_literal(email),
         )
         .limit(1)
         .execute()
