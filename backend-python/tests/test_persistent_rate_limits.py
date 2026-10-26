@@ -45,6 +45,25 @@ class PersistentRateLimitTests(unittest.TestCase):
         self.assertEqual(len(self.client.rpc.call_args_list[0].args[1]["p_bucket_key"]), 64)
 
 
+class ReadinessProbeSecurityTests(unittest.TestCase):
+    def test_production_readiness_requires_matching_secret_header(self):
+        import main
+        from starlette.requests import Request
+
+        request = Request({
+            "type": "http",
+            "method": "GET",
+            "path": "/api/ready",
+            "headers": [],
+            "client": ("203.0.113.21", 43123),
+            "server": ("testserver", 80),
+            "scheme": "https",
+        })
+        with patch.dict(os.environ, {"APP_ENV": "production", "READINESS_PROBE_TOKEN": "test-probe-secret"}):
+            response = main.api_ready(request)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.body, b'{"status":"not_found"}')
+
 class SensitiveTokenUrlTests(unittest.TestCase):
     def test_verification_and_reset_tokens_use_fragments_not_query_strings(self):
         with patch.object(auth, "FRONTEND_URL", "https://learnora.example"):
