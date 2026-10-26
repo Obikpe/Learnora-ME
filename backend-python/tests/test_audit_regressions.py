@@ -2,6 +2,7 @@
 import os
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
@@ -84,7 +85,8 @@ class AuditRegressionTests(unittest.TestCase):
             "server": ("testserver", 80),
             "scheme": "https",
         })
-        self.assertEqual(_get_client_ip(request), "203.0.113.44")
+        with patch.dict(os.environ, {"VERCEL": "1"}):
+            self.assertEqual(_get_client_ip(request), "203.0.113.44")
 
 
 if __name__ == "__main__":
