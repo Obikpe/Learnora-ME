@@ -1,4 +1,5 @@
 import os
+import hmac
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -11,10 +12,6 @@ from routers import auth, grading, progress, billing, webhooks, community, grade
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,14 +28,11 @@ app = FastAPI(
     openapi_url="/openapi.json" if os.getenv("APP_ENV", "production").strip().lower() != "production" else None,
 )
 
-# Rate limiter middleware
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
-app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
-
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request, exc):
-    return JSONResponse(status_code=429, content={"error": "Rate limit exceeded, try again in 15 minutes"})
+# Shared PostgreSQL rate limiting is used in production so counters survive
+# serverless instance churn. Local development remains deterministic.
+API_RATE_LIMIT_REQUESTS = max(1, int(os.getenv("API_RATE_LIMIT_REQUESTS", "60")))
+API_RATE_LIMIT_WINDOW_SECONDS = max(1, int(os.getenv("API_RATE_LIMIT_WINDOW_SECONDS", "60")))
+_RATE_LIMIT_EXEMPT_PATHS = {"/", "/api/health", "/api/ready"}
 
 # CORS Middleware (Correctly placed to handle preflight OPTIONS requests)
 origins = [
@@ -74,6 +68,48 @@ app.add_middleware(
     "X-Organisation-ID",
     ],
 )
+
+@app.middleware("http")
+async def distributed_api_rate_limit(request: Request, call_next):
+    if (
+        os.getenv("APP_ENV", "production").strip().lower() != "production"
+        or request.method == "OPTIONS"
+        or request.url.path in _RATE_LIMIT_EXEMPT_PATHS
+    ):
+        return await call_next(request)
+
+    client_ip = auth._get_client_ip(request) or "unknown"
+    bucket_key = auth._rate_limit_digest(f"api:{client_ip}")
+    try:
+        result = auth.supabase.rpc("consume_api_rate_limit", {
+            "p_bucket_key": bucket_key,
+            "p_max_requests": API_RATE_LIMIT_REQUESTS,
+            "p_window_seconds": API_RATE_LIMIT_WINDOW_SECONDS,
+        }).execute()
+        limited = getattr(result, "data", None)
+        if not isinstance(limited, bool):
+            if isinstance(limited, list) and limited and isinstance(limited[0], dict):
+                limited = limited[0].get("consume_api_rate_limit", limited[0].get("limited"))
+            elif isinstance(limited, dict):
+                limited = limited.get("consume_api_rate_limit", limited.get("limited"))
+        if not isinstance(limited, bool):
+            raise RuntimeError("Unexpected response from shared API rate limiter")
+    except Exception as exc:
+        print(f"Shared API rate-limit check failed: {type(exc).__name__}")
+        return JSONResponse(
+            status_code=503,
+            content={"error": "Request protection is temporarily unavailable. Please retry shortly."},
+            headers={"Retry-After": "5"},
+        )
+
+    if limited:
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Rate limit exceeded. Please retry after the rate-limit window."},
+            headers={"Retry-After": str(API_RATE_LIMIT_WINDOW_SECONDS)},
+        )
+    return await call_next(request)
+
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -143,8 +179,14 @@ def api_health():
 
 
 @app.get("/api/ready")
-def api_ready():
-    """Readiness probe for deployment checks; never returns credentials or raw DB errors."""
+def api_ready(request: Request):
+    """Token-protected readiness probe; the public liveness endpoint remains /api/health."""
+    if os.getenv("APP_ENV", "production").strip().lower() == "production":
+        expected = os.getenv("READINESS_PROBE_TOKEN", "").strip()
+        supplied = request.headers.get("x-readiness-token", "")
+        if not expected or not hmac.compare_digest(supplied, expected):
+            return JSONResponse(status_code=404, content={"status": "not_found"})
+
     configured = bool(
         getattr(auth, "SUPABASE_URL", "")
         and getattr(auth, "SUPABASE_KEY", "")
