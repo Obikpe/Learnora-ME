@@ -1,16 +1,17 @@
-const BASE = (process.env.NEXT_PUBLIC_API_URL || "https://learnora-backend.vercel.app").replace(/\/$/, "");
+const BASE = "";
 
 export const token = () =>
   typeof window === "undefined" ? "" : sessionStorage.getItem("learnora_team_token") || "";
 
 export const setToken = (value: string) => {
-  sessionStorage.setItem("learnora_team_token", value);
+  sessionStorage.setItem("learnora_team_token", "cookie-session");
   sessionStorage.setItem("learnora_team_last_activity", String(Date.now()));
 };
 
 export const clearToken = () => {
   sessionStorage.removeItem("learnora_team_token");
   sessionStorage.removeItem("learnora_team_last_activity");
+  if (typeof window !== "undefined") void fetch("/api/internal/auth/logout", { method: "POST", credentials: "same-origin", keepalive: true }).catch(() => {});
 };
 
 export class ApiRequestError extends Error {
@@ -30,7 +31,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   }
 
   const accessToken = token();
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+  if (accessToken && accessToken !== "cookie-session") headers.set("Authorization", `Bearer ${accessToken}`);
 
   let response: Response;
   try {
@@ -38,6 +39,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
       ...init,
       headers,
       cache: "no-store",
+      credentials: "same-origin",
     });
   } catch {
     throw new ApiRequestError("Cannot reach Learnora's backend. Check your connection and try again.", 0);
@@ -45,6 +47,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") sessionStorage.removeItem("learnora_team_token");
     const message =
       typeof body.detail === "string"
         ? body.detail
