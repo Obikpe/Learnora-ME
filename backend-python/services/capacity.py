@@ -1,4 +1,10 @@
-"""Backend-enforced organisation and cohort capacity checks."""
+"""Backend-enforced organisation and cohort capacity checks.
+
+These checks provide API errors; database constraints/triggers remain the
+concurrency authority because count-then-insert is not atomic.
+"""
+from datetime import date
+
 from fastapi import HTTPException
 from routers.auth import supabase
 
@@ -8,33 +14,46 @@ KEY_ROLES = {"learners": "learner", "instructors": "instructor"}
 def entitlement_limit(org_id: str, key: str):
     org = (
         supabase.table("organisations")
-        .select("settings")
+        .select("settings,is_active")
         .eq("id", org_id)
         .limit(1)
         .execute()
     )
-    settings = (org.data[0].get("settings") or {}) if org.data else {}
+    if not org.data:
+        raise HTTPException(status_code=404, detail="Organisation not found.")
+    organisation = org.data[0]
+    if not organisation.get("is_active"):
+        raise HTTPException(status_code=409, detail="Organisation workspace is inactive.")
+
+    settings = organisation.get("settings") or {}
     # The existing WitStart pilot is intentionally contract-exempt. New customer
     # workspaces are not exempt and need an active/signed contract entitlement.
     if settings.get("pilot_mode") is True:
         return None
 
+    today = date.today().isoformat()
     contracts = (
         supabase.table("learnora_contracts")
-        .select("id,status")
+        .select("id,status,start_date,end_date,created_at")
         .eq("organisation_id", org_id)
         .in_("status", ["signed", "active", "expiring"])
         .order("created_at", desc=True)
-        .limit(1)
         .execute()
     )
-    if not contracts.data:
+    active_contracts = [
+        row for row in (contracts.data or [])
+        if (not row.get("start_date") or str(row["start_date"]) <= today)
+        and (not row.get("end_date") or str(row["end_date"]) >= today)
+    ]
+    if not active_contracts:
         return 0
 
+    # A newer future-dated/expired contract must not hide an older valid one.
+    contract = active_contracts[0]
     entitlement = (
         supabase.table("learnora_contract_entitlements")
         .select("limit_value,enabled")
-        .eq("contract_id", contracts.data[0]["id"])
+        .eq("contract_id", contract["id"])
         .eq("entitlement_key", key)
         .limit(1)
         .execute()
@@ -89,6 +108,7 @@ def count_org(org_id: str, key: str):
             supabase.table("learnora_courses")
             .select("id")
             .eq("organisation_id", org_id)
+            .eq("ownership", "organisation")
             .neq("status", "archived")
             .execute()
         ).data or []
@@ -106,6 +126,8 @@ def count_org(org_id: str, key: str):
 
 
 def ensure_org_capacity(org_id: str, key: str, additional: int = 1):
+    if additional < 1:
+        return
     limit = entitlement_limit(org_id, key)
     if limit is None:
         return
@@ -128,6 +150,8 @@ def ensure_cohort_capacity(cohort_id: str, additional: int = 1):
     if not cohort.data:
         raise HTTPException(status_code=404, detail="Cohort not found.")
     row = cohort.data[0]
+    if row.get("status") not in {"draft", "upcoming", "active"}:
+        raise HTTPException(status_code=409, detail="This cohort is closed to new members.")
     limit = row.get("capacity")
     if limit is None:
         return
