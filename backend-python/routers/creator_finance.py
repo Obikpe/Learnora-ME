@@ -30,6 +30,15 @@ class PayoutIn(BaseModel):
     currency: str = Field(..., min_length=3, max_length=10)
 
 
+def _require_platform_finance_admin(context: PermissionContext) -> None:
+    """Temporarily fail closed until dedicated creator-sales permissions are deployed."""
+    if not context.is_platform_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Platform finance administrator permission required.",
+        )
+
+
 def creator_for_user(uid):
     result = (
         supabase
@@ -69,6 +78,8 @@ def record_sale(
         require_permission("courses.assign")
     ),
 ):
+    _require_platform_finance_admin(context)
+
     if (
         body.platform_fee_minor
         + body.creator_earnings_minor
@@ -173,6 +184,8 @@ def release_sale(
         require_permission("courses.assign")
     ),
 ):
+    _require_platform_finance_admin(context)
+
     sale = (
         supabase
         .table("learnora_creator_sales")
@@ -227,6 +240,8 @@ def refund_sale(
         require_permission("courses.assign")
     ),
 ):
+    _require_platform_finance_admin(context)
+
     sale = (
         supabase
         .table("learnora_creator_sales")
