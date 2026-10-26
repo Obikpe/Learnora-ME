@@ -261,14 +261,14 @@ Append entries using:
 - **Branch:** direct commits to `main`; no branch was created or checked out.
 - **Repository identity:** the GitHub repository is now addressed canonically as `Obikpe/Learnora-ME`; it is the same repository previously referenced as `Obikpe/Pheonix-Analytics`.
 - **Local development:** root scripts now target `frontend-v02/`, `frontend-team/`, and `backend-python/`. README and `HOW_TO_RUN.md` were corrected. Development frontend defaults now use localhost rather than sending local work to the production API; `backend-python/.env.example` defaults to development and localhost origins.
-- **Authentication:** email account lookups escape LIKE metacharacters; unknown-account login performs dummy bcrypt verification; disabled admin status is checked after password verification; new verification/reset tokens use URL fragments and the UI retains compatibility with old query-string links; Learnora ME bearer tokens are session-scoped and legacy persistent tokens are cleared. This is not the final HttpOnly-cookie design.
+- **Authentication:** email account lookups escape LIKE metacharacters; unknown-account login performs dummy bcrypt verification; disabled admin status is checked after password verification; new verification/reset tokens use URL fragments and the UI retains compatibility with old query-string links; Learnora ME bearer tokens are session-scoped and legacy persistent tokens are cleared. Client IP headers are trusted only when the backend is running on Vercel. This is not the final HttpOnly-cookie design.
 - **API disclosure:** readiness responses no longer disclose internal configuration/database checks. Course-content and video-upload errors return generic client messages and log only exception types.
 - **CI reliability:** backend, frontend, cohort and quality workflows now trigger together for code/migration/workflow changes. The quality concurrency key includes the commit SHA so a newer push cannot cancel the evidence for an earlier candidate.
-- **Verification candidate:** `d01b04872f3aa03652545eab0932b5dd94194dcd`.
-  - [Backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870960) — success.
-  - [Backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870926) — success.
-  - [Frontend builds](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870915) — success for Learnora ME and Learnora Teams.
-  - [Cohort-learning access tests](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870862) — success.
-  - [Quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870831) — success.
+- **Verification candidate:** `de9be94ca74f5cf804b7965589834577d4fbcfa5`.
+  - [Backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/40415523010) — success.
+  - [Backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/40415522848) — success.
+  - [Frontend builds](https://github.com/Obikpe/Learnora-ME/actions/runs/40415522815) — success for Learnora ME and Learnora Teams.
+  - [Cohort-learning access tests](https://github.com/Obikpe/Learnora-ME/actions/runs/40415523049) — success.
+  - [Quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/40415522921) — success.
 - **Production impact:** a read-only Vercel deployment lookup returned no deployment for this commit. No production deployment or Supabase mutation was performed.
 - **Remaining release blockers:** HttpOnly-cookie sessions; shared production authentication/API rate limiting; creator sales permission separation and atomic sale/refund writes; managed `supabase_admin` default ACL remediation by an authorised operator; historical migration provenance and identity-lineage reconciliation; and complete browser-driven acceptance across both applications.
