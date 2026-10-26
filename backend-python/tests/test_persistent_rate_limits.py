@@ -76,7 +76,7 @@ class HttpOnlyCookieSessionTests(unittest.TestCase):
         self.assertNotIn("token", result)
         self.assertNotIn("access_token", result)
         cookie = response.headers.get("set-cookie", "")
-        self.assertIn("phx_token=signed-jwt", cookie)
+        self.assertIn("phx_token=opaque-session-value", cookie)
         self.assertIn("httponly", cookie.lower())
         self.assertIn("samesite=lax", cookie.lower())
         self.assertIn("secure", cookie.lower())
@@ -86,7 +86,7 @@ class HttpOnlyCookieSessionTests(unittest.TestCase):
 
         request = type("RequestStub", (), {"headers": {"origin": "https://attacker.example"}})()
         with self.assertRaises(HTTPException) as raised:
-            auth.deliver_auth_token(request, Response(), "signed-jwt", {"access_token": "signed-jwt"})
+            auth.deliver_auth_token(request, Response(), "opaque-session-value", {"access_token": "opaque-session-value"})
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_current_user_reads_httponly_cookie_when_no_bearer_header(self):
