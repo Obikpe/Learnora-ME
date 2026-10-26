@@ -40,7 +40,7 @@ In a second terminal:
 npm run dev:teams
 ```
 
-Learnora Teams uses port 3001 by default to avoid colliding with Learnora ME on port 3000. Configure its public API URL/rewrite settings for the local backend as required by the environment.
+Learnora Teams uses port 3001 by default to avoid colliding with Learnora ME on port 3000. Both frontends proxy `/api` to FastAPI through `next.config.mjs`; development defaults to `http://localhost:8000`. Set `API_PROXY_TARGET` to a different backend base URL when needed. Browser sessions use HttpOnly cookies, so deploy the backend and both frontends together after the release gates are approved.
 
 ## Build the frontends
 

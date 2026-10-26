@@ -272,3 +272,20 @@ Append entries using:
   - [Quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/40416347457) — success.
 - **Production impact:** a read-only Vercel deployment lookup returned no deployment for this commit. No production deployment or Supabase mutation was performed.
 - **Remaining release blockers:** HttpOnly-cookie sessions; shared production authentication/API rate limiting; creator sales permission separation and atomic sale/refund writes; managed `supabase_admin` default ACL remediation by an authorised operator; historical migration provenance and identity-lineage reconciliation; and complete browser-driven acceptance across both applications.
+
+
+## 10. 2026-10-26 — HttpOnly browser sessions and finance permission containment
+
+- **Source candidate:** `5ef2cc1193bf2b87106c276edd42181726243b82`.
+- **Browser auth:** Learnora ME, cohort login, and Learnora Teams now issue HttpOnly cookies for trusted browser origins. Cookies use `SameSite=Lax`, `Secure` in production, root path, and the configured token lifetime. Browser login payloads omit JWTs; clients keep only a non-secret `cookie-session` marker and use same-origin `/api` rewrites. Non-browser clients without an Origin header retain bearer-token responses for compatibility.
+- **Session handling:** both frontends clear legacy localStorage JWTs; old JWTs found in sessionStorage are discarded. Logout expires the correct cookie. Learnora ME cache keys use a per-login session epoch and a logout marker to prevent stale cached users from resurfacing after logout/re-login.
+- **Proxy configuration:** each frontend's `next.config.mjs` proxies `/api/:path*` to `API_PROXY_TARGET`; development defaults to `http://localhost:8000`, production defaults to `https://learnora-backend.vercel.app`. Cookie auth requires backend and frontend deployments to move together.
+- **Finance authorization:** creator sale record/release/refund routes use the existing `creator_payouts.process` permission (or the existing super-admin bypass), not the broad `courses.assign` permission. Dedicated creator-sales permissions and atomic sale/refund writes are still pending.
+- **Verification on the exact source SHA:**
+  - [Backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/40418508267) — success.
+  - [Backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/40418508234) — success.
+  - [Frontend builds](https://github.com/Obikpe/Learnora-ME/actions/runs/40418508351) — success for both applications.
+  - [Cohort-learning access tests](https://github.com/Obikpe/Learnora-ME/actions/runs/40418508220) — success.
+  - [Quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/40418508224) — success.
+- **Deployment status:** read-only Vercel lookup returned no deployment for this SHA. No production deployment or Supabase mutation was performed.
+- **Remaining release blockers:** shared production auth/API rate limiting; atomic creator sale/refund and payout-request writes; dedicated creator-sales permissions; managed `supabase_admin` default ACL remediation by an authorised operator; migration source provenance and identity-lineage reconciliation; complete browser-driven acceptance; and a coordinated staging/production rollout of the cookie-auth source.

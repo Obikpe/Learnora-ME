@@ -30,7 +30,9 @@ Requirements: Node.js/npm and Python 3.11 or newer.
    npm run dev
    ```
 
-   Learnora ME runs on port 3000 and FastAPI on port 8000.
+   Learnora ME runs on port 3000 and FastAPI on port 8000. Both frontends proxy `/api` requests to FastAPI; development defaults to `http://localhost:8000`. Set `API_PROXY_TARGET` in a frontend process only when overriding that backend base URL.
+
+   Browser login uses HttpOnly cookies through these same-origin proxies. The backend and both frontends must be deployed together when cookie auth is released; do not deploy this source candidate before the roadmap's migration and browser-acceptance gates are cleared.
 
 4. To run Learnora Teams instead, use a separate terminal:
 
