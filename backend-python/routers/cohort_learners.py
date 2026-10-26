@@ -621,7 +621,7 @@ def activate_cohort_account(body: CohortActivation):
 
 
 @router.post("/api/cohort-auth/login")
-def login_cohort_account(body: CohortLogin, request: Request, response: Response):
+def login_cohort_account(body: CohortLogin, request: Request, response: Response = None):
     username = body.username.strip().lower()
     client_ip = _get_client_ip(request) or "unknown"
     rate_key = f"cohort:{username}:{client_ip}"
