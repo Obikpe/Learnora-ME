@@ -389,6 +389,12 @@ def assign_course(
                 detail="Course not found.",
             )
 
+        if course.get("status") != "published":
+            raise HTTPException(
+                status_code=409,
+                detail="Only published courses can be assigned to an organisation.",
+            )
+
         # --------------------------------------------------------
         # Verify organisation
         # --------------------------------------------------------
