@@ -257,3 +257,21 @@ For each, document the API endpoint, required role, data source, empty/loading/e
 ## Roadmap maintenance
 
 For each completed item, record: date, commit SHA on `main`, files changed, test command/run URL, result, live-vs-disposable scope, and any residual limitation in `docs/ENGINEERING_HISTORY_AND_DECISIONS.md`. Never mark an item done based solely on a branch name, PR title, or old test run.
+
+
+## Execution snapshot — 26 October 2026
+
+This snapshot records what has been verified from repository metadata; it is not a release approval.
+
+| Area | Current evidence | Status |
+| --- | --- | --- |
+| Active local setup | Root scripts and the README/runbook now point to `frontend-v02/`, `frontend-team/`, and `backend-python/`. Commit `70e4eef59cc101068fcf0c18cadf03a159439288` contains the runbook correction; the root script correction is in the preceding commit. | Implemented in docs/scripts; local execution still needs verification. |
+| Browser token storage | Current `main` client code still stores the `phx_token` bearer token in `localStorage`. | Open security finding. |
+| Shared API/auth throttling | Current `main` still uses process-local normal-auth failure counters and SlowAPI's default in-process limiter. | Open; database-backed implementation is in draft PR #13. |
+| Security hardening draft | PR #13 has successful recorded CI runs for commit `0b54f1cda55c7de548005cfcb515ad8c0c02ff2b`: backend regression, backend verification, frontend builds, cohort access, and quality checks. | Not merged. Passing branch CI does not establish that current `main` passes or that live migrations have been applied. |
+| Database migration sequence | PR #13 adds migrations required by its shared limiter, permission, and grant changes. Its own notes state that these must precede backend deployment. | Blocked on reviewed staging/migration sequence and explicit production approval. |
+| Managed `supabase_admin` default ACL | Draft security work records that the connected database role cannot remediate these managed-role defaults. An operator-only SQL script exists on the draft branch. | Blocked on an authorised Supabase administrator and post-change catalog verification. |
+| Migration provenance and identity lineage | The reconciliation below still records reconstructed historical sources, legacy successor mappings, and the Witstart identity-set mismatch. | Open; no speculative data repair is authorised. |
+| Browser-driven product acceptance | CI evidence currently covers builds and API/database tests, not every complete browser journey across both applications. | Open. |
+
+Do not merge the draft security PR solely because its recorded checks passed: first compare its current head and migration set to `main`, verify the complete required workflow set on one exact candidate SHA, and establish a safe deployment/migration order. Production database changes, data repair, and deployment remain separate approval gates.
