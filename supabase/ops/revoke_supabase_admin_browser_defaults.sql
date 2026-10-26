@@ -20,7 +20,9 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
   REVOKE ALL PRIVILEGES ON SEQUENCES FROM PUBLIC, anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin
   REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
+-- Function EXECUTE defaults were granted globally, so revoke globally too;
+-- a schema-specific REVOKE cannot cancel a global default grant.
+ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin
   REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated;
 
 -- Fail the operation if browser-facing defaults remain for this managed owner.
