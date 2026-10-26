@@ -10,7 +10,7 @@ This branch prepares code and migrations only. No production SQL, merge, or depl
 - Creator sale record/release/refund actions use separate `creator_sales.*` permissions rather than the broad `courses.assign` permission.
 - Production readiness details require `READINESS_PROBE_TOKEN`; public liveness remains available at `/api/health`.
 - Verification and reset tokens are placed in URL fragments for new emails; the frontend clears the URL immediately and retains query-string fallback only for old emails.
-- The frontend token is tab-scoped in `sessionStorage` rather than persistent `localStorage`. This reduces persistence but is **not equivalent to an HttpOnly cookie**; the cookie migration remains a separate frontend/backend-origin design task.
+- Browser sessions use Secure, HttpOnly, SameSite=Lax cookies delivered only to the explicit frontend-origin allowlist. Both Next.js frontends proxy `/api/*` through same-origin rewrites; session storage keeps only a non-secret `cookie-session` marker. Non-browser clients without an `Origin` header retain bearer-token compatibility.
 - Cohort DOB values are encrypted at write time and excluded from organisation roster responses. A read-only live check on 26 October 2026 found zero plaintext DOB rows in `public.cohort_accounts`.
 
 ## Required migration sequence
