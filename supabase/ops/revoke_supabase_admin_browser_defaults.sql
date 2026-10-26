@@ -10,6 +10,10 @@
 
 BEGIN;
 
+-- Apply the changes as the default-ACL owner. A superuser may SET ROLE here;
+-- an ordinary postgres connection without membership cannot do so.
+SET LOCAL ROLE supabase_admin;
+
 ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
   REVOKE ALL PRIVILEGES ON TABLES FROM PUBLIC, anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
