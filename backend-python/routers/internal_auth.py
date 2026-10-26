@@ -78,7 +78,7 @@ def require_internal_permission(permission):
     return dependency
 
 @router.post("/login")
-def internal_login(payload:InternalLoginRequest,request:Request,response:Response):
+def internal_login(payload:InternalLoginRequest,request:Request,response:Response=None):
     email=norm_email(payload.email); found=_staff_by_email(email)
     if not found:
         legacy=supabase.table("admins").select("id,email,name,password_hash,role,is_active").eq("email",email).limit(1).execute()
