@@ -475,12 +475,6 @@ def _resolve_organisation(
                         None,
                     )
 
-                if legacy_role == "super_admin":
-                    return (
-                        requested_organisation_id,
-                        None,
-                    )
-
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=(
@@ -809,20 +803,8 @@ def resolve_permission_context(
             )
         )
 
-    # ========================================================================
-    # LEGACY SUPER ADMIN COMPATIBILITY
-    # ========================================================================
-
-    # Keep the existing authentication system functional while migration
-    # takes place.
-
-    if (
-        legacy_role == "super_admin"
-        and "super_admin" not in platform_roles
-    ):
-        platform_roles.append(
-            "super_admin"
-        )
+    # Legacy role labels alone do not grant platform authority. A role must
+    # be present in the active platform-admin assignment table.
 
     platform_roles = sorted(
         set(platform_roles)
