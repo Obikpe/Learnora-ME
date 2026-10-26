@@ -98,6 +98,7 @@ jobs:
             supabase/migrations/20261021220327_encrypt_cohort_date_of_birth.sql \
             supabase/migrations/20261021220333_cohort_login_rate_limits.sql \
             supabase/migrations/20261021220849_revoke_trigger_function_browser_execute.sql \
+            supabase/migrations/20261026100000_pin_cohort_assignment_function_search_paths.sql \
             supabase/migrations/20261026150000_shared_auth_rate_limits.sql \
             supabase/migrations/20261026151000_shared_api_rate_limit.sql \
             supabase/migrations/20261026152000_separate_creator_sales_permissions.sql
