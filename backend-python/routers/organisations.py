@@ -565,8 +565,8 @@ def update_cohort_member(
                 .execute()
             )
             if not learner_membership.data:
-                raise HTTPException(403, "An active learner membership in this organisation is required.")
-        ensure_cohort_capacity(cohort_id, 1)
+                raise HTTPException(400, "The learner must be an active member of this organisation.")
+        ensure_cohort_capacity(cohort_id)
 
     result = supabase.table("cohort_members").update({"status": body.status}).eq("id", membership_id).eq("cohort_id", cohort_id).execute()
     if not result.data:
