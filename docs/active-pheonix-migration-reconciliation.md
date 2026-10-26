@@ -8,7 +8,7 @@ All live database inspection in this task was read-only. No production rows, sch
 
 ## Active migration ledger restored
 
-The active project reports 26 applied timestamped migration versions. The active `supabase/migrations/` directory now contains exactly those 26 timestamped filenames, in the same version order:
+The 2026-10-21 inventory captured 26 applied timestamped versions matching the then-active `supabase/migrations/` directory. A fresh read-only ledger query on 2026-10-26 now returns **31 applied versions**. Five applied versions have no matching SQL file in the current repository: `20261021220303`, `20261021220321`, `20261021220327`, `20261021220333`, and `20261021220849`. The active directory currently contains 30 timestamped SQL files: the 26 previously matched files plus four release-candidate migrations that are not present in the live ledger. Do not treat this as a reconciled migration chain or run pending migrations against live Supabase until the five missing applied sources are recovered or formally documented as unrecoverable.
 
 - `20261008100924_add_learnora_ai_profiles.sql`
 - `20261009225421_learnora_organisation_portal.sql`
@@ -90,7 +90,7 @@ This snapshot is **only** a disposable staging fixture for testing the current s
 
 ## Full legacy replay rehearsal and schema-drift result
 
-The disposable CI job now replays all 15 archived legacy SQL files, the five catalog-derived prerequisites, and all 26 timestamped migrations in a fresh PostgreSQL database. The migration sequence completes successfully. Deterministic seed checks also pass: the replay produces the same 41 permission keys as the active catalog, one AI-provider seed row, and no contract-template or contract-clause rows (both are empty in the active database).
+The disposable CI job now replays all 15 archived legacy SQL files, the five catalog-derived prerequisites, and the timestamped SQL files currently present in the repository in a fresh PostgreSQL database. This is not a complete replay of the live ledger because the five applied versions listed above are missing from the repository; the four release-candidate migrations are also newer than the live ledger. The migration sequence completes successfully. Deterministic seed checks also pass: the replay produces the same 41 permission keys as the active catalog, one AI-provider seed row, and no contract-template or contract-clause rows (both are empty in the active database).
 
 A schema fingerprint comparison is intentionally **report-only** because the replay is not equivalent to the current catalog. After normalizing function-definition whitespace and ignoring column order, the comparison reports:
 
@@ -241,7 +241,7 @@ All five source/target pairs had identical blob SHAs in the repository API. This
 ## Follow-up security work — latest branch commits
 
 - Tightened the cohort username allowlist to `[a-z0-9.-]{2,160}`; the regex no longer admits a backslash. Regression tests already cover `%`, `a%`, and `_`, generic 401 responses, dummy password verification, IP+username buckets, and the sixth-attempt lockout.
-- Added `supabase/rollback/20261021183000_revoke_browser_table_grants.rollback.sql` outside the active migration directory. It restores the exact 12-table grants from migration `20261020230906`; it is explicitly marked emergency-only because applying it restores the browser-role exposure.
+- Added `supabase/rollback/20261021183000_restore_legacy_browser_table_grants.sql` outside the active migration directory. It restores the exact 12-table grants from migration `20261020230906`; it is explicitly marked emergency-only because applying it restores the browser-role exposure.
 - The active migration `20261021183000_revoke_browser_table_grants.sql` already revokes browser/public privileges across all existing public tables/views and tightens defaults for `postgres` and `supabase_admin`. CI asserts effective table/view privileges and default ACLs against the isolated legacy replay. This is repository/CI hardening only; it has **not** been applied to live Supabase.
 - Read-only live inventory returned explicit privileges on 53 public tables for each of `anon` and `authenticated` (371 privilege rows per role), and default ACL entries for both `postgres` and `supabase_admin`. Re-run the full inventory and verify all client paths before staging or production rollout.
 
@@ -270,3 +270,12 @@ A guarded DOB backfill helper, `scripts/backfill_cohort_dob_encryption.py`, has 
 - Instructor submission/grade scope and immutable grade audit history still require a dedicated route-level review and regression tests before release.
 - Activation links use URL fragments in the current cohort flow, reducing server/referrer exposure compared with query strings, but all other activation flows should be checked independently.
 - No live database migration, DOB backfill, production deployment, or merge was performed.
+
+
+## Live migration-ledger delta discovered 2026-10-26
+
+The live ledger currently contains 31 applied versions. The five versions `20261021220303`, `20261021220321`, `20261021220327`, `20261021220333`, and `20261021220849` have no matching SQL files in the current repository tree. Their original SQL and semantics have not yet been recovered, so they must not be reconstructed from guesses or marked as safely replayable.
+
+The current branch adds four **pending, un-applied** release-candidate migrations after `20261021182222`: `20261021183000`, `20261021183500`, `20261021184000`, and `20261026100000`. These are repository changes only. Do not apply them to live Supabase until the missing five applied migration sources have been reconciled and a staging rollout passes.
+
+The recorded fingerprint counts in the historical section above are from the earlier comparison and are not a substitute for a fresh comparison after the pending security migrations are applied in disposable staging.
