@@ -71,7 +71,8 @@ class HttpOnlyCookieSessionTests(unittest.TestCase):
         request = type("RequestStub", (), {"headers": {"origin": "https://learnora-me-v02.vercel.app"}})()
         response = Response()
         payload = {"status": "success", "token": "signed-jwt", "access_token": "signed-jwt", "user": {"id": "u1"}}
-        result = auth.deliver_auth_token(request, response, "signed-jwt", payload)
+        with patch.object(auth, "APP_ENV", "production"):
+            result = auth.deliver_auth_token(request, response, "opaque-session-value", payload)
         self.assertNotIn("token", result)
         self.assertNotIn("access_token", result)
         cookie = response.headers.get("set-cookie", "")
