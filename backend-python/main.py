@@ -1,4 +1,5 @@
 import os
+import ipaddress
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -31,8 +32,21 @@ app = FastAPI(
     openapi_url="/openapi.json" if os.getenv("APP_ENV", "production").strip().lower() != "production" else None,
 )
 
+def _trusted_rate_limit_ip(request: Request) -> str:
+    """Trust Vercel's normalised client IP header only on Vercel-hosted requests."""
+    if os.getenv("VERCEL", "").strip() == "1":
+        candidate = (request.headers.get("x-real-ip") or "").strip()
+        if candidate:
+            try:
+                ipaddress.ip_address(candidate)
+                return candidate
+            except ValueError:
+                pass
+    return get_remote_address(request)
+
+
 # Rate limiter middleware
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+limiter = Limiter(key_func=_trusted_rate_limit_ip, default_limits=["60/minute"])
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
