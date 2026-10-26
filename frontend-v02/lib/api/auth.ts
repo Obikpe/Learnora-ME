@@ -9,7 +9,7 @@ function activeToken() {
   if (sessionStorage.getItem("phx_logged_out") === "1") return "";
   const stored = sessionStorage.getItem("phx_token") || "";
   if (stored && stored !== "cookie-session") sessionStorage.removeItem("phx_token");
-  return sessionStorage.getItem("phx_token") || "cookie-session";
+  return "cookie-session:" + (sessionStorage.getItem("phx_session_epoch") || "implicit");
 }
 
 /** Synchronous cache read for client-side route transitions. */

@@ -13,6 +13,8 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('sessionStorage.setItem("phx_token","cookie-session")', client)
         self.assertIn('localStorage.removeItem("phx_token")', client)
         self.assertIn('sessionStorage.removeItem("phx_logged_out")', client)
+        self.assertIn('sessionStorage.setItem("phx_session_epoch"', client)
+        self.assertIn('sessionStorage.removeItem("phx_session_epoch")', client)
         self.assertIn('sessionStorage.setItem("phx_logged_out","1")', client)
         self.assertIn('value!=="cookie-session"', client)
         self.assertNotIn('localStorage.getItem("phx_token")', client)
@@ -21,6 +23,7 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('credentials:"same-origin"', client)
         self.assertIn('t!=="cookie-session"', client)
         self.assertIn('sessionStorage.getItem("phx_logged_out") === "1"', auth)
+        self.assertIn('sessionStorage.getItem("phx_session_epoch") || "implicit"', auth)
         self.assertIn('const BASE=""', client)
 
     def test_frontend_api_proxies_are_configured_for_same_origin_cookies(self):
