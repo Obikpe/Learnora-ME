@@ -10,11 +10,11 @@ CREATE OR REPLACE FUNCTION public.consume_api_rate_limit(
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog, public
+SET search_path = ''
 AS $function$
 DECLARE
   bucket public.auth_rate_limit_buckets%ROWTYPE;
-  v_now timestamptz := clock_timestamp();
+  v_now timestamptz := pg_catalog.clock_timestamp();
   next_attempts integer;
 BEGIN
   IF p_bucket_key !~ '^[0-9a-f]{64}$'
@@ -36,7 +36,7 @@ BEGIN
     RETURN true;
   END IF;
 
-  IF bucket.window_started_at <= v_now - make_interval(secs => p_window_seconds) THEN
+  IF bucket.window_started_at <= v_now - pg_catalog.make_interval(secs => p_window_seconds) THEN
     next_attempts := 1;
     UPDATE public.auth_rate_limit_buckets
     SET attempts = next_attempts,
@@ -51,7 +51,7 @@ BEGIN
   UPDATE public.auth_rate_limit_buckets
   SET attempts = next_attempts,
       blocked_until = CASE WHEN next_attempts > p_max_requests
-        THEN v_now + make_interval(secs => p_window_seconds)
+        THEN v_now + pg_catalog.make_interval(secs => p_window_seconds)
         ELSE blocked_until END,
       updated_at = v_now
   WHERE bucket_key = p_bucket_key;
