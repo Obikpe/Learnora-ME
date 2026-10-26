@@ -545,10 +545,31 @@ def update_cohort_member(
     cohort = supabase.table("cohorts").select("id").eq("id", cohort_id).eq("organisation_id", organisation_id).limit(1).execute()
     if not cohort.data:
         raise HTTPException(404, "Cohort not found.")
-    membership = supabase.table("cohort_members").select("id,cohort_account_id").eq("id", membership_id).eq("cohort_id", cohort_id).limit(1).execute()
+    membership = supabase.table("cohort_members").select("id,cohort_account_id,status").eq("id", membership_id).eq("cohort_id", cohort_id).limit(1).execute()
     if not membership.data:
         raise HTTPException(404, "Cohort membership not found.")
     member_row = membership.data[0]
+
+    # Cohort learners use cohort_accounts, not organisation_members/public.users.
+    # A withdrawn membership can only be reactivated for an active account that
+    # still belongs to this exact cohort and organisation.
+    if body.status == "active" and member_row.get("status") != "active":
+        account_id = member_row.get("cohort_account_id")
+        if not account_id:
+            raise HTTPException(400, "Only cohort learner accounts can be reactivated through this workflow.")
+        account = (
+            supabase.table("cohort_accounts")
+            .select("id,status")
+            .eq("id", account_id)
+            .eq("cohort_id", cohort_id)
+            .eq("organisation_id", organisation_id)
+            .limit(1)
+            .execute()
+        )
+        if not account.data or account.data[0].get("status") != "active":
+            raise HTTPException(400, "Only an active learner account in this organisation and cohort can be reactivated.")
+        ensure_cohort_capacity(cohort_id)
+
     result = supabase.table("cohort_members").update({"status": body.status}).eq("id", membership_id).eq("cohort_id", cohort_id).execute()
     if not result.data:
         raise HTTPException(404, "Cohort membership not found.")
