@@ -8,8 +8,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ACTIVE_MIGRATIONS = REPO_ROOT / "supabase" / "migrations"
 LEGACY_MIGRATIONS = REPO_ROOT / "supabase" / "legacy_migrations"
 
-# These timestamps are checked against the active project's migration ledger; the last four entries were applied during the 2026-10-21 security rollout.
-EXPECTED_VERSIONS = [
+# Applied versions match the verified live ledger. Pending versions are reviewed
+# release candidates and must not be described as applied until their migrations run.
+APPLIED_VERSIONS = [
     "20261008100924",
     "20261009225421",
     "20261009230311",
@@ -43,12 +44,23 @@ EXPECTED_VERSIONS = [
     "20261021220849",
 ]
 
+PENDING_VERSIONS = [
+    "20261026100000",
+    "20261026150000",
+    "20261026151000",
+    "20261026152000",
+    "20261026153000",
+]
+EXPECTED_VERSIONS = APPLIED_VERSIONS + PENDING_VERSIONS
+
 
 class SupabaseMigrationInventoryTests(unittest.TestCase):
     def test_repository_migration_inventory_includes_reviewed_pending_versions(self):
         files = sorted(ACTIVE_MIGRATIONS.glob("*.sql"))
         versions = [path.name.split("_", 1)[0] for path in files]
         self.assertEqual(versions, EXPECTED_VERSIONS)
+        self.assertEqual(versions[:len(APPLIED_VERSIONS)], APPLIED_VERSIONS)
+        self.assertEqual(versions[len(APPLIED_VERSIONS):], PENDING_VERSIONS)
         self.assertTrue(all(re.fullmatch(r"\d{14}", version) for version in versions))
         self.assertTrue(all(path.stat().st_size > 0 for path in files))
 
@@ -75,7 +87,7 @@ class SupabaseMigrationInventoryTests(unittest.TestCase):
     def test_expected_permission_seed_keys_are_unique_and_sorted(self):
         key_file = REPO_ROOT / "supabase" / "baselines" / "expected_permission_keys.txt"
         keys = key_file.read_text(encoding="utf-8").splitlines()
-        self.assertEqual(len(keys), 42)
+        self.assertEqual(len(keys), 45)
         self.assertEqual(keys, sorted(set(keys)))
 
     def test_catalog_reconstructed_sources_are_not_misrepresented_as_original(self):
