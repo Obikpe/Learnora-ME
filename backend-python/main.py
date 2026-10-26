@@ -12,7 +12,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from contextlib import asynccontextmanager
@@ -32,7 +31,8 @@ app = FastAPI(
 )
 
 # Rate limiter middleware
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+# Reuse the Vercel-aware, validated client IP resolver used by auth throttling.
+limiter = Limiter(key_func=auth._get_client_ip, default_limits=["60/minute"])
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
