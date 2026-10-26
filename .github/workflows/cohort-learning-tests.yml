@@ -228,6 +228,11 @@ jobs:
           done
           echo "Legacy plus timestamped migration replay completed."
 
+      - name: Test shared authentication and API rate-limit RPCs
+        env:
+          LEGACY_REPLAY_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/legacy_replay_staging
+        run: psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/rate_limit_assertions.sql
+
       - name: Assert browser roles have no public table or sequence privileges
         env:
           LEGACY_REPLAY_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/legacy_replay_staging
