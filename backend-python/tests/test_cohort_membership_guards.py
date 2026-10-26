@@ -96,9 +96,12 @@ class CohortMembershipGuardTests(unittest.TestCase):
             "cohorts": [{"id": "cohort-a", "organisation_id": "org-a", "status": "active"}],
             "cohort_members": [{
                 "id": "membership-a", "cohort_id": "cohort-a",
-                "user_id": "user-b", "status": "withdrawn",
+                "cohort_account_id": "account-a", "status": "withdrawn",
             }],
-            "organisation_members": [],
+            "cohort_accounts": [{
+                "id": "account-a", "cohort_id": "cohort-a",
+                "organisation_id": "org-other", "status": "active",
+            }],
         })
         with patch.object(organisations, "supabase", db), patch.object(organisations, "ensure_cohort_capacity") as capacity:
             with self.assertRaises(HTTPException) as raised:
@@ -117,11 +120,11 @@ class CohortMembershipGuardTests(unittest.TestCase):
             "cohorts": [{"id": "cohort-a", "organisation_id": "org-a", "status": "active"}],
             "cohort_members": [{
                 "id": "membership-a", "cohort_id": "cohort-a",
-                "user_id": "user-a", "status": "withdrawn",
+                "cohort_account_id": "account-a", "status": "withdrawn",
             }],
-            "organisation_members": [{
-                "id": "org-member-a", "organisation_id": "org-a",
-                "user_id": "user-a", "role": "learner", "status": "active",
+            "cohort_accounts": [{
+                "id": "account-a", "cohort_id": "cohort-a",
+                "organisation_id": "org-a", "status": "active",
             }],
         })
         with patch.object(organisations, "supabase", db), patch.object(organisations, "ensure_cohort_capacity") as capacity:
