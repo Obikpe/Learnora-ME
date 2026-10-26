@@ -5,7 +5,11 @@ let cachedForToken = "";
 let currentUserRequest: Promise<any> | null = null;
 
 function activeToken() {
-  return typeof window === "undefined" ? "" : sessionStorage.getItem("phx_token") || "cookie-session";
+  if (typeof window === "undefined") return "";
+  if (sessionStorage.getItem("phx_logged_out") === "1") return "";
+  const stored = sessionStorage.getItem("phx_token") || "";
+  if (stored && stored !== "cookie-session") sessionStorage.removeItem("phx_token");
+  return sessionStorage.getItem("phx_token") || "cookie-session";
 }
 
 /** Synchronous cache read for client-side route transitions. */

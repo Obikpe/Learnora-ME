@@ -3,12 +3,18 @@ const BASE = "";
 export const token = () => {
   if (typeof window === "undefined") return "";
   localStorage.removeItem("learnora_team_token");
-  return sessionStorage.getItem("learnora_team_token") || "";
+  const stored = sessionStorage.getItem("learnora_team_token") || "";
+  if (stored && stored !== "cookie-session") {
+    sessionStorage.removeItem("learnora_team_token");
+    return "";
+  }
+  return stored;
 };
 
 export const setToken = (_value: string) => {
   if (typeof window === "undefined") return;
   localStorage.removeItem("learnora_team_token");
+  sessionStorage.removeItem("learnora_team_logged_out");
   sessionStorage.setItem("learnora_team_token", "cookie-session");
   sessionStorage.setItem("learnora_team_last_activity", String(Date.now()));
 };
@@ -17,6 +23,7 @@ export const clearToken = () => {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem("learnora_team_token");
   localStorage.removeItem("learnora_team_token");
+  sessionStorage.setItem("learnora_team_logged_out", "1");
   sessionStorage.removeItem("learnora_team_last_activity");
   void fetch("/api/internal/auth/logout", { method: "POST", credentials: "same-origin", keepalive: true }).catch(() => {});
 };
@@ -54,7 +61,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401 && typeof window !== "undefined") sessionStorage.removeItem("learnora_team_token");
+    if (response.status === 401 && typeof window !== "undefined") { sessionStorage.removeItem("learnora_team_token"); sessionStorage.setItem("learnora_team_logged_out", "1"); }
     const message =
       typeof body.detail === "string"
         ? body.detail
