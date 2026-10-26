@@ -1066,7 +1066,12 @@ def _get_client_ip(
     if not request:
         return None
 
-    candidates = [request.headers.get("x-real-ip")]
+    candidates = []
+    # Only trust X-Real-IP when running behind Vercel's managed edge, which
+    # normalises this header. In local/other deployments, clients can supply
+    # arbitrary X-Real-IP headers, so use the ASGI peer address instead.
+    if os.getenv("VERCEL", "").strip() == "1":
+        candidates.append(request.headers.get("x-real-ip"))
     if request.client:
         candidates.append(request.client.host)
 

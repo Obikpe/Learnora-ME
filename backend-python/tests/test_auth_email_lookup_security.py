@@ -2,12 +2,14 @@
 import os
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+from starlette.requests import Request
 
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
-from routers.auth import _escape_ilike_literal
+from routers.auth import _escape_ilike_literal, _get_client_ip
 
 
 class AuthEmailLookupSecurityTests(unittest.TestCase):
@@ -17,6 +19,32 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
             _escape_ilike_literal(value),
             r"first\_last\%\*\\\\@example.com",
         )
+
+    def test_client_supplied_real_ip_is_ignored_outside_vercel(self):
+        request = Request({
+            "type": "http",
+            "method": "GET",
+            "path": "/",
+            "headers": [(b"x-real-ip", b"198.51.100.2")],
+            "client": ("203.0.113.44", 43123),
+            "server": ("testserver", 80),
+            "scheme": "http",
+        })
+        with patch.dict(os.environ, {"VERCEL": "0"}):
+            self.assertEqual(_get_client_ip(request), "203.0.113.44")
+
+    def test_vercel_edge_real_ip_is_used_when_platform_is_trusted(self):
+        request = Request({
+            "type": "http",
+            "method": "GET",
+            "path": "/",
+            "headers": [(b"x-real-ip", b"198.51.100.2")],
+            "client": ("203.0.113.44", 43123),
+            "server": ("testserver", 80),
+            "scheme": "http",
+        })
+        with patch.dict(os.environ, {"VERCEL": "1"}):
+            self.assertEqual(_get_client_ip(request), "198.51.100.2")
 
     def test_unknown_login_path_uses_dummy_password_verification(self):
         source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
