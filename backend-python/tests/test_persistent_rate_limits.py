@@ -89,6 +89,23 @@ class HttpOnlyCookieSessionTests(unittest.TestCase):
             auth.deliver_auth_token(request, Response(), "opaque-session-value", {"access_token": "opaque-session-value"})
         self.assertEqual(raised.exception.status_code, 403)
 
+    def test_internal_staff_dependency_reads_httponly_cookie(self):
+        from jose import JWTError
+        from starlette.requests import Request
+        from routers import internal_auth
+
+        request = Request({
+            "type": "http", "method": "GET", "path": "/api/internal/auth/me",
+            "headers": [(b"cookie", b"learnora_team_token=opaque-staff-session")],
+            "client": ("127.0.0.1", 1234), "server": ("testserver", 80), "scheme": "https",
+        })
+        with patch.object(internal_auth, "JWT_SECRET", "x" * 40):
+            with patch.object(internal_auth.jwt, "decode", side_effect=JWTError("invalid")) as decode:
+                with self.assertRaises(Exception):
+                    internal_auth.get_current_staff(creds=None, request=request)
+        decode.assert_called_once()
+        self.assertEqual(decode.call_args.args[0], "opaque-staff-session")
+
     def test_current_user_reads_httponly_cookie_when_no_bearer_header(self):
         from jose import JWTError
         from starlette.requests import Request
