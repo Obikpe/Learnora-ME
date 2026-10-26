@@ -35,6 +35,23 @@ jobs:
           PY
       - name: Install backend dependencies
         run: python -m pip install -r requirements.txt
+      - name: Run security regression tests
+        env:
+          APP_ENV: development
+          SUPABASE_URL: https://example.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ci-only-not-a-real-key
+          JWT_SECRET: ci-only-not-a-real-secret
+        run: |
+          python -m pip install pytest
+          python -m pytest -q \
+            tests/test_cohort_login_security.py \
+            tests/test_course_access_guards.py \
+            tests/test_course_content_access.py \
+            tests/test_organisation_team_membership.py \
+            tests/test_ai_quota_atomicity.py \
+            tests/test_audit_regressions.py \
+            tests/test_platform_admin_authority.py \
+            tests/test_cohort_membership_guards.py
       - name: Static undefined-name and syntax checks
         run: |
           python -m pip install ruff
