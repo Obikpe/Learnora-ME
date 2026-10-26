@@ -19,7 +19,7 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('value!=="cookie-session"', client)
         self.assertNotIn('localStorage.getItem("phx_token")', client)
         self.assertNotIn('localStorage.getItem("phx_token")', auth)
-        self.assertIn('sessionStorage.getItem("phx_token") || "cookie-session"', auth)
+        self.assertIn('return "cookie-session:" +', auth)
         self.assertIn('credentials:"same-origin"', client)
         self.assertIn('t!=="cookie-session"', client)
         self.assertIn('sessionStorage.getItem("phx_logged_out") === "1"', auth)
