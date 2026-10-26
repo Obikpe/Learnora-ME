@@ -254,3 +254,21 @@ Append entries using:
 - **Tests:** no application code or SQL was changed in this documentation task. No new workflow run for the documentation commits was visible at verification time; previously successful CI runs are historical and are not represented as tests of this documentation commit.
 - **Production impact:** no Supabase migration, data mutation, or deployment was performed.
 - **Remaining work:** implement and verify the P0–P6 roadmap. Documentation records the known risks but does not fix the underlying security/schema issues.
+
+
+## 9. 2026-10-26 — first remediation batch and CI evidence
+
+- **Branch:** direct commits to `main`; no branch was created or checked out.
+- **Repository identity:** the GitHub repository is now addressed canonically as `Obikpe/Learnora-ME`; it is the same repository previously referenced as `Obikpe/Pheonix-Analytics`.
+- **Local development:** root scripts now target `frontend-v02/`, `frontend-team/`, and `backend-python/`. README and `HOW_TO_RUN.md` were corrected. Development frontend defaults now use localhost rather than sending local work to the production API; `backend-python/.env.example` defaults to development and localhost origins.
+- **Authentication:** email account lookups escape LIKE metacharacters; unknown-account login performs dummy bcrypt verification; disabled admin status is checked after password verification; new verification/reset tokens use URL fragments and the UI retains compatibility with old query-string links; Learnora ME bearer tokens are session-scoped and legacy persistent tokens are cleared. This is not the final HttpOnly-cookie design.
+- **API disclosure:** readiness responses no longer disclose internal configuration/database checks. Course-content and video-upload errors return generic client messages and log only exception types.
+- **CI reliability:** backend, frontend, cohort and quality workflows now trigger together for code/migration/workflow changes. The quality concurrency key includes the commit SHA so a newer push cannot cancel the evidence for an earlier candidate.
+- **Verification candidate:** `d01b04872f3aa03652545eab0932b5dd94194dcd`.
+  - [Backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870960) — success.
+  - [Backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870926) — success.
+  - [Frontend builds](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870915) — success for Learnora ME and Learnora Teams.
+  - [Cohort-learning access tests](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870862) — success.
+  - [Quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/40414870831) — success.
+- **Production impact:** a read-only Vercel deployment lookup returned no deployment for this commit. No production deployment or Supabase mutation was performed.
+- **Remaining release blockers:** HttpOnly-cookie sessions; shared production authentication/API rate limiting; creator sales permission separation and atomic sale/refund writes; managed `supabase_admin` default ACL remediation by an authorised operator; historical migration provenance and identity-lineage reconciliation; and complete browser-driven acceptance across both applications.

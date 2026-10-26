@@ -4,16 +4,16 @@
 
 The dated sections below preserve the earlier investigation record. This update supersedes any older statement that could be read as current PR status, but it does not rewrite historical observations.
 
-- Current application source is on `main` in `frontend-v02/` (Learnora ME), `frontend-team/` (Learnora Teams), and `backend-python/` (FastAPI). The root README and local runbook were corrected on 26 October; their setup commands still require a local run to verify.
-- Draft PRs #11, #12, and #13 are not merged. PR #13's latest recorded test set passed on its head commit `0b54f1cda55c7de548005cfcb515ad8c0c02ff2b`, but this is branch evidence, not main-branch evidence.
-- The current `main` browser API client still uses `localStorage` for `phx_token`, and normal authentication/global rate limiting still includes process-local state. The complete HttpOnly-cookie/shared-limiter implementation is not part of current `main`.
+- Current application source is on `main` in `frontend-v02/` (Learnora ME), `frontend-team/` (Learnora Teams), and `backend-python/` (FastAPI). Root scripts, README, and local runbook target these active apps. Local frontends now default to localhost API in development, and `.env.example` uses local frontend URLs.
+- Draft PRs #11, #12, and #13 are not merged. PR #13's recorded test set passed on its head commit `0b54f1cda55c7de548005cfcb515ad8c0c02ff2b`. Main candidate `d01b04872f3aa03652545eab0932b5dd94194dcd` separately passed all five required workflows on the same SHA (backend regression, backend verification, frontend builds, cohort-learning tests, and quality checks).
+- Current `main` uses `sessionStorage` for the `phx_token` bearer token and clears the legacy persistent token. New verification/reset emails use URL fragments; the frontend still accepts query-string tokens for already-sent emails. This is an interim mitigation, not an HttpOnly-cookie session. Normal authentication failure counters and the global API limiter still include process-local state.
 - PR #13 adds migrations needed by its backend changes. Do not deploy those backend changes before the required migration set is reviewed and applied in the correct order. No production migration or deployment is authorised by this status note.
-- The managed `supabase_admin` default ACL issue remains a separate operator task; the connected role cannot change that managed role's defaults. A catalog check after authorised remediation is required.
+- Content API database/storage errors now return generic messages instead of exposing raw exception details. The readiness response now omits internal check details, but the token-protected readiness probe remains only in PR #13. The managed `supabase_admin` default ACL issue remains a separate operator task; the connected role cannot change that managed role's defaults. A catalog check after authorised remediation is required.
 - Historical source provenance, Witstart identity-set mismatch, legacy-to-current object lineage, full schema diff, and browser-driven acceptance remain open until evidence is recorded.
 
 Target: active Pheonix Supabase project `gihfupzvdpyrmynqgukz`.
 
-All live database inspection in this task was read-only. No production rows, schema, migration ledger, or Vercel deployment were changed. Do not merge or deploy until the legacy schema-parity gap, baseline strategy, and browser UI acceptance are reviewed.
+All live database inspection in this task was read-only. No production rows, schema, migration ledger, or Vercel deployment were changed. A read-only Vercel deployment lookup returned no deployment for the tested main commit `d01b04872f3aa03652545eab0932b5dd94194dcd`. Do not merge or deploy until the legacy schema-parity gap, baseline strategy, and browser UI acceptance are reviewed.
 
 ## Active migration ledger restored
 
