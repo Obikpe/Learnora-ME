@@ -17,6 +17,13 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
             r"first\_last\%\*\\\\@example.com",
         )
 
+    def test_unknown_login_path_uses_dummy_password_verification(self):
+        source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
+        self.assertIn("DUMMY_LOGIN_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))", source)
+        unknown_path = source.split("if not user:", 1)[1].split("# LEARNER", 1)[0]
+        self.assertIn("verify_password(", unknown_path)
+        self.assertIn("DUMMY_LOGIN_PASSWORD_HASH", unknown_path)
+
     def test_email_lookup_helper_escapes_all_pattern_wildcards(self):
         from pathlib import Path
         source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
