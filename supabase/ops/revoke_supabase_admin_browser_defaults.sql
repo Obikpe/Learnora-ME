@@ -35,11 +35,22 @@ BEGIN
     LEFT JOIN pg_roles grantee ON grantee.oid = acl.grantee
     WHERE d.defaclrole = (SELECT oid FROM pg_roles WHERE rolname = 'supabase_admin')
       AND d.defaclnamespace IN (0, 'public'::regnamespace)
-      AND (
-        acl.grantee = 0
-        OR grantee.rolname IN ('anon', 'authenticated')
-      )
+      AND (acl.grantee = 0 OR grantee.rolname IN ('anon', 'authenticated'))
   ) THEN
+    RAISE NOTICE 'Remaining managed default ACLs: %', (
+      SELECT string_agg(
+        format('object_type=%s schema=%s grantee=%s privilege=%s',
+          d.defaclobjtype, coalesce(n.nspname, '*'), coalesce(grantee.rolname, 'PUBLIC'), acl.privilege_type),
+        '; ' ORDER BY d.defaclobjtype, n.nspname, grantee.rolname, acl.privilege_type
+      )
+      FROM pg_default_acl d
+      CROSS JOIN LATERAL aclexplode(d.defaclacl) acl
+      LEFT JOIN pg_roles grantee ON grantee.oid = acl.grantee
+      LEFT JOIN pg_namespace n ON n.oid = d.defaclnamespace
+      WHERE d.defaclrole = (SELECT oid FROM pg_roles WHERE rolname = 'supabase_admin')
+        AND d.defaclnamespace IN (0, 'public'::regnamespace)
+        AND (acl.grantee = 0 OR grantee.rolname IN ('anon', 'authenticated'))
+    );
     RAISE EXCEPTION 'Browser-role default ACLs remain for supabase_admin; do not treat hardening as complete.';
   END IF;
 END
