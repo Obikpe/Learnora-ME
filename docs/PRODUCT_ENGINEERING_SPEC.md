@@ -1,0 +1,390 @@
+# Learnora Product Engineering Specification
+
+**Status:** Engineering source of truth (living document)  
+**Last reviewed:** 26 October 2026  
+**Repository:** `Obikpe/Pheonix-Analytics`  
+**Default and requested working branch:** `main`  
+**Products covered:** Learnora ME and Learnora Teams  
+**Implementation roots:** `frontend-v02/`, `frontend-team/`, `backend-python/`, `supabase/`
+
+This document describes the product intent, current repository structure, architecture, major workflows, security expectations, and rebuild procedure. It distinguishes implemented behaviour from intended behaviour and known gaps. Where repository evidence does not establish a detail, it is marked **needs verification** rather than invented.
+
+## 1. Product overview
+
+Learnora is a learning and skills-development platform built around a journey from discovering a skill to learning, practising, building, demonstrating competence with appropriate evidence, showcasing that evidence, and connecting to opportunities. Completion is not the same as verified competence; unreviewed evidence must be labelled unverified. Marketing must not fabricate course counts, learner outcomes, testimonials, organisation metrics, or portfolio evidence.
+
+The platform has two distinct web applications backed by a shared Python API and Supabase data platform:
+
+- **Learnora ME** is the customer-facing experience for learners, tutors/creators, public discovery, individual learning, and customer organisations.
+- **Learnora Teams** is the internal workforce application for Super Admin and staff operations. It is not the customer organisation portal; customer organisation workflows live in Learnora ME.
+
+### Product principles
+
+1. Use actual API records for operational metrics and public claims.
+2. Tenant boundaries are enforced by backend scope checks and database constraints, not merely by hiding UI controls.
+3. A learner's cohort/track assignment is fixed for that cohort. A cohort-specific account may differ from the public Learnora account.
+4. A learner's historical user record remains for reference/statistics after cohort closure, while cohort membership and account access are deactivated according to lifecycle rules.
+5. Organisation, team, and cohort assignments are separate concepts; team/cohort scoped access must not silently become organisation-wide access.
+6. Loading, empty, validation, error, success, and permission-denied states are first-class UI states.
+7. Avoid paid dependencies when the existing stack is sufficient; do not add a design/component library without a clear need.
+8. No destructive schema/data action is justified solely to make migration history or a schema diff look clean.
+
+## 2. Repository map and ownership
+
+| Path | Responsibility | Notes |
+|---|---|---|
+| `frontend-v02/` | Learnora ME customer-facing Next.js application | Active customer UI: public pages, learner/creator flows, organisation portal/workspace, cohort flows |
+| `frontend-team/` | Learnora Teams internal Next.js application | Super Admin and internal operations |
+| `backend-python/` | FastAPI backend, business rules, API routes, services, tests | Shared application API; check router registration in `main.py` |
+| `supabase/migrations/` | Timestamped/active SQL migration files and current schema baseline assets | Never blindly replay legacy SQL against a live project |
+| `supabase/legacy_migrations/` | Archived historical migration chain | Historical analysis only; not a queue of pending active migrations |
+| `supabase/baselines/` | Disposable catalog-derived schema fixture and comparison assets, where present | Staging fixture, not a replacement for verified migration history |
+| `backend-python/tests/` | Python unit, regression, API and migration-inventory tests | DB fixtures/assertions are under `tests/db/` |
+| `backend-python/migrations/` | Migration planning, verification SQL, reconciliation reports | Some files are planning/evidence artefacts rather than migrations to execute |
+| `docs/` | Product, UX, migration, security and release documentation | Keep the decisions and status here current |
+| `.github/workflows/` | CI checks for backend, frontend, quality, and cohort lifecycle | A cancelled workflow is not a passing check |
+| `frontend/` | Legacy frontend | Historical/legacy surface; do not silently substitute it for the active ME frontend |
+
+**Important separation:** Learnora ME is implemented under `frontend-v02/`, and Learnora Teams under `frontend-team/`. Do not confuse Teams with the organisation workspace. The legacy `frontend/` is not the target for new ME work.
+
+## 3. Technology and runtime architecture
+
+### Frontend applications
+
+Both active frontends use Next.js/React and the repository's existing styling stack (Tailwind and Lucide where already used). Keep their dependencies and deployment roots independent. Review each `package.json`, `vercel.json`, and environment example before changing build or deployment behaviour.
+
+- Learnora ME: `frontend-v02/app/`, `frontend-v02/components/`, `frontend-v02/lib/`.
+- Learnora Teams: `frontend-team/app/`, `frontend-team/components/`, `frontend-team/lib/`.
+
+The UI must call the FastAPI API for protected operations. Do not put Supabase service-role secrets in browser code. Avoid direct browser database access for backend-only records.
+
+### Backend
+
+- Entry point: `backend-python/main.py`.
+- HTTP API: routers in `backend-python/routers/`.
+- Shared business logic: `backend-python/services/`.
+- Data validation: Pydantic models and route validation.
+- Tests: `backend-python/tests/`.
+- Dependencies: `backend-python/requirements.txt` and `pyproject.toml`.
+- Vercel routing/configuration: `backend-python/vercel.json`.
+
+The backend is the authority for authentication, organisation/tenant scoping, cohort membership, course-content access, grading, AI quota reservations, finance operations, and internal staff privileges. Inspect route inclusion and dependency wiring in `main.py` before adding a router.
+
+### Database and storage
+
+Supabase provides PostgreSQL, database functions/triggers, and related platform services. The active Pheonix project reference recorded in repository engineering notes is `gihfupzvdpyrmynqgukz`. This reference identifies the intended project but does **not** prove the currently deployed Vercel backend points to it; deployment environment values have not been independently verified.
+
+Reuse existing tables and relationships. Do not create parallel models without proving the existing model cannot represent the requirement. Do not run migrations against production as part of ordinary local development or CI.
+
+### External integrations
+
+Payment providers and email/notification integrations appear in the repository history and README. Treat provider status, production credentials, webhook configuration, and live payment behaviour as **environment-specific and requiring verification**. Never place real keys in source control. Use CI-only dummy values in tests.
+
+## 4. User groups and product boundaries
+
+### Learnora ME personas
+
+- **Public visitor:** discovers learning tracks, courses, tutors, platform information, policies, and organisation options.
+- **Individual learner:** registers/authenticates, discovers/enrols in available learning, views lessons, tracks progress, attempts quizzes, takes notes, and accesses eligible AI/learning support.
+- **Tutor/creator applicant:** submits an application; approval and account capabilities must follow the backend's status/permission checks.
+- **Approved tutor/creator:** manages permitted creator/course work, content and submissions within granted ownership and roles.
+- **Organisation owner/manager:** accesses only the organisation(s) they are authorised to manage; manages teams, cohorts, learner memberships, programmes, courses, tutors, contracts/entitlements, and progress according to grants.
+- **Organisation team manager/member:** accesses only permitted team operations and assigned learning.
+- **Cohort learner:** authenticates with a cohort-specific account, sees only assigned learning, and follows the cohort's fixed track and lifecycle.
+
+### Learnora Teams personas
+
+- **Platform Super Admin:** operates internal platform controls according to explicit platform-admin authority.
+- **Internal staff/team member:** can access only the internal operational sections and actions permitted to their staff membership and role.
+
+Internal platform administration and customer organisation administration are separate trust boundaries. Do not grant platform-admin powers because a user is an organisation owner, or vice versa.
+
+## 5. Functional scope and workflows
+
+### 5.1 Public discovery and learning
+
+Current routes and components should be inspected directly under `frontend-v02/app/`; the route tree includes public course/tutor/organisation discovery, informational/legal pages, login/registration, and learner dashboards. Preserve existing working routes and navigation when redesigning individual pages.
+
+Target user journey:
+
+1. Visitor lands on the site and understands the learning proposition.
+2. Visitor browses real courses/tracks and tutor information.
+3. Visitor registers or signs in.
+4. Learner enrols only where course visibility, publication, entitlement and access rules permit.
+5. Learner opens a course, module and lesson; the backend validates current access at request time.
+6. Progress, quiz attempts, notes and other permitted learning records are persisted.
+7. Evidence/portfolio is presented with a clear distinction between self-reported, submitted, reviewed and verified evidence.
+
+A route existing in the tree does not by itself prove that its full journey has been browser-tested. Verify each end-to-end flow.
+
+### 5.2 Tutor/creator lifecycle
+
+The customer app includes an application-to-teach flow and creator dashboard. The intended lifecycle is application → review/approval → authorised creator workspace → course/content creation or management → publication according to permissions → learner engagement and grading where allowed. Do not infer creator approval from the existence of a user account.
+
+Course ownership, organisation affiliation, and instructor assignment must be checked server-side. Creator/finance operations require separation of duties and auditable state transitions.
+
+### 5.3 Customer organisation onboarding and workspaces
+
+Customer organisation workflows belong to Learnora ME. The engineering scope includes organisation owners/managers, teams, cohorts, programmes, tutors, learners, course access, contracts/entitlements, AI use, and progression.
+
+Target lifecycle:
+
+1. Organisation enquiry/request and organisation creation or activation.
+2. Verify the acting user's active membership and role for the target organisation.
+3. Set up teams and team memberships; team managers must be active members of the same organisation.
+4. Set up programmes and ordered course relationships where used.
+5. Create a cohort, assign its programme/track and eligible courses, and configure capacity/contract constraints.
+6. Provision cohort learners and validate membership/identity consistency.
+7. Assign courses at the correct scope: organisation-wide, team, cohort, or individual.
+8. Confirm access only when both the assignment and the corresponding active membership are valid.
+9. Track learning, assessment and progress using real records.
+10. Archive/close the cohort using the lifecycle rules; deactivate the cohort-specific access and active state without deleting the historical user record required for reference/statistics.
+
+A scoped team/cohort entitlement is not an organisation-wide grant. A learner who loses active membership or assignment must lose the corresponding content access even if a stale enrolment row remains.
+
+### 5.4 Cohort-specific account and login
+
+Cohort learner identities are deliberately distinct from `public.users` to allow a cohort-specific identity for the same email without weakening the public user's unique-email constraint. The relevant implementation is `backend-python/routers/cohort_learners.py`; tests include `test_cohort_login_security.py`, `test_cohort_learner_workflow.py`, `test_cohort_archive_lifecycle.py`, and `test_cohort_api_lifecycle.py`.
+
+Security requirements:
+
+- Username matching must be exact, never wildcard-based.
+- Reject malformed usernames before database lookup but return the same public authentication failure as an incorrect password.
+- Perform dummy password-hash verification for unknown usernames to reduce account-enumeration timing differences.
+- Rate-limit by both username and client IP; process-local counters alone are not sufficient for multi-instance/serverless production.
+- Recheck account/cohort status and membership against the database on authenticated requests.
+- Activation tokens must be hashed, single-use, short-lived, and not exposed unnecessarily through URLs/logs/referrers.
+- Passwords must be stored using the existing secure password-hashing helper; never log credentials or token values.
+
+Current status of each item must be verified against main code and tests before claiming complete.
+
+### 5.5 Learning content and course access
+
+The backend contains access, course content, course, learning structure, progress, grading, and evidence routers. Enforce access in the backend for every read and write, not only in dashboard route guards.
+
+Access decisions should combine:
+- current user identity and account state;
+- active organisation membership, if relevant;
+- course publication and ownership;
+- explicit organisation-wide assignment versus scoped entitlement;
+- active team/cohort membership and matching assignment;
+- contract/entitlement and capacity state;
+- module unlock prerequisites;
+- applicable course/module/lesson progress or assessment gates.
+
+Any instructor access to learner submissions must be constrained to courses/modules the instructor is authorised to teach, not merely to all courses in the same organisation. Grade changes need an audit record and a clear policy for revisions.
+
+### 5.6 AI features and quota
+
+AI-related code includes `routers/ai.py`, `routers/ai_profiles.py`, `services/ai.py`, `services/ai_gateway.py`, `services/ai_profiles.py`, and quota-related database objects such as `learnora_ai_limits` and `ai_usage_logs`.
+
+Requirements:
+- Resolve AI profile/provider access from server-side policy.
+- Check role, entitlement and applicable quota before calling a provider.
+- Reserve quota atomically to prevent concurrent requests from exceeding limits.
+- Define unlimited monthly quota only where the stored contract explicitly permits a NULL monthly limit; daily limits remain independently enforced.
+- Log usage without storing unnecessary secrets or sensitive prompt content.
+- Handle provider errors/retries without double charging or duplicate side effects.
+- Never expose provider secrets to the browser.
+
+### 5.7 Learnora Teams internal operations
+
+The internal application is rooted at `frontend-team/`. Its current route/component tree includes areas for super-admin, organisations, courses/content, creators, AI operations, notifications, and general section routing. Components include `Shell`, `Sidebar`, `SessionGuard`, `OrganisationWorkspace`, `ContentManager`, `ContentWorkspace`, `LivePanel`, and API/operations helpers under `lib/`.
+
+Treat these screens as an internal control plane:
+- verify staff session and server-side role before every protected action;
+- separate read-only inspection from mutations;
+- use explicit confirmations for high-impact actions;
+- record audit events for privileged operations;
+- display accurate loading/error/empty states;
+- avoid exposing secrets or unnecessary personal data;
+- do not confuse internal organisation management tools with the customer-facing organisation portal in Learnora ME.
+
+Exact per-role permissions and every control's current API implementation must be confirmed in the current code before changing them.
+
+## 6. Data model and invariants
+
+The existing schema already contains (names are taken from engineering notes; verify columns and constraints against the current catalog before writing SQL):
+
+| Domain | Existing structures |
+|---|---|
+| Users and tenant membership | `users`, `organisations`, `organisation_members` |
+| Teams | `organisation_teams`, `organisation_team_members` |
+| Cohorts | `cohorts`, `cohort_members`, `learnora_cohort_lifecycle`, `learnora_cohort_lifecycle_events` |
+| Programmes | `learnora_programmes`, `learnora_programme_courses` |
+| Course assignment/access | `cohort_course_assignments`, `course_access`, `learnora_access_entitlements`, `learnora_enrolments`, team course assignments |
+| Contracts | `learnora_contracts`, `learnora_contract_entitlements`, `learnora_contract_versions`, `learnora_contract_clauses` |
+| Capacity | `learnora_capacity_reservations` |
+| AI usage | `learnora_ai_limits`, `ai_usage_logs` |
+| Learning and assessment | `quizzes`, `quiz_attempts`, `course_modules`, `learnora_lessons`, progress/notes tables |
+
+Core invariants:
+1. Every tenant-owned relationship must be consistent with the same organisation. Foreign keys that prove only entity existence are not enough.
+2. Team members and team managers must have active membership in the team's organisation.
+3. Cohort members must have active learner membership in the cohort's organisation.
+4. Cohort/programme and team/cohort course assignments must point to an allowed course/programme in the same tenant scope.
+5. A learner's track does not change during a cohort.
+6. Capacity reservation and AI quota reservation must be atomic under concurrent requests.
+7. Organisation-wide course grants and scoped assignments are different access types.
+8. Cohort closure changes active state/access without destroying historical records needed for audit/statistics.
+9. User identity mapping must be explicit; matching aggregate row counts do not prove record-level correctness.
+10. Schema changes must be migration-backed, reviewed and tested on a disposable database first.
+
+## 7. Security architecture and requirements
+
+### Authentication and sessions
+
+The repository has historical docs that describe an HttpOnly/JWT security target, while a later review identified a frontend session token in `localStorage` (`phx_token`) with a 24-hour lifetime. This is a documented inconsistency and must not be papered over: inspect current main code and decide/implement the supported session design. Preferred target is an HttpOnly, Secure, appropriately SameSite cookie with short access lifetime and a deliberate refresh/session revocation strategy, subject to the deployed architecture and CSRF controls.
+
+Unknown-user and wrong-password responses should be indistinguishable in body/status and as close as practical in timing. Password reset, email verification and activation flows must use single-use, expiring, hashed tokens.
+
+### Authorization and database grants
+
+The API must use server-side scope checks. Browser roles `anon` and `authenticated` must not have broad table grants on backend-only tables. A prior security review identified overly broad default/table grants and a mismatch between the locked-down test fixture and the live grant model. Before a grant migration is approved:
+1. inventory table grants and per-owner default privileges read-only;
+2. confirm no browser/mobile/scripts depend on direct table access;
+3. test the revocation against a disposable replay and the authenticated API journey;
+4. ensure CI fails when forbidden grants appear in the replayed schema;
+5. prepare an exact rollback script outside the active migration directory;
+6. apply to production only after separately approved staging verification and quiet-window plan.
+
+Default privileges are scoped to the role that creates future objects. Check every relevant owner (including `postgres` and `supabase_admin` where applicable); a single `ALTER DEFAULT PRIVILEGES` statement does not necessarily cover all owners.
+
+Do not assume RLS alone neutralises excessive grants. Test grants, RLS flags, policies, functions, views, and service-role paths together.
+
+### Additional API/browser hardening
+
+Track and remediate:
+- shared/distributed login rate limits for serverless instances;
+- trusted-proxy handling for client IP and verification of Vercel header behaviour;
+- CSP and standard security headers;
+- minimising personal data, especially learner date of birth and data returned to organisations;
+- payout/ledger atomicity and separation of finance duties;
+- instructor/course-level grading scope and grade-change audit logs;
+- restrictive, explicit CORS origin allowlists (avoid broad preview-domain trust with credentials);
+- disabling or protecting production API documentation endpoints;
+- pinning `search_path` for security-sensitive functions/triggers;
+- avoiding activation tokens in URL query strings where a safer flow is feasible;
+- sanitising query/filter construction, especially any interpolated `.or_()` expression;
+- ensuring readiness endpoints disclose no sensitive operational information.
+
+### Privacy
+
+Store and return only data needed for a clear purpose. DOB is sensitive personal information and should not be returned to an organisation unless there is a justified, documented requirement. Where it must be retained, consider encryption at rest at application level, strict field-level access and retention rules. Establish jurisdictional/legal requirements with qualified review; this document is engineering guidance, not legal advice.
+
+## 8. UI and design system
+
+Design direction documented in `docs/learnora-ui-ux-research.md`:
+- dark graphite surfaces with warm gold accent;
+- deliberate typography and generous whitespace;
+- high-contrast functional controls;
+- retain the existing top-navigation structure unless usability evidence justifies change;
+- page-specific layouts for marketing, learning, tutor discovery, organisation onboarding and internal operations;
+- use different relevant imagery for different story sections;
+- keep motion subordinate to comprehension;
+- mobile-responsive layouts and keyboard/semantic accessibility;
+- use existing Next.js/React/Tailwind/Lucide stack;
+- research actual shipped flows (where available) rather than copying isolated inspiration shots;
+- do not claim a Figma/Mobbin review occurred unless the integration was actually connected and used.
+
+Every key flow needs loading, empty, validation, error, success, disabled and permission-denied states. Avoid fabricated statistics or generic repeated card layouts where a purpose-built composition is clearer.
+
+## 9. Local rebuild and developer setup
+
+These instructions are a starting point; exact environment variables and commands must be checked against current config files.
+
+### Prerequisites
+
+- Node.js version compatible with both frontend package files.
+- Python version compatible with `backend-python/pyproject.toml` and requirements.
+- PostgreSQL/Supabase disposable database for integration tests that require SQL.
+- Git and access to the repository.
+- Provider/test credentials only where the relevant feature requires them.
+
+### Get the code
+
+```bash
+git clone https://github.com/Obikpe/Pheonix-Analytics.git
+cd Pheonix-Analytics
+git switch main
+```
+
+### Learnora ME
+
+```bash
+cd frontend-v02
+npm ci
+npm run dev
+```
+
+Read `frontend-v02/package.json` for the authoritative scripts. Copy `.env.example` to a local-only environment file and populate only the values actually required by the frontend. Never commit the local environment file.
+
+### Learnora Teams
+
+```bash
+cd frontend-team
+npm ci
+npm run dev
+```
+
+Read `frontend-team/package.json` for exact scripts and environment variable names.
+
+### FastAPI backend
+
+```bash
+cd backend-python
+python -m venv .venv
+# Activate the virtual environment for your operating system.
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+Use `.env.example` as the source of variable names. Keep service-role secrets server-side and local. Do not copy production credentials into a development environment.
+
+### Tests
+
+From `backend-python/`, inspect the configured pytest/test scripts and run the unit/regression suites. The cohort integration workflow requires disposable PostgreSQL and a local PostgREST/API setup; use `.github/workflows/cohort-learning-tests.yml` as the authoritative CI procedure. Run frontend production builds from each frontend directory. A cancelled workflow is not a pass.
+
+Never use a live production database as a test fixture for lifecycle, auth, quota, payout, or cohort mutations.
+
+## 10. CI and release workflow
+
+The repository has workflows for backend verification/tests, frontend builds, quality checks, and cohort lifecycle tests. Read their current definitions rather than relying on historic run summaries.
+
+Minimum release gate:
+- all relevant workflows finish with conclusion `success`;
+- no workflow remains cancelled/skipped without an explained, approved reason;
+- auth, tenant isolation, cohort lifecycle, course access, quota, finance and migration tests pass;
+- schema grants/RLS/policies/functions/triggers are reviewed;
+- frontend builds pass for both active apps;
+- migrations run against a disposable database and have a documented rollback;
+- staging smoke test covers critical user journeys;
+- deployment target and environment mapping are verified;
+- no production deploy or live SQL change occurs without explicit release authorisation.
+
+## 11. Definition of done
+
+A feature is not done merely because a route or component exists. It is done when:
+1. Product behaviour and roles are documented.
+2. UI works on mobile and desktop with complete interaction states.
+3. Backend enforces authentication, tenant scope and business invariants.
+4. Data schema and migration are reviewed, replayable on disposable PostgreSQL, and safe to roll back where applicable.
+5. Tests cover normal, invalid, cross-tenant, revoked-access, concurrency and failure paths as relevant.
+6. CI completes successfully on the exact commit.
+7. Telemetry/audit events are added for sensitive operations.
+8. Documentation and environment examples are updated.
+9. Any known limitation is explicitly recorded and not represented as complete.
+10. Production rollout is separately authorised and verified.
+
+## 12. Source-of-truth files
+
+- `docs/ROADMAP.md` — prioritised implementation roadmap and acceptance gates.
+- `docs/ENGINEERING_HISTORY_AND_DECISIONS.md` — action log, decisions, security findings and migration provenance.
+- `docs/learnora-ui-ux-research.md` — UI/UX design decisions and research constraints.
+- `backend-python/migrations/STEP_4_ORGANISATION_DATA_MODEL_PLAN.md` — organisation data model and migration planning.
+- `backend-python/migrations/STEP_7_FINAL_GAP_REGISTER.md` — historical audit and release findings; verify dates/branch references before relying on old status.
+- `backend-python/migrations/STEP_7_REPOSITORY_MIGRATION_COMPARISON.md` — repository migration comparison.
+- `backend-python/migrations/STEP_7_SCHEMA_DATA_COMPARISON_RESULTS.md` — recorded live inventory/data-lineage findings.
+- `docs/active-pheonix-migration-reconciliation.md` — current-schema baseline versus legacy replay reconciliation.
+
+When these sources disagree, inspect the current `main` code and active database catalog, record the discrepancy, and update the documentation rather than silently choosing whichever claim looks newer.
