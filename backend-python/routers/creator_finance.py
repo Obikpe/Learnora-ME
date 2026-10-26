@@ -66,7 +66,7 @@ def _get_creator(creator_id: str):
 def record_sale(
     body: SaleIn,
     context: PermissionContext = Depends(
-        require_permission("courses.assign")
+        require_permission("creator_sales.record")
     ),
 ):
     if (
@@ -170,7 +170,7 @@ def record_sale(
 def release_sale(
     sale_id: str,
     context: PermissionContext = Depends(
-        require_permission("courses.assign")
+        require_permission("creator_sales.release")
     ),
 ):
     sale = (
@@ -224,7 +224,7 @@ def release_sale(
 def refund_sale(
     sale_id: str,
     context: PermissionContext = Depends(
-        require_permission("courses.assign")
+        require_permission("creator_sales.refund")
     ),
 ):
     sale = (
