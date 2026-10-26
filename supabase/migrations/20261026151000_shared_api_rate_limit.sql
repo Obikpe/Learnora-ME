@@ -14,7 +14,7 @@ SET search_path = pg_catalog, public
 AS $function$
 DECLARE
   bucket public.auth_rate_limit_buckets%ROWTYPE;
-  current_time timestamptz := clock_timestamp();
+  v_now timestamptz := clock_timestamp();
   next_attempts integer;
 BEGIN
   IF p_bucket_key !~ '^[0-9a-f]{64}$'
@@ -32,17 +32,17 @@ BEGIN
   WHERE bucket_key = p_bucket_key
   FOR UPDATE;
 
-  IF bucket.blocked_until IS NOT NULL AND bucket.blocked_until > current_time THEN
+  IF bucket.blocked_until IS NOT NULL AND bucket.blocked_until > v_now THEN
     RETURN true;
   END IF;
 
-  IF bucket.window_started_at <= current_time - make_interval(secs => p_window_seconds) THEN
+  IF bucket.window_started_at <= v_now - make_interval(secs => p_window_seconds) THEN
     next_attempts := 1;
     UPDATE public.auth_rate_limit_buckets
     SET attempts = next_attempts,
-        window_started_at = current_time,
+        window_started_at = v_now,
         blocked_until = NULL,
-        updated_at = current_time
+        updated_at = v_now
     WHERE bucket_key = p_bucket_key;
     RETURN false;
   END IF;
@@ -51,9 +51,9 @@ BEGIN
   UPDATE public.auth_rate_limit_buckets
   SET attempts = next_attempts,
       blocked_until = CASE WHEN next_attempts > p_max_requests
-        THEN current_time + make_interval(secs => p_window_seconds)
+        THEN v_now + make_interval(secs => p_window_seconds)
         ELSE blocked_until END,
-      updated_at = current_time
+      updated_at = v_now
   WHERE bucket_key = p_bucket_key;
 
   RETURN next_attempts > p_max_requests;
