@@ -92,5 +92,5 @@ The legacy schema fingerprint is intentionally report-only. Do not drop/remap le
 4. Run the privileged `supabase_admin` default-ACL operation with the appropriate owner-approved access.
 5. Run the DOB dry-run script; the current live count is zero, so no backfill is needed unless new plaintext rows are discovered.
 6. Validate rate-limit behavior across multiple serverless instances, creator finance permission grants, and the readiness probe with the secret header.
-7. Resolve the HttpOnly-cookie/session architecture and migration provenance before calling the security review complete.
+7. Validate cookie login/logout from each production frontend domain and ensure Vercel rewrites target the intended backend; then resolve migration provenance before calling the security review complete.
 8. Deploy only with explicit release approval and a rollback window. This branch does not authorise a production migration or deployment.
