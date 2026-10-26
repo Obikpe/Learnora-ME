@@ -75,7 +75,7 @@ from typing import Optional
 import bcrypt
 import httpx
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -214,6 +214,65 @@ TOKEN_TTL = int(
         "86400",
     )
 )
+
+AUTH_COOKIE_NAME = "phx_token"
+TEAM_COOKIE_NAME = "learnora_team_token"
+
+
+def _cookie_auth_origins() -> set[str]:
+    origins = {
+        "https://thepheonixanalytics.com",
+        "https://www.thepheonixanalytics.com",
+        "https://learnora-me.vercel.app",
+        "https://teamslearnora.vercel.app",
+        "https://learnora-me-v02.vercel.app",
+    }
+    for value in (FRONTEND_URL, os.getenv("INTERNAL_FRONTEND_URL", "")):
+        value = value.strip().rstrip("/")
+        if value:
+            origins.add(value)
+    if APP_ENV != "production":
+        origins.add("http://localhost:3000")
+    return origins
+
+
+def deliver_auth_token(
+    request: Request,
+    response: Response,
+    token: str,
+    payload: dict,
+    cookie_name: str = AUTH_COOKIE_NAME,
+) -> dict:
+    """Issue HttpOnly cookies to approved browser origins; retain bearer responses for non-browser clients."""
+    origin = request.headers.get("origin", "").strip().rstrip("/")
+    if not origin:
+        return payload
+    if origin not in _cookie_auth_origins():
+        raise HTTPException(status_code=403, detail="Origin not allowed")
+
+    response.set_cookie(
+        key=cookie_name,
+        value=token,
+        max_age=TOKEN_TTL,
+        path="/",
+        secure=APP_ENV == "production",
+        httponly=True,
+        samesite="lax",
+    )
+    payload.pop("token", None)
+    payload.pop("access_token", None)
+    payload.pop("accessToken", None)
+    return payload
+
+
+def clear_auth_cookie(response: Response, cookie_name: str = AUTH_COOKIE_NAME) -> None:
+    response.delete_cookie(
+        key=cookie_name,
+        path="/",
+        secure=APP_ENV == "production",
+        httponly=True,
+        samesite="lax",
+    )
 
 JWT_SECRET = (
     os.getenv(
@@ -1415,10 +1474,13 @@ def get_current_user(
     creds: Optional[
         HTTPAuthorizationCredentials
     ] = Depends(bearer),
+    request: Request = None,
 ) -> CurrentUser:
 
-    if not creds:
-
+    token_value = creds.credentials if creds else (
+        request.cookies.get(AUTH_COOKIE_NAME) if request else None
+    )
+    if not token_value:
         raise HTTPException(
             status_code=401,
             detail="Not authenticated",
@@ -1427,7 +1489,7 @@ def get_current_user(
     try:
 
         payload = jwt.decode(
-            creds.credentials,
+            token_value,
             JWT_SECRET,
             algorithms=[ALGORITHM],
         )
@@ -1940,6 +2002,7 @@ class ResendVerificationRequest(BaseModel):
 def login(
     payload: LoginRequest,
     request: Request,
+    response: Response,
 ):
 
     email = norm_email(
@@ -2099,7 +2162,7 @@ def login(
             request=request,
         )
 
-        return {
+        return deliver_auth_token(request, response, token, {
             "status": "success",
             "token": token,
             "access_token": token,
@@ -2115,7 +2178,7 @@ def login(
                 role,
                 "admin",
             ),
-        }
+        })
 
     # ---------------------------------------------------------------
     # LEARNER
@@ -2304,7 +2367,7 @@ def login(
         request=request,
     )
 
-    return {
+    return deliver_auth_token(request, response, token, {
         "status": "success",
         "token": token,
         "access_token": token,
@@ -2336,10 +2399,16 @@ def login(
             role,
             "learner",
         ),
-    }
+    })
 
 
 # ---------------------------------------------------------------------------
+@router.post("/logout")
+def logout(response: Response):
+    clear_auth_cookie(response, AUTH_COOKIE_NAME)
+    return {"success": True}
+
+
 # REGISTER
 # ---------------------------------------------------------------------------
 
