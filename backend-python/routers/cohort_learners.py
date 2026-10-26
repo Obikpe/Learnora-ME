@@ -13,12 +13,13 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from cryptography.fernet import Fernet
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from jose import jwt
 from pydantic import BaseModel, EmailStr, Field
 
 from routers.auth import (
     ALGORITHM,
+    AUTH_COOKIE_NAME,
     FRONTEND_URL,
     JWT_SECRET,
     TOKEN_TTL,
@@ -32,6 +33,7 @@ from routers.auth import (
     check_password_rules,
     hash_password,
     verify_password,
+    deliver_auth_token,
     supabase,
     get_current_user,
     CurrentUser,
@@ -619,7 +621,7 @@ def activate_cohort_account(body: CohortActivation):
 
 
 @router.post("/api/cohort-auth/login")
-def login_cohort_account(body: CohortLogin, request: Request):
+def login_cohort_account(body: CohortLogin, request: Request, response: Response):
     username = body.username.strip().lower()
     client_ip = _get_client_ip(request) or "unknown"
     rate_key = f"cohort:{username}:{client_ip}"
@@ -676,7 +678,7 @@ def login_cohort_account(body: CohortLogin, request: Request):
         "iat": token_now,
         "exp": token_now + TOKEN_TTL,
     }, JWT_SECRET, algorithm=ALGORITHM)
-    return {
+    return deliver_auth_token(request, response, token, {
         "success": True,
         "access_token": token,
         "token_type": "bearer",
@@ -688,7 +690,7 @@ def login_cohort_account(body: CohortLogin, request: Request):
             "organisation_id": account["organisation_id"],
             "cohort_status": cohort.data[0]["status"],
         },
-    }
+    }, cookie_name=AUTH_COOKIE_NAME)
 
 
 @router.get("/api/cohort-auth/me")
