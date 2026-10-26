@@ -217,10 +217,39 @@ jobs:
             psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
           for migration in supabase/migrations/[0-9]*.sql; do
+            # Reproduce the hosted project's unsafe supabase_admin defaults in
+            # the disposable replay before the cleanup migration runs.
+            if [[ "$migration" == *"20261026153000_revoke_browser_privileges_and_defaults.sql" ]]; then
+              psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $role$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_admin') THEN
+              CREATE ROLE supabase_admin;
+            END IF;
+          END
+          $role$;
+          ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
+            GRANT ALL PRIVILEGES ON TABLES TO anon, authenticated;
+          ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
+            GRANT ALL PRIVILEGES ON SEQUENCES TO anon, authenticated;
+          ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin
+            GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
+          ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
+            GRANT EXECUTE ON FUNCTIONS TO anon, authenticated;
+          SQL
+            fi
             echo "Applying timestamped migration: $migration"
             psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
-          echo "Legacy plus timestamped migration replay completed."
+          # In CI postgres is a disposable superuser, so SET ROLE simulates the
+          # separately authorised project-admin operation that production requires.
+          unsafe_admin_defaults="$(psql "$LEGACY_REPLAY_DATABASE_URL" -X -qAt -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM pg_default_acl d CROSS JOIN LATERAL aclexplode(d.defaclacl) acl WHERE pg_get_userbyid(d.defaclrole) = 'supabase_admin' AND d.defaclnamespace IN (0, 'public'::regnamespace) AND (acl.grantee = 0 OR acl.grantee IN (SELECT oid FROM pg_roles WHERE rolname IN ('anon', 'authenticated')));")"
+          if [[ "$unsafe_admin_defaults" == "0" ]]; then
+            echo "CI did not reproduce the expected unsafe supabase_admin default ACLs."
+            exit 1
+          fi
+          psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SET ROLE supabase_admin" -f supabase/operations/20261026153000_revoke_supabase_admin_default_privileges.sql
+          echo "Legacy migration replay and privileged default-ACL remediation completed."
 
       - name: Compare deterministic migration seed data
         id: seed_check
