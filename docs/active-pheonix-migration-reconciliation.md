@@ -96,10 +96,10 @@ A schema fingerprint comparison is intentionally **report-only** because the rep
 
 | Object category | Active catalog | Replayed chain | Difference |
 | --- | ---: | ---: | --- |
-| Column definitions | 986 | 926 | 95 missing from replay; 35 replay-only |
+| Column definitions | 987 | 927 | 95 missing from replay; 35 replay-only |
 | Constraint definitions | 449 | 441 | 20 missing; 12 replay-only |
 | Indexes | 315 | 287 | 35 missing; 7 replay-only |
-| Functions | 52 | 52 | Match after whitespace normalization |
+| Functions | 53 | 53 | Match after whitespace normalization |
 | Triggers | 44 | 37 | 7 missing from replay |
 | RLS table states | 101 | 102 | 30 active states not reproduced; 31 replay-only states |
 | Policies | 0 | 1 | Extra `lessons.enrolled can read` policy in replay |
@@ -110,7 +110,7 @@ Four active-schema tables are absent from the replay: `media`, `security_logs`, 
 
 The historical chain also fails to reproduce the active `service_role` grants by itself. For the second API test only, CI applies the same service-role-only grant harness used by the catalog snapshot. This is a disposable-test adjustment, not a recovered historical migration.
 
-The authenticated cohort lifecycle test passes against both the catalog snapshot and the replayed chain **after** that grant adjustment. On the replayed-chain run, the legacy `audit_logs` table shape also triggers a swallowed `account_type` schema-cache error in the authentication audit writer; the test remains green because that writer intentionally catches exceptions. The catalog-snapshot run does not show this warning. This is another observable consequence of the known legacy schema drift, not a successful audit-write assertion. This validates the cohort routes, but it does not make the full legacy schema equivalent. No legacy tables or columns were automatically dropped or remapped: their data lineage is unresolved, and forcing the fingerprint to match without a reviewed mapping could destroy or misclassify data.
+The revised workflow runs the authenticated cohort lifecycle journey against the catalog-derived current-schema snapshot only. The legacy replay is now used only for deterministic seed checks, effective-grant/default-ACL assertions and a report-only schema fingerprint; it is not an API acceptance database. An earlier workflow version also ran API acceptance against the replay and observed a swallowed `account_type` schema-cache error in the legacy `audit_logs` table, which is historical evidence of the drift, not a successful audit-write assertion. The latest comparison still shows the differences above, so the full legacy schema is not equivalent. No legacy tables or columns were automatically dropped or remapped: their data lineage is unresolved, and forcing the fingerprint to match without a reviewed mapping could destroy or misclassify data.
 
 ## Authenticated API journey added to CI
 
@@ -279,3 +279,12 @@ The live ledger currently contains 31 applied versions. The five versions `20261
 The current branch adds four **pending, un-applied** release-candidate migrations after `20261021182222`: `20261021183000`, `20261021183500`, `20261021184000`, and `20261026100000`. These are repository changes only. Do not apply them to live Supabase until the missing five applied migration sources have been reconciled and a staging rollout passes.
 
 The recorded fingerprint counts in the historical section above are from the earlier comparison and are not a substitute for a fresh comparison after the pending security migrations are applied in disposable staging.
+
+
+## Verification after security remediation — 2026-10-26
+
+- [Cohort Learning Access Tests](https://github.com/Obikpe/Pheonix-Analytics/actions/runs/40288443754) — **passed** on commit `28f220539b7d07f5a452e61997ff554133a27729`. This includes the authenticated cohort API journey against the catalog-derived snapshot, disposable cohort SQL assertions, legacy replay, deterministic seed checks, and the browser-role privilege/default-ACL assertion. The schema fingerprint remains intentionally non-blocking and reports the unresolved differences above.
+- [Learnora Backend Verification](https://github.com/Obikpe/Pheonix-Analytics/actions/runs/40288422625) — **passed** on commit `da3c70af2a7b921b68c498309b916fdcd5f78336`, including Python security regression tests and the migration inventory assertion.
+- [Learnora quality checks](https://github.com/Obikpe/Pheonix-Analytics/actions/runs/40288590347) — run started on `b9241a08354c7ed1ffa9621c7aa8efe12d120a18`; final result should be recorded after both frontend builds complete.
+
+The live ledger query above is read-only. No live migration, grant change, DOB backfill, merge or deployment was performed.
