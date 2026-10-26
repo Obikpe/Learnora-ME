@@ -69,6 +69,15 @@ app.add_middleware(
     ],
 )
 
+def _rate_limit_cors_headers(request: Request, retry_after: str) -> dict[str, str]:
+    headers = {"Retry-After": retry_after, "Vary": "Origin"}
+    origin = request.headers.get("origin", "")
+    if origin in origins:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+    return headers
+
+
 @app.middleware("http")
 async def distributed_api_rate_limit(request: Request, call_next):
     if (
@@ -99,14 +108,14 @@ async def distributed_api_rate_limit(request: Request, call_next):
         return JSONResponse(
             status_code=503,
             content={"error": "Request protection is temporarily unavailable. Please retry shortly."},
-            headers={"Retry-After": "5"},
+            headers=_rate_limit_cors_headers(request, "5"),
         )
 
     if limited:
         return JSONResponse(
             status_code=429,
             content={"error": "Rate limit exceeded. Please retry after the rate-limit window."},
-            headers={"Retry-After": str(API_RATE_LIMIT_WINDOW_SECONDS)},
+            headers=_rate_limit_cors_headers(request, str(API_RATE_LIMIT_WINDOW_SECONDS)),
         )
     return await call_next(request)
 
