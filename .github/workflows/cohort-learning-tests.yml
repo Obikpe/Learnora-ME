@@ -226,6 +226,92 @@ jobs:
           done
           echo "Legacy plus timestamped migration replay completed."
 
+      - name: Assert browser roles have no public table or sequence privileges
+        env:
+          LEGACY_REPLAY_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/legacy_replay_staging
+        run: |
+          set -euo pipefail
+          psql "$LEGACY_REPLAY_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $check$
+          DECLARE
+            item record;
+            privilege_name text;
+            privilege_names text[] := ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'];
+          BEGIN
+            FOR item IN
+              SELECT c.oid, n.nspname, c.relname, c.relkind
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = 'public'
+                AND c.relkind IN ('r','p','v','m','f')
+            LOOP
+              FOREACH privilege_name IN ARRAY privilege_names LOOP
+                IF has_table_privilege('anon', item.oid, privilege_name)
+                   OR has_table_privilege('authenticated', item.oid, privilege_name) THEN
+                  RAISE EXCEPTION 'Browser role retains % privilege on public.%',
+                    privilege_name, item.relname;
+                END IF;
+              END LOOP;
+              IF has_any_column_privilege('anon', item.oid, 'SELECT')
+                 OR has_any_column_privilege('authenticated', item.oid, 'SELECT')
+                 OR has_any_column_privilege('anon', item.oid, 'INSERT')
+                 OR has_any_column_privilege('authenticated', item.oid, 'INSERT')
+                 OR has_any_column_privilege('anon', item.oid, 'UPDATE')
+                 OR has_any_column_privilege('authenticated', item.oid, 'UPDATE')
+                 OR has_any_column_privilege('anon', item.oid, 'REFERENCES')
+                 OR has_any_column_privilege('authenticated', item.oid, 'REFERENCES') THEN
+                RAISE EXCEPTION 'Browser role retains column-level privileges on public.%', item.relname;
+              END IF;
+            END LOOP;
+
+            FOR item IN
+              SELECT c.oid, c.relname
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = 'public' AND c.relkind = 'S'
+            LOOP
+              IF has_sequence_privilege('anon', item.oid, 'USAGE')
+                 OR has_sequence_privilege('anon', item.oid, 'SELECT')
+                 OR has_sequence_privilege('anon', item.oid, 'UPDATE')
+                 OR has_sequence_privilege('authenticated', item.oid, 'USAGE')
+                 OR has_sequence_privilege('authenticated', item.oid, 'SELECT')
+                 OR has_sequence_privilege('authenticated', item.oid, 'UPDATE') THEN
+                RAISE EXCEPTION 'Browser role retains privileges on public sequence %', item.relname;
+              END IF;
+            END LOOP;
+          END
+          $check$;
+
+          -- Check default ACLs for the role that creates future public objects.
+          -- Both current project owner roles are covered where they exist.
+          DO $defaults$
+          DECLARE
+            owner_role text;
+            role_oid oid;
+            acl_text text;
+          BEGIN
+            FOREACH owner_role IN ARRAY ARRAY['postgres','supabase_admin'] LOOP
+              SELECT oid INTO role_oid FROM pg_roles WHERE rolname = owner_role;
+              IF role_oid IS NULL THEN
+                CONTINUE;
+              END IF;
+              SELECT d.defaclacl::text INTO acl_text
+              FROM pg_default_acl d
+              JOIN pg_namespace n ON n.oid = d.defaclnamespace
+              WHERE d.defaclrole = role_oid
+                AND n.nspname = 'public'
+                AND d.defaclobjtype = 'r';
+              IF acl_text IS NOT NULL
+                 AND (acl_text LIKE '%anon=%' OR acl_text LIKE '%authenticated=%'
+                      OR acl_text LIKE '%anon=%' OR acl_text LIKE '%=arwdDxtm/%') THEN
+                RAISE EXCEPTION 'Unexpected browser/PUBLIC table privileges in default ACL for role %: %',
+                  owner_role, acl_text;
+              END IF;
+            END LOOP;
+          END
+          $defaults$;
+          SQL
+
       - name: Compare deterministic migration seed data
         id: seed_check
         if: steps.legacy_replay.outcome == 'success'
