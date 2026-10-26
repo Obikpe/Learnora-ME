@@ -436,6 +436,10 @@ _FAILS: dict[str, deque] = defaultdict(
 MAX_FAILS = 5
 WINDOW = 900
 
+# Unknown email addresses follow the same expensive password-verification
+# path as real accounts to reduce login-enumeration timing differences.
+DUMMY_LOGIN_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
+
 
 def _limited(
     key: str,
@@ -1968,39 +1972,9 @@ def login(
 
     if admin:
 
-        if not admin.get(
-            "is_active",
-            False,
-        ):
-
-            _record_failure(
-                rate_key
-            )
-
-            log_security_event(
-                action=(
-                    "disabled_admin_login_attempt"
-                ),
-                email=email,
-                request=request,
-            )
-
-            raise HTTPException(
-                status_code=403,
-                detail=(
-                    "This administrator "
-                    "account is disabled."
-                ),
-            )
-
-        valid, needs_rehash = (
-            verify_password(
-                payload.password,
-                admin.get(
-                    "password_hash",
-                    "",
-                ),
-            )
+        valid, needs_rehash = verify_password(
+            payload.password,
+            admin.get("password_hash") or DUMMY_LOGIN_PASSWORD_HASH,
         )
 
         if not valid:
@@ -2017,9 +1991,24 @@ def login(
 
             raise HTTPException(
                 status_code=401,
-                detail=(
-                    "Invalid email or password"
-                ),
+                detail="Invalid email or password",
+            )
+
+        if not admin.get("is_active", False):
+
+            _record_failure(
+                rate_key
+            )
+
+            log_security_event(
+                action="disabled_admin_login_attempt",
+                email=email,
+                request=request,
+            )
+
+            raise HTTPException(
+                status_code=403,
+                detail="This administrator account is disabled.",
             )
 
         _clear_failures(
@@ -2117,6 +2106,12 @@ def login(
     )
 
     if not user:
+
+        # Match the bcrypt verification path for known accounts.
+        verify_password(
+            payload.password,
+            DUMMY_LOGIN_PASSWORD_HASH,
+        )
 
         _record_failure(
             rate_key
