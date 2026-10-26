@@ -33,6 +33,12 @@ class RuntimeSecurityContractTests(unittest.TestCase):
         self.assertIn("FRONTEND_URL=http://localhost:3000", env_example)
         self.assertIn("INTERNAL_FRONTEND_URL=http://localhost:3001", env_example)
 
+    def test_course_content_errors_do_not_return_database_exception_details(self):
+        for relative in ("routers/course_content.py", "routers/internal_content.py"):
+            source = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(router=relative):
+                self.assertNotIn("str(exc)", source)
+
     def test_readiness_response_does_not_disclose_internal_check_details(self):
         source = (ROOT / "main.py").read_text(encoding="utf-8")
         readiness = source.split("@app.get(\"/api/ready\")", 1)[1]

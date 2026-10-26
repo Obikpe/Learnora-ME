@@ -340,7 +340,8 @@ def create_video_upload(
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Unable to create video upload URL: {str(exc)}")
+        print("Video upload URL creation failed:", type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Unable to create video upload URL.")
 
 @router.post("/lessons/{lesson_id}/videos")
 def create_video(lesson_id: str, payload: VideoWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.video"))):

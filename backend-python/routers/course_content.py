@@ -142,9 +142,10 @@ def _get_course(course_id: str):
         return records[0] if records else None
 
     except Exception as exc:
+        print("Course content operation failed (Failed to load course):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to load course: {str(exc)}",
+            detail="Unable to load course.",
         )
 
 
@@ -172,9 +173,10 @@ def _get_module(module_id: str):
         return records[0] if records else None
 
     except Exception as exc:
+        print("Course content operation failed (Failed to load module):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to load module: {str(exc)}",
+            detail="Unable to load module.",
         )
 
 
@@ -207,9 +209,10 @@ def _get_lesson(lesson_id: str):
         return records[0] if records else None
 
     except Exception as exc:
+        print("Course content operation failed (Failed to load lesson):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to load lesson: {str(exc)}",
+            detail="Unable to load lesson.",
         )
 
 
@@ -677,9 +680,10 @@ def list_modules(
         }
 
     except Exception as exc:
+        print("Course content operation failed (Failed to load course modules):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to load course modules: {str(exc)}",
+            detail="Unable to load course modules.",
         )
 
 
@@ -769,9 +773,10 @@ def create_module(
         raise
 
     except Exception as exc:
+        print("Course content operation failed (Module creation failed):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Module creation failed: {str(exc)}",
+            detail="Unable to create module.",
         )
 
 
@@ -845,9 +850,10 @@ def update_module(
         raise
 
     except Exception as exc:
+        print("Course content operation failed (Module update failed):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Module update failed: {str(exc)}",
+            detail="Unable to update module.",
         )
 
 
@@ -903,9 +909,10 @@ def archive_module(
         raise
 
     except Exception as exc:
+        print("Course content operation failed (Module archive failed):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Module archive failed: {str(exc)}",
+            detail="Unable to archive module.",
         )
 
 
@@ -972,9 +979,10 @@ def list_lessons(
         }
 
     except Exception as exc:
+        print("Course content operation failed (Failed to load module lessons):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to load module lessons: {str(exc)}",
+            detail="Unable to load module lessons.",
         )
 
 
@@ -1083,9 +1091,10 @@ def create_lesson(
         raise
 
     except Exception as exc:
+        print("Course content operation failed (Lesson creation failed):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Lesson creation failed: {str(exc)}",
+            detail="Unable to create lesson.",
         )
 
 
@@ -1170,9 +1179,10 @@ def update_lesson(
         raise
 
     except Exception as exc:
+        print("Course content operation failed (Lesson update failed):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Lesson update failed: {str(exc)}",
+            detail="Unable to update lesson.",
         )
 
 
@@ -1236,9 +1246,10 @@ def archive_lesson(
         raise
 
     except Exception as exc:
+        print("Course content operation failed (Lesson archive failed):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Lesson archive failed: {str(exc)}",
+            detail="Unable to archive lesson.",
         )
 
 
@@ -1281,9 +1292,10 @@ def reorder_modules(
         }
 
     except Exception as exc:
+        print("Course content operation failed (Module reorder failed):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Module reorder failed: {str(exc)}",
+            detail="Unable to reorder modules.",
         )
 
 
@@ -1330,9 +1342,10 @@ def reorder_lessons(
         }
 
     except Exception as exc:
+        print("Course content operation failed (Lesson reorder failed):", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=f"Lesson reorder failed: {str(exc)}",
+            detail="Unable to reorder lessons.",
         )
 
 @router.get("/courses/{course_id}/structure")
@@ -1471,10 +1484,8 @@ def get_course_structure(
         raise
 
     except Exception as exc:
+        print("Course structure load failed:", type(exc).__name__)
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Failed to load course structure: "
-                f"{str(exc)}"
-            ),
+            detail="Unable to load course structure.",
         )
