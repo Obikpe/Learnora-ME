@@ -197,10 +197,10 @@ All four workflows completed successfully on that exact commit:
 ### Remaining release blockers
 
 1. **Managed-role default ACLs.** Live verification still shows `supabase_admin` default ACL entries granting `anon` and `authenticated` privileges on future tables, sequences, and functions. The active database connection is `postgres`, which is not superuser and is not a member of `supabase_admin`; it cannot alter that role's defaults. This requires an authorised Supabase administrative action or support intervention. The CI replay is being updated to reproduce this ACL rather than silently testing a cleaner database; until the ACL is removed, that check should fail.
-2. **LocalStorage bearer tokens.** The frontend still stores `phx_token` in `localStorage`. CSP/security headers reduce exposure but do not eliminate token theft through XSS. A complete HttpOnly-cookie migration needs coordinated backend and frontend changes, CSRF/origin enforcement, logout/expiry handling, and cross-site cookie tests. This remains unresolved.
+2. **Bearer-token XSS exposure.** This follow-up branch moves `phx_token` from `localStorage` to `sessionStorage`, removes any legacy persistent token, and adds a regression test. This reduces persistence across browser restarts but does not make the token inaccessible to injected JavaScript. A complete HttpOnly-cookie migration still needs coordinated backend/frontend changes, CSRF/origin enforcement, logout/expiry handling, and cross-site cookie tests; treat that as residual risk, not fully solved.
 3. **Instructor grading scope/audit.** The current backend exposes learner assignment read/submit routes, but no instructor grading-write endpoint matching the reported issue could be identified in the current router tree. Do not add a speculative endpoint. If such a route exists in another deployed component, provide its path or source so its course-assignment scope, controlled grade transitions, and immutable audit events can be implemented and tested.
 4. **Historical source provenance.** The five 20 October migration files match archived source candidates byte-for-byte, but the timestamped path history consists of restoration commits, so original deployment-time provenance is still qualified. The two AI-profile/onboarding migrations remain catalog-derived reconstructions, not recovered originals. Obtain trusted author/backup artifacts if available; otherwise require explicit semantic review and approval before treating the reconstructions as canonical.
-5. **Session storage decision.** Verification and password-reset tokens are being moved to URL fragments on the follow-up branch so browsers do not send them in HTTP query strings. Those frontend/backend changes are not live until a reviewed merge and deployment; the current production frontend must not be assumed to have them.
+5. **Session and URL-token changes are branch-only until release.** The follow-up branch uses URL fragments for verification/reset tokens and now uses session-scoped bearer-token storage in `frontend-v02`. These frontend changes are not live until a reviewed merge and deployment; do not assume production has them.
 
 No automated legacy-data deletion or remapping has been performed. Do not merge/deploy a follow-up that leaves the managed-role default ACL check unresolved.
 
@@ -231,3 +231,11 @@ Post-migration verification confirmed zero explicit public-table grant rows for 
 
 
 The trigger-function hardening migration also removed direct `EXECUTE` rights from browser roles for trigger-only functions, including `update_admins_updated_at`, `set_updated_at`, and the cohort validation triggers. Live verification confirms browser roles cannot execute the protected trigger functions; PostgreSQL triggers continue to execute them normally.
+
+
+## Additional hardening in follow-up branch `fix/security-followups-20261021`
+
+- Moved the v02 frontend bearer token from persistent `localStorage` to `sessionStorage`; the token reader also clears the legacy persistent token so old sessions must sign in again.
+- Added a cross-layer regression test for token-storage and CSP/security-header contracts.
+- Updated the disposable legacy-replay workflow to verify that it reproduces the known `supabase_admin` default-ACL exposure, then execute the admin-only remediation script in the disposable database and assert the resulting browser-role ACLs are clean. This tests the remediation SQL, but does not claim the hosted managed-role defaults have been fixed.
+- No live database changes or deployments were performed by these follow-up commits.
