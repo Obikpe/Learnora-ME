@@ -64,6 +64,34 @@ class ReadinessProbeSecurityTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.body, b'{"status":"not_found"}')
 
+class StandardLoginTimingTests(unittest.TestCase):
+    def test_unknown_email_still_runs_password_verification(self):
+        from fastapi import HTTPException
+        from starlette.requests import Request
+
+        request = Request({
+            "type": "http",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "headers": [],
+            "client": ("203.0.113.22", 43123),
+            "server": ("testserver", 80),
+            "scheme": "https",
+        })
+        with (
+            patch.object(auth, "_limited", return_value=False),
+            patch.object(auth, "_find_admin", return_value=None),
+            patch.object(auth, "_find_user", return_value=None),
+            patch.object(auth, "_record_failure"),
+            patch.object(auth, "log_security_event"),
+            patch.object(auth, "verify_password", return_value=(False, False)) as verify,
+        ):
+            with self.assertRaises(HTTPException) as raised:
+                auth.login(auth.LoginRequest(email="missing@example.com", password="wrong-password"), request)
+        self.assertEqual(raised.exception.status_code, 401)
+        verify.assert_called_once_with("wrong-password", auth.DUMMY_LOGIN_PASSWORD_HASH)
+
+
 class SensitiveTokenUrlTests(unittest.TestCase):
     def test_verification_and_reset_tokens_use_fragments_not_query_strings(self):
         with patch.object(auth, "FRONTEND_URL", "https://learnora.example"):
