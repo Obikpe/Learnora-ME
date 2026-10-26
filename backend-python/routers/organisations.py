@@ -545,10 +545,29 @@ def update_cohort_member(
     cohort = supabase.table("cohorts").select("id").eq("id", cohort_id).eq("organisation_id", organisation_id).limit(1).execute()
     if not cohort.data:
         raise HTTPException(404, "Cohort not found.")
-    membership = supabase.table("cohort_members").select("id,cohort_account_id").eq("id", membership_id).eq("cohort_id", cohort_id).limit(1).execute()
+    membership = supabase.table("cohort_members").select("id,cohort_account_id,user_id,status").eq("id", membership_id).eq("cohort_id", cohort_id).limit(1).execute()
     if not membership.data:
         raise HTTPException(404, "Cohort membership not found.")
     member_row = membership.data[0]
+
+    # Legacy user-backed memberships need an active learner membership in
+    # the same organisation. Dedicated cohort accounts have user_id=NULL.
+    if body.status == "active" and member_row.get("status") != "active":
+        if member_row.get("user_id"):
+            learner_membership = (
+                supabase.table("organisation_members")
+                .select("id")
+                .eq("organisation_id", organisation_id)
+                .eq("user_id", member_row["user_id"])
+                .eq("role", "learner")
+                .eq("status", "active")
+                .limit(1)
+                .execute()
+            )
+            if not learner_membership.data:
+                raise HTTPException(403, "An active learner membership in this organisation is required.")
+        ensure_cohort_capacity(cohort_id, 1)
+
     result = supabase.table("cohort_members").update({"status": body.status}).eq("id", membership_id).eq("cohort_id", cohort_id).execute()
     if not result.data:
         raise HTTPException(404, "Cohort membership not found.")
