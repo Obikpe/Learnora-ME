@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { clearToken, token } from "../lib/api";
+import { clearToken, setToken, teamMe, token } from "../lib/api";
 
 const IDLE_LIMIT_MS = 10 * 60 * 1000;
 
@@ -12,13 +12,11 @@ export default function SessionGuard() {
 
   useEffect(() => {
     if (pathname === "/login") return;
-
-    if (!token()) {
-      router.replace("/login");
-      return;
-    }
-
+    let active = true;
+    let timer: number | undefined;
+    const events = ["pointerdown", "keydown", "mousemove", "touchstart", "scroll"];
     let lastWrite = 0;
+
     const markActivity = () => {
       if (!token()) return;
       const now = Date.now();
@@ -41,15 +39,34 @@ export default function SessionGuard() {
       }
     };
 
-    checkIdle();
-    if (token()) markActivity();
-    const timer = window.setInterval(checkIdle, 15000);
-    const events = ["pointerdown", "keydown", "mousemove", "touchstart", "scroll"];
-    events.forEach((event) => window.addEventListener(event, markActivity, { passive: true }));
-    document.addEventListener("visibilitychange", checkIdle);
+    const restoreCookieSession = async () => {
+      try {
+        // Verify the HttpOnly cookie with the backend. This also restores the
+        // non-secret tab marker when a valid cookie is opened in a new tab.
+        await teamMe();
+        if (!active) return;
+        if (!token()) setToken("cookie-session");
+        if (!sessionStorage.getItem("learnora_team_last_activity")) {
+          sessionStorage.setItem("learnora_team_last_activity", String(Date.now()));
+        }
+        markActivity();
+        checkIdle();
+        timer = window.setInterval(checkIdle, 15000);
+        events.forEach((event) => window.addEventListener(event, markActivity, { passive: true }));
+        document.addEventListener("visibilitychange", checkIdle);
+      } catch {
+        if (active) {
+          sessionStorage.removeItem("learnora_team_token");
+          sessionStorage.removeItem("learnora_team_last_activity");
+          router.replace("/login");
+        }
+      }
+    };
 
+    void restoreCookieSession();
     return () => {
-      window.clearInterval(timer);
+      active = false;
+      if (timer !== undefined) window.clearInterval(timer);
       events.forEach((event) => window.removeEventListener(event, markActivity));
       document.removeEventListener("visibilitychange", checkIdle);
     };
