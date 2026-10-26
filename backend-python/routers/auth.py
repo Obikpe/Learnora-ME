@@ -75,7 +75,7 @@ from typing import Optional
 import bcrypt
 import httpx
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -129,6 +129,55 @@ FRONTEND_URL = (
     .strip()
     .rstrip("/")
 )
+
+AUTH_COOKIE_NAME = "phx_token"
+TEAM_COOKIE_NAME = "learnora_team_token"
+
+
+def _cookie_auth_origins() -> set[str]:
+    """Return the explicit frontend origins allowed to establish cookie sessions."""
+    origins = {
+        "https://learnora-taupe.vercel.app",
+        "https://learnora-me.vercel.app",
+        "https://learnora-me-v02.vercel.app",
+        "https://teamslearnora.vercel.app",
+        "https://thepheonixanalytics.com",
+        "https://www.thepheonixanalytics.com",
+    }
+    for configured in (FRONTEND_URL, os.getenv("INTERNAL_FRONTEND_URL", "").strip()):
+        value = configured.strip().rstrip("/")
+        if value.startswith("https://") or (APP_ENV != "production" and value.startswith("http://")):
+            origins.add(value)
+    if APP_ENV != "production":
+        origins.update({"http://localhost:3000", "http://localhost:3001"})
+    return origins
+
+
+def deliver_auth_token(request: Request, response: Response | None, token: str, payload: dict, *, cookie_name: str = AUTH_COOKIE_NAME) -> dict:
+    """Set an HttpOnly cookie for trusted browsers; retain bearer responses for non-browser clients."""
+    origin = (request.headers.get("origin") or "").strip().rstrip("/")
+    if not origin:
+        return payload
+    if origin not in _cookie_auth_origins():
+        raise HTTPException(status_code=403, detail="This origin is not allowed to establish a session.")
+    if response is None:
+        response = Response()
+    response.set_cookie(key=cookie_name, value=token, max_age=TOKEN_TTL, httponly=True, secure=APP_ENV == "production", samesite="lax", path="/")
+    safe_payload = dict(payload)
+    safe_payload.pop("token", None)
+    safe_payload.pop("access_token", None)
+    safe_payload.pop("refresh_token", None)
+    return safe_payload
+
+
+def clear_auth_cookie(response: Response, cookie_name: str = AUTH_COOKIE_NAME) -> None:
+    response.set_cookie(key=cookie_name, value="", max_age=0, expires=0, httponly=True, secure=APP_ENV == "production", samesite="lax", path="/")
+
+
+def _request_auth_token(request: Request | None, creds: Optional[HTTPAuthorizationCredentials], cookie_name: str = AUTH_COOKIE_NAME) -> Optional[str]:
+    cookie_token = request.cookies.get(cookie_name) if request else None
+    return cookie_token or (creds.credentials if creds else None)
+
 
 EMAIL_VERIFICATION_PATH = (
     os.getenv(
@@ -1415,10 +1464,11 @@ def get_current_user(
     creds: Optional[
         HTTPAuthorizationCredentials
     ] = Depends(bearer),
+    request: Request = None,
 ) -> CurrentUser:
 
-    if not creds:
-
+    token_value = _request_auth_token(request, creds)
+    if not token_value:
         raise HTTPException(
             status_code=401,
             detail="Not authenticated",
@@ -1427,7 +1477,7 @@ def get_current_user(
     try:
 
         payload = jwt.decode(
-            creds.credentials,
+            token_value,
             JWT_SECRET,
             algorithms=[ALGORITHM],
         )
@@ -1940,6 +1990,7 @@ class ResendVerificationRequest(BaseModel):
 def login(
     payload: LoginRequest,
     request: Request,
+    response: Response = None,
 ):
 
     email = norm_email(
@@ -2084,7 +2135,7 @@ def login(
             request=request,
         )
 
-        return {
+        return deliver_auth_token(request, response, token, {
             "status": "success",
             "token": token,
             "access_token": token,
@@ -2100,7 +2151,7 @@ def login(
                 role,
                 "admin",
             ),
-        }
+        })
 
     # ---------------------------------------------------------------
     # LEARNER
@@ -2289,7 +2340,7 @@ def login(
         request=request,
     )
 
-    return {
+    return deliver_auth_token(request, response, token, {
         "status": "success",
         "token": token,
         "access_token": token,
@@ -2321,10 +2372,18 @@ def login(
             role,
             "learner",
         ),
-    }
+    })
 
 
 # ---------------------------------------------------------------------------
+
+
+@router.post("/logout")
+def logout(response: Response):
+    clear_auth_cookie(response, AUTH_COOKIE_NAME)
+    return {"success": True}
+
+
 # REGISTER
 # ---------------------------------------------------------------------------
 

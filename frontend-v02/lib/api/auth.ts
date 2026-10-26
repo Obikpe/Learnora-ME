@@ -1,11 +1,11 @@
-import { request, token } from "./client";
+import { request } from "./client";
 
 let cachedUser: any = null;
 let cachedForToken = "";
 let currentUserRequest: Promise<any> | null = null;
 
 function activeToken() {
-  return token();
+  return typeof window === "undefined" ? "" : sessionStorage.getItem("phx_token") || "cookie-session";
 }
 
 /** Synchronous cache read for client-side route transitions. */

@@ -1,17 +1,24 @@
-const DEFAULT_API_URL = process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://learnora-backend.vercel.app";
-const BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
+const BASE = "";
 
-export const token = () =>
-  typeof window === "undefined" ? "" : sessionStorage.getItem("learnora_team_token") || "";
+export const token = () => {
+  if (typeof window === "undefined") return "";
+  localStorage.removeItem("learnora_team_token");
+  return sessionStorage.getItem("learnora_team_token") || "";
+};
 
-export const setToken = (value: string) => {
-  sessionStorage.setItem("learnora_team_token", value);
+export const setToken = (_value: string) => {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("learnora_team_token");
+  sessionStorage.setItem("learnora_team_token", "cookie-session");
   sessionStorage.setItem("learnora_team_last_activity", String(Date.now()));
 };
 
 export const clearToken = () => {
+  if (typeof window === "undefined") return;
   sessionStorage.removeItem("learnora_team_token");
+  localStorage.removeItem("learnora_team_token");
   sessionStorage.removeItem("learnora_team_last_activity");
+  void fetch("/api/internal/auth/logout", { method: "POST", credentials: "same-origin", keepalive: true }).catch(() => {});
 };
 
 export class ApiRequestError extends Error {
@@ -31,7 +38,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   }
 
   const accessToken = token();
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+  if (accessToken && accessToken !== "cookie-session") headers.set("Authorization", `Bearer ${accessToken}`);
 
   let response: Response;
   try {
@@ -39,6 +46,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
       ...init,
       headers,
       cache: "no-store",
+      credentials: "same-origin",
     });
   } catch {
     throw new ApiRequestError("Cannot reach Learnora's backend. Check your connection and try again.", 0);
@@ -46,6 +54,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") sessionStorage.removeItem("learnora_team_token");
     const message =
       typeof body.detail === "string"
         ? body.detail

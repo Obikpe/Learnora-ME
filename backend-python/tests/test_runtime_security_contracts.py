@@ -11,12 +11,12 @@ class RuntimeSecurityContractTests(unittest.TestCase):
         source = (ROOT / "main.py").read_text(encoding="utf-8")
         self.assertIn("load_dotenv(dotenv_path=ENV_PATH, override=False)", source)
 
-    def test_local_frontends_default_to_local_api_not_production(self):
-        for relative in ("frontend-v02/lib/api/client.ts", "frontend-team/lib/api.ts"):
+    def test_local_frontends_proxy_to_local_api_not_production(self):
+        for relative in ("frontend-v02/next.config.mjs", "frontend-team/next.config.mjs"):
             source = (ROOT.parent / relative).read_text(encoding="utf-8")
             with self.subTest(frontend=relative):
                 self.assertIn("http://localhost:8000", source)
-                self.assertIn("process.env.NODE_ENV", source)
+                self.assertIn("API_PROXY_TARGET", source)
 
     def test_local_cors_allows_both_frontend_ports_only_outside_production(self):
         source = (ROOT / "main.py").read_text(encoding="utf-8")

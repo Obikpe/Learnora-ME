@@ -6,15 +6,26 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class FrontendSecurityContractTests(unittest.TestCase):
-    def test_bearer_token_is_session_scoped_and_legacy_persistent_token_is_cleared(self):
+    def test_browser_auth_uses_cookie_session_and_clears_legacy_bearer_storage(self):
         client = (ROOT / "frontend-v02" / "lib" / "api" / "client.ts").read_text(encoding="utf-8")
         auth = (ROOT / "frontend-v02" / "lib" / "api" / "auth.ts").read_text(encoding="utf-8")
         self.assertIn('sessionStorage.getItem("phx_token")', client)
-        self.assertIn('sessionStorage.setItem("phx_token",v)', client)
+        self.assertIn('sessionStorage.setItem("phx_token","cookie-session")', client)
         self.assertIn('localStorage.removeItem("phx_token")', client)
         self.assertNotIn('localStorage.getItem("phx_token")', client)
         self.assertNotIn('localStorage.getItem("phx_token")', auth)
-        self.assertIn("return token();", auth)
+        self.assertIn('sessionStorage.getItem("phx_token") || "cookie-session"', auth)
+        self.assertIn('credentials:"same-origin"', client)
+        self.assertIn('t!=="cookie-session"', client)
+        self.assertIn('const BASE=""', client)
+
+    def test_frontend_api_proxies_are_configured_for_same_origin_cookies(self):
+        for relative in ("frontend-v02/next.config.mjs", "frontend-team/next.config.mjs"):
+            source = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(config=relative):
+                self.assertIn("API_PROXY_TARGET", source)
+                self.assertIn("http://localhost:8000", source)
+                self.assertIn("/api/:path*", source)
 
     def test_email_token_pages_support_new_fragments_and_existing_query_links(self):
         for relative in ("frontend-v02/app/verify-email/page.tsx", "frontend-v02/app/reset-password/page.tsx"):
