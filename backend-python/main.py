@@ -1,4 +1,5 @@
 import os
+import hmac
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -180,8 +181,15 @@ def api_health():
 
 
 @app.get("/api/ready")
-def api_ready():
-    """Readiness probe for deployment checks; never returns credentials or raw DB errors."""
+def api_ready(request: Request):
+    """Token-protected readiness probe; the public liveness endpoint remains /api/health."""
+    if os.getenv("APP_ENV", "production").strip().lower() == "production":
+        expected = os.getenv("READINESS_PROBE_TOKEN", "").strip()
+        supplied = request.headers.get("x-readiness-token", "")
+        if not expected or not hmac.compare_digest(supplied, expected):
+            # Do not disclose whether the probe token is configured.
+            return JSONResponse(status_code=404, content={"status": "not_found"})
+
     configured = bool(
         getattr(auth, "SUPABASE_URL", "")
         and getattr(auth, "SUPABASE_KEY", "")
