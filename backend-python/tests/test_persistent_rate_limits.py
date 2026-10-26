@@ -47,8 +47,9 @@ class PersistentRateLimitTests(unittest.TestCase):
 
 class DistributedApiMiddlewareTests(unittest.TestCase):
     def test_production_api_limit_is_shared_and_returns_429_when_limited(self):
-        from fastapi.testclient import TestClient
+        import asyncio
         import main
+        from starlette.requests import Request
 
         original_client = main.auth.supabase
         mock_client = Mock()
@@ -56,13 +57,25 @@ class DistributedApiMiddlewareTests(unittest.TestCase):
         main.auth.supabase = mock_client
         self.addCleanup(setattr, main.auth, "supabase", original_client)
 
+        request = Request({
+            "type": "http",
+            "method": "POST",
+            "path": "/api/auth/login",
+            "headers": [],
+            "client": ("203.0.113.20", 43123),
+            "server": ("testserver", 80),
+            "scheme": "https",
+        })
+
+        async def should_not_be_called(_request):
+            self.fail("A limited request must not reach the route handler.")
+
         with patch.dict(os.environ, {"APP_ENV": "production", "API_RATE_LIMIT_REQUESTS": "60", "API_RATE_LIMIT_WINDOW_SECONDS": "60"}):
-            response = TestClient(main.app).post("/api/auth/login", json={"email": "x@example.com", "password": "wrong"})
+            response = asyncio.run(main.distributed_api_rate_limit(request, should_not_be_called))
         self.assertEqual(response.status_code, 429)
         self.assertIn("Retry-After", response.headers)
         mock_client.rpc.assert_called_once()
         self.assertEqual(mock_client.rpc.call_args.args[0], "consume_api_rate_limit")
-
 
 if __name__ == "__main__":
     unittest.main()
