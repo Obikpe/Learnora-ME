@@ -238,12 +238,14 @@ def _cookie_auth_origins() -> set[str]:
 
 def deliver_auth_token(
     request: Request,
-    response: Response,
+    response: Response | None,
     token: str,
     payload: dict,
     cookie_name: str = AUTH_COOKIE_NAME,
 ) -> dict:
     """Issue HttpOnly cookies to approved browser origins; retain bearer responses for non-browser clients."""
+    if response is None:
+        response = Response()
     origin = request.headers.get("origin", "").strip().rstrip("/")
     if not origin:
         return payload
@@ -2002,7 +2004,7 @@ class ResendVerificationRequest(BaseModel):
 def login(
     payload: LoginRequest,
     request: Request,
-    response: Response,
+    response: Response = None,
 ):
 
     email = norm_email(
