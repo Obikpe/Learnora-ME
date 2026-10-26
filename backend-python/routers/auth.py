@@ -421,6 +421,10 @@ _FAILS: dict[str, deque] = defaultdict(deque)
 MAX_FAILS = 5
 WINDOW = 900
 
+# Match the expensive password-verification path for unknown email addresses.
+# The dummy secret is generated per process and is never associated with an account.
+DUMMY_LOGIN_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
+
 
 def _persistent_rate_limits_enabled() -> bool:
     return APP_ENV == "production" or os.getenv("AUTH_RATE_LIMIT_BACKEND", "").strip().lower() == "postgres"
@@ -2122,6 +2126,12 @@ def login(
     )
 
     if not user:
+
+        # Do not reveal whether an email exists by skipping password hashing.
+        verify_password(
+            payload.password,
+            DUMMY_LOGIN_PASSWORD_HASH,
+        )
 
         _record_failure(
             rate_key
