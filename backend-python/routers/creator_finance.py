@@ -30,12 +30,15 @@ class PayoutIn(BaseModel):
     currency: str = Field(..., min_length=3, max_length=10)
 
 
-def _require_platform_finance_admin(context: PermissionContext) -> None:
-    """Temporarily fail closed until dedicated creator-sales permissions are deployed."""
-    if not context.is_platform_admin:
+def _require_creator_finance_permission(context: PermissionContext) -> None:
+    """Use the existing finance permission until dedicated sales permissions are migrated."""
+    if not (
+        context.is_super_admin
+        or context.has_permission("creator_payouts.process")
+    ):
         raise HTTPException(
             status_code=403,
-            detail="Platform finance administrator permission required.",
+            detail="Creator finance permission required.",
         )
 
 
@@ -75,10 +78,10 @@ def _get_creator(creator_id: str):
 def record_sale(
     body: SaleIn,
     context: PermissionContext = Depends(
-        require_permission("courses.assign")
+        require_permission("creator_payouts.process")
     ),
 ):
-    _require_platform_finance_admin(context)
+    _require_creator_finance_permission(context)
 
     if (
         body.platform_fee_minor
@@ -181,10 +184,10 @@ def record_sale(
 def release_sale(
     sale_id: str,
     context: PermissionContext = Depends(
-        require_permission("courses.assign")
+        require_permission("creator_payouts.process")
     ),
 ):
-    _require_platform_finance_admin(context)
+    _require_creator_finance_permission(context)
 
     sale = (
         supabase
@@ -237,10 +240,10 @@ def release_sale(
 def refund_sale(
     sale_id: str,
     context: PermissionContext = Depends(
-        require_permission("courses.assign")
+        require_permission("creator_payouts.process")
     ),
 ):
-    _require_platform_finance_admin(context)
+    _require_creator_finance_permission(context)
 
     sale = (
         supabase
