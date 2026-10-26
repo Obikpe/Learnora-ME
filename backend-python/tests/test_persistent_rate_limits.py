@@ -64,6 +64,46 @@ class ReadinessProbeSecurityTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.body, b'{"status":"not_found"}')
 
+class HttpOnlyCookieSessionTests(unittest.TestCase):
+    def test_browser_login_payload_uses_httponly_cookie_and_removes_jwt(self):
+        from fastapi import Response
+
+        request = type("RequestStub", (), {"headers": {"origin": "https://learnora-me-v02.vercel.app"}})()
+        response = Response()
+        payload = {"status": "success", "token": "signed-jwt", "access_token": "signed-jwt", "user": {"id": "u1"}}
+        result = auth.deliver_auth_token(request, response, "signed-jwt", payload)
+        self.assertNotIn("token", result)
+        self.assertNotIn("access_token", result)
+        cookie = response.headers.get("set-cookie", "")
+        self.assertIn("phx_token=signed-jwt", cookie)
+        self.assertIn("httponly", cookie.lower())
+        self.assertIn("samesite=lax", cookie.lower())
+        self.assertIn("secure", cookie.lower())
+
+    def test_unapproved_browser_origin_cannot_receive_a_session(self):
+        from fastapi import HTTPException, Response
+
+        request = type("RequestStub", (), {"headers": {"origin": "https://attacker.example"}})()
+        with self.assertRaises(HTTPException) as raised:
+            auth.deliver_auth_token(request, Response(), "signed-jwt", {"access_token": "signed-jwt"})
+        self.assertEqual(raised.exception.status_code, 403)
+
+    def test_current_user_reads_httponly_cookie_when_no_bearer_header(self):
+        from jose import JWTError
+        from starlette.requests import Request
+
+        request = Request({
+            "type": "http", "method": "GET", "path": "/api/auth/me",
+            "headers": [(b"cookie", b"phx_token=cookie-jwt")],
+            "client": ("127.0.0.1", 1234), "server": ("testserver", 80), "scheme": "https",
+        })
+        with patch.object(auth.jwt, "decode", side_effect=JWTError("invalid")) as decode:
+            with self.assertRaises(Exception):
+                auth.get_current_user(creds=None, request=request)
+        decode.assert_called_once()
+        self.assertEqual(decode.call_args.args[0], "cookie-jwt")
+
+
 class StandardLoginTimingTests(unittest.TestCase):
     def test_unknown_email_still_runs_password_verification(self):
         from fastapi import HTTPException
