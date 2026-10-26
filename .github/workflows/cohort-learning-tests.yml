@@ -295,17 +295,22 @@ jobs:
               IF role_oid IS NULL THEN
                 CONTINUE;
               END IF;
-              SELECT d.defaclacl::text INTO acl_text
-              FROM pg_default_acl d
-              JOIN pg_namespace n ON n.oid = d.defaclnamespace
-              WHERE d.defaclrole = role_oid
-                AND n.nspname = 'public'
-                AND d.defaclobjtype = 'r';
-              IF acl_text IS NOT NULL
-                 AND (acl_text LIKE '%anon=%' OR acl_text LIKE '%authenticated=%'
-                      OR acl_text LIKE '%anon=%' OR acl_text LIKE '%=arwdDxtm/%') THEN
-                RAISE EXCEPTION 'Unexpected browser/PUBLIC table privileges in default ACL for role %: %',
-                  owner_role, acl_text;
+              IF EXISTS (
+                SELECT 1
+                FROM pg_default_acl d
+                JOIN pg_namespace n ON n.oid = d.defaclnamespace
+                CROSS JOIN LATERAL aclexplode(d.defaclacl) acl
+                WHERE d.defaclrole = role_oid
+                  AND n.nspname = 'public'
+                  AND d.defaclobjtype = 'r'
+                  AND acl.grantee IN (
+                    0,
+                    (SELECT oid FROM pg_roles WHERE rolname = 'anon'),
+                    (SELECT oid FROM pg_roles WHERE rolname = 'authenticated')
+                  )
+              ) THEN
+                RAISE EXCEPTION 'Unexpected browser/PUBLIC table privileges in default ACL for role %',
+                  owner_role;
               END IF;
             END LOOP;
           END
