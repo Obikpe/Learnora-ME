@@ -2042,58 +2042,33 @@ def login(
 
     if admin:
 
-        if not admin.get(
-            "is_active",
-            False,
-        ):
-
-            _record_failure(
-                rate_key
-            )
-
-            log_security_event(
-                action=(
-                    "disabled_admin_login_attempt"
-                ),
-                email=email,
-                request=request,
-            )
-
-            raise HTTPException(
-                status_code=403,
-                detail=(
-                    "This administrator "
-                    "account is disabled."
-                ),
-            )
-
-        valid, needs_rehash = (
-            verify_password(
-                payload.password,
-                admin.get(
-                    "password_hash",
-                    "",
-                ),
-            )
+        valid, needs_rehash = verify_password(
+            payload.password,
+            admin.get("password_hash") or DUMMY_LOGIN_PASSWORD_HASH,
         )
 
         if not valid:
-
-            _record_failure(
-                rate_key
-            )
-
+            _record_failure(rate_key)
             log_security_event(
                 action="failed_admin_login",
                 email=email,
                 request=request,
             )
-
             raise HTTPException(
                 status_code=401,
-                detail=(
-                    "Invalid email or password"
-                ),
+                detail="Invalid email or password",
+            )
+
+        if not admin.get("is_active", False):
+            _record_failure(rate_key)
+            log_security_event(
+                action="disabled_admin_login_attempt",
+                email=email,
+                request=request,
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="This administrator account is disabled.",
             )
 
         _clear_failures(
