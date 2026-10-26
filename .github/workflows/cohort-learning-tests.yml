@@ -1,6 +1,16 @@
 name: Cohort Learning Access Tests
 
 on:
+  push:
+    branches:
+      - cohort-org-backend-reconciliation
+    paths:
+      - "backend-python/**"
+      - "supabase/migrations/**"
+      - "supabase/legacy_migrations/**"
+      - "supabase/baselines/**"
+      - "frontend-v02/app/dashboard/organisation/**"
+      - ".github/workflows/cohort-learning-tests.yml"
   pull_request:
     paths:
       - "backend-python/**"
