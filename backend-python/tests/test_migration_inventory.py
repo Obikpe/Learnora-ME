@@ -33,6 +33,7 @@ class MigrationInventoryTests(unittest.TestCase):
             "20261021220327_encrypt_cohort_date_of_birth.sql",
             "20261021220333_cohort_login_rate_limits.sql",
             "20261021220849_revoke_trigger_function_browser_execute.sql",
+            "20261026153000_revoke_browser_privileges_and_defaults.sql",
         )
         for name in expected:
             with self.subTest(migration=name):
