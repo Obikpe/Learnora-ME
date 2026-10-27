@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "backend-python/**"
+      - "frontend/**"
       - "frontend-v02/**"
       - "frontend-team/**"
       - "supabase/**"
@@ -14,6 +15,7 @@ on:
     branches: [main]
     paths:
       - "backend-python/**"
+      - "frontend/**"
       - "frontend-v02/**"
       - "frontend-team/**"
       - "supabase/**"
@@ -51,6 +53,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - app: frontend
+            directory: frontend
           - app: frontend-v02
             directory: frontend-v02
           - app: frontend-team
