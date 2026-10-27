@@ -75,11 +75,7 @@ class CohortLoginSecurityTests(unittest.TestCase):
         def record(key):
             failures[key] = failures.get(key, 0) + 1
 
-        with patch.object(cohort, "supabase", self.db), \\
-             patch.object(cohort, "_get_client_ip", return_value="203.0.113.44"), \\
-             patch.object(cohort, "_cohort_rate_limited", side_effect=limited), \\
-             patch.object(cohort, "_cohort_record_failure", side_effect=record), \\
-             patch.object(cohort, "verify_password", return_value=(False, False)):
+        with patch.object(cohort, "supabase", self.db), patch.object(cohort, "_get_client_ip", return_value="203.0.113.44"), patch.object(cohort, "_cohort_rate_limited", side_effect=limited), patch.object(cohort, "_cohort_record_failure", side_effect=record), patch.object(cohort, "verify_password", return_value=(False, False)):
             for i in range(cohort.COHORT_LOGIN_MAX_FAILS):
                 with self.assertRaises(HTTPException) as raised:
                     cohort.login_cohort_account(
