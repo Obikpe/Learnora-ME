@@ -1,5 +1,4 @@
 import os
-import ipaddress
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -12,10 +11,6 @@ from routers import auth, grading, progress, billing, webhooks, community, grade
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,27 +27,12 @@ app = FastAPI(
     openapi_url="/openapi.json" if os.getenv("APP_ENV", "production").strip().lower() != "production" else None,
 )
 
-def _trusted_rate_limit_ip(request: Request) -> str:
-    """Trust Vercel's normalised client IP header only on Vercel-hosted requests."""
-    if os.getenv("VERCEL", "").strip() == "1":
-        candidate = (request.headers.get("x-real-ip") or "").strip()
-        if candidate:
-            try:
-                ipaddress.ip_address(candidate)
-                return candidate
-            except ValueError:
-                pass
-    return get_remote_address(request)
+# Shared PostgreSQL rate limiting is used in production so counters survive
+# serverless instance churn. Local development remains deterministic.
+API_RATE_LIMIT_REQUESTS = max(1, int(os.getenv("API_RATE_LIMIT_REQUESTS", "60")))
+API_RATE_LIMIT_WINDOW_SECONDS = max(1, int(os.getenv("API_RATE_LIMIT_WINDOW_SECONDS", "60")))
+_RATE_LIMIT_EXEMPT_PATHS = {"/", "/api/health", "/api/ready"}
 
-
-# Rate limiter middleware
-limiter = Limiter(key_func=_trusted_rate_limit_ip, default_limits=["60/minute"])
-app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
-
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request, exc):
-    return JSONResponse(status_code=429, content={"error": "Rate limit exceeded, try again in 15 minutes"})
 
 # CORS Middleware (Correctly placed to handle preflight OPTIONS requests)
 origins = [
@@ -88,6 +68,58 @@ app.add_middleware(
     "X-Organisation-ID",
     ],
 )
+
+def _rate_limit_cors_headers(request: Request, retry_after: str) -> dict[str, str]:
+    headers = {"Retry-After": retry_after, "Vary": "Origin"}
+    origin = request.headers.get("origin", "")
+    if origin in origins:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+    return headers
+
+
+@app.middleware("http")
+async def distributed_api_rate_limit(request: Request, call_next):
+    if (
+        os.getenv("APP_ENV", "production").strip().lower() != "production"
+        or request.method == "OPTIONS"
+        or request.url.path in _RATE_LIMIT_EXEMPT_PATHS
+    ):
+        return await call_next(request)
+
+    client_ip = auth._get_client_ip(request) or "unknown"
+    bucket_key = auth._rate_limit_digest(f"api:{client_ip}")
+    try:
+        result = auth.supabase.rpc("consume_api_rate_limit", {
+            "p_bucket_key": bucket_key,
+            "p_max_requests": API_RATE_LIMIT_REQUESTS,
+            "p_window_seconds": API_RATE_LIMIT_WINDOW_SECONDS,
+        }).execute()
+        limited = getattr(result, "data", None)
+        if not isinstance(limited, bool):
+            if isinstance(limited, list) and limited and isinstance(limited[0], dict):
+                limited = limited[0].get("consume_api_rate_limit", limited[0].get("limited"))
+            elif isinstance(limited, dict):
+                limited = limited.get("consume_api_rate_limit", limited.get("limited"))
+        if not isinstance(limited, bool):
+            raise RuntimeError("Unexpected response from shared API rate limiter")
+    except Exception as exc:
+        print(f"Shared API rate-limit check failed: {type(exc).__name__}")
+        return JSONResponse(
+            status_code=503,
+            content={"error": "Request protection is temporarily unavailable. Please retry shortly."},
+            headers=_rate_limit_cors_headers(request, "5"),
+        )
+
+    if limited:
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Rate limit exceeded. Please retry after the rate-limit window."},
+            headers=_rate_limit_cors_headers(request, str(API_RATE_LIMIT_WINDOW_SECONDS)),
+        )
+    return await call_next(request)
+
+
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
