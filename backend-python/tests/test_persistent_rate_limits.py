@@ -1,14 +1,17 @@
 """Tests for database-backed authentication and API rate limiting."""
+import asyncio
 import os
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
 from routers import auth
+from starlette.requests import Request
+from starlette.responses import Response
 
 
 class PersistentRateLimitTests(unittest.TestCase):
@@ -43,4 +46,58 @@ class PersistentRateLimitTests(unittest.TestCase):
         self.assertEqual(self.client.rpc.call_args_list[0].args[0], "record_auth_rate_failure")
         self.assertEqual(self.client.rpc.call_args_list[1].args[0], "clear_auth_rate_limit")
         self.assertEqual(len(self.client.rpc.call_args_list[0].args[1]["p_bucket_key"]), 64)
+
+class PersistentApiRateLimitTests(unittest.TestCase):
+    def _request(self):
+        return Request({
+            "type": "http",
+            "method": "GET",
+            "path": "/api/test",
+            "headers": [],
+            "client": ("203.0.113.44", 43123),
+            "server": ("testserver", 80),
+            "scheme": "https",
+        })
+
+    def test_production_api_requests_use_shared_database_bucket(self):
+        import main
+
+        client = Mock()
+        client.rpc.return_value.execute.return_value = SimpleNamespace(data=False)
+        next_handler = AsyncMock(return_value=Response("ok"))
+        with patch.object(main.auth, "supabase", client), patch.dict(os.environ, {"APP_ENV": "production", "VERCEL": "0"}):
+            response = asyncio.run(main.distributed_api_rate_limit(self._request(), next_handler))
+        self.assertEqual(response.status_code, 200)
+        client.rpc.assert_called_once_with(
+            "consume_api_rate_limit",
+            {
+                "p_bucket_key": client.rpc.call_args.args[1]["p_bucket_key"],
+                "p_max_requests": main.API_RATE_LIMIT_REQUESTS,
+                "p_window_seconds": main.API_RATE_LIMIT_WINDOW_SECONDS,
+            },
+        )
+        self.assertEqual(len(client.rpc.call_args.args[1]["p_bucket_key"]), 64)
+        next_handler.assert_awaited_once()
+
+    def test_production_api_limiter_fails_closed_if_database_is_unavailable(self):
+        import main
+
+        client = Mock()
+        client.rpc.side_effect = RuntimeError("database unavailable")
+        next_handler = AsyncMock(return_value=Response("should not run"))
+        with patch.object(main.auth, "supabase", client), patch.dict(os.environ, {"APP_ENV": "production", "VERCEL": "0"}):
+            response = asyncio.run(main.distributed_api_rate_limit(self._request(), next_handler))
+        self.assertEqual(response.status_code, 503)
+        next_handler.assert_not_awaited()
+
+    def test_production_api_limiter_returns_429_when_bucket_is_limited(self):
+        import main
+
+        client = Mock()
+        client.rpc.return_value.execute.return_value = SimpleNamespace(data=True)
+        next_handler = AsyncMock(return_value=Response("should not run"))
+        with patch.object(main.auth, "supabase", client), patch.dict(os.environ, {"APP_ENV": "production", "VERCEL": "0"}):
+            response = asyncio.run(main.distributed_api_rate_limit(self._request(), next_handler))
+        self.assertEqual(response.status_code, 429)
+        next_handler.assert_not_awaited()
 
