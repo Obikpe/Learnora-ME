@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - "backend-python/**"
+      - "frontend/**"
       - "frontend-v02/**"
       - "frontend-team/**"
       - "supabase/**"
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - "backend-python/**"
+      - "frontend/**"
       - "frontend-v02/**"
       - "frontend-team/**"
       - "supabase/**"
@@ -23,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [frontend-v02, frontend-team]
+        app: [frontend, frontend-v02, frontend-team]
     defaults:
       run:
         working-directory: ${{ matrix.app }}
