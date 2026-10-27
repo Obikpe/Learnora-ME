@@ -5,6 +5,7 @@ The following migrations are now committed on `main` as **pending release candid
 1. `20261026100000_pin_cohort_assignment_function_search_paths.sql`
 2. `20261026150000_shared_auth_rate_limits.sql`
 3. `20261026151000_shared_api_rate_limit.sql`
+4. `20261026153000_revoke_browser_privileges_and_defaults.sql`
 
 They have not been applied to any production database by this change. Do not deploy the updated backend until these migrations have been reviewed and applied to a disposable staging Supabase project, then verified against the migration ledger and rate-limit assertions.
 
@@ -19,9 +20,9 @@ They have not been applied to any production database by this change. Do not dep
 ## Staging verification checklist
 
 - Run the backend regression and verification workflows.
-- Apply the three pending migrations in timestamp order to a disposable project.
+- Apply the four pending migrations in timestamp order to a disposable project.
 - Run `backend-python/tests/db/rate_limit_assertions.sql` in that disposable project.
 - Verify that concurrent requests share a single limit bucket and that an unavailable RPC causes a fail-closed response.
 - Confirm the active Supabase migration ledger before any production rollout.
 
-This documentation does not authorise a production migration or deployment.
+The separate administrator-only operation `supabase/ops/revoke_supabase_admin_browser_defaults.sql` addresses default ACLs owned by `supabase_admin`; it must be run only by an authorised administrator session, not by the normal migration role.\n\nThis documentation does not authorise a production migration or deployment.
