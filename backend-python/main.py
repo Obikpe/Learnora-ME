@@ -27,6 +27,22 @@ app = FastAPI(
     openapi_url="/openapi.json" if os.getenv("APP_ENV", "production").strip().lower() != "production" else None,
 )
 
+def _trusted_rate_limit_ip(request: Request) -> str:
+    """Use Vercel's normalised client IP only on Vercel; otherwise use the peer address."""
+    if os.getenv("VERCEL", "").strip() == "1":
+        candidate = (request.headers.get("x-real-ip") or "").strip()
+        if candidate:
+            try:
+                return str(ipaddress.ip_address(candidate))
+            except ValueError:
+                pass
+    if request.client and request.client.host:
+        try:
+            return str(ipaddress.ip_address(request.client.host))
+        except ValueError:
+            pass
+    return "unknown"
+
 # Shared PostgreSQL rate limiting is used in production so counters survive
 # serverless instance churn. Local development remains deterministic.
 API_RATE_LIMIT_REQUESTS = max(1, int(os.getenv("API_RATE_LIMIT_REQUESTS", "60")))
@@ -87,7 +103,7 @@ async def distributed_api_rate_limit(request: Request, call_next):
     ):
         return await call_next(request)
 
-    client_ip = auth._get_client_ip(request) or "unknown"
+    client_ip = _trusted_rate_limit_ip(request)
     bucket_key = auth._rate_limit_digest(f"api:{client_ip}")
     try:
         result = auth.supabase.rpc("consume_api_rate_limit", {
