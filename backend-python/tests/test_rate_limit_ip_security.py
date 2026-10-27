@@ -43,7 +43,8 @@ class RateLimitIpSecurityTests(unittest.TestCase):
         source = (main.__file__)
         with open(source, encoding="utf-8") as file:
             content = file.read()
-        self.assertIn("Limiter(key_func=_trusted_rate_limit_ip", content)
+        self.assertIn("async def distributed_api_rate_limit", content)
+        self.assertIn('rpc("consume_api_rate_limit"', content)
 
 
 if __name__ == "__main__":
