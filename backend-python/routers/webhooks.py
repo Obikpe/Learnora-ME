@@ -1,27 +1,255 @@
-import hashlib, hmac, os, json
-from fastapi import APIRouter, Request, HTTPException
+"""Verified payment-provider webhooks.
+
+Recurring Paystack events are mapped to an existing Learnora learner identity.
+A provider subscription is never allowed to activate an account by email alone.
+"""
+import hashlib
+import hmac
+import json
+import logging
+import os
+from datetime import datetime, timezone
+
+import httpx
+from fastapi import APIRouter, HTTPException, Request
+
 from routers.auth import supabase
 
 router = APIRouter()
+log = logging.getLogger("paystack_webhooks")
+PAYSTACK_BASE = "https://api.paystack.co"
+LEARNER_ROLES = {"normal", "witstart"}
+
+
+def _subscription_details(data: dict) -> dict:
+    """Paystack sends subscription details nested on invoice/charge events."""
+    nested = data.get("subscription")
+    return nested if isinstance(nested, dict) else data
+
+
+def _subscription_code(data: dict) -> str:
+    details = _subscription_details(data)
+    return str(details.get("subscription_code") or data.get("subscription_code") or "").strip()
+
+
+async def _disable_orphaned_subscription(code: str, email_token: str) -> None:
+    """Stop provider billing when its event has no eligible Learnora account."""
+    secret = (os.getenv("PAYSTACK_SECRET_KEY") or "").strip().strip('"').strip("'")
+    if not secret or not code or not email_token:
+        log.error("Cannot automatically stop orphaned Paystack subscription: required provider credentials are missing")
+        raise HTTPException(503, "Orphaned subscription cancellation requires provider reconciliation.")
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(
+                f"{PAYSTACK_BASE}/subscription/disable",
+                headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/json"},
+                json={"code": code, "token": email_token},
+            )
+            response.raise_for_status()
+            result = response.json()
+    except (httpx.HTTPError, ValueError):
+        log.exception("Failed to disable orphaned Paystack subscription")
+        raise HTTPException(503, "Could not stop an orphaned Paystack subscription yet; retry webhook delivery.")
+    if not isinstance(result, dict) or not result.get("status"):
+        log.error("Paystack did not confirm cancellation of an orphaned subscription")
+        raise HTTPException(503, "Paystack did not confirm cancellation of the orphaned subscription.")
+
+
+def _linked_subscription(code: str) -> dict | None:
+    if not code:
+        return None
+    result = (
+        supabase.table("learnora_subscriptions")
+        .select("id,user_id,status,provider_subscription_code,current_period_end")
+        .eq("provider_subscription_code", code)
+        .limit(1)
+        .execute()
+    )
+    rows = result.data or []
+    return rows[0] if rows else None
+
 
 @router.post("/paystack")
 async def paystack_webhook(request: Request):
-    raw = await request.body()  # must be the raw bytes, not parsed JSON
-    secret = os.getenv("PAYSTACK_SECRET_KEY", "")
+    raw = await request.body()
+    secret = (os.getenv("PAYSTACK_SECRET_KEY") or "").strip().strip('"').strip("'")
     expected = hmac.new(secret.encode(), raw, hashlib.sha512).hexdigest()
-    sig = request.headers.get("x-paystack-signature", "")
-    if not secret or not hmac.compare_digest(sig, expected):
+    signature = request.headers.get("x-paystack-signature", "")
+    if not secret or not hmac.compare_digest(signature, expected):
         raise HTTPException(401, "Invalid signature")
 
-    event = json.loads(raw)
-    etype = event.get("event")
-    email = ((event.get("data") or {}).get("customer") or {}).get("email", "").lower().strip()
+    try:
+        event = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise HTTPException(400, "Invalid JSON payload")
 
-    if email:
-        if etype in ("charge.success", "subscription.create"):
-            supabase.table("users").update(
-                {"sub_status": "active", "is_paid": True}).eq("email", email).execute()
-        elif etype in ("subscription.disable", "invoice.payment_failed"):
-            supabase.table("users").update(
-                {"sub_status": "canceled", "is_paid": False}).eq("email", email).execute()
+    if not isinstance(event, dict):
+        raise HTTPException(400, "Invalid event payload")
+
+    event_type = str(event.get("event") or "")
+    data = event.get("data") or {}
+    if not isinstance(data, dict):
+        raise HTTPException(400, "Invalid event data")
+
+    customer = data.get("customer") or {}
+    if not isinstance(customer, dict):
+        customer = {}
+    email = str(customer.get("email") or "").lower().strip()
+    customer_code = str(customer.get("customer_code") or "").strip()
+    details = _subscription_details(data)
+    code = _subscription_code(data)
+    email_token = str(details.get("email_token") or data.get("email_token") or "").strip()
+    now = datetime.now(timezone.utc).isoformat()
+
+    # A subscription creation event is the source of the Paystack subscription
+    # code and email token required to actually stop future automatic charges.
+    if event_type == "subscription.create":
+        if not code or not email_token or not email:
+            log.error("Paystack subscription.create omitted required account/subscription identifiers")
+            raise HTTPException(503, "Subscription event is missing required identifiers; provider reconciliation is needed.")
+        try:
+            user_result = (
+                supabase.table("users")
+                .select("id,email,role,email_verified_at,sub_status")
+                .eq("email", email)
+                .limit(1)
+                .execute()
+            )
+            users = user_result.data or []
+        except Exception:
+            log.exception("Could not look up Learnora account for subscription event")
+            raise HTTPException(503, "Could not reconcile the subscription event yet.")
+
+        eligible = bool(
+            users
+            and users[0].get("role") in LEARNER_ROLES
+            and users[0].get("email_verified_at")
+        )
+        if not eligible:
+            # Deleting the Learnora row does not cancel a provider-side agreement.
+            # Actively disable the orphan rather than acknowledging it and leaving
+            # recurring charges running.
+            await _disable_orphaned_subscription(code, email_token)
+            return {"received": True, "orphaned_subscription_disabled": True}
+
+        user = users[0]
+        plan = data.get("plan") if isinstance(data.get("plan"), dict) else {}
+        next_payment = details.get("next_payment_date") or data.get("next_payment_date")
+        try:
+            existing = (
+                supabase.table("learnora_subscriptions")
+                .select("id")
+                .eq("user_id", user["id"])
+                .in_("status", ["active", "past_due", "paused"])
+                .order("created_at", desc=True)
+                .limit(1)
+                .execute()
+                .data or []
+            )
+            subscription_fields = {
+                "provider": "paystack",
+                "provider_customer_id": customer_code or None,
+                "provider_subscription_code": code,
+                "provider_email_token": email_token,
+                "status": "active",
+                "updated_at": now,
+            }
+            if next_payment:
+                subscription_fields["current_period_end"] = next_payment
+            if plan.get("plan_code"):
+                subscription_fields["plan_code"] = plan["plan_code"]
+            if plan.get("interval"):
+                subscription_fields["billing_interval"] = "yearly" if plan["interval"] == "annually" else plan["interval"]
+            if data.get("currency") or plan.get("currency"):
+                subscription_fields["currency"] = str(data.get("currency") or plan.get("currency")).upper()
+            if data.get("amount") is not None or plan.get("amount") is not None:
+                subscription_fields["amount_minor"] = int(data.get("amount") or plan.get("amount") or 0)
+
+            if existing:
+                supabase.table("learnora_subscriptions").update(subscription_fields).eq("id", existing[0]["id"]).eq("user_id", user["id"]).execute()
+            else:
+                supabase.table("learnora_subscriptions").insert({
+                    **subscription_fields,
+                    "user_id": user["id"],
+                    "starts_at": now,
+                    "current_period_start": now,
+                }).execute()
+            # Only a currently existing, verified learner row is updated.
+            user_fields = {"sub_status": "active", "is_paid": True, "subscription_tier": "paid"}
+            if next_payment:
+                user_fields["expires_at"] = next_payment
+            supabase.table("users").update(user_fields).eq("id", user["id"]).execute()
+        except Exception:
+            log.exception("Failed to persist Learnora subscription event")
+            raise HTTPException(503, "Subscription event could not be saved yet.")
+        return {"received": True}
+
+    if event_type in {"subscription.not_renew", "subscription.disable", "invoice.payment_failed", "invoice.update", "charge.success"}:
+        try:
+            linked = _linked_subscription(code)
+        except Exception:
+            log.exception("Failed mapping Paystack event to Learnora subscription")
+            raise HTTPException(503, "Subscription event could not be reconciled yet.")
+
+        if not linked:
+            # Never grant or change access based on a matching email alone. For
+            # an unlinked recurring event, stop the provider agreement if its
+            # credentials are included and otherwise leave a visible retry.
+            if event_type == "subscription.not_renew":
+                return {"received": True, "unlinked": True}
+            if event_type == "subscription.disable":
+                return {"received": True, "unlinked": True}
+            if event_type == "charge.success":
+                return {"received": True, "unlinked": True}
+            if event_type == "invoice.payment_failed":
+                return {"received": True, "unlinked": True}
+            return {"received": True, "unlinked": True}
+
+        user_id = linked["user_id"]
+        try:
+            if event_type == "subscription.not_renew":
+                supabase.table("learnora_subscriptions").update({
+                    "status": "cancelled",
+                    "cancelled_at": now,
+                    "updated_at": now,
+                }).eq("id", linked["id"]).execute()
+                # Keep current access through the already-paid period.
+            elif event_type == "subscription.disable":
+                supabase.table("learnora_subscriptions").update({
+                    "status": "cancelled",
+                    "cancelled_at": now,
+                    "updated_at": now,
+                }).eq("id", linked["id"]).execute()
+                supabase.table("users").update({
+                    "sub_status": "expired",
+                    "is_paid": False,
+                    "subscription_tier": "free",
+                }).eq("id", user_id).execute()
+            elif event_type == "invoice.payment_failed":
+                supabase.table("learnora_subscriptions").update({
+                    "status": "past_due",
+                    "updated_at": now,
+                }).eq("id", linked["id"]).execute()
+                supabase.table("users").update({
+                    "sub_status": "past_due",
+                    "is_paid": False,
+                }).eq("id", user_id).execute()
+            elif event_type in {"invoice.update", "charge.success"}:
+                invoice_status = str(data.get("status") or "").lower()
+                successful = event_type == "charge.success" or (invoice_status in {"success", "paid"} and data.get("paid") in (True, 1, "1"))
+                if successful:
+                    next_payment = details.get("next_payment_date") or data.get("next_payment_date")
+                    fields = {"status": "active", "updated_at": now}
+                    user_fields = {"sub_status": "active", "is_paid": True, "subscription_tier": "paid"}
+                    if next_payment:
+                        fields["current_period_end"] = next_payment
+                        user_fields["expires_at"] = next_payment
+                    supabase.table("learnora_subscriptions").update(fields).eq("id", linked["id"]).execute()
+                    supabase.table("users").update(user_fields).eq("id", user_id).execute()
+        except Exception:
+            log.exception("Failed applying Paystack subscription status event")
+            raise HTTPException(503, "Subscription status could not be updated yet.")
+
+    # One-off initial charges are handled by the signed-in verify-payment route.
+    # Do not let charge.success reactivate arbitrary accounts by email.
     return {"received": True}
