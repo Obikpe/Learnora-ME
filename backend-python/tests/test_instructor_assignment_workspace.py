@@ -90,6 +90,7 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
             ],
             "cohort_account_lesson_progress": [
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "progress_percent": 100, "completed": True},
+                {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "progress_percent": 20, "completed": False},
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-2", "progress_percent": 40, "completed": False},
                 {"course_assignment_id": "assignment-1", "lesson_id": "revoked-lesson", "progress_percent": 100, "completed": True},
             ],
