@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, CircleDollarSign, Plus, Send, Sparkles } from "lu
 import Shell from "../../../components/dashboard/Shell";
 import SectionHeader from "../../../components/dashboard/SectionHeader";
 import EmptyState from "../../../components/feedback/EmptyState";
+import Skeleton from "../../../components/feedback/Skeleton";
 import { request } from "../../../lib/api/client";
 
 export default function CreatorStudio() {
@@ -135,7 +136,7 @@ export default function CreatorStudio() {
   return <Shell active="creator">
     <SectionHeader eyebrow="Teach on Learnora" title="Creator studio" description="Build practical, text-based courses, publish free learning and review recorded creator earnings."/>
     {(error || notice) && <div role={error ? "alert" : "status"} className={"mt-6 rounded-xl border p-4 text-sm " + (error ? "border-red-400/20 bg-red-400/[.05] text-red-200" : "border-emerald-400/20 bg-emerald-400/[.05] text-emerald-200")}>{error || notice}</div>}
-    {loading ? <div className="mt-7 rounded-2xl border border-white/10 bg-[#0e1319] p-6 text-sm text-slate-500">Loading creator records…</div> : !isApproved ? <section className="mt-7 rounded-2xl border border-white/[.08] bg-[#0e1319] p-6 sm:p-8">
+    {loading ? <div className="mt-7"><Skeleton variant="workspace" label="Loading your instructor workspace" /></div> : !isApproved ? <section className="mt-7 rounded-2xl border border-white/[.08] bg-[#0e1319] p-6 sm:p-8">
       <div className="flex items-start gap-4"><div className="rounded-2xl bg-[#d7ad35]/10 p-3"><Sparkles className="gold" size={22}/></div><div><h2 className="text-xl font-semibold">{application?.status === "submitted" || application?.status === "under_review" ? "Your application is in review" : application?.status === "declined" ? "You can apply again" : "Share what you know"}</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{application?.status === "submitted" || application?.status === "under_review" ? "Your application has been recorded. Creator tools become available after Learnora approves the account." : "Apply to become a Learnora creator. Applications are reviewed before course publishing and public discovery are enabled."}</p>{application?.status && <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-xs capitalize text-slate-300"><span className="h-1.5 w-1.5 rounded-full bg-[#d7ad35]"/>{application.status.replaceAll("_", " ")}</p>}{(!application || application.status === "declined") && <a href="/apply-to-teach" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black">Apply to teach <ArrowRight size={15}/></a>}</div></div>
     </section> : <>
       <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
