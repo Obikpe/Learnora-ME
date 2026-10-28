@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, Compass, Target, FolderKanban, Sparkles, FileCheck2, Award, MessageCircle, BrainCircuit, Bell, Settings, LayoutDashboard, LogOut, Users, Building2, Activity, ShieldCheck, CircleDollarSign, Layers3, LineChart, LockKeyhole, Menu, X, ChevronRight } from "lucide-react";
+import { BookOpen, Compass, Target, FolderKanban, Sparkles, FileCheck2, Award, MessageCircle, BrainCircuit, Bell, Settings, LayoutDashboard, LogOut, Users, Building2, Activity, ShieldCheck, CircleDollarSign, Layers3, LineChart, LockKeyhole, CreditCard, Menu, X, ChevronRight } from "lucide-react";
 import { clearToken } from "../../lib/api";
 
 const learner:any[]=[
-  ["overview","Overview",LayoutDashboard],["learning","My learning",BookOpen],["discover","Discover",Compass],["practice","Practise",Target],["projects","Projects",FolderKanban],["skills","Skills",Sparkles],["evidence","Evidence",FileCheck2],["certificates","Certificates",Award],["community","Community",MessageCircle],["ai","AI tutor",BrainCircuit],["creator","Creator studio",Users],["notifications","Notifications",Bell],["settings","Settings",Settings]
+  ["overview","Overview",LayoutDashboard],["learning","My learning",BookOpen],["discover","Discover",Compass],["practice","Practise",Target],["projects","Projects",FolderKanban],["skills","Skills",Sparkles],["evidence","Evidence",FileCheck2],["certificates","Certificates",Award],["community","Community",MessageCircle],["ai","AI tutor",BrainCircuit],["creator","Creator studio",Users],["notifications","Notifications",Bell],["subscription","Subscription",CreditCard],["settings","Settings",Settings]
 ];
 const superAdmin:any[]=[
   ["overview","Overview",LayoutDashboard],["users","Users",Users],["organisations","Organisations",Building2],["courses","Courses",BookOpen],["content","Content",Layers3],["commercial","Commerce",CircleDollarSign],["creators","Creators",Users],["analytics","Analytics",LineChart],["ai","AI operations",BrainCircuit],["activity","Activity",Activity],["security","Security",LockKeyhole],["admins","Admins",ShieldCheck],["settings","Settings",Settings]
