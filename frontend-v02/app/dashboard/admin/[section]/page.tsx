@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
 import {currentUser} from "../../../../lib/api";
+import Skeleton from "../../../../components/feedback/Skeleton";
 import {adminCourses,organisations,organisationRequests,creatorApplications,aiProviders} from "../../../../lib/api/admin";
 import Shell from "../../../../components/dashboard/Shell";
 import SectionHeader from "../../../../components/dashboard/SectionHeader";
@@ -10,7 +11,7 @@ export default function AdminSection({params}:{params:{section:string}}){
  const[u,setU]=useState<any>(null),[data,setData]=useState<any>(null),[err,setErr]=useState("");
  useEffect(()=>{currentUser().then(x=>{if(x.account_type!=="admin")location.href="/dashboard";else setU(x)}).catch(()=>location.href="/login")},[]);
  useEffect(()=>{if(!u)return;let fn:Promise<any>;switch(params.section){case"courses":fn=adminCourses();break;case"organisations":fn=organisations();break;case"commercial":fn=organisationRequests();break;case"creators":fn=creatorApplications();break;case"ai":fn=aiProviders();break;default:fn=Promise.resolve(null)}fn.then(setData).catch(e=>setErr(e.message))},[u,params.section]);
- if(!u)return <div className="p-10">Loading administration…</div>;
+ if(!u)return <Shell admin active={params.section}><Skeleton label="Verifying administrator access" /></Shell>;
  const s=params.section, rows=data?.courses||data?.organisations||data?.requests||data?.applications||data?.providers||[];
  let columns:any[]=[];
  if(s==="courses")columns=[{key:"title",label:"Course"},{key:"ownership",label:"Ownership"},{key:"status",label:"Status"},{key:"level",label:"Level"}];
