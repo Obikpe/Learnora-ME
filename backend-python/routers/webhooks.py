@@ -256,6 +256,28 @@ async def paystack_webhook(request: Request):
 
         user_id = linked["user_id"]
 
+        # A terminal local subscription must never be reactivated by a delayed
+        # provider event. invoice.create arrives before the scheduled debit, so
+        # actively disable provider renewal and preserve the terminal state.
+        if linked.get("status") in {"cancelled", "expired"} and event_type in {
+            "invoice.create", "invoice.payment_failed", "invoice.update", "charge.success"
+        }:
+            if event_type == "invoice.create":
+                disable_code = code or str(linked.get("provider_subscription_code") or "")
+                disable_token = email_token or str(linked.get("provider_email_token") or "")
+                await _disable_orphaned_subscription(disable_code, disable_token)
+                return {
+                    "received": True,
+                    "terminal_subscription_unchanged": True,
+                    "provider_renewal_disabled": True,
+                }
+            log.warning(
+                "Ignoring %s for terminal subscription %s; local access remains terminal",
+                event_type,
+                linked.get("id"),
+            )
+            return {"received": True, "terminal_subscription_unchanged": True}
+
         # A deleted, unverified, or non-learner account must not continue
         # generating recurring invoices. invoice.create arrives before the
         # scheduled debit, so disable at this point rather than waiting for
