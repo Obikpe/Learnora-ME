@@ -77,7 +77,7 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
                 {"id": "assignment-2", "tutor_user_id": "someone-else", "cohort_member_id": "member-1", "cohort_id": "cohort-1", "course_id": "course-1", "status": "active", "assigned_at": "2026-10-02T00:00:00Z", "updated_at": "2026-10-02T00:00:00Z"},
             ],
             "cohorts": [{"id": "cohort-1", "name": "October cohort", "organisation_id": "org-1", "status": "active", "start_date": "2026-10-01", "end_date": "2026-12-01"}],
-            "cohort_members": [{"id": "member-1", "cohort_id": "cohort-1", "cohort_account_id": "account-1", "user_id": None, "status": "active"}],
+            "cohort_members": [{"id": "member-1", "cohort_id": "cohort-1", "cohort_account_id": "account-1", "user_id": None, "track_id": "track-1", "status": "active"}],
             "cohort_accounts": [{"id": "account-1", "first_name": "Ada", "last_name": "Learner", "username": "ada.learner", "status": "active"}],
             "learnora_courses": [{"id": "course-1", "title": "Data Fundamentals", "slug": "data-fundamentals", "status": "published", "estimated_hours": 12}],
             "cohort_member_lesson_assignments": [
@@ -126,6 +126,20 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
             with self.assertRaises(HTTPException) as raised:
                 cohort_learning.my_instructor_assignments(learner_user())
         self.assertEqual(raised.exception.status_code, 403)
+
+    def test_organisation_roster_includes_scoped_learner_course_progress(self):
+        context = SimpleNamespace(is_platform_admin=True, organisation_id=None)
+        with patch.object(cohort_learning, "supabase", self.db):
+            result = cohort_learning.list_learner_course_assignments(
+                "org-1", "cohort-1", "member-1", context
+            )
+        assignments = {item["id"]: item for item in result["assignments"]}
+        self.assertEqual(assignments["assignment-1"]["assigned_lesson_count"], 2)
+        self.assertEqual(assignments["assignment-1"]["completed_lesson_count"], 1)
+        self.assertEqual(assignments["assignment-1"]["in_progress_lesson_count"], 1)
+        self.assertEqual(assignments["assignment-1"]["completion_percent"], 50)
+        self.assertEqual(assignments["assignment-2"]["assigned_lesson_count"], 0)
+        self.assertEqual(assignments["assignment-2"]["completion_percent"], 0)
 
 
 if __name__ == "__main__":
