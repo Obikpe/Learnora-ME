@@ -2,6 +2,7 @@
 import{useEffect,useMemo,useRef,useState}from"react";
 import Shell from"../../../../components/dashboard/Shell";
 import EmptyState from"../../../../components/feedback/EmptyState";
+import Skeleton from"../../../../components/feedback/Skeleton";
 import{request}from"../../../../lib/api/client";
 import{FileText,Save,Sparkles,CheckCircle2,ClipboardCheck,Send,MessageCircle}from"lucide-react";
 export default function LearningPlayer({params}:{params:{courseId:string}}){
@@ -23,7 +24,7 @@ export default function LearningPlayer({params}:{params:{courseId:string}}){
  async function submitProject(e:any){e.preventDefault();if(!projectId)return;setProjectBusy(true);setProjectError("");setProjectNotice("");try{const r=await request<any>("/evidence/projects/"+encodeURIComponent(projectId)+"/submissions",{method:"POST",body:JSON.stringify(projectForm)});setProjectSubmissions((old:any)=>[r.submission,...old]);setProjectNotice("Project submitted for review.");setProjectId("");setProjectForm({title:"",description:"",repository_url:"",live_url:"",submission_url:""});}catch(e:any){setProjectError(e.message||"Project submission failed.");}finally{setProjectBusy(false)}}
  function askAI(){const context="Course: "+(d.course?.title||d.title||"Current course")+"\nLesson: "+(current?.title||"Current lesson")+"\n\n"+((current?.content||"No lesson text is available. Use the lesson title and my question as context.").slice(0,8000))+"\n\nPlease help me understand this lesson. Explain the key ideas and give a practical example.";sessionStorage.setItem("learnora_ai_context",context);location.href="/dashboard/ai";}
  if(err&&!d)return <Shell active="learning"><EmptyState title="Learning unavailable" message={err}/></Shell>;
- if(!d)return <Shell active="learning"><p className="text-slate-500">Loading your course…</p></Shell>;
+ if(!d)return <Shell active="learning"><Skeleton variant="course" label="Loading your course content" /></Shell>;
  const video=media.videos?.[0];
  return <Shell active="learning"><div className="grid min-w-0 gap-5 xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-6">
  <aside className="h-fit max-h-[40vh] overflow-y-auto border border-white/[.1] bg-[#11171e] p-4 xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)]"><p className="mb-2 text-xs uppercase tracking-[.2em] gold">Course progress</p><h2 className="text-lg font-semibold">{d.course?.title||d.title||"Your course"}</h2><div className="mb-5 mt-4 text-3xl font-semibold">{d.progress_percent||0}%</div><div className="mb-4 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#d7ad35]" style={{width:Math.max(0,Math.min(100,d.progress_percent||0))+"%"}}/></div>{d.modules?.map((m:any)=><div key={m.id} className="mb-4"><p className="px-2 pb-2 text-[10px] uppercase tracking-[.14em] text-slate-600">{m.title}</p>{(m.lessons||[]).map((l:any)=><button key={l.id} onClick={()=>setCurrent(l)} className={"mb-1 w-full rounded-xl p-3 text-left text-sm "+(current?.id===l.id?"bg-[#d7ad35]/10 text-[#f2d477]":"text-slate-400 hover:bg-white/[.03]")}>{l.title}<span className="ml-2 text-xs text-slate-700">{l.progress?.completed?"✓":""}</span></button>)}</div>)}</aside>
