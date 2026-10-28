@@ -60,7 +60,7 @@ def _linked_subscription(code: str) -> dict | None:
         return None
     result = (
         supabase.table("learnora_subscriptions")
-        .select("id,user_id,status,provider_subscription_code,current_period_end")
+        .select("id,user_id,status,provider_subscription_code,provider_email_token,current_period_end")
         .eq("provider_subscription_code", code)
         .limit(1)
         .execute()
@@ -184,7 +184,7 @@ async def paystack_webhook(request: Request):
             raise HTTPException(503, "Subscription event could not be saved yet.")
         return {"received": True}
 
-    if event_type in {"subscription.not_renew", "subscription.disable", "invoice.payment_failed", "invoice.update", "charge.success"}:
+    if event_type in {"subscription.not_renew", "subscription.disable", "invoice.create", "invoice.payment_failed", "invoice.update", "charge.success"}:
         try:
             linked = _linked_subscription(code)
         except Exception:
@@ -206,6 +206,44 @@ async def paystack_webhook(request: Request):
             return {"received": True, "unlinked": True}
 
         user_id = linked["user_id"]
+
+        # A deleted, unverified, or non-learner account must not continue
+        # generating recurring invoices. invoice.create arrives before the
+        # scheduled debit, so disable at this point rather than waiting for
+        # charge.success or an account-deletion cleanup job.
+        if event_type in {"invoice.create", "invoice.payment_failed", "invoice.update", "charge.success"}:
+            try:
+                owner_result = (
+                    supabase.table("users")
+                    .select("id,role,email_verified_at")
+                    .eq("id", user_id)
+                    .limit(1)
+                    .execute()
+                )
+                owners = owner_result.data or []
+            except Exception:
+                log.exception("Could not verify account ownership for recurring Paystack event")
+                raise HTTPException(503, "Could not verify subscription owner yet.")
+            owner_ok = bool(
+                owners
+                and owners[0].get("role") in LEARNER_ROLES
+                and owners[0].get("email_verified_at")
+            )
+            if not owner_ok:
+                disable_code = code or str(linked.get("provider_subscription_code") or "")
+                disable_token = email_token or str(linked.get("provider_email_token") or "")
+                await _disable_orphaned_subscription(disable_code, disable_token)
+                try:
+                    supabase.table("learnora_subscriptions").update({
+                        "status": "cancelled",
+                        "cancelled_at": now,
+                        "updated_at": now,
+                    }).eq("id", linked["id"]).execute()
+                except Exception:
+                    log.exception("Provider cancellation succeeded but local orphan status update failed")
+                    raise HTTPException(503, "Provider cancellation succeeded; local status reconciliation will be retried.")
+                return {"received": True, "orphaned_subscription_disabled": True}
+
         try:
             if event_type == "subscription.not_renew":
                 supabase.table("learnora_subscriptions").update({
