@@ -122,6 +122,19 @@ class SubscriptionCancellationTests(unittest.TestCase):
             billing.get_learner_subscription(staff)
         self.assertEqual(raised.exception.status_code, 403)
 
+    def test_cohort_identity_cannot_manage_individual_learner_subscription(self):
+        cohort = auth.CurrentUser(
+            id="cohort-account-1",
+            email="cohort@example.com",
+            role="normal",
+            sub_status="active",
+            account_type="cohort",
+            is_paid=False,
+        )
+        with self.assertRaises(HTTPException) as raised:
+            billing.get_learner_subscription(cohort)
+        self.assertEqual(raised.exception.status_code, 403)
+
     def test_login_and_dashboard_loading_use_skeletons_in_frontend_v02(self):
         login = (ROOT / "frontend-v02/app/login/page.tsx").read_text(encoding="utf-8")
         dashboard = (ROOT / "frontend-v02/app/dashboard/page.tsx").read_text(encoding="utf-8")
