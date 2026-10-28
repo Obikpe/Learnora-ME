@@ -672,3 +672,181 @@ def update_my_cohort_lesson_progress(
     if not result.data:
         raise HTTPException(500, "Progress could not be saved.")
     return {"success": True, "progress": result.data[0]}
+
+
+@router.get("/api/instructor/me/assignments")
+def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
+    """Return only active cohort-course assignments explicitly assigned to this instructor."""
+    if not user.id or user.account_type == "cohort":
+        raise HTTPException(403, "This workspace is only available to organisation instructors.")
+
+    membership_rows = (
+        supabase.table("organisation_members")
+        .select("organisation_id,role,status")
+        .eq("user_id", str(user.id))
+        .eq("status", "active")
+        .execute()
+    ).data or []
+    instructor_org_ids = {
+        str(row["organisation_id"])
+        for row in membership_rows
+        if row.get("role") == "instructor" and row.get("organisation_id")
+    }
+    if not instructor_org_ids:
+        raise HTTPException(403, "You do not have an active instructor membership.")
+
+    active_organisations = (
+        supabase.table("organisations")
+        .select("id,name,is_active")
+        .in_("id", list(instructor_org_ids))
+        .eq("is_active", True)
+        .execute()
+    ).data or []
+    active_org_map = {
+        str(row["id"]): row
+        for row in active_organisations
+        if row.get("is_active")
+    }
+    if not active_org_map:
+        return {"success": True, "assignments": []}
+
+    assigned_rows = (
+        supabase.table("cohort_member_course_assignments")
+        .select("id,cohort_member_id,cohort_id,track_id,course_id,status,assigned_at,updated_at")
+        .eq("tutor_user_id", str(user.id))
+        .eq("status", "active")
+        .order("assigned_at", desc=True)
+        .execute()
+    ).data or []
+    if not assigned_rows:
+        return {"success": True, "assignments": []}
+
+    cohort_ids = list({str(row["cohort_id"]) for row in assigned_rows if row.get("cohort_id")})
+    cohorts = (
+        supabase.table("cohorts")
+        .select("id,name,organisation_id,status,start_date,end_date")
+        .in_("id", cohort_ids)
+        .execute()
+    ).data or [] if cohort_ids else []
+    cohort_map = {
+        str(row["id"]): row
+        for row in cohorts
+        if str(row.get("organisation_id")) in active_org_map
+        and row.get("status") in {"draft", "upcoming", "active"}
+    }
+
+    member_ids = list({
+        str(row["cohort_member_id"])
+        for row in assigned_rows
+        if row.get("cohort_member_id") and str(row.get("cohort_id")) in cohort_map
+    })
+    members = (
+        supabase.table("cohort_members")
+        .select("id,cohort_id,cohort_account_id,user_id,status")
+        .in_("id", member_ids)
+        .eq("status", "active")
+        .execute()
+    ).data or [] if member_ids else []
+    member_map = {
+        str(row["id"]): row
+        for row in members
+        if str(row.get("cohort_id")) in cohort_map
+    }
+
+    account_ids = list({
+        str(row["cohort_account_id"])
+        for row in members
+        if row.get("cohort_account_id")
+    })
+    accounts = (
+        supabase.table("cohort_accounts")
+        .select("id,first_name,last_name,username,status")
+        .in_("id", account_ids)
+        .eq("status", "active")
+        .execute()
+    ).data or [] if account_ids else []
+    account_map = {str(row["id"]): row for row in accounts}
+
+    legacy_user_ids = list({
+        str(row["user_id"])
+        for row in members
+        if row.get("user_id") and not row.get("cohort_account_id")
+    })
+    legacy_users = (
+        supabase.table("users")
+        .select("id,name")
+        .in_("id", legacy_user_ids)
+        .execute()
+    ).data or [] if legacy_user_ids else []
+    legacy_user_map = {str(row["id"]): row for row in legacy_users}
+
+    course_ids = list({str(row["course_id"]) for row in assigned_rows if row.get("course_id")})
+    courses = (
+        supabase.table("learnora_courses")
+        .select("id,title,slug,status,estimated_hours")
+        .in_("id", course_ids)
+        .eq("status", "published")
+        .execute()
+    ).data or [] if course_ids else []
+    course_map = {str(row["id"]): row for row in courses}
+
+    assignment_ids = [
+        str(row["id"])
+        for row in assigned_rows
+        if str(row.get("cohort_id")) in cohort_map
+        and str(row.get("cohort_member_id")) in member_map
+        and str(row.get("course_id")) in course_map
+    ]
+    lesson_rows = (
+        supabase.table("cohort_member_lesson_assignments")
+        .select("course_assignment_id,lesson_id")
+        .in_("course_assignment_id", assignment_ids)
+        .eq("status", "active")
+        .execute()
+    ).data or [] if assignment_ids else []
+    lesson_counts = {}
+    for lesson in lesson_rows:
+        key = str(lesson["course_assignment_id"])
+        lesson_counts[key] = lesson_counts.get(key, 0) + 1
+
+    assignments = []
+    for row in assigned_rows:
+        cohort = cohort_map.get(str(row.get("cohort_id")))
+        member = member_map.get(str(row.get("cohort_member_id")))
+        course = course_map.get(str(row.get("course_id")))
+        if not cohort or not member or not course:
+            continue
+        account = account_map.get(str(member.get("cohort_account_id"))) if member.get("cohort_account_id") else None
+        legacy_user = legacy_user_map.get(str(member.get("user_id"))) if member.get("user_id") else None
+        if member.get("cohort_account_id") and not account:
+            continue
+        learner_name = (
+            f"{account.get('first_name', '')} {account.get('last_name', '')}".strip()
+            if account else str((legacy_user or {}).get("name") or "Learner")
+        )
+        assignments.append({
+            "id": str(row["id"]),
+            "assigned_at": row.get("assigned_at"),
+            "updated_at": row.get("updated_at"),
+            "cohort": {
+                "id": str(cohort["id"]),
+                "name": cohort.get("name") or "Cohort",
+                "status": cohort.get("status"),
+                "start_date": cohort.get("start_date"),
+                "end_date": cohort.get("end_date"),
+                "organisation_name": active_org_map[str(cohort["organisation_id"])].get("name"),
+            },
+            "learner": {
+                "member_id": str(member["id"]),
+                "name": learner_name,
+                "username": account.get("username") if account else None,
+            },
+            "course": {
+                "id": str(course["id"]),
+                "title": course.get("title") or "Assigned course",
+                "slug": course.get("slug"),
+                "estimated_hours": course.get("estimated_hours"),
+            },
+            "assigned_lesson_count": lesson_counts.get(str(row["id"]), 0),
+        })
+    return {"success": True, "assignments": assignments}
