@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Compass, Target, FolderKanban, Sparkles, FileCheck2, Award, MessageCircle, BrainCircuit, Bell, Settings, LayoutDashboard, LogOut, Users, Building2, Activity, ShieldCheck, CircleDollarSign, Layers3, LineChart, LockKeyhole, CreditCard, Menu, X, ChevronRight } from "lucide-react";
-import { clearToken } from "../../lib/api";
+import { clearToken, currentUser } from "../../lib/api";
 
 const learner:any[]=[
   ["overview","Overview",LayoutDashboard],["learning","My learning",BookOpen],["discover","Discover",Compass],["practice","Practise",Target],["projects","Projects",FolderKanban],["skills","Skills",Sparkles],["evidence","Evidence",FileCheck2],["certificates","Certificates",Award],["community","Community",MessageCircle],["ai","AI tutor",BrainCircuit],["creator","Creator studio",Users],["notifications","Notifications",Bell],["subscription","Subscription",CreditCard],["settings","Settings",Settings]
@@ -23,7 +23,9 @@ function NavItems({items,active,admin,onNavigate}:{items:any[];active:string;adm
 
 export default function Sidebar({admin=false,role="",active}:{admin?:boolean;role?:string;active:string}) {
   const [mobileOpen,setMobileOpen]=useState(false);
-  const items=admin?(role==="super_admin"?superAdmin:orgAdmin):learner;
+  const [canTeach,setCanTeach]=useState(false);
+  useEffect(()=>{let cancelled=false;currentUser().then((me:any)=>{if(!cancelled)setCanTeach((me.organisation_memberships||[]).some((membership:any)=>membership.role==="instructor"&&membership.status==="active"));}).catch(()=>{});return()=>{cancelled=true};},[]);
+  const items=admin?(role==="super_admin"?superAdmin:orgAdmin):(canTeach?[...learner,["instructor","Teaching",Users]]:learner);
   const logout=()=>{clearToken();location.href="/login"};
   const brand=<Link href={admin?"/dashboard/admin/overview":"/dashboard"} className="flex h-20 shrink-0 items-center px-6 font-display text-2xl">Learnora <span className="ml-1 text-[var(--gold-light)]">ME</span></Link>;
   return <>
