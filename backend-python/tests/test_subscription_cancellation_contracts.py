@@ -139,7 +139,7 @@ class SubscriptionCancellationTests(unittest.TestCase):
         self.assertIn('request<any>("/billing/subscription/cancel"', page)
 
     def test_provider_credentials_are_server_only_and_webhooks_guard_orphans(self):
-        migration = (ROOT / "supabase/migrations/20261028170000_paystack_subscription_cancellation.sql").read_text(encoding="utf-8")
+        migration = (ROOT / "supabase/migrations/20261028171902_paystack_subscription_cancellation.sql").read_text(encoding="utf-8")
         webhook = (ROOT / "backend-python/routers/webhooks.py").read_text(encoding="utf-8")
         self.assertIn("provider_subscription_code", migration)
         self.assertIn("provider_email_token", migration)
