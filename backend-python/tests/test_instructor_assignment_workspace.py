@@ -82,6 +82,7 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
             "learnora_courses": [{"id": "course-1", "title": "Data Fundamentals", "slug": "data-fundamentals", "status": "published", "estimated_hours": 12}],
             "cohort_member_lesson_assignments": [
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "status": "active"},
+                {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "status": "active"},
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-2", "status": "active"},
             ],
             "learnora_lessons": [
