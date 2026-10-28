@@ -24,8 +24,10 @@ function NavItems({items,active,admin,onNavigate}:{items:any[];active:string;adm
 export default function Sidebar({admin=false,role="",active}:{admin?:boolean;role?:string;active:string}) {
   const [mobileOpen,setMobileOpen]=useState(false);
   const [canTeach,setCanTeach]=useState(false);
-  useEffect(()=>{let cancelled=false;currentUser().then((me:any)=>{if(!cancelled)setCanTeach((me.organisation_memberships||[]).some((membership:any)=>membership.role==="instructor"&&membership.status==="active"));}).catch(()=>{});return()=>{cancelled=true};},[]);
-  const items=admin?(role==="super_admin"?superAdmin:orgAdmin):(canTeach?[...learner,["instructor","Teaching",Users]]:learner);
+  const [isCohortAccount,setIsCohortAccount]=useState(false);
+  useEffect(()=>{let cancelled=false;currentUser().then((me:any)=>{if(!cancelled){setCanTeach((me.organisation_memberships||[]).some((membership:any)=>membership.role==="instructor"&&membership.status==="active"));setIsCohortAccount(me.account_type==="cohort");}}).catch(()=>{});return()=>{cancelled=true};},[]);
+  const learnerItems=canTeach?[...learner,["instructor","Teaching",Users]]:learner;
+  const items=admin?(role==="super_admin"?superAdmin:orgAdmin):learnerItems.filter(([key])=>!(isCohortAccount&&key==="subscription"));
   const logout=()=>{clearToken();location.href="/login"};
   const brand=<Link href={admin?"/dashboard/admin/overview":"/dashboard"} className="flex h-20 shrink-0 items-center px-6 font-display text-2xl">Learnora <span className="ml-1 text-[var(--gold-light)]">ME</span></Link>;
   return <>
