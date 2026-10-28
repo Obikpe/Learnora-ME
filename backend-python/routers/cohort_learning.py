@@ -846,7 +846,8 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
         completed = bool(progress.get("completed"))
         if completed:
             progress_entry["completed"].add(lesson_id)
-        elif percent > 0:
+            progress_entry["in_progress"].discard(lesson_id)
+        elif percent > 0 and lesson_id not in progress_entry["completed"]:
             progress_entry["in_progress"].add(lesson_id)
         details = progress_detail_by_assignment.setdefault(key, {})
         previous = details.get(lesson_id, {"progress_percent": 0, "completed": False})
