@@ -145,6 +145,10 @@ class SubscriptionCancellationTests(unittest.TestCase):
         self.assertIn('if (busy) return <main', login)
         self.assertIn('if(!u||loading)return <Shell active="overview"><Skeleton', dashboard)
         self.assertIn('Skeleton variant="compact"', sections)
+        onboarding = (ROOT / "frontend-v02/app/onboarding/page.tsx").read_text(encoding="utf-8")
+        organisation_portal = (ROOT / "frontend-v02/app/organisation-portal/page.tsx").read_text(encoding="utf-8")
+        self.assertIn('<Skeleton variant="compact" label="Checking your account and preparing your learning path"/>', onboarding)
+        self.assertIn('<Skeleton variant="workspace" label="Loading contract and next steps"/>', organisation_portal)
 
     def test_subscription_page_is_linked_and_calls_authenticated_backend(self):
         page = (ROOT / "frontend-v02/app/dashboard/subscription/page.tsx").read_text(encoding="utf-8")
