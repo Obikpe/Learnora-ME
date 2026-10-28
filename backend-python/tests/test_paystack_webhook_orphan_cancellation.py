@@ -187,9 +187,11 @@ class PaystackOrphanCancellationTests(unittest.IsolatedAsyncioTestCase):
             },
         }
         disable = AsyncMock()
-        with patch.dict(os.environ, {"PAYSTACK_SECRET_KEY": "webhook-test-secret"}), \\
-             patch.object(webhooks, "supabase", db), \\
-             patch.object(webhooks, "_disable_orphaned_subscription", disable):
+        with (
+            patch.dict(os.environ, {"PAYSTACK_SECRET_KEY": "webhook-test-secret"}),
+            patch.object(webhooks, "supabase", db),
+            patch.object(webhooks, "_disable_orphaned_subscription", disable),
+        ):
             result = await webhooks.paystack_webhook(signed_request(event))
 
         self.assertEqual(result, {"received": True, "duplicate_subscription_disabled": True})
