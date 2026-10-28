@@ -10,6 +10,7 @@ import DataTable from "../../../components/dashboard/DataTable";
 import EmptyState from "../../../components/feedback/EmptyState";
 import CommunityBoard from "../../../components/dashboard/CommunityBoard";
 import AccountSettings from "../../../components/dashboard/AccountSettings";
+import Skeleton from "../../../components/feedback/Skeleton";
 
 const labels:any={learning:"My learning",discover:"Discover",practice:"Practise",projects:"Projects",skills:"Skills",evidence:"Evidence",certificates:"Certificates",community:"Community",settings:"Settings"};
 const descriptions:any={
@@ -44,7 +45,7 @@ export default function Page({params}:{params:{section:string}}){
   }
   load();return()=>{cancelled=true};
  },[u,params.section]);
- if(!u)return <div className="p-10 text-slate-500">Loading your Learnora workspace…</div>;
+ if(!u)return <Shell active={params.section}><Skeleton label="Verifying your account and preparing this section" /></Shell>;
  const section=params.section;
  const courseRows:any[]=(data?.data||data?.courses||[]).map((x:any)=>x.course?{id:x.course.id,title:x.course.title,level:x.course.level,status:x.enrolment?.status,completed_lessons:x.completed_lessons,tracked_lessons:x.tracked_lessons}:x);
  const evidenceRows=data?.evidence||[];
