@@ -74,6 +74,28 @@ class InactiveOrganisationMembershipTests(unittest.TestCase):
             }],
         })
 
+    def test_existing_member_can_be_found_by_normalized_email(self):
+        with patch.object(organisation_members, "supabase", self.db):
+            user = organisation_members._user_by_email(" Learner@Example.com ")
+        self.assertEqual(user["id"], self.user_id)
+
+    def test_invalid_member_email_is_rejected(self):
+        with patch.object(organisation_members, "supabase", self.db):
+            with self.assertRaises(HTTPException) as raised:
+                organisation_members._user_by_email("not-an-email")
+        self.assertEqual(raised.exception.status_code, 400)
+
+    def test_member_creation_requires_exactly_one_account_identifier(self):
+        self.db.rows["organisations"][0]["is_active"] = True
+        payload = organisation_members.AddOrganisationMember(
+            user_id=UUID(self.user_id), email="learner@example.com", role="learner"
+        )
+        with patch.object(organisation_members, "supabase", self.db):
+            with self.assertRaises(HTTPException) as raised:
+                organisation_members.add_member(UUID(self.org_id), payload, platform_admin())
+        self.assertEqual(raised.exception.status_code, 400)
+        self.assertFalse(self.db.update_called)
+
     def test_cannot_add_member_to_inactive_organisation(self):
         payload = organisation_members.AddOrganisationMember(user_id=UUID(self.user_id), role="learner")
         with patch.object(organisation_members, "supabase", self.db):
