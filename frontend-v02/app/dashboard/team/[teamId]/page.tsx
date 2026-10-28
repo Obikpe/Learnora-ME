@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Users } from "lucide-react";
 import { request } from "../../../../lib/api/client";
 import Logo from "../../../../components/brand/Logo";
 import EmptyState from "../../../../components/feedback/EmptyState";
+import Skeleton from "../../../../components/feedback/Skeleton";
 
 export default function TeamWorkspace({ params }: { params: { teamId: string } }) {
   const [data, setData] = useState<any>(null);
@@ -58,7 +59,7 @@ export default function TeamWorkspace({ params }: { params: { teamId: string } }
       <main className="mx-auto max-w-6xl px-5 py-10 lg:px-8">
         {error && <div role="alert" className="mb-6 rounded-xl border border-red-400/20 bg-red-400/[.05] p-4 text-sm text-red-200">{error}</div>}
         {notice && <div role="status" className="mb-6 rounded-xl border border-emerald-400/20 bg-emerald-400/[.05] p-4 text-sm text-emerald-200">{notice}</div>}
-        {!data ? <div className="rounded-2xl border border-white/10 p-8 text-sm text-slate-500">Loading team workspace…</div> : (
+        {!data ? <Skeleton variant="compact" label="Loading your team workspace" /> : (
           <>
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div>
