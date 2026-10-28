@@ -11,6 +11,9 @@ import { request } from "../../../lib/api/client";
 type TeachingAssignment = {
   id: string;
   assigned_lesson_count: number;
+  completed_lesson_count: number;
+  in_progress_lesson_count: number;
+  completion_percent: number;
   cohort: {
     id: string;
     name: string;
@@ -63,7 +66,13 @@ export default function InstructorWorkspace() {
       {!error && assignments.length === 0 ? <div className="mt-7"><EmptyState title="No teaching assignments yet" message="When an organisation assigns you to a learner's course, the cohort, learner and course will appear here. If you expected an assignment, ask your organisation administrator to check your active instructor membership and learner assignment." /></div> : !error && <div className="mt-7 grid gap-4 xl:grid-cols-2">
         {assignments.map(item => <article key={item.id} className="rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] gold">{item.cohort.organisation_name || "Organisation"}</p><h2 className="mt-2 text-lg font-semibold">{item.learner.name}</h2><p className="mt-1 text-xs text-slate-500">{item.learner.username ? "@" + item.learner.username : "Cohort learner"}</p></div><span className="rounded-full border border-emerald-400/20 px-3 py-1 text-[10px] capitalize text-emerald-200">{item.cohort.status}</span></div>
-          <div className="mt-5 rounded-xl border border-white/[.07] bg-black/15 p-4"><div className="flex items-start gap-3"><BookOpen size={18} className="mt-0.5 shrink-0 gold"/><div className="min-w-0"><p className="font-medium">{item.course.title}</p><p className="mt-1 text-xs text-slate-500">{item.assigned_lesson_count} assigned lesson{item.assigned_lesson_count === 1 ? "" : "s"}{item.course.estimated_hours != null ? " · " + item.course.estimated_hours + " estimated hours" : ""}</p></div></div></div>
+          <div className="mt-5 rounded-xl border border-white/[.07] bg-black/15 p-4"><div className="flex items-start gap-3"><BookOpen size={18} className="mt-0.5 shrink-0 gold"/><div className="min-w-0"><p className="font-medium">{item.course.title}</p><p className="mt-1 text-xs text-slate-500">{item.assigned_lesson_count} assigned lesson{item.assigned_lesson_count === 1 ? "" : "s"}{item.course.estimated_hours != null ? " · " + item.course.estimated_hours + " estimated hours" : ""}</p></div></div>
+            <div className="mt-4 border-t border-white/[.07] pt-4">
+              <div className="flex items-center justify-between gap-3 text-xs"><span className="text-slate-400">Lesson progress</span><span className="text-slate-200">{item.completed_lesson_count} of {item.assigned_lesson_count} complete</span></div>
+              <div role="progressbar" aria-label={item.learner.name + " lesson completion"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.max(0, Math.min(100, item.completion_percent || 0))} className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#d7ad35] transition-all" style={{ width: Math.max(0, Math.min(100, item.completion_percent || 0)) + "%" }}/></div>
+              <p className="mt-2 text-[11px] text-slate-500">{item.in_progress_lesson_count} lesson{item.in_progress_lesson_count === 1 ? "" : "s"} in progress</p>
+            </div>
+          </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500"><span>{item.cohort.name}</span><span>{dateLabel(item.cohort.start_date)}{item.cohort.start_date && item.cohort.end_date ? " – " : ""}{dateLabel(item.cohort.end_date)}</span></div>
         </article>)}
       </div>}

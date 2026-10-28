@@ -80,7 +80,15 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
             "cohort_members": [{"id": "member-1", "cohort_id": "cohort-1", "cohort_account_id": "account-1", "user_id": None, "status": "active"}],
             "cohort_accounts": [{"id": "account-1", "first_name": "Ada", "last_name": "Learner", "username": "ada.learner", "status": "active"}],
             "learnora_courses": [{"id": "course-1", "title": "Data Fundamentals", "slug": "data-fundamentals", "status": "published", "estimated_hours": 12}],
-            "cohort_member_lesson_assignments": [{"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "status": "active"}],
+            "cohort_member_lesson_assignments": [
+                {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "status": "active"},
+                {"course_assignment_id": "assignment-1", "lesson_id": "lesson-2", "status": "active"},
+            ],
+            "cohort_account_lesson_progress": [
+                {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "progress_percent": 100, "completed": True},
+                {"course_assignment_id": "assignment-1", "lesson_id": "lesson-2", "progress_percent": 40, "completed": False},
+                {"course_assignment_id": "assignment-1", "lesson_id": "revoked-lesson", "progress_percent": 100, "completed": True},
+            ],
             "users": [],
         })
 
@@ -92,7 +100,10 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
         self.assertEqual(assignment["cohort"]["organisation_name"], "North Academy")
         self.assertEqual(assignment["learner"]["name"], "Ada Learner")
         self.assertEqual(assignment["course"]["title"], "Data Fundamentals")
-        self.assertEqual(assignment["assigned_lesson_count"], 1)
+        self.assertEqual(assignment["assigned_lesson_count"], 2)
+        self.assertEqual(assignment["completed_lesson_count"], 1)
+        self.assertEqual(assignment["in_progress_lesson_count"], 1)
+        self.assertEqual(assignment["completion_percent"], 50)
         self.assertNotIn("email", assignment["learner"])
 
     def test_learner_membership_cannot_open_instructor_workspace(self):

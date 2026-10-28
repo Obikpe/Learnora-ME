@@ -805,9 +805,38 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
         .execute()
     ).data or [] if assignment_ids else []
     lesson_counts = {}
+    active_lessons_by_assignment = {}
     for lesson in lesson_rows:
         key = str(lesson["course_assignment_id"])
+        lesson_id = str(lesson["lesson_id"])
         lesson_counts[key] = lesson_counts.get(key, 0) + 1
+        active_lessons_by_assignment.setdefault(key, set()).add(lesson_id)
+
+    active_lesson_ids = list({
+        lesson_id
+        for lesson_ids in active_lessons_by_assignment.values()
+        for lesson_id in lesson_ids
+    })
+    progress_rows = (
+        supabase.table("cohort_account_lesson_progress")
+        .select("course_assignment_id,lesson_id,progress_percent,completed")
+        .in_("course_assignment_id", assignment_ids)
+        .in_("lesson_id", active_lesson_ids)
+        .execute()
+    ).data or [] if assignment_ids and active_lesson_ids else []
+    progress_by_assignment = {}
+    for progress in progress_rows:
+        key = str(progress.get("course_assignment_id") or "")
+        lesson_id = str(progress.get("lesson_id") or "")
+        if lesson_id not in active_lessons_by_assignment.get(key, set()):
+            continue
+        progress_entry = progress_by_assignment.setdefault(
+            key, {"completed": set(), "in_progress": set()}
+        )
+        if progress.get("completed"):
+            progress_entry["completed"].add(lesson_id)
+        elif int(progress.get("progress_percent") or 0) > 0:
+            progress_entry["in_progress"].add(lesson_id)
 
     assignments = []
     for row in assigned_rows:
@@ -851,5 +880,11 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
                 "estimated_hours": course.get("estimated_hours"),
             },
             "assigned_lesson_count": lesson_counts.get(str(row["id"]), 0),
+            "completed_lesson_count": len(progress_by_assignment.get(str(row["id"]), {}).get("completed", set())),
+            "in_progress_lesson_count": len(progress_by_assignment.get(str(row["id"]), {}).get("in_progress", set())),
+            "completion_percent": round(
+                100 * len(progress_by_assignment.get(str(row["id"]), {}).get("completed", set()))
+                / lesson_counts[str(row["id"])]
+            ) if lesson_counts.get(str(row["id"]), 0) else 0,
         })
     return {"success": True, "assignments": assignments}
