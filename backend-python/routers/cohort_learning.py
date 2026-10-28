@@ -824,7 +824,16 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
         .in_("lesson_id", active_lesson_ids)
         .execute()
     ).data or [] if assignment_ids and active_lesson_ids else []
+    lesson_details = (
+        supabase.table("learnora_lessons")
+        .select("id,title,order_index,duration_minutes")
+        .in_("id", active_lesson_ids)
+        .execute()
+    ).data or [] if active_lesson_ids else []
+    lesson_map = {str(row["id"]): row for row in lesson_details}
+
     progress_by_assignment = {}
+    progress_detail_by_assignment = {}
     for progress in progress_rows:
         key = str(progress.get("course_assignment_id") or "")
         lesson_id = str(progress.get("lesson_id") or "")
@@ -833,10 +842,18 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
         progress_entry = progress_by_assignment.setdefault(
             key, {"completed": set(), "in_progress": set()}
         )
-        if progress.get("completed"):
+        percent = max(0, min(100, int(progress.get("progress_percent") or 0)))
+        completed = bool(progress.get("completed"))
+        if completed:
             progress_entry["completed"].add(lesson_id)
-        elif int(progress.get("progress_percent") or 0) > 0:
+        elif percent > 0:
             progress_entry["in_progress"].add(lesson_id)
+        details = progress_detail_by_assignment.setdefault(key, {})
+        previous = details.get(lesson_id, {"progress_percent": 0, "completed": False})
+        details[lesson_id] = {
+            "progress_percent": max(percent, int(previous["progress_percent"])),
+            "completed": completed or bool(previous["completed"]),
+        }
 
     assignments = []
     for row in assigned_rows:
@@ -886,5 +903,24 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
                 100 * len(progress_by_assignment.get(str(row["id"]), {}).get("completed", set()))
                 / lesson_counts[str(row["id"])]
             ) if lesson_counts.get(str(row["id"]), 0) else 0,
+            "lesson_progress": [
+                {
+                    "lesson_id": lesson_id,
+                    "title": lesson_map.get(lesson_id, {}).get("title") or "Assigned lesson",
+                    "order_index": lesson_map.get(lesson_id, {}).get("order_index"),
+                    "duration_minutes": lesson_map.get(lesson_id, {}).get("duration_minutes"),
+                    "progress_percent": int(progress_detail_by_assignment.get(str(row["id"]), {}).get(lesson_id, {}).get("progress_percent", 0)),
+                    "completed": bool(progress_detail_by_assignment.get(str(row["id"]), {}).get(lesson_id, {}).get("completed", False)),
+                    "status": "completed" if progress_detail_by_assignment.get(str(row["id"]), {}).get(lesson_id, {}).get("completed", False) else ("in_progress" if int(progress_detail_by_assignment.get(str(row["id"]), {}).get(lesson_id, {}).get("progress_percent", 0)) > 0 else "not_started"),
+                }
+                for lesson_id in sorted(
+                    active_lessons_by_assignment.get(str(row["id"]), set()),
+                    key=lambda lesson_id: (
+                        lesson_map.get(lesson_id, {}).get("order_index") is None,
+                        lesson_map.get(lesson_id, {}).get("order_index") or 0,
+                        lesson_map.get(lesson_id, {}).get("title") or "",
+                    ),
+                )
+            ],
         })
     return {"success": True, "assignments": assignments}
