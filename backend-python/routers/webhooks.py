@@ -148,9 +148,15 @@ async def paystack_webhook(request: Request):
                 await _disable_orphaned_subscription(code, email_token)
                 return {"received": True, "orphaned_subscription_disabled": True}
             if existing_by_code and existing_by_code[0].get("status") in {"cancelled", "expired"}:
-                # Duplicate/retried create events must not resurrect a cancelled
-                # provider agreement or its local entitlement.
-                return {"received": True, "terminal_subscription_unchanged": True}
+                # A delayed/retried create event must not resurrect local access.
+                # Also disable the provider-side agreement: a terminal local row
+                # alone cannot guarantee that Paystack has stopped renewal.
+                await _disable_orphaned_subscription(code, email_token)
+                return {
+                    "received": True,
+                    "terminal_subscription_unchanged": True,
+                    "provider_renewal_disabled": True,
+                }
             existing = existing_by_code or (
                 supabase.table("learnora_subscriptions")
                 .select("id")
