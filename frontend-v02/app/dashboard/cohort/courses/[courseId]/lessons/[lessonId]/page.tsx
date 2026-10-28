@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Skeleton from "../../../../../../../components/feedback/Skeleton";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, LoaderCircle, Save } from "lucide-react";
@@ -68,7 +69,7 @@ export default function CohortLessonPage() {
     <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 border-b border-white/[.08] pb-6"><Logo/><Link href={"/dashboard/cohort/courses/"+encodeURIComponent(courseId)} className="text-xs text-slate-400 hover:text-[#f2d477]">Course lessons</Link></header>
     <div className="mx-auto max-w-5xl">
       <Link href={"/dashboard/cohort/courses/"+encodeURIComponent(courseId)} className="mt-8 inline-flex items-center gap-2 text-xs text-slate-500 hover:text-slate-200"><ArrowLeft size={14}/> Back to lessons</Link>
-      {loading ? <p role="status" className="mt-10 text-sm text-slate-500">Loading assigned lesson…</p> : error && !lesson ? <div role="alert" className="mt-8 rounded-2xl border border-red-400/20 p-5 text-sm text-red-200">{error}<button onClick={()=>void load()} className="mt-4 block underline">Try again</button></div> : lesson && <>
+      {loading ? <Skeleton variant="course" label="Loading your assigned lesson" /> : error && !lesson ? <div role="alert" className="mt-8 rounded-2xl border border-red-400/20 p-5 text-sm text-red-200">{error}<button onClick={()=>void load()} className="mt-4 block underline">Try again</button></div> : lesson && <>
         <p className="mt-8 text-[10px] font-bold uppercase tracking-[.2em] text-[#f2d477]">{lesson.module?.title || "Lesson"}</p>
         <h1 className="mt-3 max-w-4xl font-display text-4xl leading-tight sm:text-5xl">{lesson.title}</h1>
         {lesson.description&&<p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">{lesson.description}</p>}
