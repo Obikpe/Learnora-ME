@@ -44,7 +44,7 @@ export default function OrganisationWorkspace() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [memberId, setMemberId] = useState("");
+  const [memberEmail, setMemberEmail] = useState("");
   const [role, setRole] = useState("learner");
   const [busy, setBusy] = useState(false);
   const [needsOrgSelection, setNeedsOrgSelection] = useState(false);
@@ -122,9 +122,9 @@ export default function OrganisationWorkspace() {
     try {
       await request("/organisations/" + encodeURIComponent(user.organisation_id) + "/members", {
         method: "POST",
-        body: JSON.stringify({ user_id: memberId, role }),
+        body: JSON.stringify({ email: memberEmail.trim().toLowerCase(), role }),
       });
-      setMemberId("");
+      setMemberEmail("");
       setNotice("Existing Learnora account added to the organisation.");
       await load();
     } catch (e: any) {
@@ -507,10 +507,10 @@ export default function OrganisationWorkspace() {
 
                 <form onSubmit={addMember} className="mt-6 rounded-xl border border-white/[.07] bg-black/20 p-4">
                   <h3 className="font-semibold">Add an existing Learnora account</h3>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">The current membership API accepts an existing account ID. Invitations by email are not yet available here.</p>
-                  <label className="mt-4 block text-xs text-slate-400">User ID<input required value={memberId} onChange={(e) => setMemberId(e.target.value)} className={inputClass} placeholder="UUID of an existing Learnora account" /></label>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">Add someone who already has a Learnora account using their email address. Inviting people who have not registered yet is not supported here.</p>
+                  <label className="mt-4 block text-xs text-slate-400">Account email<input required type="email" autoComplete="email" value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} className={inputClass} placeholder="learner@example.com" /></label>
                   <label className="mt-4 block text-xs text-slate-400">Organisation role<select value={role} onChange={(e) => setRole(e.target.value)} className={inputClass}><option value="learner">Learner</option><option value="instructor">Instructor</option><option value="admin">Administrator</option></select></label>
-                  <button disabled={busy || !memberId.trim()} className="mt-4 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black disabled:opacity-50">{busy ? "Adding…" : "Add member"}</button>
+                  <button disabled={busy || !memberEmail.trim()} className="mt-4 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black disabled:opacity-50">{busy ? "Adding…" : "Add member"}</button>
                 </form>
               </section>
 
