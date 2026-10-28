@@ -151,6 +151,55 @@ class PaystackOrphanCancellationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(db.rows["learnora_subscriptions"][0]["cancelled_at"] is not None, True)
 
 
+    async def test_duplicate_subscription_create_does_not_replace_existing_provider_agreement(self):
+        db = FakeSupabase({
+            "users": [{
+                "id": "learner-1",
+                "email": "learner@example.com",
+                "role": "normal",
+                "email_verified_at": "2026-01-01T00:00:00Z",
+                "sub_status": "active",
+            }],
+            "learnora_subscriptions": [{
+                "id": "subscription-row-existing",
+                "user_id": "learner-1",
+                "status": "active",
+                "provider": "paystack",
+                "provider_subscription_code": "SUB_existing",
+                "provider_email_token": "existing-token",
+            }],
+        })
+        event = {
+            "event": "subscription.create",
+            "data": {
+                "customer": {
+                    "email": "learner@example.com",
+                    "customer_code": "CUS_test",
+                },
+                "subscription_code": "SUB_duplicate",
+                "email_token": "duplicate-token",
+                "plan": {
+                    "plan_code": "PLN_monthly",
+                    "interval": "monthly",
+                    "amount": 1200000,
+                    "currency": "NGN",
+                },
+            },
+        }
+        disable = AsyncMock()
+        with patch.dict(os.environ, {"PAYSTACK_SECRET_KEY": "webhook-test-secret"}), \\
+             patch.object(webhooks, "supabase", db), \\
+             patch.object(webhooks, "_disable_orphaned_subscription", disable):
+            result = await webhooks.paystack_webhook(signed_request(event))
+
+        self.assertEqual(result, {"received": True, "duplicate_subscription_disabled": True})
+        disable.assert_awaited_once_with("SUB_duplicate", "duplicate-token")
+        self.assertEqual(
+            db.rows["learnora_subscriptions"][0]["provider_subscription_code"],
+            "SUB_existing",
+        )
+        self.assertEqual(db.updates, [])
+
     async def test_cancelled_subscription_invoice_is_disabled_without_reactivation(self):
         db = FakeSupabase({
             "learnora_subscriptions": [{
