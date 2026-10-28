@@ -44,6 +44,7 @@ export default function SubscriptionPage() {
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [confirmingCancellation, setConfirmingCancellation] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,8 +69,6 @@ export default function SubscriptionPage() {
 
   async function cancelSubscription() {
     if (!subscription?.can_cancel || cancelling) return;
-    const confirmed = window.confirm("Cancel automatic renewal for your Learnora subscription? Paystack will be asked to stop future recurring charges. Your current paid access may remain available until the period end shown below.");
-    if (!confirmed) return;
     setCancelling(true);
     setError("");
     setNotice("");
@@ -77,8 +76,10 @@ export default function SubscriptionPage() {
       const result = await request<any>("/billing/subscription/cancel", { method: "POST", body: JSON.stringify({}) });
       setSubscription(old => old ? { ...old, status: "cancelled", cancelled_at: result.cancelled_at || new Date().toISOString(), can_cancel: false, current_period_end: result.current_period_end || old.current_period_end } : old);
       setNotice(result.message || "Paystack confirmed the cancellation request. Future renewal has been stopped.");
+      setConfirmingCancellation(false);
     } catch (e: any) {
       setError(e.message || "The subscription could not be cancelled. No cancellation is being reported as complete.");
+      setConfirmingCancellation(false);
     } finally {
       setCancelling(false);
     }
@@ -107,12 +108,23 @@ export default function SubscriptionPage() {
           {subscription.cancelled_at && <div className="sm:col-span-2"><dt className="text-xs text-slate-500">Cancellation requested</dt><dd className="mt-1 text-sm text-slate-200">{dateLabel(subscription.cancelled_at)}</dd></div>}
         </dl>}
         {subscription?.can_cancel && <div className="mt-7 border-t border-white/[.08] pt-6">
-          <button type="button" disabled={cancelling} onClick={cancelSubscription} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-400/25 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-400/[.07] disabled:cursor-wait disabled:opacity-50">{cancelling ? <><span className="size-4 animate-spin rounded-full border-2 border-red-200/30 border-t-red-200"/>Cancelling renewal…</> : "Cancel subscription"}</button>
+          <button type="button" disabled={cancelling} onClick={() => { setError(""); setConfirmingCancellation(true); }} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-400/25 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-400/[.07] disabled:cursor-wait disabled:opacity-50">Cancel subscription</button>
           <p className="mt-3 text-xs leading-6 text-slate-500">Learnora will confirm cancellation with the payment provider before showing it as cancelled. Cancelling renewal does not automatically refund a payment already made.</p>
         </div>}
         {subscription?.has_subscription && !subscription.can_cancel && subscription.status !== "cancelled" && <div className="mt-7 flex items-start gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[.035] p-4 text-xs leading-6 text-amber-100"><ShieldCheck size={16} className="mt-0.5 shrink-0"/><p>This record is not currently linked to the provider credentials needed to cancel recurring billing automatically. Do not assume renewal has stopped. Contact Learnora support to reconcile the provider subscription.</p></div>}
         {subscription?.status === "cancelled" && <p className="mt-6 text-sm leading-6 text-slate-400">Renewal is marked cancelled. Your current paid-through date, if shown, indicates when existing access is due to end.</p>}
       </section>
+      {confirmingCancellation && <div className="fixed inset-0 z-[100] grid place-items-center overflow-y-auto bg-black/75 p-4 backdrop-blur-sm" onMouseDown={event => { if (event.target === event.currentTarget && !cancelling) setConfirmingCancellation(false); }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="cancel-subscription-title" aria-describedby="cancel-subscription-description" className="w-full max-w-lg rounded-2xl border border-white/[.12] bg-[#11171e] p-6 shadow-2xl sm:p-7">
+          <div className="flex size-11 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/[.08]"><CreditCard size={20} className="text-red-200"/></div>
+          <h2 id="cancel-subscription-title" className="mt-5 text-xl font-semibold">Cancel automatic renewal?</h2>
+          <p id="cancel-subscription-description" className="mt-3 text-sm leading-7 text-slate-300">Learnora will ask {subscription?.provider === "paystack" ? "Paystack" : "your payment provider"} to stop future recurring charges. You will not be billed again through this subscription once the provider confirms cancellation. Any access already paid for may remain available until {dateLabel(subscription?.current_period_end)}. This does not refund a payment already made.</p>
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" disabled={cancelling} onClick={() => setConfirmingCancellation(false)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/[.12] px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[.05] disabled:opacity-50">Keep subscription</button>
+            <button type="button" disabled={cancelling} onClick={cancelSubscription} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-400 disabled:cursor-wait disabled:opacity-60">{cancelling && <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white"/>}{cancelling ? "Cancelling renewal…" : "Confirm cancellation"}</button>
+          </div>
+        </section>
+      </div>}
       <p className="mt-5 max-w-3xl text-xs leading-6 text-slate-600">Only individual Learnora learner subscriptions are managed here. Organisation, cohort and internal team access is managed separately. If you deleted your Learnora account but still receive payment notifications, the external subscription must also be cancelled with the provider; deleting an account record alone cannot cancel a payment agreement held by Paystack.</p>
     </>}
   </Shell>;
