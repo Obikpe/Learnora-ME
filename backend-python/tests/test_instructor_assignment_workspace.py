@@ -90,7 +90,7 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
                 {"id": "lesson-2", "title": "Working with data", "order_index": 2, "duration_minutes": 25},
             ],
             "cohort_account_lesson_progress": [
-                {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "progress_percent": 100, "completed": True},
+                {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "progress_percent": 0, "completed": True},
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "progress_percent": 20, "completed": False},
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-2", "progress_percent": 40, "completed": False},
                 {"course_assignment_id": "assignment-1", "lesson_id": "revoked-lesson", "progress_percent": 100, "completed": True},
