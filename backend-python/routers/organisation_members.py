@@ -1,6 +1,7 @@
 """Organisation membership API with lifecycle and hard capacity enforcement."""
 from typing import Optional
 from uuid import UUID
+import re
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from .auth import supabase
@@ -13,8 +14,9 @@ ALLOWED_ROLES={"owner","admin","instructor","learner"}
 ALLOWED_STATUS={"active","invited","suspended"}
 
 class AddOrganisationMember(BaseModel):
-    user_id: UUID
-    role: str=Field(default="learner",min_length=1,max_length=50)
+    user_id: Optional[UUID] = None
+    email: Optional[str] = Field(default=None, min_length=3, max_length=320)
+    role: str = Field(default="learner", min_length=1, max_length=50)
 
 class UpdateOrganisationMember(BaseModel):
     role: Optional[str]=None
@@ -54,6 +56,16 @@ def _user(uid):
     r=supabase.table("users").select("id,email,name,role").eq("id",uid).limit(1).execute()
     return r.data[0] if r.data else None
 
+def _user_by_email(value):
+    email = (value or "").strip().lower()
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise HTTPException(400, "Enter a valid email address.")
+    r = supabase.table("users").select("id,email,name,role").eq("email", email).limit(2).execute()
+    rows = r.data or []
+    if len(rows) > 1:
+        raise HTTPException(409, "More than one account matches this email. Use the account ID to resolve the duplicate.")
+    return rows[0] if rows else None
+
 def _format(m,u):
     return {"membership_id":m["id"],"organisation_id":m["organisation_id"],"user_id":m["user_id"],"role":m["role"],"status":m["status"],"joined_at":m["joined_at"],"user":u}
 
@@ -76,9 +88,16 @@ def get_member(organisation_id:UUID,member_id:UUID,context:PermissionContext=Dep
 
 @router.post("/{organisation_id}/members")
 def add_member(organisation_id:UUID,payload:AddOrganisationMember,context:PermissionContext=Depends(require_permission("organisations.members"))):
-    oid=_scope(context,organisation_id); org=_org(oid); _require_active_org(org); role=_role(payload.role); uid=str(payload.user_id)
-    u=_user(uid)
-    if not u:raise HTTPException(404,"User not found.")
+    oid = _scope(context, organisation_id)
+    org = _org(oid)
+    _require_active_org(org)
+    role = _role(payload.role)
+    if bool(payload.user_id) == bool(payload.email):
+        raise HTTPException(400, "Provide exactly one of user_id or email.")
+    u = _user(str(payload.user_id)) if payload.user_id else _user_by_email(payload.email or "")
+    if not u:
+        raise HTTPException(404, "No existing Learnora account uses that email or ID. Invitations for new accounts are not available yet.")
+    uid = str(u["id"])
     existing=supabase.table("organisation_members").select("id,organisation_id,user_id,role,status,joined_at").eq("organisation_id",oid).eq("user_id",uid).limit(1).execute()
     if existing.data:
         m=existing.data[0]
