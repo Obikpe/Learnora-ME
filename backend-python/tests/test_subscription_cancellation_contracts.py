@@ -151,6 +151,11 @@ class SubscriptionCancellationTests(unittest.TestCase):
         self.assertIn('<Skeleton variant="workspace" label="Loading contract and next steps"/>', organisation_portal)
         course_detail = (ROOT / "frontend-v02/app/courses/[id]/page.tsx").read_text(encoding="utf-8")
         self.assertIn('<Skeleton variant="course" label="Loading course details"/>', course_detail)
+        instructor = (ROOT / "frontend-v02/app/dashboard/instructor/page.tsx").read_text(encoding="utf-8")
+        organisation = (ROOT / "frontend-v02/app/dashboard/organisation/page.tsx").read_text(encoding="utf-8")
+        self.assertIn("View lesson details", instructor)
+        self.assertIn("aria-expanded={Boolean(expandedAssignments[item.id])}", instructor)
+        self.assertIn('" complete (" + (assignment.completion_percent || 0) + "%)"', organisation)
 
     def test_subscription_page_is_linked_and_calls_authenticated_backend(self):
         page = (ROOT / "frontend-v02/app/dashboard/subscription/page.tsx").read_text(encoding="utf-8")
