@@ -145,6 +145,8 @@ class SubscriptionCancellationTests(unittest.TestCase):
         self.assertIn("provider_email_token", migration)
         self.assertIn("_disable_orphaned_subscription", webhook)
         self.assertIn('event_type == "invoice.create"', webhook)
+        terminal_branch = webhook[webhook.index('if existing_by_code and existing_by_code[0].get("status") in {"cancelled", "expired"}:'):webhook.index("existing = existing_by_code or", webhook.index('if existing_by_code and existing_by_code[0].get("status") in {"cancelled", "expired"}:'))]
+        self.assertIn("await _disable_orphaned_subscription(code, email_token)", terminal_branch)
         self.assertNotIn('.update(\n                {"sub_status": "active", "is_paid": True}).eq("email", email)', webhook)
 
 
