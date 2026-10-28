@@ -1,13 +1,27 @@
 "use client";
 
 type SkeletonProps = {
-  variant?: "workspace" | "course" | "compact";
+  variant?: "workspace" | "course" | "compact" | "directory";
   label?: string;
 };
 
 /** Layout-shaped placeholders used while the authenticated workspace is being verified. */
 export default function Skeleton({ variant = "workspace", label = "Verifying your account" }: SkeletonProps) {
   const bar = (className: string) => <div className={"animate-pulse motion-reduce:animate-none rounded-md bg-white/[.07] " + className} />;
+
+  if (variant === "directory") {
+    return <div role="status" aria-label={label} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <span className="sr-only">{label}</span>
+      {Array.from({ length: 6 }, (_, index) => <article key={index} className="rounded-2xl border border-white/[.08] bg-[#11171e] p-5">
+        {bar("h-14 w-14 rounded-xl")}
+        {bar("mt-5 h-2.5 w-24")}
+        {bar("mt-3 h-5 w-3/4")}
+        {bar("mt-3 h-3 w-full")}
+        {bar("mt-2 h-3 w-5/6")}
+        {bar("mt-5 h-9 w-32")}
+      </article>)}
+    </div>;
+  }
 
   if (variant === "compact") {
     return <div role="status" aria-label={label} className="mt-8 rounded-2xl border border-white/[.08] bg-[#0e1319] p-5">
