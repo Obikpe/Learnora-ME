@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import Logo from "../../components/brand/Logo";
 import { IMAGES } from "../../lib/constants";
 import Toast from "../../components/feedback/Toast";
+import Skeleton from "../../components/feedback/Skeleton";
 import { login,setToken,currentUser,organisationContext,setOrganisationContext,clearOrganisationContext } from "../../lib/api";
 
 export default function Login() {
@@ -26,6 +27,7 @@ export default function Login() {
     } catch(e:any) {setError(e.message||"We could not sign you in. Check your details and try again.");}
     finally {setBusy(false);}
   }
+  if (busy) return <main className="min-h-screen bg-[var(--bg)] px-5 py-10 sm:px-8 lg:px-12"><div className="mx-auto max-w-5xl pt-8"><Skeleton label="Verifying your account and preparing your learning workspace" /></div>{error&&<Toast title="Sign in failed" message={error} type="error" onClose={()=>setError("")}/>}</main>;
   return <main className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1fr_.92fr]">
     <aside className="relative hidden min-h-screen overflow-hidden border-r border-white/[.1] bg-[#11171e] lg:block">
       <img src={IMAGES.login} alt="A quiet study space ready for focused learning" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
