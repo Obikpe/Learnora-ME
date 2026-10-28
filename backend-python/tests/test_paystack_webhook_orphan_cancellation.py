@@ -20,6 +20,7 @@ class Query:
         self.db = db
         self.table_name = table
         self.filters = {}
+        self.in_filters = {}
         self.limit_count = None
         self.operation = "select"
         self.payload = None
@@ -29,6 +30,13 @@ class Query:
 
     def eq(self, key, value):
         self.filters[key] = str(value)
+        return self
+
+    def in_(self, key, values):
+        self.in_filters[key] = {str(value) for value in values}
+        return self
+
+    def order(self, *_args, **_kwargs):
         return self
 
     def limit(self, count):
@@ -43,6 +51,7 @@ class Query:
     def execute(self):
         rows = self.db.rows.get(self.table_name, [])
         matches = [row for row in rows if all(str(row.get(key)) == value for key, value in self.filters.items())]
+        matches = [row for row in matches if all(str(row.get(key)) in values for key, values in self.in_filters.items())]
         if self.limit_count is not None:
             matches = matches[:self.limit_count]
         if self.operation == "update":
