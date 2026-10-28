@@ -14,6 +14,15 @@ type TeachingAssignment = {
   completed_lesson_count: number;
   in_progress_lesson_count: number;
   completion_percent: number;
+  lesson_progress?: Array<{
+    lesson_id: string;
+    title: string;
+    order_index?: number | null;
+    duration_minutes?: number | null;
+    progress_percent: number;
+    completed: boolean;
+    status: "completed" | "in_progress" | "not_started";
+  }>;
   cohort: {
     id: string;
     name: string;
@@ -36,6 +45,7 @@ export default function InstructorWorkspace() {
   const [assignments, setAssignments] = useState<TeachingAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedAssignments, setExpandedAssignments] = useState<Record<string, boolean>>({});
 
   async function load() {
     setLoading(true);
@@ -72,6 +82,28 @@ export default function InstructorWorkspace() {
               <div role="progressbar" aria-label={item.learner.name + " lesson completion"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.max(0, Math.min(100, item.completion_percent || 0))} className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#d7ad35] transition-all" style={{ width: Math.max(0, Math.min(100, item.completion_percent || 0)) + "%" }}/></div>
               <p className="mt-2 text-[11px] text-slate-500">{item.in_progress_lesson_count} lesson{item.in_progress_lesson_count === 1 ? "" : "s"} in progress</p>
             </div>
+            <button
+              type="button"
+              aria-expanded={Boolean(expandedAssignments[item.id])}
+              aria-controls={"lesson-progress-" + item.id}
+              onClick={() => setExpandedAssignments(old => ({ ...old, [item.id]: !old[item.id] }))}
+              className="mt-4 text-xs font-semibold gold underline-offset-4 hover:underline"
+            >
+              {expandedAssignments[item.id] ? "Hide lesson details" : "View lesson details"}
+            </button>
+            {expandedAssignments[item.id] && <div id={"lesson-progress-" + item.id} className="mt-3 space-y-3 border-t border-white/[.07] pt-3">
+              {!item.lesson_progress?.length ? <p className="text-xs text-slate-500">No active lessons are currently assigned to this learner for this course.</p> : item.lesson_progress.map(lesson => {
+                const percent = Math.max(0, Math.min(100, lesson.progress_percent || 0));
+                return <div key={lesson.lesson_id} className="rounded-lg border border-white/[.06] bg-black/10 p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div><p className="text-xs font-medium text-slate-200">{lesson.title}</p>{lesson.duration_minutes != null && <p className="mt-1 text-[10px] text-slate-600">{lesson.duration_minutes} min</p>}</div>
+                    <span className={"text-[10px] capitalize " + (lesson.status === "completed" ? "text-emerald-200" : lesson.status === "in_progress" ? "text-[#f2d477]" : "text-slate-500")}>{lesson.status.replaceAll("_", " ")}</span>
+                  </div>
+                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[#d7ad35]" style={{ width: percent + "%" }} /></div>
+                  <p className="mt-1 text-right text-[10px] text-slate-600">{percent}%</p>
+                </div>;
+              })}
+            </div>}
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500"><span>{item.cohort.name}</span><span>{dateLabel(item.cohort.start_date)}{item.cohort.start_date && item.cohort.end_date ? " – " : ""}{dateLabel(item.cohort.end_date)}</span></div>
         </article>)}
