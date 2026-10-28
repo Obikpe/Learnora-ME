@@ -651,7 +651,7 @@ def verify_payment(body: VerifyPaymentRequest):
 def _require_billing_learner(user: CurrentUser) -> None:
     # Cohort, organisation, creator and internal staff identities never manage
     # individual learner recurring billing through this endpoint.
-    if user.role not in ("normal", "witstart") or not user.id or user.account_type == "cohort":
+    if user.role not in ("normal", "witstart") or not user.id or user.account_type != "learner":
         raise HTTPException(
             status_code=403,
             detail="Only individual Learnora learner accounts can manage this subscription.",
