@@ -137,6 +137,10 @@ class SubscriptionCancellationTests(unittest.TestCase):
         self.assertIn('["subscription","Subscription",CreditCard]', sidebar)
         self.assertIn('request<Subscription>("/billing/subscription")', page)
         self.assertIn('request<any>("/billing/subscription/cancel"', page)
+        self.assertIn('role="dialog"', page)
+        self.assertIn('aria-modal="true"', page)
+        self.assertIn('Confirm cancellation', page)
+        self.assertNotIn("window.confirm(", page)
 
     def test_provider_credentials_are_server_only_and_webhooks_guard_orphans(self):
         migration = (ROOT / "supabase/migrations/20261028171902_paystack_subscription_cancellation.sql").read_text(encoding="utf-8")
