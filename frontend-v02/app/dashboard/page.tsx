@@ -8,11 +8,12 @@ import { request } from "../../lib/api/client";
 import Shell from "../../components/dashboard/Shell";
 import StatCard from "../../components/dashboard/StatCard";
 import EmptyState from "../../components/feedback/EmptyState";
+import Skeleton from "../../components/feedback/Skeleton";
 
 export default function Page(){
  const [u,setU]=useState<any>(()=>getCachedCurrentUser()),[learning,setLearning]=useState<any>(null),[record,setRecord]=useState<any>(null),[teams,setTeams]=useState<any[]>([]),[recommendations,setRecommendations]=useState<any>(null),[err,setErr]=useState(""),[loading,setLoading]=useState(true);
  useEffect(()=>{let cancelled=false;currentUser().then(async me=>{if(me.role==="organisation_prospect"){location.href="/organisation-portal";return;}if(me.role==="witstart"){location.href="/dashboard/witstart";return;}if(me.role==="normal"){try{const onboarding=await request<any>("/learner/onboarding");if(!onboarding.completed){location.href="/onboarding";return;}}catch{}}const privileged=(me.organisation_memberships||[]).filter((membership:any)=>["owner","admin"].includes(membership.role));if(me.organisation_id&&["owner","admin"].includes(me.organisation_role)){location.href="/dashboard/organisation";return;}if(privileged.length){location.href="/dashboard/organisation"+(privileged.length>1&&!me.organisation_id?"?choose=1":"");return;}if(cancelled)return;setU(me);Promise.allSettled([progress(),evidence(),request<any>("/learner/recommendations")]).then(([p,e,r])=>{if(cancelled)return;let failed=false;if(p.status==="fulfilled")setLearning(p.value);else failed=true;if(e.status==="fulfilled")setRecord(e.value);else failed=true;if(r.status==="fulfilled")setRecommendations(r.value);if(failed)setErr("Some learning records are temporarily unavailable. Your account is safe; please try again shortly.");}).finally(()=>{if(!cancelled)setLoading(false)});request<any>("/organisations/my-teams").then(x=>{if(!cancelled)setTeams(x.teams||[])}).catch(()=>{if(!cancelled)setTeams([])});}).catch(()=>{if(!cancelled)location.href="/login"});return()=>{cancelled=true}},[]);
- if(!u)return <div className="p-10 text-slate-500" role="status">Preparing your learning workspace…</div>;
+ if(!u)return <Shell active="overview"><Skeleton label="Verifying your account and preparing your learning workspace" /></Shell>;
  const enrolled=learning?.courses||[];
  const completedLessons=enrolled.reduce((n:number,x:any)=>n+(x.completed_lessons||0),0);
  const trackedLessons=enrolled.reduce((n:number,x:any)=>n+(x.tracked_lessons||0),0);
