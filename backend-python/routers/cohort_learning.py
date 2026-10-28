@@ -899,9 +899,12 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
             progress_entry["in_progress"].add(lesson_id)
         details = progress_detail_by_assignment.setdefault(key, {})
         previous = details.get(lesson_id, {"progress_percent": 0, "completed": False})
+        is_completed = completed or bool(previous["completed"])
         details[lesson_id] = {
-            "progress_percent": max(percent, int(previous["progress_percent"])),
-            "completed": completed or bool(previous["completed"]),
+            # A completed lesson is always represented as 100%, even if an
+            # older or duplicate progress row contains a stale lower percentage.
+            "progress_percent": 100 if is_completed else max(percent, int(previous["progress_percent"])),
+            "completed": is_completed,
         }
 
     assignments = []
