@@ -421,7 +421,11 @@ def list_learner_course_assignments(
     ).data or [] if active_assignment_ids else []
     lessons_by_assignment = {}
     for lesson in lessons:
-        lessons_by_assignment.setdefault(str(lesson["course_assignment_id"]), []).append(str(lesson["lesson_id"]))
+        key = str(lesson["course_assignment_id"])
+        lesson_id = str(lesson["lesson_id"])
+        assigned = lessons_by_assignment.setdefault(key, [])
+        if lesson_id not in assigned:
+            assigned.append(lesson_id)
     active_lesson_ids = list({
         lesson_id for lesson_ids in lessons_by_assignment.values() for lesson_id in lesson_ids
     })
@@ -846,13 +850,15 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
         .eq("status", "active")
         .execute()
     ).data or [] if assignment_ids else []
-    lesson_counts = {}
     active_lessons_by_assignment = {}
     for lesson in lesson_rows:
         key = str(lesson["course_assignment_id"])
         lesson_id = str(lesson["lesson_id"])
-        lesson_counts[key] = lesson_counts.get(key, 0) + 1
         active_lessons_by_assignment.setdefault(key, set()).add(lesson_id)
+    lesson_counts = {
+        key: len(lesson_ids)
+        for key, lesson_ids in active_lessons_by_assignment.items()
+    }
 
     active_lesson_ids = list({
         lesson_id
