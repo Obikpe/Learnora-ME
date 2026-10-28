@@ -409,17 +409,59 @@ def list_learner_course_assignments(
     ).data or [] if course_ids else []
     course_map = {str(row["id"]): row for row in courses}
     assignment_ids = [str(row["id"]) for row in rows]
+    active_assignment_ids = [
+        str(row["id"]) for row in rows if row.get("status") == "active"
+    ]
     lessons = (
         supabase.table("cohort_member_lesson_assignments")
         .select("course_assignment_id,lesson_id,status")
-        .in_("course_assignment_id", assignment_ids)
+        .in_("course_assignment_id", active_assignment_ids)
         .eq("status", "active")
         .execute()
-    ).data or [] if assignment_ids else []
+    ).data or [] if active_assignment_ids else []
     lessons_by_assignment = {}
     for lesson in lessons:
-        lessons_by_assignment.setdefault(str(lesson["course_assignment_id"]), []).append(lesson["lesson_id"])
-    return {"success": True, "assignments": [{**row, "course": course_map.get(str(row["course_id"])), "lesson_ids": lessons_by_assignment.get(str(row["id"]), [])} for row in rows]}
+        lessons_by_assignment.setdefault(str(lesson["course_assignment_id"]), []).append(str(lesson["lesson_id"]))
+    active_lesson_ids = list({
+        lesson_id for lesson_ids in lessons_by_assignment.values() for lesson_id in lesson_ids
+    })
+    progress_rows = (
+        supabase.table("cohort_account_lesson_progress")
+        .select("course_assignment_id,lesson_id,progress_percent,completed")
+        .in_("course_assignment_id", active_assignment_ids)
+        .in_("lesson_id", active_lesson_ids)
+        .execute()
+    ).data or [] if active_assignment_ids and active_lesson_ids else []
+    progress_by_assignment = {}
+    for progress in progress_rows:
+        assignment_id = str(progress.get("course_assignment_id") or "")
+        lesson_id = str(progress.get("lesson_id") or "")
+        if lesson_id not in set(lessons_by_assignment.get(assignment_id, [])):
+            continue
+        entry = progress_by_assignment.setdefault(assignment_id, {"completed": set(), "in_progress": set()})
+        if progress.get("completed"):
+            entry["completed"].add(lesson_id)
+            entry["in_progress"].discard(lesson_id)
+        elif int(progress.get("progress_percent") or 0) > 0 and lesson_id not in entry["completed"]:
+            entry["in_progress"].add(lesson_id)
+
+    assignments = []
+    for row in rows:
+        assignment_id = str(row["id"])
+        lesson_ids = lessons_by_assignment.get(assignment_id, [])
+        progress = progress_by_assignment.get(assignment_id, {"completed": set(), "in_progress": set()})
+        assigned_count = len(lesson_ids)
+        completed_count = len(progress["completed"])
+        assignments.append({
+            **row,
+            "course": course_map.get(str(row["course_id"])),
+            "lesson_ids": lesson_ids,
+            "assigned_lesson_count": assigned_count,
+            "completed_lesson_count": completed_count,
+            "in_progress_lesson_count": len(progress["in_progress"]),
+            "completion_percent": round(100 * completed_count / assigned_count) if assigned_count else 0,
+        })
+    return {"success": True, "assignments": assignments}
 
 
 def _active_cohort_member(user: CurrentUser) -> tuple[dict, dict]:
