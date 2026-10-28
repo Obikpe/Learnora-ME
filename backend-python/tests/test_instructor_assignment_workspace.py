@@ -1,4 +1,4 @@
-""""Tests for the organisation instructor's scoped teaching workspace."""
+"""Tests for the organisation instructor's scoped teaching workspace."""
 import os
 import unittest
 from types import SimpleNamespace
