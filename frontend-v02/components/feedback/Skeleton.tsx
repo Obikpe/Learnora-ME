@@ -7,7 +7,7 @@ type SkeletonProps = {
 
 /** Layout-shaped placeholders used while the authenticated workspace is being verified. */
 export default function Skeleton({ variant = "workspace", label = "Verifying your account" }: SkeletonProps) {
-  const bar = (className: string) => <div className={"animate-pulse rounded-md bg-white/[.07] " + className} />;
+  const bar = (className: string) => <div className={"animate-pulse motion-reduce:animate-none rounded-md bg-white/[.07] " + className} />;
 
   if (variant === "compact") {
     return <div role="status" aria-label={label} className="mt-8 rounded-2xl border border-white/[.08] bg-[#0e1319] p-5">
