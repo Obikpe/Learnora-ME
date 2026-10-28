@@ -136,7 +136,22 @@ async def paystack_webhook(request: Request):
         plan = data.get("plan") if isinstance(data.get("plan"), dict) else {}
         next_payment = details.get("next_payment_date") or data.get("next_payment_date")
         try:
-            existing = (
+            existing_by_code = (
+                supabase.table("learnora_subscriptions")
+                .select("id,user_id,status")
+                .eq("provider_subscription_code", code)
+                .limit(1)
+                .execute()
+                .data or []
+            )
+            if existing_by_code and str(existing_by_code[0].get("user_id")) != str(user["id"]):
+                await _disable_orphaned_subscription(code, email_token)
+                return {"received": True, "orphaned_subscription_disabled": True}
+            if existing_by_code and existing_by_code[0].get("status") in {"cancelled", "expired"}:
+                # Duplicate/retried create events must not resurrect a cancelled
+                # provider agreement or its local entitlement.
+                return {"received": True, "terminal_subscription_unchanged": True}
+            existing = existing_by_code or (
                 supabase.table("learnora_subscriptions")
                 .select("id")
                 .eq("user_id", user["id"])
@@ -190,6 +205,38 @@ async def paystack_webhook(request: Request):
         except Exception:
             log.exception("Failed mapping Paystack event to Learnora subscription")
             raise HTTPException(503, "Subscription event could not be reconciled yet.")
+
+        if not linked and event_type == "invoice.create" and customer_code:
+            # Older records may predate saving the Paystack subscription code.
+            # Reconcile a single unambiguous active record by its provider
+            # customer code before treating the invoice as orphaned.
+            try:
+                legacy_rows = (
+                    supabase.table("learnora_subscriptions")
+                    .select("id,user_id,status,provider_subscription_code,provider_email_token,current_period_end")
+                    .eq("provider_customer_id", customer_code)
+                    .in_("status", ["active", "past_due", "paused"])
+                    .order("created_at", desc=True)
+                    .limit(2)
+                    .execute()
+                    .data or []
+                )
+                if len(legacy_rows) == 1:
+                    candidate = legacy_rows[0]
+                    updates = {
+                        "provider": "paystack",
+                        "provider_subscription_code": code,
+                        "provider_email_token": email_token,
+                        "updated_at": now,
+                    }
+                    next_payment = details.get("next_payment_date") or data.get("next_payment_date")
+                    if next_payment:
+                        updates["current_period_end"] = next_payment
+                    supabase.table("learnora_subscriptions").update(updates).eq("id", candidate["id"]).eq("user_id", candidate["user_id"]).execute()
+                    linked = {**candidate, "provider_subscription_code": code, "provider_email_token": email_token}
+            except Exception:
+                log.exception("Could not reconcile legacy Paystack subscription")
+                raise HTTPException(503, "Could not reconcile the recurring invoice yet.")
 
         if not linked:
             # A recurring invoice without a local Learnora subscription is not
