@@ -142,6 +142,15 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
         self.assertEqual(assignments["assignment-2"]["assigned_lesson_count"], 0)
         self.assertEqual(assignments["assignment-2"]["completion_percent"], 0)
 
+    def test_organisation_progress_cannot_cross_tenant_scope(self):
+        context = SimpleNamespace(is_platform_admin=False, organisation_id="org-2")
+        with patch.object(cohort_learning, "supabase", self.db):
+            with self.assertRaises(HTTPException) as raised:
+                cohort_learning.list_learner_course_assignments(
+                    "org-1", "cohort-1", "member-1", context
+                )
+        self.assertEqual(raised.exception.status_code, 403)
+
 
 if __name__ == "__main__":
     unittest.main()
