@@ -157,16 +157,45 @@ async def paystack_webhook(request: Request):
                     "terminal_subscription_unchanged": True,
                     "provider_renewal_disabled": True,
                 }
-            existing = existing_by_code or (
-                supabase.table("learnora_subscriptions")
-                .select("id")
-                .eq("user_id", user["id"])
-                .in_("status", ["active", "past_due", "paused"])
-                .order("created_at", desc=True)
-                .limit(1)
-                .execute()
-                .data or []
-            )
+            existing = existing_by_code
+            if not existing:
+                active_rows = (
+                    supabase.table("learnora_subscriptions")
+                    .select(
+                        "id,user_id,status,provider,provider_subscription_code,"
+                        "provider_email_token"
+                    )
+                    .eq("user_id", user["id"])
+                    .in_("status", ["active", "past_due", "paused"])
+                    .order("created_at", desc=True)
+                    .limit(20)
+                    .execute()
+                    .data or []
+                )
+                # A repeated checkout can create a second provider subscription.
+                # Never overwrite a different active provider agreement: doing so
+                # would lose the only local code/token that can stop its renewal.
+                # Keep a legacy Paystack row without a code eligible for linking,
+                # because older verification flows created that row before the
+                # subscription.create webhook supplied the recurring identifiers.
+                conflicting = any(
+                    (
+                        row.get("provider_subscription_code")
+                        and str(row.get("provider_subscription_code")) != code
+                    )
+                    or (
+                        row.get("provider")
+                        and row.get("provider") != "paystack"
+                    )
+                    for row in active_rows
+                )
+                if conflicting:
+                    await _disable_orphaned_subscription(code, email_token)
+                    return {
+                        "received": True,
+                        "duplicate_subscription_disabled": True,
+                    }
+                existing = active_rows[:1]
             subscription_fields = {
                 "provider": "paystack",
                 "provider_customer_id": customer_code or None,
