@@ -820,6 +820,9 @@ def my_instructor_assignments(user: CurrentUser = Depends(get_current_user)):
         legacy_user = legacy_user_map.get(str(member.get("user_id"))) if member.get("user_id") else None
         if member.get("cohort_account_id") and not account:
             continue
+        if not account and not legacy_user:
+            # Do not display stale assignments whose learner identity no longer exists.
+            continue
         learner_name = (
             f"{account.get('first_name', '')} {account.get('last_name', '')}".strip()
             if account else str((legacy_user or {}).get("name") or "Learner")
