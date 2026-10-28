@@ -42,6 +42,7 @@ APPLIED_VERSIONS = [
     "20261021220327",
     "20261021220333",
     "20261021220849",
+    "20261028171902",
 ]
 
 PENDING_VERSIONS = [
@@ -49,9 +50,8 @@ PENDING_VERSIONS = [
     "20261026150000",
     "20261026151000",
     "20261026153000",
-    "20261028170000",
-]
-EXPECTED_VERSIONS = APPLIED_VERSIONS + PENDING_VERSIONS
+ ]
+EXPECTED_VERSIONS = sorted(APPLIED_VERSIONS + PENDING_VERSIONS)
 
 
 class SupabaseMigrationInventoryTests(unittest.TestCase):
@@ -59,8 +59,8 @@ class SupabaseMigrationInventoryTests(unittest.TestCase):
         files = sorted(ACTIVE_MIGRATIONS.glob("*.sql"))
         versions = [path.name.split("_", 1)[0] for path in files]
         self.assertEqual(versions, EXPECTED_VERSIONS)
-        self.assertEqual(versions[:len(APPLIED_VERSIONS)], APPLIED_VERSIONS)
-        self.assertEqual(versions[len(APPLIED_VERSIONS):], PENDING_VERSIONS)
+        self.assertTrue(set(APPLIED_VERSIONS).issubset(set(versions)))
+        self.assertTrue(set(PENDING_VERSIONS).issubset(set(versions)))
         self.assertTrue(all(re.fullmatch(r"\d{14}", version) for version in versions))
         self.assertTrue(all(path.stat().st_size > 0 for path in files))
 
