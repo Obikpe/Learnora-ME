@@ -84,6 +84,10 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "status": "active"},
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-2", "status": "active"},
             ],
+            "learnora_lessons": [
+                {"id": "lesson-1", "title": "Introduction", "order_index": 1, "duration_minutes": 15},
+                {"id": "lesson-2", "title": "Working with data", "order_index": 2, "duration_minutes": 25},
+            ],
             "cohort_account_lesson_progress": [
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-1", "progress_percent": 100, "completed": True},
                 {"course_assignment_id": "assignment-1", "lesson_id": "lesson-2", "progress_percent": 40, "completed": False},
@@ -104,6 +108,13 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
         self.assertEqual(assignment["completed_lesson_count"], 1)
         self.assertEqual(assignment["in_progress_lesson_count"], 1)
         self.assertEqual(assignment["completion_percent"], 50)
+        self.assertEqual(
+            assignment["lesson_progress"],
+            [
+                {"lesson_id": "lesson-1", "title": "Introduction", "order_index": 1, "duration_minutes": 15, "progress_percent": 100, "completed": True, "status": "completed"},
+                {"lesson_id": "lesson-2", "title": "Working with data", "order_index": 2, "duration_minutes": 25, "progress_percent": 40, "completed": False, "status": "in_progress"},
+            ],
+        )
         self.assertNotIn("email", assignment["learner"])
 
     def test_learner_membership_cannot_open_instructor_workspace(self):
