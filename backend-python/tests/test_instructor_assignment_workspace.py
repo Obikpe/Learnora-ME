@@ -128,7 +128,7 @@ class InstructorAssignmentWorkspaceTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_organisation_roster_includes_scoped_learner_course_progress(self):
-        context = SimpleNamespace(is_platform_admin=True, organisation_id=None)
+        context = SimpleNamespace(is_platform_admin=False, organisation_id="org-1")
         with patch.object(cohort_learning, "supabase", self.db):
             result = cohort_learning.list_learner_course_assignments(
                 "org-1", "cohort-1", "member-1", context
