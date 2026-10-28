@@ -192,17 +192,13 @@ async def paystack_webhook(request: Request):
             raise HTTPException(503, "Subscription event could not be reconciled yet.")
 
         if not linked:
-            # Never grant or change access based on a matching email alone. For
-            # an unlinked recurring event, stop the provider agreement if its
-            # credentials are included and otherwise leave a visible retry.
-            if event_type == "subscription.not_renew":
-                return {"received": True, "unlinked": True}
-            if event_type == "subscription.disable":
-                return {"received": True, "unlinked": True}
-            if event_type == "charge.success":
-                return {"received": True, "unlinked": True}
-            if event_type == "invoice.payment_failed":
-                return {"received": True, "unlinked": True}
+            # A recurring invoice without a local Learnora subscription is not
+            # authorised to charge an account. Stop it before the debit where
+            # the invoice event provides the provider's cancellation token.
+            if event_type == "invoice.create":
+                await _disable_orphaned_subscription(code, email_token)
+                return {"received": True, "orphaned_subscription_disabled": True}
+            # Never grant or change access based on a matching email alone.
             return {"received": True, "unlinked": True}
 
         user_id = linked["user_id"]
