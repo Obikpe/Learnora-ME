@@ -7,6 +7,7 @@ import { request, setOrganisationContext } from "../../../lib/api/client";
 import Logo from "../../../components/brand/Logo";
 import StatCard from "../../../components/dashboard/StatCard";
 import EmptyState from "../../../components/feedback/EmptyState";
+import Skeleton from "../../../components/feedback/Skeleton";
 
 const inputClass = "mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] px-3 py-3 text-sm outline-none focus:border-[#d7ad35]/50";
 
@@ -470,7 +471,7 @@ export default function OrganisationWorkspace() {
         {notice && <div role="status" className="mt-6 rounded-xl border border-emerald-400/20 bg-emerald-400/[.05] p-4 text-sm text-emerald-200">{notice}</div>}
 
         {loading ? (
-          <div className="mt-8 rounded-2xl border border-white/10 p-8 text-sm text-slate-500">Loading organisation records…</div>
+          <Skeleton variant="compact" label="Loading organisation records" />
         ) : org ? (
           <>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
