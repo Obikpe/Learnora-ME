@@ -19,11 +19,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from .auth import (
+    CurrentUser,
     allowed_for,
+    get_current_user,
     make_token,
     norm_email,
     supabase,
@@ -638,6 +640,179 @@ def verify_payment(body: VerifyPaymentRequest):
             role,
             "learner",
         ),
+    }
+
+
+
+# ---------------------------------------------------------------------------
+# LEARNER SUBSCRIPTION MANAGEMENT
+# ---------------------------------------------------------------------------
+
+def _require_billing_learner(user: CurrentUser) -> None:
+    # Cohort, organisation, creator and internal staff identities never manage
+    # individual learner recurring billing through this endpoint.
+    if user.role not in ("normal", "witstart") or not user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Only individual Learnora learner accounts can manage this subscription.",
+        )
+
+
+def _disable_paystack_subscription(code: str, email_token: str) -> dict:
+    """Ask Paystack to stop future recurring charges; never mark local state first."""
+    secret = get_secret()
+    try:
+        response = httpx.post(
+            f"{PAYSTACK_BASE}/subscription/disable",
+            headers={
+                "Authorization": f"Bearer {secret}",
+                "Content-Type": "application/json",
+            },
+            json={"code": code, "token": email_token},
+            timeout=20,
+        )
+        response.raise_for_status()
+        result = response.json()
+    except httpx.HTTPStatusError:
+        log.warning("Paystack rejected subscription cancellation")
+        raise HTTPException(
+            status_code=502,
+            detail="Paystack could not confirm cancellation. Your subscription has not been marked cancelled.",
+        )
+    except (httpx.RequestError, ValueError):
+        log.warning("Paystack subscription cancellation request failed")
+        raise HTTPException(
+            status_code=502,
+            detail="We could not confirm cancellation with Paystack. Please retry; renewal is not confirmed stopped.",
+        )
+    if not isinstance(result, dict) or not result.get("status"):
+        raise HTTPException(
+            status_code=502,
+            detail="Paystack did not confirm cancellation. Your subscription has not been marked cancelled.",
+        )
+    return result.get("data") or {}
+
+
+@router.get("/subscription")
+def get_learner_subscription(
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Return safe billing details for the signed-in learner only."""
+    _require_billing_learner(user)
+    try:
+        result = (
+            supabase.table("learnora_subscriptions")
+            .select(
+                "id,status,plan_code,billing_interval,currency,amount_minor,provider,"
+                "current_period_end,cancelled_at,provider_subscription_code,provider_email_token"
+            )
+            .eq("user_id", user.id)
+            .order("created_at", desc=True)
+            .limit(20)
+            .execute()
+        )
+        rows = result.data or []
+    except Exception:
+        log.exception("Failed reading learner subscription")
+        raise HTTPException(status_code=500, detail="Subscription details are temporarily unavailable.")
+
+    renewable = [row for row in rows if row.get("status") in ("active", "past_due", "paused")]
+    selected = renewable[0] if renewable else (rows[0] if rows else None)
+    can_cancel = bool(
+        renewable
+        and all(
+            row.get("provider") == "paystack"
+            and row.get("provider_subscription_code")
+            and row.get("provider_email_token")
+            for row in renewable
+        )
+    )
+    if not selected:
+        return {"has_subscription": False, "can_cancel": False}
+
+    # Provider cancellation credentials are deliberately never returned to a browser.
+    return {
+        "has_subscription": True,
+        "status": selected.get("status"),
+        "provider": selected.get("provider"),
+        "plan_code": selected.get("plan_code"),
+        "billing_interval": selected.get("billing_interval"),
+        "currency": selected.get("currency"),
+        "amount_minor": selected.get("amount_minor"),
+        "current_period_end": selected.get("current_period_end"),
+        "cancelled_at": selected.get("cancelled_at"),
+        "can_cancel": can_cancel,
+    }
+
+
+@router.post("/subscription/cancel")
+def cancel_learner_subscription(
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Cancel every linked recurring learner subscription with Paystack."""
+    _require_billing_learner(user)
+    try:
+        result = (
+            supabase.table("learnora_subscriptions")
+            .select(
+                "id,status,provider,provider_subscription_code,provider_email_token,current_period_end"
+            )
+            .eq("user_id", user.id)
+            .in_("status", ["active", "past_due", "paused"])
+            .order("created_at", desc=True)
+            .execute()
+        )
+        rows = result.data or []
+    except Exception:
+        log.exception("Failed reading subscriptions before cancellation")
+        raise HTTPException(status_code=500, detail="Subscription cancellation could not be started.")
+
+    if not rows:
+        raise HTTPException(status_code=404, detail="There is no active recurring subscription to cancel.")
+
+    # Preflight all rows before contacting the provider so we do not knowingly
+    # leave a second recurring charge running after a partial cancellation.
+    if any(row.get("provider") != "paystack" for row in rows):
+        raise HTTPException(
+            status_code=409,
+            detail="An active subscription uses a provider that is not yet connected to this cancellation flow. Contact Learnora support before the next billing date.",
+        )
+    if any(not row.get("provider_subscription_code") or not row.get("provider_email_token") for row in rows):
+        raise HTTPException(
+            status_code=409,
+            detail="The provider subscription details are not linked to this account, so Learnora cannot safely cancel every recurring charge automatically. Contact support to reconcile the Paystack subscription.",
+        )
+
+    now = datetime.now(timezone.utc)
+    cancelled_count = 0
+    period_end = rows[0].get("current_period_end")
+    for row in rows:
+        # Do not change local state unless Paystack confirms each cancellation.
+        _disable_paystack_subscription(
+            str(row["provider_subscription_code"]),
+            str(row["provider_email_token"]),
+        )
+        try:
+            supabase.table("learnora_subscriptions").update({
+                "status": "cancelled",
+                "cancelled_at": now.isoformat(),
+                "updated_at": now.isoformat(),
+            }).eq("id", row["id"]).eq("user_id", user.id).execute()
+        except Exception:
+            # Paystack has stopped renewal, but local state must be reconciled.
+            log.exception("Paystack cancelled a subscription but local status update failed")
+            raise HTTPException(
+                status_code=500,
+                detail="Paystack stopped a renewal, but Learnora could not update the local record. Contact support and do not retry payment.",
+            )
+        cancelled_count += 1
+
+    return {
+        "ok": True,
+        "cancelled_count": cancelled_count,
+        "cancelled_at": now.isoformat(),
+        "current_period_end": period_end,
+        "message": "Paystack confirmed cancellation of automatic renewal. Your existing paid access, if any, remains subject to its current expiry date.",
     }
 
 
