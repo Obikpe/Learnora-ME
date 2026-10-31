@@ -11,6 +11,7 @@ from typing import Optional
 from fastapi import HTTPException
 
 from routers.auth import supabase
+from services.free_access import free_access_mode_enabled
 
 
 def _now():
@@ -58,12 +59,21 @@ def resolve_course_access(
     user_id: str,
     course_id: str,
     organisation_id: Optional[str] = None,
+    allow_free_access: bool = False,
 ):
     """Return the strongest current access source, or None."""
     course = _course(course_id)
 
     if not course or course.get("status") != "published":
         return None
+
+    if (
+        allow_free_access
+        and free_access_mode_enabled()
+        and not organisation_id
+        and course.get("ownership") == "learnora"
+    ):
+        return {"allowed": True, "source": "free_launch"}
 
     entitlements = (
         supabase
