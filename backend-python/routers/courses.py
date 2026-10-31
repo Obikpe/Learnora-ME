@@ -644,7 +644,7 @@ def self_enrol_in_free_course(
             raise HTTPException(403, "This creator is not approved for course distribution.")
     settings = course.get("settings") or {}
     is_free = (
-        (free_access_mode_enabled() and is_individual_learner(user.role, user.account_type) and course.get("ownership") == "learnora" and not course.get("organisation_id"))
+        (free_access_mode_enabled() and is_individual_learner(user.role, user.account_type, getattr(user, "organisation_id", None)) and course.get("ownership") == "learnora" and not course.get("organisation_id"))
         or settings.get("is_free") is True
         or settings.get("access_type") == "free"
         or settings.get("price") == 0
@@ -691,7 +691,7 @@ def self_enrol_in_track(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Enrol an individual learner in every course of a published global track."""
-    if not is_individual_learner(user.role, user.account_type):
+    if not is_individual_learner(user.role, user.account_type, getattr(user, "organisation_id", None)):
         raise HTTPException(403, "Only individual learner accounts can self-enrol in public tracks.")
     try:
         track_id = str(UUID(track_id))
