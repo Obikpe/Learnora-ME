@@ -2,7 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import Logo from "../brand/Logo";
 
 const groups=[
-  {title:"Explore",links:[["Explore courses","/courses"],["How it works","/how-it-works"],["For learners","/for-learners"]]},
+  {title:"Explore",links:[["Explore tracks","/tracks"],["Explore courses","/courses"],["How it works","/how-it-works"],["For learners","/for-learners"]]},
   {title:"Work with Learnora",links:[["For instructors","/for-instructors"],["For organisations","/for-organisations"],["Get started","/get-started"]]},
   {title:"Your account",links:[["Sign in","/login"],["Create account","/register"],["About Learnora","/about"]]},
   {title:"Policies",links:[["Privacy policy","/privacy"],["Terms of use","/terms"],["Cookies & storage","/cookies"]]}
