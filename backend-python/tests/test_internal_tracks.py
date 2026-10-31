@@ -132,6 +132,17 @@ class InternalTracksTests(unittest.TestCase):
         self.assertEqual([row["id"] for row in ordered], ["link-2", "link-1"])
         self.assertEqual([row["order_index"] for row in ordered], [0, 1])
 
+    def test_track_curriculum_freezes_after_any_learner_enrolment(self):
+        self.fixtures["learnora_enrolments"] = [
+            {"id": "enrol-1", "course_id": "course-1", "status": "active"}
+        ]
+        with patch.object(internal_tracks, "supabase", TrackSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                internal_tracks._assert_track_curriculum_editable(
+                    "11111111-1111-4111-8111-111111111111"
+                )
+        self.assertEqual(raised.exception.status_code, 409)
+
     def test_published_track_course_list_cannot_be_mutated(self):
         self.fixtures["learnora_learning_paths"][0]["status"] = "published"
         with patch.object(internal_tracks, "supabase", TrackSupabase(self.fixtures)):
