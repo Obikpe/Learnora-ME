@@ -732,16 +732,20 @@ def self_enrol_in_track(
     ).data or []
     course_map = {str(row["id"]): row for row in course_rows}
 
-    missing_or_restricted = []
+    missing_required = []
+    enrolable_course_ids = []
     for link in links:
-        course = course_map.get(str(link.get("course_id")))
+        course_id = str(link.get("course_id"))
+        course = course_map.get(course_id)
+        required = link.get("required") is not False
         if (
             not course
             or course.get("status") != "published"
             or course.get("ownership") != "learnora"
             or course.get("organisation_id") is not None
         ):
-            missing_or_restricted.append(str(link.get("course_id")))
+            if required:
+                missing_required.append(course_id)
             continue
         settings = course.get("settings") or {}
         free_for_learner = (
@@ -750,25 +754,29 @@ def self_enrol_in_track(
             or settings.get("access_type") == "free"
             or settings.get("price") == 0
         )
-        if not free_for_learner:
-            missing_or_restricted.append(str(link.get("course_id")))
+        if free_for_learner:
+            enrolable_course_ids.append(course_id)
+        elif required:
+            missing_required.append(course_id)
 
-    if missing_or_restricted:
+    if missing_required:
         raise HTTPException(
             409,
-            "Every course in this public track must be published and available for free enrolment.",
+            "Every required course in this public track must be published and available for free enrolment.",
         )
+    if not enrolable_course_ids:
+        raise HTTPException(409, "This track has no currently available courses.")
 
     existing = (
         supabase.table("learnora_enrolments")
         .select("id,course_id,status,enrolled_at,completed_at")
         .eq("user_id", user.id)
-        .in_("course_id", course_ids)
+        .in_("course_id", enrolable_course_ids)
         .in_("status", ["active", "completed"])
         .execute()
     ).data or []
     existing_by_course = {str(row.get("course_id")): row for row in existing}
-    missing = [course_id for course_id in course_ids if course_id not in existing_by_course]
+    missing = [course_id for course_id in enrolable_course_ids if course_id not in existing_by_course]
     inserted_rows = []
     if missing:
         now = datetime.now(timezone.utc).isoformat()
@@ -797,7 +805,7 @@ def self_enrol_in_track(
         "enrolled_courses": len(existing_by_course) + len(inserted_rows),
         "new_enrolments": len(inserted_rows),
         "already_enrolled_courses": len(existing_by_course),
-        "course_ids": course_ids,
+        "course_ids": enrolable_course_ids,
     }
 
 @router.post("")
