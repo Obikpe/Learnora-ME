@@ -102,6 +102,19 @@ class FreeAccessModeTests(unittest.TestCase):
                 result = auth._resolve_learner_access(learner)
             self.assertFalse(result["course_access"])
 
+    def test_inactive_account_is_not_reactivated_by_free_mode(self):
+        learner = {
+            "id": "learner-1",
+            "role": "normal",
+            "email_verified_at": "2026-10-01T10:00:00Z",
+            "sub_status": "inactive",
+            "is_paid": False,
+        }
+        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}):
+            result = auth._resolve_learner_access(learner)
+        self.assertFalse(result["course_access"])
+        self.assertEqual(result["access_state"], "expired")
+
     def test_turning_mode_off_restores_existing_expiry_check(self):
         learner = {
             "id": "learner-1",
