@@ -260,3 +260,47 @@ For every workstream, update the roadmap and engineering history with:
 - Remaining risks and the next dependency.
 
 Do not mark work complete because a UI exists or an API route returns success once. Verify the full workflow through the real application boundary and the appropriate database/storage fixture.
+
+
+## 10. Implementation baseline and verified findings — 2026-10-31
+
+### Reversible free-access foundation
+
+The first code layer has been committed to `main`:
+
+- A server-only `FREE_ACCESS_MODE` environment flag was added. It defaults to `false`; it must be deliberately enabled in the backend deployment environment before the free launch is live.
+- The free entitlement is limited to verified individual learner accounts with role `normal`. Organisation/Witstart learners, cohort identities, prospects, creators, staff and administrators do not receive this individual free grant.
+- In free mode, the learner access resolver bypasses trial expiry and paid-membership checks for eligible individual learners without updating their subscription rows, expiry dates, payment records or historical trial data. Inactive accounts remain inactive.
+- Published, global Learnora-owned courses are eligible for free self-enrolment and content access. Tenant-scoped, organisation-owned and creator-owned content is not made free by this mode.
+- The public catalogue can identify the temporary free mode. The learner course detail and subscription screens reflect the free individual-learner experience.
+- The existing Paystack, subscription, trial, expiry, purchase and Pro implementation remains in place. Turning the flag off restores the original entitlement path.
+- Regression tests were added for eligibility, expiry bypass, inactive-account denial, organisation boundary, unpublished/creator/tenant-scoped course denial and paid-mode fallback.
+
+### Teams learner oversight and analytics
+
+The first internal operations layer has also been added:
+
+- A permission-protected, paginated individual learner list with email search and enrolment/lesson progress summaries.
+- A permission-protected learner detail endpoint with enrolments, course labels and recent saved lesson progress. Password hashes and credentials are not selected.
+- A platform analytics endpoint and Teams pages for learner oversight and metrics. The active-learner calculation currently samples up to 10,000 recent lesson-progress rows and exposes a cap warning; it is not yet a database-side aggregate.
+- The existing Teams content manager already contains course, module, lesson, reorder and media/resource workflows. Those workflows still require end-to-end acceptance; their presence in the UI is not being treated as proof of completion.
+
+### Track/course schema gap — do not guess or reuse cohort relations
+
+The repository's checked-in baseline schema `supabase/baselines/active-pheonix-public-schema.sql` shows:
+
+- `learnora_tracks` exists, with optional `organisation_id`, name, slug, description and status.
+- `cohort_track_courses` links a track and course **through a required cohort_id**. It is cohort-scoped and must not be used as the public catalogue's track/course relationship.
+- `learnora_learning_paths` and `learnora_learning_path_courses` form a separate owner-scoped learning-path model. They have not been repurposed as public catalogue tracks.
+- A general track-to-course association for the global Learnora catalogue is not present in this baseline. The public track journey therefore needs an explicit schema design and migration before it can be safely implemented.
+- The baseline `learnora_feedback` table has no dedicated track foreign key, consent field or moderation state. It is not sufficient by itself for the planned public track-review workflow.
+
+The active Supabase project metadata was confirmed as Pheonix (`gihfupzvdpyrmynqgukz`), status `ACTIVE_HEALTHY`. Live SQL catalog introspection could not be completed because the read-only database connection returned a password-authentication failure for its read-only database user. The checked-in baseline is useful evidence, but it is not represented as a live-schema verification.
+
+### Verification and release state
+
+- No production database migration, data write, environment-variable change or deployment was performed.
+- `FREE_ACCESS_MODE` remains off by default. The code is not live until the backend environment is configured and an authorised deployment is made.
+- The new Python regression tests have been committed, but GitHub Actions jobs on the current workstream are failing before a runner is assigned: the jobs have no runner name and no executed steps, and downloadable logs are unavailable. This is an infrastructure/CI evidence blocker, not a verified code-test failure or a green test result.
+- The Teams track/course workflow, track completion, consented/moderated reviews, full browser acceptance and production enablement remain open.
+
