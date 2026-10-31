@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, BookOpen, Clock3, LockKeyhole, Check, ChevronDown } from "lucide-react";
 import { course, structure } from "../../../lib/api/learning";
 import { request } from "../../../lib/api/client";
+import { currentUser, organisationContext } from "../../../lib/api";
 import PublicNav from "../../../components/public/PublicNav";
 import PublicFooter from "../../../components/public/PublicFooter";
 import EmptyState from "../../../components/feedback/EmptyState";
@@ -11,12 +12,19 @@ import Skeleton from "../../../components/feedback/Skeleton";
 
 export default function CourseDetail({params}:{params:{id:string}}) {
   const [c,setC]=useState<any>(),[s,setS]=useState<any>(),[freeMode,setFreeMode]=useState(false),[error,setError]=useState(""),[enrolError,setEnrolError]=useState(""),[enrolling,setEnrolling]=useState(false),[enrolled,setEnrolled]=useState(false);
-  useEffect(()=>{let active=true;Promise.all([course(params.id),structure(params.id),request<any>("/access/mode").catch(()=>({free_access_mode:false}))]).then(([a,b,mode])=>{if(active){setC(a.course||a);setS(b);setFreeMode(Boolean(mode.free_access_mode))}}).catch(x=>{if(active)setError(x.message||"Course could not be loaded.")});return()=>{active=false}},[params.id]);
+  useEffect(()=>{let active=true;setHasOrganisationContext(Boolean(organisationContext()));currentUser().then(me=>{if(active)setUser(me)}).catch(()=>{if(active)setUser(null)});Promise.all([course(params.id),structure(params.id),request<any>("/access/mode").catch(()=>({free_access_mode:false}))]).then(([a,b,mode])=>{if(active){setC(a.course||a);setS(b);setFreeMode(Boolean(mode.free_access_mode))}}).catch(x=>{if(active)setError(x.message||"Course could not be loaded.")});return()=>{active=false}},[params.id]);
   async function enrol(){setEnrolError("");setEnrolling(true);try{await request<any>("/courses/"+encodeURIComponent(params.id)+"/enrol",{method:"POST"});setEnrolled(true);location.href="/dashboard/learning/"+encodeURIComponent(params.id)}catch(e:any){setEnrolError(e.message||"Enrolment is not available for this course.")}finally{setEnrolling(false)}}
   if(error)return <><PublicNav/><main className="mx-auto max-w-5xl px-5 pb-24 pt-36"><EmptyState title="Course unavailable" message={error}/><a href="/courses" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold gold">Back to courses <ArrowRight size={15}/></a></main><PublicFooter/></>;
   if(!c)return <><PublicNav/><main className="mx-auto max-w-[82rem] px-5 pb-24 pt-32 lg:px-8"><Skeleton variant="course" label="Loading course details"/></main><PublicFooter/></>;
   const modules=s?.modules||s?.structure?.modules||[];
-  const isFree=(freeMode&&c.ownership==="learnora")||c.settings?.is_free===true||c.settings?.access_type==="free"||c.settings?.price===0;
+  const explicitlyFree=c.settings?.is_free===true||c.settings?.access_type==="free"||c.settings?.price===0;
+  const freeLaunchCourse=freeMode&&c.ownership==="learnora"&&!c.organisation_id;
+  const isFree=freeLaunchCourse||explicitlyFree;
+  const individualLearner=user?.role==="normal"&&user?.account_type==="learner"&&!hasOrganisationContext;
+  const canEnrol=Boolean(user)&&(
+    (freeLaunchCourse&&individualLearner)
+    ||(explicitlyFree&&["normal","witstart"].includes(user.role))
+  );
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
   return <>
     <PublicNav/>
@@ -43,7 +51,7 @@ export default function CourseDetail({params}:{params:{id:string}}) {
           <div className="p-6">
             <p className="text-sm leading-7 text-slate-400">{isFree?(freeMode&&c.ownership==="learnora"?"Learnora is currently free for individual learners. Enrol to start learning and keep your progress with your account.":"This published course is marked as free. Enrol to start learning and keep your progress with your account."):"Self-enrolment is not enabled for this course. Access may depend on an organisation assignment or another access policy; Learnora will not bypass that requirement."}</p>
             <div className="my-5 border-y border-white/[.09] py-4"><div className="flex items-center justify-between py-1.5 text-sm"><span className="text-slate-500">Modules</span><span className="tabular-nums">{modules.length}</span></div><div className="flex items-center justify-between py-1.5 text-sm"><span className="text-slate-500">Lessons</span><span className="tabular-nums">{lessonCount}</span></div><div className="flex items-center justify-between py-1.5 text-sm"><span className="text-slate-500">Pace</span><span>{c.estimated_hours?c.estimated_hours+" hours":"Flexible"}</span></div></div>
-            {isFree?<button onClick={enrol} disabled={enrolling||enrolled} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--gold)] px-5 text-sm font-bold text-[#17140d] transition-colors hover:bg-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-50">{enrolling?"Enrolling…":enrolled?"Opening course…":"Enrol and start learning"}<ArrowRight size={16}/></button>:<a href="/get-started" className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/[.16] px-5 text-sm font-semibold transition-colors hover:border-white/30 hover:bg-white/[.03]">Ask about access <ArrowRight size={15}/></a>}
+            {canEnrol?<button onClick={enrol} disabled={enrolling||enrolled} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--gold)] px-5 text-sm font-bold text-[#17140d] transition-colors hover:bg-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-50">{enrolling?"Enrolling…":enrolled?"Opening course…":"Enrol and start learning"}<ArrowRight size={16}/></button>:isFree&&!user?<a href={"/login?next="+encodeURIComponent("/courses/"+params.id)} className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--gold)] px-5 text-sm font-bold text-[#17140d]">Sign in to enrol <ArrowRight size={15}/></a>:freeLaunchCourse&&!individualLearner?<a href={"/login?next="+encodeURIComponent("/courses/"+params.id)} className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/[.16] px-5 text-sm font-semibold">Switch to individual learning <ArrowRight size={15}/></a>:isFree?<p className="text-xs leading-6 text-slate-500">This course is free, but this account type cannot self-enrol. Use your organisation's assigned learning access.</p>:<a href="/get-started" className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/[.16] px-5 text-sm font-semibold transition-colors hover:border-white/30 hover:bg-white/[.03]">Ask about access <ArrowRight size={15}/></a>}
             {enrolError&&<div role="alert" className="mt-4 rounded-lg border border-amber-300/15 bg-amber-300/[.04] p-3 text-xs leading-5 text-amber-100/80">{enrolError} <a href="/login" className="font-semibold gold">Sign in</a></div>}
           </div>
         </aside>
