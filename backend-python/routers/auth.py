@@ -816,7 +816,7 @@ Please verify your email address by opening the link below:
 
 This verification link expires in {EMAIL_VERIFICATION_TTL_MINUTES} minutes.
 
-Once your email is verified, your 7-day free trial will begin.
+{ 'You can use Learnora for free after verification; no payment method or trial expiry is required.' if free_access_mode_enabled() else 'Once your email is verified, your 7-day free trial will begin.' }
 
 If you did not create a Learnora Me account, you can ignore this email.
 
@@ -852,7 +852,7 @@ Learnora Me
 
     <p style="font-size:13px;color:#64748b;line-height:1.6;">
       This link expires in {EMAIL_VERIFICATION_TTL_MINUTES} minutes.
-      Your 7-day free trial begins after successful verification.
+      { 'Free Learnora access begins after successful verification. No payment method or trial expiry is required.' if free_access_mode_enabled() else 'Your 7-day free trial begins after successful verification.' }
     </p>
 
     <p style="font-size:13px;color:#94a3b8;line-height:1.6;">
