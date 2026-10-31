@@ -93,7 +93,7 @@ def _module_for_lesson(lesson_id: str):
     return str(result.data[0]["module_id"])
 
 
-def _assert_module_unlocked(user_id: str, module_id: str):
+def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool = False):
     """Require a passed >=70% assessment for every earlier module."""
     current = (
         supabase.table("course_modules")
@@ -105,15 +105,18 @@ def _assert_module_unlocked(user_id: str, module_id: str):
     if not current:
         raise HTTPException(404, "Module not found.")
     module = current[0]
-    previous_modules = (
+    previous_query = (
         supabase.table("course_modules")
         .select("id,title,order_index")
         .eq("course_id", module["course_id"])
         .lt("order_index", module["order_index"])
-        .eq("status", "published")
-        .order("order_index")
-        .execute()
-    ).data or []
+    )
+    previous_query = (
+        previous_query.in_("status", ["published", "archived"])
+        if include_archived
+        else previous_query.eq("status", "published")
+    )
+    previous_modules = previous_query.order("order_index").execute().data or []
 
     for previous in previous_modules:
         quizzes = (
@@ -216,14 +219,17 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
     module_views = []
     for module in modules:
         locked = False
-        if not include_archived:
-            try:
-                _assert_module_unlocked(user_id, str(module["id"]))
-            except HTTPException as exc:
-                if exc.status_code in (409, 423):
-                    locked = True
-                else:
-                    raise
+        try:
+            _assert_module_unlocked(
+                user_id,
+                str(module["id"]),
+                include_archived=include_archived,
+            )
+        except HTTPException as exc:
+            if exc.status_code in (409, 423):
+                locked = True
+            else:
+                raise
         module_lessons = []
         for lesson in lessons:
             if str(lesson["module_id"]) != str(module["id"]):
