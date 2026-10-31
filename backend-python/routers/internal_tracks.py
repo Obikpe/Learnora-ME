@@ -388,6 +388,8 @@ def reorder_track_courses(
     staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
 ):
     track = _global_track(track_id)
+    if track.get("status") == "archived":
+        raise HTTPException(status_code=409, detail="Archived tracks cannot be edited.")
     if track.get("status") == "published":
         raise HTTPException(status_code=409, detail="Unpublish the track before changing course order.")
     _assert_track_curriculum_editable(str(track["id"]))
@@ -451,6 +453,8 @@ def remove_track_course(
     staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
 ):
     track = _global_track(track_id)
+    if track.get("status") == "archived":
+        raise HTTPException(status_code=409, detail="Archived tracks cannot be edited.")
     if track.get("status") == "published":
         raise HTTPException(status_code=409, detail="Unpublish the track before removing a course.")
     _assert_track_curriculum_editable(str(track["id"]))
