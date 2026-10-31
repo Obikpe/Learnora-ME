@@ -27,8 +27,12 @@ trialing
 active
     User has an active paid membership.
 
+free
+    Verified individual learner access while FREE_ACCESS_MODE is enabled.
+
 expired
-    Trial or paid membership has expired.
+    Trial or paid membership has expired. The reversible free-launch mode may
+    grant individual learner access without rewriting this billing history.
 
 Email verification
 ------------------
