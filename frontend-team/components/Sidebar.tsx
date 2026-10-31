@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Users, Building2, BookOpen, Layers3, CircleDollarSign, UserCog, LineChart, BrainCircuit, Activity, ShieldCheck, Settings, Bell, LogOut, Network, UserRoundCog, Menu, X, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, Building2, BookOpen, Layers3, CircleDollarSign, UserCog, LineChart, BrainCircuit, Activity, ShieldCheck, Settings, Bell, LogOut, Network, UserRoundCog, Menu, X, ChevronRight, Route } from "lucide-react";
 import { clearToken } from "../lib/api";
 
 const all: any[] = [
@@ -11,6 +11,7 @@ const all: any[] = [
   ["teams","Teams",UserRoundCog],
   ["organisations","Organisations",Building2],
   ["courses","Courses",BookOpen],
+  ["tracks","Tracks",Route],
   ["content","Learning content",Layers3],
   ["learners","Learners",Users],
   ["commerce","Commerce",CircleDollarSign],
@@ -34,7 +35,7 @@ function NavItems({items,active,onNavigate}:{items:any[];active:string;onNavigat
 export default function Sidebar({roles,active}:{roles:string[];active:string}) {
   const [mobileOpen,setMobileOpen]=useState(false);
   const platform=roles.includes("super_admin")||roles.includes("platform_admin");
-  const items=platform?all:all.filter(x=>["overview","staff","teams","courses","content","learners","activity","notifications","settings"].includes(x[0]));
+  const items=platform?all:all.filter(x=>["overview","staff","teams","courses","tracks","content","learners","activity","notifications","settings"].includes(x[0]));
   const logout=()=>{clearToken();location.href="/login"};
   return <>
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] border-r border-white/[.09] bg-[#0c1015] lg:block">
