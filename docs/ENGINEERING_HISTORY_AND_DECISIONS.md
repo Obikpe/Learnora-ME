@@ -346,3 +346,12 @@ Append entries using:
 - Main HEAD was `41735ba6cdedcc810420693a0cd77aa4d6ce48da` at the verification check. The five workflows triggered for that SHA failed before running any steps (zero steps; runner name blank), so CI has not executed the new tests or frontend builds.
 - Vercel Git deployments are disabled in repository configuration; the latest Learnora ME deployment predates the current code. No deployment was made. The backend Vercel project still references the older `Pheonix-Analytics` repository, unlike the learner frontend project linked to `Learnora-ME`; this must be reconciled before release.
 - `FREE_ACCESS_MODE` remains off by default and was not set in Vercel. No production environment change, database migration/data mutation, or deployment was performed. Live Pheonix SQL schema verification remains blocked by the read-only connection authentication failure.
+
+
+### Free launch and track hardening — 2026-11-01
+
+- Organisation membership is resolved before free-launch entitlement calculation. Active organisation members do not inherit the individual free grant. Membership lookup errors fail closed when free mode is enabled.
+- Global track enrolments use a track-specific `source_type` marker. Curriculum locking and unpublished-track progress visibility use that marker, preventing unrelated course enrolments from freezing or exposing a track.
+- Track enrolment only considers global individual enrolments, reactivates withdrawn rows, and refuses invited/suspended rows. Track curriculum controls reject archived tracks at the API layer.
+- Archived-course progress summaries include historical module/lesson rows but still execute the module assessment-lock check.
+- Tests were added for free-access organisation boundaries, public catalogue labelling, track enrolment lifecycle, independent course enrolments, archived track visibility and module locks. GitHub Actions jobs currently fail before executing steps and provide no logs; these tests remain unverified. Live Pheonix schema verification failed due read-only DB authentication. No production migration, environment change or deployment occurred.
