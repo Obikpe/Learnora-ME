@@ -285,15 +285,15 @@ The first internal operations layer has also been added:
 - A platform analytics endpoint and Teams pages for learner oversight and metrics. The active-learner calculation currently samples up to 10,000 recent lesson-progress rows and exposes a cap warning; it is not yet a database-side aggregate.
 - The existing Teams content manager already contains course, module, lesson, reorder and media/resource workflows. Those workflows still require end-to-end acceptance; their presence in the UI is not being treated as proof of completion.
 
-### Track/course schema gap — do not guess or reuse cohort relations
+### Track/course model — reuse the generic learning-path relationship, not cohort tables
 
 The repository's checked-in baseline schema `supabase/baselines/active-pheonix-public-schema.sql` shows:
 
-- `learnora_tracks` exists, with optional `organisation_id`, name, slug, description and status.
-- `cohort_track_courses` links a track and course **through a required cohort_id**. It is cohort-scoped and must not be used as the public catalogue's track/course relationship.
-- `learnora_learning_paths` and `learnora_learning_path_courses` form a separate owner-scoped learning-path model. They have not been repurposed as public catalogue tracks.
-- A general track-to-course association for the global Learnora catalogue is not present in this baseline. The public track journey therefore needs an explicit schema design and migration before it can be safely implemented.
-- The baseline `learnora_feedback` table has no dedicated track foreign key, consent field or moderation state. It is not sufficient by itself for the planned public track-review workflow.
+- `learnora_tracks` is the track-assignment model used with cohorts. `cohort_track_courses` links a track and course **through a required cohort_id**. That relation is cohort-scoped and is not used for the individual public catalogue.
+- `learnora_learning_paths` and `learnora_learning_path_courses` provide the generic ordered course-sequence model. The path table permits both `owner_user_id` and `organisation_id` to be NULL, supports draft/published/archived states, and the course relation stores `order_index` and `required`.
+- Global Learnora tracks therefore use this existing generic model with both owner and organisation IDs NULL. Personal learner paths and organisation paths remain separately scoped by their non-NULL owner/organisation values. This avoids creating a competing track table and avoids misusing the cohort-only join.
+- Track enrolment creates the learner's ordinary course enrolments for the track's eligible courses. Track progress is derived from backend course completion for required courses; it does not invent a second lesson-progress store.
+- The baseline `learnora_feedback` table has no dedicated track foreign key, consent field or moderation state. It is not sufficient by itself for the planned public track-review workflow; review storage still needs a dedicated, reviewed schema change before public review display.
 
 The active Supabase project metadata was confirmed as Pheonix (`gihfupzvdpyrmynqgukz`), status `ACTIVE_HEALTHY`. Live SQL catalog introspection could not be completed because the read-only database connection returned a password-authentication failure for its read-only database user. The checked-in baseline is useful evidence, but it is not represented as a live-schema verification.
 
@@ -304,3 +304,10 @@ The active Supabase project metadata was confirmed as Pheonix (`gihfupzvdpyrmynq
 - The new Python regression tests have been committed, but GitHub Actions jobs on the current workstream are failing before a runner is assigned: the jobs have no runner name and no executed steps, and downloadable logs are unavailable. This is an infrastructure/CI evidence blocker, not a verified code-test failure or a green test result.
 - The Teams track/course workflow, track completion, consented/moderated reviews, full browser acceptance and production enablement remain open.
 
+
+
+### Track implementation update — 2026-10-31
+
+The global track MVP has now been implemented against the existing generic learning-path schema: Teams can create/manage global tracks, attach global Learnora courses, reorder the course sequence, publish/unpublish/archive tracks, and the learner app can discover tracks, enrol into their eligible courses and view backend-calculated required-course completion. Published tracks cannot have their course list reordered or changed until they are unpublished; courses linked to published global tracks cannot be unpublished or archived through the Teams course API. Track publication requires at least one required course and published course content.
+
+This is code-only work against the checked-in baseline. Because live SQL introspection is still unavailable, confirm the live Pheonix schema before release. The track review/rating workflow remains blocked on a proper track-linked feedback model with separate public consent and moderation fields; no review data is being stored in an improvised field.
