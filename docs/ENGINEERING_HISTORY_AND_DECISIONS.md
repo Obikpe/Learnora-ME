@@ -338,3 +338,5 @@ Append entries using:
 
 
 - **Review preparation:** added `docs/TRACK_REVIEW_SCHEMA_PROPOSAL.md` defining a dedicated track-linked review record, explicit opt-in public consent, moderation status/audit, privacy rules and regression tests. This is a proposal only; no migration/table or public review endpoint exists yet.
+
+- **Track continuity hardening:** track curriculum is frozen once any linked course has active/completed learner enrolments. Unpublished/archived tracks disappear from public discovery and new enrolment, but the authenticated progress endpoint still serves the saved track to learners with required-course enrolments. Analytics now counts only global Learnora courses and reports published global tracks.
