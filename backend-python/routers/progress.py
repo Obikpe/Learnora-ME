@@ -159,7 +159,7 @@ def _course_summary(user_id: str, course_id: str):
         .table("course_modules")
         .select("id,title,order_index,status")
         .eq("course_id", course_id)
-        .neq("status", "archived")
+        .eq("status", "published")
         .order("order_index")
         .execute()
     ).data or []
@@ -176,7 +176,7 @@ def _course_summary(user_id: str, course_id: str):
                 "content,duration_minutes,status"
             )
             .in_("module_id", module_ids)
-            .neq("status", "archived")
+            .eq("status", "published")
             .order("order_index")
             .execute()
         ).data or []
