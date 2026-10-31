@@ -87,6 +87,33 @@ class PublicTrackProgressTests(unittest.TestCase):
         self.assertTrue(result["completed"])
         self.assertEqual(result["progress_percent"], 100)
 
+    def test_course_summary_ignores_draft_modules_and_lessons(self):
+        fixtures = {
+            "learnora_enrolments": [
+                {"id": "enrol-1", "user_id": "learner-1", "course_id": "course-1", "status": "active"}
+            ],
+            "course_modules": [
+                {"id": "module-published", "course_id": "course-1", "status": "published", "order_index": 0},
+                {"id": "module-draft", "course_id": "course-1", "status": "draft", "order_index": 1},
+            ],
+            "learnora_lessons": [
+                {"id": "lesson-published", "module_id": "module-published", "status": "published", "order_index": 0},
+                {"id": "lesson-draft", "module_id": "module-published", "status": "draft", "order_index": 1},
+                {"id": "lesson-in-draft-module", "module_id": "module-draft", "status": "published", "order_index": 0},
+            ],
+            "learnora_lesson_progress": [
+                {"user_id": "learner-1", "lesson_id": "lesson-published", "completed": True, "progress_percent": 100},
+                {"user_id": "learner-1", "lesson_id": "lesson-draft", "completed": False, "progress_percent": 0},
+                {"user_id": "learner-1", "lesson_id": "lesson-in-draft-module", "completed": False, "progress_percent": 0},
+            ],
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
+            result = progress._course_summary("learner-1", "course-1")
+        self.assertEqual(result["total_lessons"], 1)
+        self.assertEqual(result["completed_lessons"], 1)
+        self.assertEqual(result["progress_percent"], 100)
+        self.assertTrue(result["completed"])
+
     def test_organisation_learner_cannot_use_individual_public_track_progress(self):
         user = SimpleNamespace(id="learner-2", role="witstart", account_type="learner")
         with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)):
