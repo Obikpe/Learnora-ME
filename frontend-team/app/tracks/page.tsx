@@ -18,6 +18,7 @@ export default function TracksWorkspace() {
   const [slug,setSlug]=useState("");
   const [description,setDescription]=useState("");
   const [courseId,setCourseId]=useState("");
+  const [courseRequired,setCourseRequired]=useState(true);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
@@ -100,9 +101,19 @@ export default function TracksWorkspace() {
     setError("");setNotice("");setSaving(true);
     try {
       const order_index=(detail.courses||[]).reduce((max:number,item:any)=>Math.max(max,Number(item.order_index)||0),-1)+1;
-      await request<any>("/tracks/"+encodeURIComponent(detail.id)+"/courses",{method:"POST",body:JSON.stringify({course_id:courseId,order_index,required:true})});
-      setCourseId("");await loadTrack(detail.id);await load();setNotice("Course added to the track.");
+      await request<any>("/tracks/"+encodeURIComponent(detail.id)+"/courses",{method:"POST",body:JSON.stringify({course_id:courseId,order_index,required:courseRequired})});
+      setCourseId("");setCourseRequired(true);await loadTrack(detail.id);await load();setNotice("Course added to the track.");
     } catch(e:any) {setError(e.message||"Course could not be added.");}
+    finally {setSaving(false);}
+  }
+
+  async function toggleRequired(item:any) {
+    if(!detail)return;
+    setSaving(true);setError("");setNotice("");
+    try {
+      await request<any>("/tracks/"+encodeURIComponent(detail.id)+"/courses",{method:"POST",body:JSON.stringify({course_id:item.course_id,order_index:item.order_index,required:!item.required})});
+      await loadTrack(detail.id);setNotice("Course requirement updated.");
+    } catch(e:any) {setError(e.message||"Course requirement could not be updated.");}
     finally {setSaving(false);}
   }
 
@@ -171,10 +182,10 @@ export default function TracksWorkspace() {
           <div className="mt-9 border-t border-white/[.08] pt-6">
             <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="section-kicker">Curriculum</p><h3 className="mt-2 text-lg font-semibold">Ordered courses</h3></div><span className="text-xs text-slate-600">{(detail.courses||[]).length} linked</span></div>
             <div className="mt-4 divide-y divide-white/[.06]">
-              {(detail.courses||[]).map((item:any,index:number)=><div key={item.id} className="flex flex-wrap items-center gap-3 py-3"><span className="grid size-8 shrink-0 place-items-center border border-white/[.1] text-xs tabular-nums text-slate-500">{index+1}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-200">{item.course?.title||"Missing course record"}</p><p className="mt-1 text-[10px] uppercase tracking-[.12em] text-slate-600">{item.course?.status||"unknown"} · {item.required?"Required":"Optional"}</p></div><div className="flex items-center gap-1"><button type="button" title="Move up" aria-label="Move course up" disabled={saving||index===0} onClick={()=>void moveCourse(index,-1)} className="mini-icon disabled:opacity-30"><ArrowUp size={14}/></button><button type="button" title="Move down" aria-label="Move course down" disabled={saving||index===(detail.courses||[]).length-1} onClick={()=>void moveCourse(index,1)} className="mini-icon disabled:opacity-30"><ArrowDown size={14}/></button><button type="button" title="Remove course" aria-label="Remove course" disabled={saving} onClick={()=>void removeCourse(item.course_id)} className="mini-icon text-red-300"><Trash2 size={14}/></button></div></div>)}
+              {(detail.courses||[]).map((item:any,index:number)=><div key={item.id} className="flex flex-wrap items-center gap-3 py-3"><span className="grid size-8 shrink-0 place-items-center border border-white/[.1] text-xs tabular-nums text-slate-500">{index+1}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-200">{item.course?.title||"Missing course record"}</p><p className="mt-1 text-[10px] uppercase tracking-[.12em] text-slate-600">{item.course?.status||"unknown"} · {item.required?"Required":"Optional"}</p></div><div className="flex items-center gap-1"><button type="button" disabled={saving} onClick={()=>void toggleRequired(item)} className="mini text-[10px]">{item.required?"Required":"Optional"}</button><button type="button" title="Move up" aria-label="Move course up" disabled={saving||index===0} onClick={()=>void moveCourse(index,-1)} className="mini-icon disabled:opacity-30"><ArrowUp size={14}/></button><button type="button" title="Move down" aria-label="Move course down" disabled={saving||index===(detail.courses||[]).length-1} onClick={()=>void moveCourse(index,1)} className="mini-icon disabled:opacity-30"><ArrowDown size={14}/></button><button type="button" title="Remove course" aria-label="Remove course" disabled={saving} onClick={()=>void removeCourse(item.course_id)} className="mini-icon text-red-300"><Trash2 size={14}/></button></div></div>)}
               {!detail.courses?.length&&<p className="py-7 text-sm text-slate-500">Add published Learnora courses to build this track.</p>}
             </div>
-            <form onSubmit={addCourse} className="mt-5 flex flex-col gap-2 sm:flex-row"><select value={courseId} onChange={e=>setCourseId(e.target.value)} className="field min-h-11 flex-1"><option value="">Choose a global Learnora course</option>{availableCourses.map(course=><option key={course.id} value={course.id}>{course.title} · {course.status}</option>)}</select><button type="submit" disabled={saving||!courseId} className="mini inline-flex min-h-11 items-center justify-center gap-2"><Plus size={14}/>Add course</button></form>
+            <form onSubmit={addCourse} className="mt-5 flex flex-col gap-2 sm:flex-row"><select value={courseId} onChange={e=>setCourseId(e.target.value)} className="field min-h-11 flex-1"><option value="">Choose a global Learnora course</option>{availableCourses.map(course=><option key={course.id} value={course.id}>{course.title} · {course.status}</option>)}</select><label className="inline-flex min-h-11 items-center gap-2 border border-white/[.1] px-3 text-xs text-slate-400"><input type="checkbox" checked={courseRequired} onChange={e=>setCourseRequired(e.target.checked)}/>Required</label><button type="submit" disabled={saving||!courseId} className="mini inline-flex min-h-11 items-center justify-center gap-2"><Plus size={14}/>Add course</button></form>
             <p className="mt-3 text-[11px] leading-5 text-slate-600">Only global Learnora-owned courses can be linked. Publishing requires every linked course to have published modules and lessons, plus assessments before modules that unlock later modules. Once learners have course enrolments, the track curriculum is frozen; create a new track for a different sequence. Unpublished tracks remain available to existing learners with saved enrolments.</p>
           </div>
         </>}
