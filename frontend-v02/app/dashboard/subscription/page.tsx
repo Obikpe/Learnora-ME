@@ -40,6 +40,7 @@ function moneyLabel(currency?: string | null, minor?: number | null) {
 export default function SubscriptionPage() {
   const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [freeAccess, setFreeAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
@@ -53,6 +54,10 @@ export default function SubscriptionPage() {
         const user = await currentUser();
         if (!["normal", "witstart"].includes(user.role) || user.account_type === "cohort") {
           router.replace("/dashboard");
+          return;
+        }
+        if (user.access_state === "free" && user.course_access) {
+          if (!cancelled) setFreeAccess(true);
           return;
         }
         const result = await request<Subscription>("/billing/subscription");
@@ -83,6 +88,18 @@ export default function SubscriptionPage() {
     } finally {
       setCancelling(false);
     }
+  }
+
+  if (freeAccess && !loading) {
+    return <Shell active="subscription">
+      <SectionHeader eyebrow="Your account" title="Free learner access" description="Learnora is currently free for individual learners. You do not need a payment method or subscription to continue learning." />
+      <section className="mt-7 max-w-3xl rounded-2xl border border-white/[.08] bg-[#0e1319] p-6 sm:p-8">
+        <p className="text-xs font-bold uppercase tracking-[.18em] gold">Free launch</p>
+        <h2 className="mt-3 text-2xl font-semibold">Your learning is not on a trial.</h2>
+        <p className="mt-3 text-sm leading-7 text-slate-400">Your access to the free Learnora catalogue does not expire because of a trial date. Existing billing records are preserved, and this page will reflect any future changes to the learner plan.</p>
+        <a href="/courses" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-[#d7ad35] px-5 py-3 text-sm font-bold text-black">Explore courses</a>
+      </section>
+    </Shell>;
   }
 
   return <Shell active="subscription">
