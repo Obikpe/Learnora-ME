@@ -289,3 +289,23 @@ Append entries using:
   - [Quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/40418907269) — success.
 - **Deployment status:** read-only Vercel lookup returned no deployment for this SHA. No production deployment or Supabase mutation was performed.
 - **Remaining release blockers:** shared production auth/API rate limiting; atomic creator sale/refund and payout-request writes; dedicated creator-sales permissions; managed `supabase_admin` default ACL remediation by an authorised operator; migration source provenance and identity-lineage reconciliation; complete browser-driven acceptance; and a coordinated staging/production rollout of the cookie-auth source.
+
+
+## 11. 2026-10-31 — staged free launch before paid expansion
+
+- **Decision source:** product-owner direction confirmed on 31 October 2026.
+- **Plan document:** [Free Launch → Paid Expansion Plan](FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md). This is an additive strategy document; the original product specification, roadmap phases, security findings, organisation/cohort plans, instructor/creator plans, and billing history are retained.
+- **Product sequence:** temporarily free individual learner access first; complete Learnora Teams content operations and the Learnora ME learner journey; add optional post-track ratings/reviews with consent and moderation; then return to organisation/instructor work and later paid courses/Pro.
+- **Applications:** Learnora ME remains frontend-v02/; Learnora Teams remains frontend-team/; shared FastAPI remains backend-python/. Legacy frontend/ is not the current implementation target.
+- **Database clarification:** the product owner confirmed Learnora continues to use the already-active Pheonix Supabase project. Do not create or switch to a separate Learnora Supabase project. Existing engineering records identify project reference gihfupzvdpyrmynqgukz; confirm configured project identity through safe metadata before database operations and never expose credentials.
+- **Free-mode design decision:** implement a central, reversible, server-enforced mode. It must remove payment-method, checkout, paid-subscription and trial-expiry barriers for the intended individual learner journey while preserving payment/Paystack, subscription, trial, expiry, entitlement and Pro code/data. Disabling free mode must restore the original paid enforcement. Do not rewrite historical subscription records or weaken authentication, staff permissions, tenant boundaries, RLS or private-media controls.
+- **Teams scope:** track and ordered track-course management; course creation/editing/publishing; modules/lessons; video and resource uploads; learner information/progress; reliable platform statistics.
+- **Learner scope:** public discovery, track/course enrolment, lesson/media access, supported activities, progress/resume, and backend-confirmed completion.
+- **Feedback scope:** after backend-confirmed track completion, offer an optional dismissible 1–5 rating and comment. Public display requires separate consent and moderation. Do not promise Google rich-result stars for self-serving reviews.
+- **Deferred, not cancelled:** organisation, cohort, instructor/tutor/creator, creator sales/payouts, contracts/entitlements, and paid/Pro services remain in the original plan and existing code/schema. Their implementation is sequenced later; no deletion or security-boundary weakening is authorised.
+- **Documentation commits on main:**
+  - Additive strategy document: commit 1de61620a770fb6a025c230f179cc0ca09d48d45.
+  - Roadmap sequencing addendum: commit 02ee18490eea998317b2b6ea10da5a141761c8ba.
+  - Product specification addendum: commit 9f292e088b8f51c991330e2a454512e6a5f08419.
+- **Verification and impact:** documentation-only changes. No application code, SQL migration, Supabase data, or deployment was changed by these commits. No CI result is claimed for these documentation commits.
+- **Next action:** begin implementation with a read-only baseline check of main, the configured active Pheonix Supabase target, current track/course schema, and billing/access enforcement; then implement and test the reversible free-access mode before moving to Teams content workflows.
