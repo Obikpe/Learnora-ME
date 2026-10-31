@@ -43,6 +43,7 @@ class FreeAccessModeTests(unittest.TestCase):
 
     def test_only_global_individual_learner_accounts_are_eligible(self):
         self.assertTrue(is_individual_learner("normal", "learner"))
+        self.assertFalse(is_individual_learner("normal", "learner", "org-1"))
         self.assertFalse(is_individual_learner("witstart", "learner"))
         for role, account_type in (
             ("super_admin", "admin"),
