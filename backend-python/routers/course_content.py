@@ -29,6 +29,7 @@ from .permissions import (
     require_permission,
 )
 from services.capacity import entitlement_limit
+from services.free_access import free_access_mode_enabled, is_individual_learner
 
 
 router = APIRouter(
@@ -456,6 +457,21 @@ def _check_course_view_access(
             if any(_has_active_scoped_course_source(str(context.user_id), str(organisation_id), course_id, row) for row in enrolments):
                 return
             raise HTTPException(403, "You are not enrolled in or assigned to this course.")
+
+    # During the free launch, individual global learner accounts can read
+    # published Learnora-owned catalogue courses without a trial or purchase.
+    # An organisation-scoped request never receives this individual grant.
+    if (
+        ownership == "learnora"
+        and not organisation_id
+        and course.get("status") == "published"
+        and free_access_mode_enabled()
+        and is_individual_learner(
+            getattr(context.user, "role", None),
+            getattr(context.user, "account_type", None),
+        )
+    ):
+        return
 
     # Learnora-owned catalogue content is available to an organisation only
     # when that organisation has an active course-access record.
