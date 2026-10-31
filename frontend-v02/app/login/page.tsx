@@ -22,6 +22,13 @@ export default function Login() {
       const privileged=memberships.filter((m:any)=>["owner","admin"].includes(m.role));
       const savedId=organisationContext();
       const selected=(me.organisation_id?memberships.find((m:any)=>String(m.organisation_id)===String(me.organisation_id)):null)||(savedId?memberships.find((m:any)=>String(m.organisation_id)===String(savedId)&&["owner","admin"].includes(m.role)):null)||(privileged.length===1?privileged[0]:null);
+      const requestedNext = new URLSearchParams(window.location.search).get("next") || "";
+      const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "";
+      if (me.role === "normal" && safeNext) {
+        clearOrganisationContext();
+        router.push(safeNext);
+        return;
+      }
       if(selected&&["owner","admin"].includes(selected.role))setOrganisationContext(String(selected.organisation_id));else clearOrganisationContext();
       router.push(me.role==="organisation_prospect"?"/organisation-portal":me.role==="witstart"?"/dashboard/witstart":selected&&["owner","admin"].includes(selected.role)?"/dashboard/organisation":privileged.length>1?"/dashboard/organisation?choose=1":"/dashboard");
     } catch(e:any) {setError(e.message||"We could not sign you in. Check your details and try again.");}
