@@ -49,16 +49,16 @@ class PublicTrackProgressTests(unittest.TestCase):
                 {"id": self.track_id, "name": "Foundations", "slug": "foundations", "description": "", "status": "published", "owner_user_id": None, "organisation_id": None}
             ],
             "learnora_learning_path_courses": [
-                {"id": "link-1", "course_id": "course-1", "order_index": 0, "required": True},
-                {"id": "link-2", "course_id": "course-2", "order_index": 1, "required": True},
+                {"id": "link-1", "path_id": self.track_id, "course_id": "course-1", "order_index": 0, "required": True},
+                {"id": "link-2", "path_id": self.track_id, "course_id": "course-2", "order_index": 1, "required": True},
             ],
             "learnora_courses": [
                 {"id": "course-1", "title": "One", "status": "published", "ownership": "learnora", "organisation_id": None},
                 {"id": "course-2", "title": "Two", "status": "published", "ownership": "learnora", "organisation_id": None},
             ],
             "learnora_enrolments": [
-                {"id": "e1", "course_id": "course-1", "status": "completed"},
-                {"id": "e2", "course_id": "course-2", "status": "active"},
+                {"id": "e1", "user_id": "learner-1", "course_id": "course-1", "status": "completed"},
+                {"id": "e2", "user_id": "learner-1", "course_id": "course-2", "status": "active"},
             ],
         }
         self.user = SimpleNamespace(id="learner-1", role="normal", account_type="learner")
