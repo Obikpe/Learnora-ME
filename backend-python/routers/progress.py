@@ -760,8 +760,6 @@ def track_progress(
         .in_("status", ["active", "completed"])
         .execute()
     ).data or []
-    if track.get("status") != "published" and not enrolments:
-        raise HTTPException(404, "Track not found.")
     enrolment_map = {str(row.get("course_id")): row for row in enrolments}
 
     course_progress = []
@@ -804,6 +802,8 @@ def track_progress(
             required_progress.append(item)
 
     required_count = len(required_progress)
+    if track.get("status") != "published" and not any(item["enrolled"] for item in required_progress):
+        raise HTTPException(404, "Track not found.")
     completed_required = sum(
         1 for item in required_progress if item["progress"]["completed"]
     )
