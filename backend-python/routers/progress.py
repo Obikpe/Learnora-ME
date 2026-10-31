@@ -146,7 +146,7 @@ def _assert_module_unlocked(user_id: str, module_id: str):
                 )
 
 
-def _course_summary(user_id: str, course_id: str):
+def _course_summary(user_id: str, course_id: str, include_archived: bool = False):
     enrolment = _enrolment(user_id, course_id)
     if not enrolment:
         raise HTTPException(
@@ -154,21 +154,24 @@ def _course_summary(user_id: str, course_id: str):
             "You are not enrolled in this course.",
         )
 
-    modules = (
+    module_query = (
         supabase
         .table("course_modules")
         .select("id,title,order_index,status")
         .eq("course_id", course_id)
-        .eq("status", "published")
-        .order("order_index")
-        .execute()
-    ).data or []
+    )
+    module_query = (
+        module_query.in_("status", ["published", "archived"])
+        if include_archived
+        else module_query.eq("status", "published")
+    )
+    modules = module_query.order("order_index").execute().data or []
 
     module_ids = [row["id"] for row in modules]
 
     lessons = []
     if module_ids:
-        lessons = (
+        lesson_query = (
             supabase
             .table("learnora_lessons")
             .select(
@@ -176,10 +179,13 @@ def _course_summary(user_id: str, course_id: str):
                 "content,duration_minutes,status"
             )
             .in_("module_id", module_ids)
-            .eq("status", "published")
-            .order("order_index")
-            .execute()
-        ).data or []
+        )
+        lesson_query = (
+            lesson_query.in_("status", ["published", "archived"])
+            if include_archived
+            else lesson_query.eq("status", "published")
+        )
+        lessons = lesson_query.order("order_index").execute().data or []
 
     progress = (
         supabase
@@ -210,13 +216,14 @@ def _course_summary(user_id: str, course_id: str):
     module_views = []
     for module in modules:
         locked = False
-        try:
-            _assert_module_unlocked(user_id, str(module["id"]))
-        except HTTPException as exc:
-            if exc.status_code in (409, 423):
-                locked = True
-            else:
-                raise
+        if not include_archived:
+            try:
+                _assert_module_unlocked(user_id, str(module["id"]))
+            except HTTPException as exc:
+                if exc.status_code in (409, 423):
+                    locked = True
+                else:
+                    raise
         module_lessons = []
         for lesson in lessons:
             if str(lesson["module_id"]) != str(module["id"]):
@@ -770,7 +777,7 @@ def track_progress(
         if not course:
             continue
         enrolment = enrolment_map.get(course_id)
-        summary = _course_summary(str(user.id), course_id) if enrolment else {
+        summary = _course_summary(str(user.id), course_id, include_archived=course.get("status") != "published") if enrolment else {
             "total_lessons": 0,
             "completed_lessons": 0,
             "progress_percent": 0,
