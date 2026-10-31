@@ -38,15 +38,35 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
           if (active) setProgress(null);
         }
       })
-      .catch(e => { if (active) setError(e.message || "Track could not be loaded."); })
+      .catch(async e => {
+        try {
+          // Existing learners retain access to saved track progress after a
+          // track is unpublished or archived from new learner discovery.
+          const saved = await request<any>("/progress/tracks/"+encodeURIComponent(params.id));
+          if (active) {
+            setProgress(saved);
+            setTrack({
+              ...saved.track,
+              courses: saved.courses,
+              course_count: saved.courses?.length || 0,
+              required_course_count: saved.required_courses || 0,
+            });
+          }
+        } catch {
+          if (active) setError(e.message || "Track could not be loaded.");
+        }
+      })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [params.id]);
 
   const nextCourse = useMemo(() => {
     const courses = progress?.courses || [];
-    return courses.find((item:any) => item.required && !item.progress?.completed)
-      || courses.find((item:any) => !item.progress?.completed)
+    const enrolledCourses = courses.filter((item:any) => item.enrolled);
+    return enrolledCourses.find((item:any) => item.required && !item.progress?.completed)
+      || enrolledCourses.find((item:any) => !item.progress?.completed)
+      || enrolledCourses[0]
+      || courses.find((item:any) => item.required)
       || track?.courses?.[0];
   }, [progress, track]);
 
@@ -88,7 +108,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
           <div className="flex items-center justify-between text-xs text-slate-500"><span>Track progress</span><span className="tabular-nums">{percent}%</span></div>
           <div className="mt-3 h-2 overflow-hidden bg-white/[.08]"><div className="h-full bg-[var(--gold)] transition-all" style={{width:percent+"%"}}/></div>
           <p className="mt-3 text-xs text-slate-500">{completedCount} of {requiredCount} required courses completed</p>
-          {isCompleted ? <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 size={16}/>Track completed</p> : isEnrolled ? <button type="button" disabled={!nextCourse?.course?.id} onClick={()=>{if(nextCourse?.course?.id)location.href="/dashboard/learning/"+encodeURIComponent(nextCourse.course.id)}} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f] disabled:opacity-40">Continue learning <ArrowRight size={15}/></button> : <button type="button" onClick={()=>void enrol()} disabled={enrolling} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f] disabled:opacity-50">{enrolling?"Enrolling…":"Enrol in this track"} <ArrowRight size={15}/></button>}
+          {isCompleted ? <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 size={16}/>Track completed</p> : isEnrolled ? <button type="button" disabled={!nextCourse?.course?.id} onClick={()=>{if(nextCourse?.course?.id)location.href="/dashboard/learning/"+encodeURIComponent(nextCourse.course.id)}} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f] disabled:opacity-40">Continue learning <ArrowRight size={15}/></button> : track?.status!=="published" ? <p className="mt-5 text-xs leading-6 text-slate-500">This track is no longer open for new enrolments.</p> : <button type="button" onClick={()=>void enrol()} disabled={enrolling} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f] disabled:opacity-50">{enrolling?"Enrolling…":"Enrol in this track"} <ArrowRight size={15}/></button>}
         </div>
       </header>
 
@@ -103,7 +123,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
             return <article key={item.id} className="grid gap-4 py-5 sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:items-center">
               <div className="grid size-11 place-items-center border border-white/[.1] text-sm tabular-nums text-slate-500">{String(index+1).padStart(2,"0")}</div>
               <div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><h3 className="text-lg font-semibold text-slate-100">{item.course?.title}</h3>{item.required ? <span className="text-[9px] font-bold uppercase tracking-[.15em] gold">Required</span> : <span className="text-[9px] font-semibold uppercase tracking-[.15em] text-slate-500">Optional</span>}</div><p className="mt-2 text-sm leading-6 text-slate-500">{item.course?.short_description || item.course?.level || "Published Learnora course"}</p>{saved?.progress && <p className="mt-2 text-xs text-slate-500">{saved.progress.completed_lessons} of {saved.progress.total_lessons} lessons complete · {saved.progress.progress_percent}%</p>}</div>
-              <div className="flex items-center gap-3">{done ? <span className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-300"><CheckCircle2 size={15}/>Completed</span> : isEnrolled ? <Link href={"/dashboard/learning/"+encodeURIComponent(item.course?.id)} className="inline-flex min-h-10 items-center gap-2 border border-white/[.14] px-3 text-xs font-semibold text-slate-200 hover:border-[var(--gold)]">Open course <ArrowRight size={14}/></Link> : <span className="inline-flex items-center gap-2 text-xs text-slate-600"><Circle size={13}/>Not started</span>}</div>
+              <div className="flex items-center gap-3">{done ? <span className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-300"><CheckCircle2 size={15}/>Completed</span> : saved?.enrolled ? <Link href={"/dashboard/learning/"+encodeURIComponent(item.course?.id)} className="inline-flex min-h-10 items-center gap-2 border border-white/[.14] px-3 text-xs font-semibold text-slate-200 hover:border-[var(--gold)]">Open course <ArrowRight size={14}/></Link> : <span className="inline-flex items-center gap-2 text-xs text-slate-600"><Circle size={13}/>Not enrolled</span>}</div>
             </article>;
           })}
         </div>
