@@ -611,7 +611,7 @@ def learners(
     offset: int = Query(default=0, ge=0),
     staff: InternalStaffContext = _staff("users.view"),
 ):
-    """Return a privacy-minimised, paginated view of individual learners."""
+    """Return privacy-minimised learner-role accounts, including organisation-linked users."""
     query = (
         supabase.table("users")
         .select("id,name,email,role,email_verified_at,created_at,sub_status")
@@ -692,7 +692,7 @@ def learner_detail(
         .execute()
     )
     if not user_result.data:
-        raise HTTPException(404, "Individual learner not found.")
+        raise HTTPException(404, "Learner account not found.")
 
     enrolments = (
         supabase.table("learnora_enrolments")
