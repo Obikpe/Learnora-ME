@@ -8,6 +8,33 @@ from typing import Optional, Literal
 
 router = APIRouter(prefix="/api/internal/content", tags=["Internal Content"])
 
+def _assert_course_not_in_published_global_track(course_id: str):
+    links = (
+        supabase.table("learnora_learning_path_courses")
+        .select("path_id")
+        .eq("course_id", course_id)
+        .execute()
+    ).data or []
+    path_ids = list({str(row["path_id"]) for row in links if row.get("path_id")})
+    if not path_ids:
+        return
+    published = (
+        supabase.table("learnora_learning_paths")
+        .select("id")
+        .in_("id", path_ids)
+        .eq("status", "published")
+        .is_("owner_user_id", "null")
+        .is_("organisation_id", "null")
+        .limit(1)
+        .execute()
+    ).data or []
+    if published:
+        raise HTTPException(
+            status_code=409,
+            detail="Unpublish or update the global track before changing this course's publication or ownership.",
+        )
+
+
 @router.get("/courses")
 def courses(staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
     rows = supabase.table("learnora_courses").select("id,title,slug,organisation_id,ownership,status,created_at,updated_at").order("created_at", desc=True).execute()
@@ -70,9 +97,21 @@ def get_course(course_id: str, staff: InternalStaffContext = Depends(require_int
 
 @router.patch("/courses/{course_id}")
 def update_course(course_id: str, payload: CourseWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
-    if not supabase.table("learnora_courses").select("id").eq("id", course_id).limit(1).execute().data:
+    current_result = (
+        supabase.table("learnora_courses")
+        .select("id,status,ownership,organisation_id")
+        .eq("id", course_id)
+        .limit(1)
+        .execute()
+    )
+    if not current_result.data:
         raise HTTPException(status_code=404, detail="Course not found.")
+    current_course = current_result.data[0]
     data = payload.model_dump(exclude_unset=True)
+    resulting_status = data.get("status", current_course.get("status"))
+    resulting_ownership = data.get("ownership", current_course.get("ownership"))
+    if resulting_status != "published" or resulting_ownership != "learnora" or current_course.get("organisation_id") is not None:
+        _assert_course_not_in_published_global_track(course_id)
     for key in ("title", "slug", "short_description", "description", "level", "ownership", "thumbnail_url"):
         if key in data and isinstance(data[key], str):
             data[key] = data[key].strip() or None
@@ -90,6 +129,7 @@ def update_course(course_id: str, payload: CourseWrite, staff: InternalStaffCont
 
 @router.post("/courses/{course_id}/archive")
 def archive_course(course_id: str, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    _assert_course_not_in_published_global_track(course_id)
     row = supabase.table("learnora_courses").update({"status": "archived"}).eq("id", course_id).execute()
     if not row.data:
         raise HTTPException(status_code=404, detail="Course not found.")
