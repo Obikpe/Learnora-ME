@@ -28,6 +28,7 @@ class EnrolmentQuery:
     def order(self, *_args, **_kwargs): return self
     def limit(self, value): self.limit_value = value; return self
     def insert(self, values): self.action = "insert"; self.values = values; return self
+    def update(self, values): self.action = "update"; self.values = values; return self
 
     def execute(self):
         rows = self.fixtures.setdefault(self.table, [])
@@ -42,6 +43,10 @@ class EnrolmentQuery:
             inserted = [dict(value) for value in values]
             rows.extend(inserted)
             return SimpleNamespace(data=inserted)
+        if self.action == "update":
+            for row in selected:
+                row.update(self.values)
+            return SimpleNamespace(data=[dict(row) for row in selected])
         return SimpleNamespace(data=selected)
 
 
@@ -75,7 +80,32 @@ class TrackEnrolmentTests(unittest.TestCase):
         self.assertEqual(result["new_enrolments"], 2)
         self.assertEqual(result["enrolled_courses"], 2)
         self.assertEqual({row["course_id"] for row in self.fixtures["learnora_enrolments"]}, {"course-1", "course-2"})
-        self.assertTrue(all(row["source_type"] == "track_enrolment" for row in self.fixtures["learnora_enrolments"]))
+        self.assertTrue(all(row["source_type"] == f"track_enrolment:{self.track_id}" for row in self.fixtures["learnora_enrolments"]))
+
+    def test_withdrawn_individual_enrolment_is_reactivated_instead_of_duplicated(self):
+        self.fixtures["learnora_enrolments"] = [
+            {"id": "old-1", "user_id": "learner-1", "course_id": "course-1", "organisation_id": None, "cohort_id": None, "status": "withdrawn", "source_type": "self_enrolment"}
+        ]
+        user = SimpleNamespace(id="learner-1", role="normal", account_type="learner")
+        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(courses, "supabase", EnrolmentSupabase(self.fixtures)):
+            result = courses.self_enrol_in_track(self.track_id, user=user)
+        self.assertEqual(result["reactivated_enrolments"], 1)
+        self.assertEqual(result["new_enrolments"], 1)
+        self.assertEqual(len(self.fixtures["learnora_enrolments"]), 2)
+        restored = self.fixtures["learnora_enrolments"][0]
+        self.assertEqual(restored["status"], "active")
+        self.assertEqual(restored["source_type"], f"track_enrolment:{self.track_id}")
+
+    def test_suspended_enrolment_is_not_reactivated_by_public_track_enrolment(self):
+        self.fixtures["learnora_enrolments"] = [
+            {"id": "old-1", "user_id": "learner-1", "course_id": "course-1", "organisation_id": None, "cohort_id": None, "status": "suspended", "source_type": "self_enrolment"}
+        ]
+        user = SimpleNamespace(id="learner-1", role="normal", account_type="learner")
+        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(courses, "supabase", EnrolmentSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                courses.self_enrol_in_track(self.track_id, user=user)
+        self.assertEqual(raised.exception.status_code, 409)
+        self.assertEqual(self.fixtures["learnora_enrolments"][0]["status"], "suspended")
 
     def test_witstart_organisation_learner_cannot_self_enrol_in_public_track(self):
         user = SimpleNamespace(id="learner-2", role="witstart", account_type="learner")
