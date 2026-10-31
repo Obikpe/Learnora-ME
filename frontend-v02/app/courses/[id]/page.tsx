@@ -10,13 +10,13 @@ import EmptyState from "../../../components/feedback/EmptyState";
 import Skeleton from "../../../components/feedback/Skeleton";
 
 export default function CourseDetail({params}:{params:{id:string}}) {
-  const [c,setC]=useState<any>(),[s,setS]=useState<any>(),[error,setError]=useState(""),[enrolError,setEnrolError]=useState(""),[enrolling,setEnrolling]=useState(false),[enrolled,setEnrolled]=useState(false);
-  useEffect(()=>{let active=true;Promise.all([course(params.id),structure(params.id)]).then(([a,b])=>{if(active){setC(a.course||a);setS(b)}}).catch(x=>{if(active)setError(x.message||"Course could not be loaded.")});return()=>{active=false}},[params.id]);
+  const [c,setC]=useState<any>(),[s,setS]=useState<any>(),[freeMode,setFreeMode]=useState(false),[error,setError]=useState(""),[enrolError,setEnrolError]=useState(""),[enrolling,setEnrolling]=useState(false),[enrolled,setEnrolled]=useState(false);
+  useEffect(()=>{let active=true;Promise.all([course(params.id),structure(params.id),request<any>("/access/mode").catch(()=>({free_access_mode:false}))]).then(([a,b,mode])=>{if(active){setC(a.course||a);setS(b);setFreeMode(Boolean(mode.free_access_mode))}}).catch(x=>{if(active)setError(x.message||"Course could not be loaded.")});return()=>{active=false}},[params.id]);
   async function enrol(){setEnrolError("");setEnrolling(true);try{await request<any>("/courses/"+encodeURIComponent(params.id)+"/enrol",{method:"POST"});setEnrolled(true);location.href="/dashboard/learning/"+encodeURIComponent(params.id)}catch(e:any){setEnrolError(e.message||"Enrolment is not available for this course.")}finally{setEnrolling(false)}}
   if(error)return <><PublicNav/><main className="mx-auto max-w-5xl px-5 pb-24 pt-36"><EmptyState title="Course unavailable" message={error}/><a href="/courses" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold gold">Back to courses <ArrowRight size={15}/></a></main><PublicFooter/></>;
   if(!c)return <><PublicNav/><main className="mx-auto max-w-[82rem] px-5 pb-24 pt-32 lg:px-8"><Skeleton variant="course" label="Loading course details"/></main><PublicFooter/></>;
   const modules=s?.modules||s?.structure?.modules||[];
-  const isFree=c.settings?.is_free===true||c.settings?.access_type==="free"||c.settings?.price===0;
+  const isFree=(freeMode&&c.ownership==="learnora")||c.settings?.is_free===true||c.settings?.access_type==="free"||c.settings?.price===0;
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
   return <>
     <PublicNav/>
