@@ -76,7 +76,7 @@ export default function LearnersPage() {
   return <Shell roles={me.roles || []} active="learners">
     <header className="border-b border-white/[.1] pb-6">
       <p className="section-kicker">Platform oversight / Learners</p>
-      <h1 className="mt-3 font-display text-4xl tracking-tight sm:text-5xl">Individual learners</h1>
+      <h1 className="mt-3 font-display text-4xl tracking-tight sm:text-5xl">Learner accounts</h1>
       <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Review individual learner accounts, enrolments and saved learning progress. Organisation and cohort records remain managed in their own workspaces.</p>
     </header>
 
@@ -108,7 +108,7 @@ export default function LearnersPage() {
                 <td className="px-4 py-4 tabular-nums text-slate-300">{learner.learning_summary?.completed_lessons || 0} / {learner.learning_summary?.tracked_lessons || 0}</td>
                 <td className="px-4 py-4 text-xs text-slate-500">{learner.created_at ? new Date(learner.created_at).toLocaleDateString() : "—"}</td>
               </tr>)}
-              {!loading && !items.length && <tr><td colSpan={5} className="px-4 py-12 text-center text-sm text-slate-500">No individual learner records matched this search.</td></tr>}
+              {!loading && !items.length && <tr><td colSpan={5} className="px-4 py-12 text-center text-sm text-slate-500">No learner account records matched this search.</td></tr>}
               {loading && <tr><td colSpan={5} className="px-4 py-12 text-center text-sm text-slate-500">Loading learner records…</td></tr>}
             </tbody>
           </table>
