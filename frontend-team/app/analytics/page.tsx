@@ -33,8 +33,8 @@ export default function AnalyticsPage() {
 
   const metrics = data?.metrics || {};
   const cards = [
-    { key: "individual_learners", label: "Individual learners", icon: Users, description: "Verified and unverified learner accounts." },
-    { key: "new_individual_learners_30d", label: "New learners · 30 days", icon: GraduationCap, description: "New individual learner registrations." },
+    { key: "individual_learners", label: "Learner accounts", icon: Users, description: "Verified and unverified accounts with the learner role." },
+    { key: "new_individual_learners_30d", label: "New learner accounts · 30 days", icon: GraduationCap, description: "New accounts registered with the learner role." },
     { key: "published_learnora_courses", label: "Published courses", icon: BookOpen, description: "Published courses owned by Learnora." },
     { key: "published_global_tracks", label: "Published tracks", icon: Route, description: "Published global learner tracks." },
     { key: "active_course_enrolments", label: "Active enrolments", icon: Activity, description: "Enrolments currently marked active." },
