@@ -687,7 +687,7 @@ def learner_detail(
         supabase.table("users")
         .select("id,name,email,role,email_verified_at,created_at,sub_status")
         .eq("id", user_id)
-        .in_("role", ["normal", "witstart"])
+        .eq("role", "normal")
         .limit(1)
         .execute()
     )
@@ -748,13 +748,16 @@ def analytics_overview(
 
     learner_count = supabase.table("users").select(
         "id", count="exact", head=True
-    ).in_("role", ["normal", "witstart"]).execute()
+    ).eq("role", "normal").execute()
     new_learners = supabase.table("users").select(
         "id", count="exact", head=True
-    ).in_("role", ["normal", "witstart"]).gte("created_at", since).execute()
+    ).eq("role", "normal").gte("created_at", since).execute()
     published_courses = supabase.table("learnora_courses").select(
         "id", count="exact", head=True
     ).eq("ownership", "learnora").eq("status", "published").execute()
+    published_tracks = supabase.table("learnora_learning_paths").select(
+        "id", count="exact", head=True
+    ).is_("owner_user_id", "null").is_("organisation_id", "null").eq("status", "published").execute()
     active_enrolments = supabase.table("learnora_enrolments").select(
         "id", count="exact", head=True
     ).eq("status", "active").execute()
@@ -781,6 +784,7 @@ def analytics_overview(
             "individual_learners": int(learner_count.count or 0),
             "new_individual_learners_30d": int(new_learners.count or 0),
             "published_learnora_courses": int(published_courses.count or 0),
+            "published_global_tracks": int(published_tracks.count or 0),
             "active_course_enrolments": int(active_enrolments.count or 0),
             "completed_course_enrolments": int(completed_enrolments.count or 0),
             "active_learners_30d": active_learners,
@@ -790,6 +794,7 @@ def analytics_overview(
             "individual_learners": "Accounts with role normal in public.users.",
             "new_individual_learners_30d": "Accounts with role normal created in the last 30 days.",
             "published_learnora_courses": "Published courses owned by Learnora; excludes organisation and creator courses.",
+            "published_global_tracks": "Published global learning paths with no personal owner or organisation scope.",
             "active_course_enrolments": "Course enrolments whose status is active.",
             "completed_course_enrolments": "Course enrolments whose status is completed.",
             "active_learners_30d": "Distinct learners with a lesson-progress record accessed in the last 30 days.",
