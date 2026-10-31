@@ -3,8 +3,8 @@
 These endpoints are intentionally separate from learner/admin public APIs so
 the internal frontend can authenticate with the internal staff token only.
 """
-from fastapi import APIRouter, Depends, HTTPException
-from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException, Query
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, Field
 from typing import Any, Optional
 from .internal_auth import InternalStaffContext, require_internal_permission
@@ -598,3 +598,202 @@ def update_organisation_request(
         raise HTTPException(status_code=500, detail="Unable to update organisation request.")
 
     return {"success": True, "request": updated.data[0]}
+
+
+# ---------------------------------------------------------------------------
+# Individual learner oversight and platform analytics
+# ---------------------------------------------------------------------------
+
+@router.get("/learners")
+def learners(
+    q: Optional[str] = Query(default=None, max_length=120),
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    staff: InternalStaffContext = _staff("users.view"),
+):
+    """Return a privacy-minimised, paginated view of individual learners."""
+    query = (
+        supabase.table("users")
+        .select("id,name,email,role,email_verified_at,created_at,sub_status")
+        .in_("role", ["normal", "witstart"])
+        .order("created_at", desc=True)
+        .range(offset, offset + limit - 1)
+    )
+    search = (q or "").strip().replace("%", "").replace("_", "").replace(",", "")[:120]
+    if search:
+        query = query.ilike("email", f"%{search}%")
+    result = query.execute()
+    learner_rows = result.data or []
+    learner_ids = [str(row["id"]) for row in learner_rows if row.get("id")]
+
+    enrolments = []
+    lesson_progress = []
+    if learner_ids:
+        enrolments = (
+            supabase.table("learnora_enrolments")
+            .select("user_id,status")
+            .in_("user_id", learner_ids)
+            .execute()
+        ).data or []
+        lesson_progress = (
+            supabase.table("learnora_lesson_progress")
+            .select("user_id,completed")
+            .in_("user_id", learner_ids)
+            .execute()
+        ).data or []
+
+    summaries = {}
+    for learner_id in learner_ids:
+        own_enrolments = [row for row in enrolments if str(row.get("user_id")) == learner_id]
+        own_progress = [row for row in lesson_progress if str(row.get("user_id")) == learner_id]
+        summaries[learner_id] = {
+            "enrolled_courses": len(own_enrolments),
+            "completed_courses": sum(1 for row in own_enrolments if row.get("status") == "completed"),
+            "tracked_lessons": len(own_progress),
+            "completed_lessons": sum(1 for row in own_progress if row.get("completed") is True),
+        }
+
+    learners_payload = []
+    for row in learner_rows:
+        learner_id = str(row.get("id") or "")
+        learners_payload.append({
+            **row,
+            "learning_summary": summaries.get(learner_id, {
+                "enrolled_courses": 0,
+                "completed_courses": 0,
+                "tracked_lessons": 0,
+                "completed_lessons": 0,
+            }),
+        })
+
+    return {
+        "success": True,
+        "learners": learners_payload,
+        "pagination": {
+            "limit": limit,
+            "offset": offset,
+            "has_more": len(learner_rows) == limit,
+        },
+    }
+
+
+@router.get("/learners/{user_id}")
+def learner_detail(
+    user_id: str,
+    staff: InternalStaffContext = _staff("users.view"),
+):
+    """Return one learner's account, enrolments and lesson progress."""
+    user_result = (
+        supabase.table("users")
+        .select("id,name,email,role,email_verified_at,created_at,sub_status")
+        .eq("id", user_id)
+        .in_("role", ["normal", "witstart"])
+        .limit(1)
+        .execute()
+    )
+    if not user_result.data:
+        raise HTTPException(404, "Individual learner not found.")
+
+    enrolments = (
+        supabase.table("learnora_enrolments")
+        .select("id,course_id,status,enrolled_at,completed_at,organisation_id,cohort_id")
+        .eq("user_id", user_id)
+        .order("enrolled_at", desc=True)
+        .execute()
+    ).data or []
+    progress_rows = (
+        supabase.table("learnora_lesson_progress")
+        .select("lesson_id,enrolment_id,progress_percent,completed,last_position_seconds,last_accessed_at,completed_at")
+        .eq("user_id", user_id)
+        .order("last_accessed_at", desc=True)
+        .limit(500)
+        .execute()
+    ).data or []
+    course_ids = list({str(row["course_id"]) for row in enrolments if row.get("course_id")})
+    course_rows = []
+    if course_ids:
+        course_rows = (
+            supabase.table("learnora_courses")
+            .select("id,title,slug,status,ownership")
+            .in_("id", course_ids)
+            .execute()
+        ).data or []
+    course_map = {str(row["id"]): row for row in course_rows}
+    enrolments_payload = [
+        {**row, "course": course_map.get(str(row.get("course_id")))}
+        for row in enrolments
+    ]
+    completed_lessons = sum(1 for row in progress_rows if row.get("completed") is True)
+    return {
+        "success": True,
+        "learner": user_result.data[0],
+        "enrolments": enrolments_payload,
+        "lesson_progress": progress_rows,
+        "learning_summary": {
+            "enrolled_courses": len(enrolments),
+            "completed_courses": sum(1 for row in enrolments if row.get("status") == "completed"),
+            "tracked_lessons": len(progress_rows),
+            "completed_lessons": completed_lessons,
+            "progress_rows_limited": len(progress_rows) == 500,
+        },
+    }
+
+
+@router.get("/analytics/overview")
+def analytics_overview(
+    staff: InternalStaffContext = _staff("platform.analytics"),
+):
+    """Return operational metrics with explicit definitions and windows."""
+    since = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+    learner_count = supabase.table("users").select(
+        "id", count="exact", head=True
+    ).in_("role", ["normal", "witstart"]).execute()
+    new_learners = supabase.table("users").select(
+        "id", count="exact", head=True
+    ).in_("role", ["normal", "witstart"]).gte("created_at", since).execute()
+    published_courses = supabase.table("learnora_courses").select(
+        "id", count="exact", head=True
+    ).eq("ownership", "learnora").eq("status", "published").execute()
+    active_enrolments = supabase.table("learnora_enrolments").select(
+        "id", count="exact", head=True
+    ).eq("status", "active").execute()
+    completed_enrolments = supabase.table("learnora_enrolments").select(
+        "id", count="exact", head=True
+    ).eq("status", "completed").execute()
+    lesson_events = supabase.table("learnora_lesson_progress").select(
+        "user_id,completed"
+    ).gte("last_accessed_at", since).limit(10000).execute()
+    recent_events = lesson_events.data or []
+    active_learners = len({
+        str(row.get("user_id"))
+        for row in recent_events
+        if row.get("user_id")
+    })
+    recent_completions = sum(
+        1 for row in recent_events if row.get("completed") is True
+    )
+
+    return {
+        "success": True,
+        "window_days": 30,
+        "metrics": {
+            "individual_learners": int(learner_count.count or 0),
+            "new_individual_learners_30d": int(new_learners.count or 0),
+            "published_learnora_courses": int(published_courses.count or 0),
+            "active_course_enrolments": int(active_enrolments.count or 0),
+            "completed_course_enrolments": int(completed_enrolments.count or 0),
+            "active_learners_30d": active_learners,
+            "lesson_completions_30d": recent_completions,
+        },
+        "definitions": {
+            "individual_learners": "Accounts with role normal or witstart in public.users.",
+            "new_individual_learners_30d": "Individual learner accounts created in the last 30 days.",
+            "published_learnora_courses": "Published courses owned by Learnora; excludes organisation and creator courses.",
+            "active_course_enrolments": "Course enrolments whose status is active.",
+            "completed_course_enrolments": "Course enrolments whose status is completed.",
+            "active_learners_30d": "Distinct learners with a lesson-progress record accessed in the last 30 days.",
+            "lesson_completions_30d": "Completed lesson-progress records accessed in the last 30 days.",
+        },
+        "active_learner_sample_capped": len(recent_events) == 10000,
+    }
