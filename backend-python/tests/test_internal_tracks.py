@@ -89,6 +89,14 @@ class InternalTracksTests(unittest.TestCase):
                 {"id": "course-1", "title": "One", "status": "published", "ownership": "learnora", "organisation_id": None},
                 {"id": "course-2", "title": "Two", "status": "published", "ownership": "learnora", "organisation_id": None},
             ],
+            "course_modules": [
+                {"id": "module-1", "course_id": "course-1", "status": "published"},
+                {"id": "module-2", "course_id": "course-2", "status": "published"},
+            ],
+            "learnora_lessons": [
+                {"id": "lesson-1", "module_id": "module-1", "status": "published"},
+                {"id": "lesson-2", "module_id": "module-2", "status": "published"},
+            ],
         }
 
     def test_global_track_scope_excludes_personal_and_organisation_paths(self):
