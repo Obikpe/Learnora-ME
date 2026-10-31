@@ -309,7 +309,7 @@ def reorder_track_courses(
                 {"order_index": temp_start + index}
             ).eq("id", item.id).eq("path_id", str(track["id"])).execute()
         for item in items:
-            updated = (
+            (
                 supabase.table("learnora_learning_path_courses")
                 .update({"order_index": item.order_index})
                 .eq("id", item.id)
