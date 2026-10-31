@@ -311,3 +311,6 @@ The active Supabase project metadata was confirmed as Pheonix (`gihfupzvdpyrmynq
 The global track MVP has now been implemented against the existing generic learning-path schema: Teams can create/manage global tracks, attach global Learnora courses, reorder the course sequence, publish/unpublish/archive tracks, and the learner app can discover tracks, enrol into their eligible courses and view backend-calculated required-course completion. Published tracks cannot have their course list reordered or changed until they are unpublished; courses linked to published global tracks cannot be unpublished or archived through the Teams course API. Track publication requires at least one required course and published course content.
 
 This is code-only work against the checked-in baseline. Because live SQL introspection is still unavailable, confirm the live Pheonix schema before release. The track review/rating workflow remains blocked on a proper track-linked feedback model with separate public consent and moderation fields; no review data is being stored in an improvised field.
+
+
+The proposed review schema and its consent, moderation, security and test gates are documented in [TRACK_REVIEW_SCHEMA_PROPOSAL.md](TRACK_REVIEW_SCHEMA_PROPOSAL.md). It is a proposal only; no migration or review table has been created.
