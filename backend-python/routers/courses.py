@@ -791,7 +791,7 @@ def self_enrol_in_track(
                     "organisation_id": None,
                     "status": "active",
                     "enrolled_at": now,
-                    "source_type": "track_enrolment",
+                    "source_type": f"track_enrolment:{track_id}",
                 }
                 for course_id in missing
             ])
