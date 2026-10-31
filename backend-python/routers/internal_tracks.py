@@ -331,6 +331,8 @@ def reorder_track_courses(
         raise HTTPException(status_code=409, detail="Reorder must include every current track course exactly once.")
     if len({item.order_index for item in items}) != len(items):
         raise HTTPException(status_code=422, detail="Course order positions must be unique.")
+    if {item.order_index for item in items} != set(range(len(items))):
+        raise HTTPException(status_code=422, detail="Course order positions must be contiguous starting at zero.")
 
     old_positions = {key: int(row.get("order_index") or 0) for key, row in current_by_id.items()}
     temp_start = max(old_positions.values(), default=0) + len(items) + 100
@@ -350,8 +352,15 @@ def reorder_track_courses(
             # The PostgREST update can return an empty representation on a
             # successful write; execute() raising is the failure signal.
     except Exception as exc:
-        # Best-effort compensation preserves the original ordering if a later
-        # write fails. The operation is deliberately not advertised as atomic.
+        # Best-effort compensation first moves every row out of the target
+        # positions, then restores the previous unique positions.
+        for index, link_id in enumerate(old_positions):
+            try:
+                supabase.table("learnora_learning_path_courses").update(
+                    {"order_index": temp_start + len(items) + index}
+                ).eq("id", link_id).eq("path_id", str(track["id"])).execute()
+            except Exception:
+                pass
         for link_id, old_index in old_positions.items():
             try:
                 supabase.table("learnora_learning_path_courses").update(
