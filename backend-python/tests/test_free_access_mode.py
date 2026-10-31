@@ -156,6 +156,7 @@ class FreeAccessModeTests(unittest.TestCase):
             for course in (
                 {"id": "draft-1", "ownership": "learnora", "status": "draft"},
                 {"id": "creator-1", "ownership": "creator", "status": "published"},
+                {"id": "tenant-course", "ownership": "learnora", "organisation_id": "org-a", "status": "published"},
             ):
                 with self.subTest(course=course):
                     with self.assertRaises(HTTPException) as raised:
@@ -186,6 +187,12 @@ class FreeAccessModeTests(unittest.TestCase):
         course = {"id": "course-1", "ownership": "learnora", "status": "published"}
         with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(access, "_course", return_value=course), patch.object(access, "supabase", EmptySupabase()):
             result = access.resolve_course_access("learner-1", "course-1", allow_free_access=False)
+        self.assertIsNone(result)
+
+    def test_central_access_resolver_rejects_tenant_scoped_learnora_courses_for_individual_free_mode(self):
+        course = {"id": "course-1", "ownership": "learnora", "organisation_id": "org-a", "status": "published"}
+        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(access, "_course", return_value=course), patch.object(access, "supabase", EmptySupabase()):
+            result = access.resolve_course_access("learner-1", "course-1", allow_free_access=True)
         self.assertIsNone(result)
 
 
