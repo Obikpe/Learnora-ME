@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect,useState } from "react";
-import { ArrowUpRight, Users, Network, UserRoundCog, Building2, BookOpen, Layers3, ShieldCheck, Activity } from "lucide-react";
+import { ArrowUpRight, Users, Network, UserRoundCog, Building2, BookOpen, Layers3, ShieldCheck, Activity, GraduationCap, LineChart } from "lucide-react";
 import { teamMe,staff,departments,teams } from "../lib/api";
 import Shell from "../components/Shell";
 import LivePanel from "../components/LivePanel";
@@ -9,6 +9,8 @@ import LivePanel from "../components/LivePanel";
 const shortcuts=[
   {href:"/organisations",title:"Organisation workspace",detail:"Review organisation requests, contracts and capacity.",icon:Building2},
   {href:"/content",title:"Learning content",detail:"Manage courses, modules, lessons and media.",icon:Layers3},
+  {href:"/learners",title:"Individual learners",detail:"Review learner accounts, enrolments and saved progress.",icon:GraduationCap},
+  {href:"/analytics",title:"Platform analytics",detail:"Review learner activity, course enrolments and completions.",icon:LineChart},
   {href:"/staff",title:"People and access",detail:"Review team records and assigned access.",icon:Users},
   {href:"/security",title:"Security and controls",detail:"Review security posture and operational safeguards.",icon:ShieldCheck},
 ];
