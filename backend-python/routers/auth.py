@@ -2880,7 +2880,7 @@ def verify_email(
     is_prospect = user.get("role") == "organisation_prospect"
     free_launch_learner = (
         free_access_mode_enabled()
-        and is_individual_learner(user.get("role") or "normal", "learner")
+        and is_individual_learner(user.get("role"), "learner")
     )
     trial_ends_at = (
         None
