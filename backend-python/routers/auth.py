@@ -81,6 +81,8 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 from supabase import Client, create_client
 
+from services.free_access import free_access_mode_enabled, is_individual_learner
+
 
 router = APIRouter()
 bearer = HTTPBearer(auto_error=False)
@@ -1313,6 +1315,22 @@ def _resolve_learner_access(
     now = datetime.now(
         timezone.utc
     )
+
+    # Free launch is a server-side access policy, not a rewrite of billing
+    # history. Do not mutate paid/trial rows while the mode is enabled.
+    if (
+        free_access_mode_enabled()
+        and is_individual_learner(user.get("role"), "learner")
+        and user.get("email_verified_at")
+    ):
+        return {
+            "sub_status": user.get("sub_status") or "expired",
+            "is_paid": False,
+            "access_state": "free",
+            "course_access": True,
+            "trial_ends_at": user.get("trial_ends_at"),
+            "expires_at": user.get("expires_at"),
+        }
 
     sub_status = (
         user.get("sub_status")
@@ -2854,13 +2872,17 @@ def verify_email(
     # ---------------------------------------------------------------
 
     is_prospect = user.get("role") == "organisation_prospect"
+    free_launch_learner = (
+        free_access_mode_enabled()
+        and is_individual_learner(user.get("role") or "normal", "learner")
+    )
     trial_ends_at = (
         None
-        if is_prospect
+        if is_prospect or free_launch_learner
         else now + timedelta(days=TRIAL_DAYS)
     )
     verification_update = {
-        "sub_status": "expired" if is_prospect else "trialing",
+        "sub_status": "expired" if is_prospect or free_launch_learner else "trialing",
         "is_paid": False,
         "subscription_tier": "free",
         "trial_ends_at": trial_ends_at.isoformat() if trial_ends_at else None,
@@ -2988,17 +3010,18 @@ def verify_email(
         role=role,
         request=request,
         metadata={
-            "trial_days": TRIAL_DAYS,
-            "trial_ends_at": (
-                trial_ends_at.isoformat()
-            ),
+            "free_access_mode": free_launch_learner,
+            "trial_days": None if free_launch_learner or is_prospect else TRIAL_DAYS,
+            "trial_ends_at": trial_ends_at.isoformat() if trial_ends_at else None,
         },
     )
 
     return {
         "status": "success",
         "message": (
-            "Email verified successfully. "
+            "Email verified successfully. You can now use Learnora for free."
+            if free_launch_learner
+            else "Email verified successfully. "
             f"Your {TRIAL_DAYS}-day free trial has started."
         ),
         "token": token,
@@ -3007,12 +3030,10 @@ def verify_email(
         "name": user.get("name"),
         "role": role,
         "account_type": "learner",
-        "sub_status": "trialing",
+        "sub_status": "expired" if free_launch_learner else "trialing",
         "is_paid": False,
-        "access_state": "trial",
-        "trial_ends_at": (
-            trial_ends_at.isoformat()
-        ),
+        "access_state": "free" if free_launch_learner else "trial",
+        "trial_ends_at": trial_ends_at.isoformat() if trial_ends_at else None,
         "course_access": True,
         "allowed": allowed_for(
             role,
