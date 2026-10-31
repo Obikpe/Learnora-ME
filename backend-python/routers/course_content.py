@@ -463,6 +463,7 @@ def _check_course_view_access(
     # An organisation-scoped request never receives this individual grant.
     if (
         ownership == "learnora"
+        and not course_org
         and not organisation_id
         and course.get("status") == "published"
         and free_access_mode_enabled()
