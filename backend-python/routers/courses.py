@@ -644,7 +644,7 @@ def self_enrol_in_free_course(
             raise HTTPException(403, "This creator is not approved for course distribution.")
     settings = course.get("settings") or {}
     is_free = (
-        (free_access_mode_enabled() and is_individual_learner(user.role, user.account_type) and course.get("ownership") == "learnora")
+        (free_access_mode_enabled() and is_individual_learner(user.role, user.account_type) and course.get("ownership") == "learnora" and not course.get("organisation_id"))
         or settings.get("is_free") is True
         or settings.get("access_type") == "free"
         or settings.get("price") == 0
