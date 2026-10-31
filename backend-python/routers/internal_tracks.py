@@ -171,6 +171,18 @@ def _assert_publishable(track_id: str):
         ).data or []
         if not lessons:
             raise HTTPException(status_code=409, detail="Every track course must contain at least one published lesson.")
+        ordered_modules = sorted(modules, key=lambda row: int(row.get("order_index") or 0))
+        for previous_module in ordered_modules[:-1]:
+            quizzes = (
+                supabase.table("quizzes")
+                .select("id")
+                .eq("module_id", str(previous_module["id"]))
+                .eq("is_published", True)
+                .limit(1)
+                .execute()
+            ).data or []
+            if not quizzes:
+                raise HTTPException(status_code=409, detail="Every published module before the final module must have a published assessment so learners can unlock the next module.")
 
 
 @router.get("")
