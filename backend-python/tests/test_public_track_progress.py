@@ -108,6 +108,17 @@ class PublicTrackProgressTests(unittest.TestCase):
                 progress.track_progress(self.track_id, user=self.user)
         self.assertEqual(raised.exception.status_code, 404)
 
+    def test_archived_course_progress_is_retained_for_existing_track_learner(self):
+        self.fixtures["learnora_courses"][1]["status"] = "archived"
+        summaries = {
+            "course-1": {"total_lessons": 4, "completed_lessons": 4, "progress_percent": 100, "completed": True},
+            "course-2": {"total_lessons": 4, "completed_lessons": 2, "progress_percent": 50, "completed": False},
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id, **_kwargs: summaries[course_id]) as summary_mock:
+            result = progress.track_progress(self.track_id, user=self.user)
+        summary_mock.assert_any_call("learner-1", "course-2", include_archived=True)
+        self.assertEqual(result["courses"][1]["progress"]["progress_percent"], 50)
+
     def test_course_summary_ignores_draft_modules_and_lessons(self):
         fixtures = {
             "learnora_enrolments": [
