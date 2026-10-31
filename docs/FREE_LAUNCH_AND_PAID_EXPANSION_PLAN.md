@@ -314,3 +314,6 @@ This is code-only work against the checked-in baseline. Because live SQL introsp
 
 
 The proposed review schema and its consent, moderation, security and test gates are documented in [TRACK_REVIEW_SCHEMA_PROPOSAL.md](TRACK_REVIEW_SCHEMA_PROPOSAL.md). It is a proposal only; no migration or review table has been created.
+
+
+The track manager now freezes a curriculum after course enrolments exist, preventing later edits from silently changing a learner's required sequence. Unpublished/archived tracks are removed from new discovery and enrolment, while learners with existing required-course enrolments can still retrieve their saved track progress. The Teams analytics view also reports published global tracks. These behaviours are covered by regression tests that are committed but currently blocked from execution by GitHub runner assignment failures.
