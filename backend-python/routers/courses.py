@@ -771,17 +771,40 @@ def self_enrol_in_track(
 
     existing = (
         supabase.table("learnora_enrolments")
-        .select("id,course_id,status,enrolled_at,completed_at")
+        .select("id,course_id,status,enrolled_at,completed_at,source_type")
         .eq("user_id", str(user.id))
+        .is_("organisation_id", "null")
+        .is_("cohort_id", "null")
         .in_("course_id", enrolable_course_ids)
-        .in_("status", ["active", "completed"])
         .execute()
     ).data or []
     existing_by_course = {str(row.get("course_id")): row for row in existing}
+    blocked = [
+        row for row in existing
+        if row.get("status") in {"invited", "suspended"}
+    ]
+    if blocked:
+        raise HTTPException(409, "One or more course enrolments are invited or suspended and cannot be reactivated through public track enrolment.")
+    now = datetime.now(timezone.utc).isoformat()
+    reactivated_rows = []
+    for row in existing:
+        if row.get("status") == "withdrawn":
+            updated = (
+                supabase.table("learnora_enrolments")
+                .update({
+                    "status": "active",
+                    "enrolled_at": now,
+                    "completed_at": None,
+                    "source_type": f"track_enrolment:{track_id}",
+                })
+                .eq("id", str(row["id"]))
+                .is_("organisation_id", "null")
+                .execute()
+            )
+            reactivated_rows.extend(updated.data or [])
     missing = [course_id for course_id in enrolable_course_ids if course_id not in existing_by_course]
     inserted_rows = []
     if missing:
-        now = datetime.now(timezone.utc).isoformat()
         inserted = (
             supabase.table("learnora_enrolments")
             .insert([
@@ -789,6 +812,7 @@ def self_enrol_in_track(
                     "user_id": str(user.id),
                     "course_id": course_id,
                     "organisation_id": None,
+                    "cohort_id": None,
                     "status": "active",
                     "enrolled_at": now,
                     "source_type": f"track_enrolment:{track_id}",
@@ -806,7 +830,8 @@ def self_enrol_in_track(
         "track_id": track_id,
         "enrolled_courses": len(existing_by_course) + len(inserted_rows),
         "new_enrolments": len(inserted_rows),
-        "already_enrolled_courses": len(existing_by_course),
+        "reactivated_enrolments": len(reactivated_rows),
+        "already_enrolled_courses": len(existing_by_course) - len(reactivated_rows),
         "course_ids": enrolable_course_ids,
     }
 
