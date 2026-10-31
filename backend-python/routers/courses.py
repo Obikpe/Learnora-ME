@@ -724,6 +724,8 @@ def self_enrol_in_track(
     course_ids = list(dict.fromkeys(
         str(row["course_id"]) for row in links if row.get("course_id")
     ))
+    if not course_ids:
+        raise HTTPException(409, "This track does not contain valid course links.")
     course_rows = (
         supabase.table("learnora_courses")
         .select("id,title,status,ownership,organisation_id,settings")
