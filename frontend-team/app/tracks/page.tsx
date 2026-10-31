@@ -42,6 +42,7 @@ export default function TracksWorkspace() {
 
   const loadTrack = useCallback(async (id:string) => {
     if(!id){setDetail(null);return;}
+    setDetail(null);
     try {
       const result=await request<any>("/tracks/"+encodeURIComponent(id));
       setDetail(result.track);
@@ -94,7 +95,7 @@ export default function TracksWorkspace() {
     finally {setSaving(false);}
   }
 
-  async function addCourse(e:React.FormEvent) {
+  async function addCourse(e:FormEvent) {
     e.preventDefault();if(!detail||!courseId)return;
     setError("");setNotice("");setSaving(true);
     try {
