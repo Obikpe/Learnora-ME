@@ -338,3 +338,16 @@ The learner may be invited to rate Learnora after the backend confirms completio
 ### Active plan maintenance
 
 For current work, use the sequence in this addendum and the detailed acceptance criteria in `FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md`. The original P0–P6 items remain applicable safety/release gates and the broader backlog; do not interpret this revised sequence as permission to ignore a security issue that directly affects the feature being changed. Record actual completion evidence in the engineering history with the exact main SHA and test results. Production SQL, production data changes and deployment continue to require separate explicit approval.
+
+
+## 2026-10-31 implementation status update
+
+The first learner/free-launch and Teams operations code layers are now present on `main`:
+
+- Reversible server-side `FREE_ACCESS_MODE` access enforcement for verified individual role-`normal` learners, with billing history preserved and organisation/cohort/admin/creator access boundaries unchanged.
+- Learner-facing catalogue and subscription messaging for the free-launch mode.
+- Teams individual learner list/detail and first platform analytics endpoints/pages.
+- Global track management using the existing generic `learnora_learning_paths` and ordered `learnora_learning_path_courses` model; public track discovery, course enrolment and backend-derived required-course completion are implemented.
+- Progress calculations now use published learner-visible modules and lessons.
+
+Do not mark this release-ready. Remaining acceptance gates: restore GitHub Actions runner execution and obtain passing test/build evidence; verify the checked-in schema against live Pheonix using a working read-only database connection; finish full browser/end-to-end learner and Teams acceptance; design and implement track-linked reviews with separate public consent and moderation; obtain separate approval for backend environment configuration and deployment. No production migration or deployment has been performed. The free mode remains off by default.
