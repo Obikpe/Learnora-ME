@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Activity, BookOpen, CheckCircle2, GraduationCap, Users, RefreshCw } from "lucide-react";
 import Shell from "../../components/Shell";
 import { request, teamMe } from "../../lib/api";
@@ -11,7 +11,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -22,12 +22,12 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     teamMe().then(setMe).catch(e => setError(e.message || "Your staff session could not be loaded."));
     void load();
-  }, []);
+  }, [load]);
 
   if (!me) return <div className="p-10 text-slate-400">Loading secure workspace…</div>;
 
