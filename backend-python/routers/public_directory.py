@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from .auth import supabase
+from services.free_access import free_access_mode_enabled
 
 router = APIRouter(prefix="/api/public", tags=["Public discovery"])
 
@@ -35,7 +36,7 @@ def _is_public_course(course: dict, organisation_map: dict, creator_map: dict) -
 def _public_course_payload(course: dict) -> dict:
     settings = course.get("settings") or {}
     topics = settings.get("topics") if isinstance(settings.get("topics"), list) else []
-    is_free = settings.get("is_free") is True or settings.get("access_type") == "free" or settings.get("price") == 0
+    is_free = ((free_access_mode_enabled() and course.get("ownership") == "learnora") or settings.get("is_free") is True or settings.get("access_type") == "free" or settings.get("price") == 0)
     return {
         "id": course.get("id"),
         "organisation_id": course.get("organisation_id"),
