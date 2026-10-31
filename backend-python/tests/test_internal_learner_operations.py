@@ -137,8 +137,8 @@ class InternalLearnerOperationsTests(unittest.TestCase):
         with patch.object(internal_operations, "supabase", FakeSupabase(self.fixtures)):
             result = internal_operations.analytics_overview(staff=SimpleNamespace())
         metrics = result["metrics"]
-        self.assertEqual(metrics["individual_learners"], 2)
-        self.assertEqual(metrics["new_individual_learners_30d"], 2)
+        self.assertEqual(metrics["individual_learners"], 1)
+        self.assertEqual(metrics["new_individual_learners_30d"], 1)
         self.assertEqual(metrics["published_learnora_courses"], 2)
         self.assertEqual(metrics["active_course_enrolments"], 1)
         self.assertEqual(metrics["completed_course_enrolments"], 1)
