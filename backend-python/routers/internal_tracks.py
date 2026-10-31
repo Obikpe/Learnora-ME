@@ -226,7 +226,7 @@ def create_track(
 ):
     slug = _normalise_slug(payload.slug)
     _ensure_unique_slug(slug)
-    result = supabase.table("learnora_learning_paths").insert({
+    supabase.table("learnora_learning_paths").insert({
         "owner_user_id": None,
         "organisation_id": None,
         "name": payload.name.strip(),
@@ -235,9 +235,18 @@ def create_track(
         "status": "draft",
         "created_by": staff.user_id,
     }).execute()
-    if not result.data:
-        raise HTTPException(status_code=500, detail="Track creation failed.")
-    return {"success": True, "track": result.data[0]}
+    created = (
+        supabase.table("learnora_learning_paths")
+        .select("id,name,slug,description,status,created_at,updated_at")
+        .eq("slug", slug)
+        .is_("owner_user_id", "null")
+        .is_("organisation_id", "null")
+        .limit(1)
+        .execute()
+    )
+    if not created.data:
+        raise HTTPException(status_code=500, detail="Track creation could not be confirmed.")
+    return {"success": True, "track": created.data[0]}
 
 
 @router.get("/{track_id}")
@@ -273,7 +282,7 @@ def update_track(
         data["description"] = data["description"].strip() or None
     if data.get("status") == "published":
         _assert_publishable(str(track["id"]))
-    result = (
+    (
         supabase.table("learnora_learning_paths")
         .update(data)
         .eq("id", str(track["id"]))
@@ -281,9 +290,7 @@ def update_track(
         .is_("organisation_id", "null")
         .execute()
     )
-    if not result.data:
-        raise HTTPException(status_code=500, detail="Track update failed.")
-    return {"success": True, "track": result.data[0]}
+    return {"success": True, "track": _global_track(str(track["id"]))}
 
 
 @router.post("/{track_id}/courses")
@@ -332,17 +339,25 @@ def add_track_course(
         "required": payload.required,
     }
     if existing:
-        result = (
+        (
             supabase.table("learnora_learning_path_courses")
             .update({"order_index": order_index, "required": payload.required})
             .eq("id", existing["id"])
             .execute()
         )
     else:
-        result = supabase.table("learnora_learning_path_courses").insert(values).execute()
-    if not result.data:
-        raise HTTPException(status_code=500, detail="Unable to save the track course.")
-    return {"success": True, "course_link": result.data[0]}
+        supabase.table("learnora_learning_path_courses").insert(values).execute()
+    saved = (
+        supabase.table("learnora_learning_path_courses")
+        .select("id,path_id,course_id,order_index,required")
+        .eq("path_id", str(track["id"]))
+        .eq("course_id", course_id)
+        .limit(1)
+        .execute()
+    )
+    if not saved.data:
+        raise HTTPException(status_code=500, detail="Track course save could not be confirmed.")
+    return {"success": True, "course_link": saved.data[0]}
 
 
 @router.patch("/{track_id}/courses/reorder")
