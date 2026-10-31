@@ -102,7 +102,7 @@ export default function Courses() {
               </div>
               <div className="p-5 sm:p-6">
                 <h2 className="font-display text-2xl leading-snug">{course.title}</h2>
-                {(course.settings?.is_free === true || course.settings?.access_type === "free") && <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-[#f2d477]">Free to enrol</p>}
+                {(course.settings?.is_free === true || course.settings?.access_type === "free") && <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-[#f2d477]">Free for individual learners</p>}
                 <p className="mt-3 min-h-12 text-sm leading-6 text-slate-400">{course.short_description || course.description || "Explore the curriculum and available access options."}</p>
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/[.08] pt-4 text-xs text-slate-500">
                   <span className="inline-flex items-center gap-2"><Clock3 size={14}/>{course.estimated_hours ? course.estimated_hours + " hours" : "Self-paced"}</span>
