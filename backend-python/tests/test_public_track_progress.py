@@ -23,6 +23,7 @@ class Query:
     def eq(self, column, value): self.filters.append(("eq", column, value)); return self
     def is_(self, column, value): self.filters.append(("is", column, value)); return self
     def in_(self, column, values): self.filters.append(("in", column, list(values))); return self
+    def lt(self, column, value): self.filters.append(("lt", column, value)); return self
     def order(self, *_args, **_kwargs): return self
     def limit(self, value): self.limit_value = value; return self
 
@@ -32,6 +33,7 @@ class Query:
             if kind == "eq": rows = [row for row in rows if row.get(column) == value]
             elif kind == "is" and value == "null": rows = [row for row in rows if row.get(column) is None]
             elif kind == "in": rows = [row for row in rows if row.get(column) in value]
+            elif kind == "lt": rows = [row for row in rows if (row.get(column) or 0) < value]
         if self.limit_value is not None: rows = rows[:self.limit_value]
         return SimpleNamespace(data=rows)
 
