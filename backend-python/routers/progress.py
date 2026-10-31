@@ -701,7 +701,7 @@ def track_progress(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Calculate public track progress from required course completions."""
-    if not is_individual_learner(user.role, user.account_type):
+    if not is_individual_learner(user.role, user.account_type, getattr(user, "organisation_id", None)):
         raise HTTPException(403, "Public track progress is available to individual learner accounts.")
     try:
         track_id = str(UUID(track_id))
