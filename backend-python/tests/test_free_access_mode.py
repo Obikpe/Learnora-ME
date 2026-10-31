@@ -77,6 +77,28 @@ class FreeAccessModeTests(unittest.TestCase):
         self.assertEqual(result["trial_ends_at"], learner["trial_ends_at"])
         db.table.assert_not_called()
 
+    def test_verified_learner_with_active_organisation_context_does_not_receive_free_access(self):
+        learner = {
+            "id": "learner-1",
+            "role": "normal",
+            "email_verified_at": "2026-10-01T10:00:00Z",
+            "sub_status": "expired",
+            "is_paid": False,
+        }
+        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}):
+            result = auth._resolve_learner_access(learner, organisation_id="org-1")
+        self.assertFalse(result["course_access"])
+        self.assertEqual(result["access_state"], "expired")
+
+    def test_membership_lookup_fails_closed_when_free_mode_is_enabled(self):
+        class BrokenSupabase:
+            def table(self, _name):
+                raise RuntimeError("database unavailable")
+        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(auth, "supabase", BrokenSupabase()):
+            with self.assertRaises(HTTPException) as raised:
+                auth._active_organisation_context("learner-1")
+        self.assertEqual(raised.exception.status_code, 503)
+
     def test_unverified_learner_does_not_receive_free_access(self):
         learner = {
             "id": "learner-1",
