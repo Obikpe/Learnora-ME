@@ -683,6 +683,123 @@ def self_enrol_in_free_course(
     return {"success": True, "already_enrolled": False, "enrolment": inserted.data[0]}
 
 
+
+
+@router.post("/tracks/{track_id}/enrol")
+def self_enrol_in_track(
+    track_id: str,
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Enrol an individual learner in every course of a published global track."""
+    if not is_individual_learner(user.role, user.account_type):
+        raise HTTPException(403, "Only individual learner accounts can self-enrol in public tracks.")
+    try:
+        track_id = str(UUID(track_id))
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(404, "Track not found.") from None
+
+    track_result = (
+        supabase.table("learnora_learning_paths")
+        .select("id,name,status,owner_user_id,organisation_id")
+        .eq("id", track_id)
+        .is_("owner_user_id", "null")
+        .is_("organisation_id", "null")
+        .eq("status", "published")
+        .limit(1)
+        .execute()
+    )
+    if not track_result.data:
+        raise HTTPException(404, "Published Learnora track not found.")
+
+    links = (
+        supabase.table("learnora_learning_path_courses")
+        .select("course_id,order_index,required")
+        .eq("path_id", track_id)
+        .order("order_index")
+        .execute()
+    ).data or []
+    if not links:
+        raise HTTPException(409, "This track does not contain any courses.")
+
+    course_ids = list(dict.fromkeys(
+        str(row["course_id"]) for row in links if row.get("course_id")
+    ))
+    course_rows = (
+        supabase.table("learnora_courses")
+        .select("id,title,status,ownership,organisation_id,settings")
+        .in_("id", course_ids)
+        .execute()
+    ).data or []
+    course_map = {str(row["id"]): row for row in course_rows}
+
+    missing_or_restricted = []
+    for link in links:
+        course = course_map.get(str(link.get("course_id")))
+        if (
+            not course
+            or course.get("status") != "published"
+            or course.get("ownership") != "learnora"
+            or course.get("organisation_id") is not None
+        ):
+            missing_or_restricted.append(str(link.get("course_id")))
+            continue
+        settings = course.get("settings") or {}
+        free_for_learner = (
+            free_access_mode_enabled()
+            or settings.get("is_free") is True
+            or settings.get("access_type") == "free"
+            or settings.get("price") == 0
+        )
+        if not free_for_learner:
+            missing_or_restricted.append(str(link.get("course_id")))
+
+    if missing_or_restricted:
+        raise HTTPException(
+            409,
+            "Every course in this public track must be published and available for free enrolment.",
+        )
+
+    existing = (
+        supabase.table("learnora_enrolments")
+        .select("id,course_id,status,enrolled_at,completed_at")
+        .eq("user_id", user.id)
+        .in_("course_id", course_ids)
+        .in_("status", ["active", "completed"])
+        .execute()
+    ).data or []
+    existing_by_course = {str(row.get("course_id")): row for row in existing}
+    missing = [course_id for course_id in course_ids if course_id not in existing_by_course]
+    inserted_rows = []
+    if missing:
+        now = datetime.now(timezone.utc).isoformat()
+        inserted = (
+            supabase.table("learnora_enrolments")
+            .insert([
+                {
+                    "user_id": user.id,
+                    "course_id": course_id,
+                    "organisation_id": None,
+                    "status": "active",
+                    "enrolled_at": now,
+                    "source_type": "track_enrolment",
+                }
+                for course_id in missing
+            ])
+            .execute()
+        )
+        if not inserted.data:
+            raise HTTPException(500, "Unable to create the track course enrolments.")
+        inserted_rows = inserted.data
+
+    return {
+        "success": True,
+        "track_id": track_id,
+        "enrolled_courses": len(existing_by_course) + len(inserted_rows),
+        "new_enrolments": len(inserted_rows),
+        "already_enrolled_courses": len(existing_by_course),
+        "course_ids": course_ids,
+    }
+
 @router.post("")
 def create_course(
     payload: CreateCourse,
