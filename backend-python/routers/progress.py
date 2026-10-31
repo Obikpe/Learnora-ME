@@ -815,7 +815,7 @@ def track_progress(
         item["enrolled"] for item in required_progress
     )
     if track.get("status") != "published":
-        enrolled = bool(enrolments)
+        enrolled = any(item["enrolled"] for item in required_progress)
     completed = bool(required_count) and completed_required == required_count
 
     return {
