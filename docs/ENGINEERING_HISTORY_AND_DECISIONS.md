@@ -325,3 +325,14 @@ Append entries using:
 - **Deployment:** none. `FREE_ACCESS_MODE` remains false by default and has not been set in Vercel or another production runtime. The implementation is not live until configuration and deployment are separately authorised.
 - **Remaining immediate work:** resolve CI runner availability; verify live schema through a working read-only connection; create and test the general track/course relationship under the approved migration workflow; implement Teams track management and learner track enrolment; finish the learner discovery/resume/completion journey; implement track completion and optional consented/moderated reviews; run full browser and regression acceptance before requesting release approval.
 
+
+
+### Track MVP implementation addendum — 2026-10-31
+
+- **Schema reuse decision:** global learner tracks use `learnora_learning_paths` with `owner_user_id IS NULL` and `organisation_id IS NULL`, plus the existing ordered `learnora_learning_path_courses` relation. This is the generic course-sequence model in the checked-in baseline. The cohort-specific `learnora_tracks` / `cohort_track_courses` model is left untouched. Personal and organisation paths remain scoped by their existing non-NULL owner/organisation fields.
+- **Teams:** added a permission-protected global track API and a Teams editor for creating, editing, ordering, publishing, unpublishing and archiving tracks. Tracks only accept global Learnora-owned courses. Publishing requires at least one required course and published modules/lessons. Published curriculum cannot be modified until the track is unpublished; linked courses cannot be unpublished/archived while used by a published global track.
+- **Learner app:** added public track discovery/detail pages, track navigation, individual learner track enrolment (creates ordinary course enrolments), and backend-derived track progress/completion from required course completion. The sign-in flow now safely returns an individual learner to the requested track route after authentication.
+- **Progress correctness:** course and module completion/unlock calculations now count learner-visible published modules and lessons rather than draft/archived content.
+- **Reviews:** not implemented yet. The existing feedback table has no track foreign key, separate public-consent field or moderation state; do not encode track IDs into unrelated columns. A dedicated schema change is still required before review collection/public display.
+- **Migration status:** no migration was required for the global track MVP according to the checked-in baseline, but live SQL schema introspection remains blocked. No database change was applied.
+
