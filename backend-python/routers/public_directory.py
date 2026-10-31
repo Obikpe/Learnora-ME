@@ -116,6 +116,33 @@ def _global_track_lookup(track_id: str) -> dict:
     return result.data[0]
 
 
+def _public_track_payload_from_rows(track: dict, links: list[dict], course_map: dict) -> dict:
+    courses = []
+    for link in links:
+        course = course_map.get(str(link.get("course_id")))
+        if course:
+            courses.append({**link, "course": course})
+        elif link.get("required") is True:
+            # A published track is hidden if a required course is no longer
+            # a published global Learnora course.
+            raise HTTPException(404, "Track not found.")
+    if not courses:
+        raise HTTPException(404, "Track not found.")
+    required_count = sum(1 for row in courses if row.get("required") is True)
+    if required_count == 0:
+        raise HTTPException(404, "Track not found.")
+    return {
+        "id": track.get("id"),
+        "name": track.get("name"),
+        "slug": track.get("slug"),
+        "description": track.get("description"),
+        "created_at": track.get("created_at"),
+        "courses": courses,
+        "course_count": len(courses),
+        "required_course_count": required_count,
+    }
+
+
 def _public_track_payload(track: dict) -> dict:
     links = (
         supabase.table("learnora_learning_path_courses")
@@ -125,7 +152,7 @@ def _public_track_payload(track: dict) -> dict:
         .execute()
     ).data or []
     course_ids = list({str(row["course_id"]) for row in links if row.get("course_id")})
-    courses = []
+    course_map = {}
     if course_ids:
         rows = (
             supabase.table("learnora_courses")
@@ -137,27 +164,7 @@ def _public_track_payload(track: dict) -> dict:
             .execute()
         ).data or []
         course_map = {str(row["id"]): row for row in rows}
-        for link in links:
-            course = course_map.get(str(link.get("course_id")))
-            if course:
-                courses.append({**link, "course": course})
-            elif link.get("required") is True:
-                # A published track is hidden if a required course is no
-                # longer a published global Learnora course.
-                raise HTTPException(404, "Track not found.")
-    if not courses:
-        raise HTTPException(404, "Track not found.")
-    required_count = sum(1 for row in courses if row.get("required") is True)
-    return {
-        "id": track.get("id"),
-        "name": track.get("name"),
-        "slug": track.get("slug"),
-        "description": track.get("description"),
-        "created_at": track.get("created_at"),
-        "courses": courses,
-        "course_count": len(courses),
-        "required_course_count": required_count,
-    }
+    return _public_track_payload_from_rows(track, links, course_map)
 
 
 @router.get("/tracks")
@@ -171,10 +178,41 @@ def public_tracks():
         .order("created_at", desc=True)
         .execute()
     ).data or []
+    track_ids = [str(row["id"]) for row in tracks if row.get("id")]
+    links = []
+    if track_ids:
+        links = (
+            supabase.table("learnora_learning_path_courses")
+            .select("id,path_id,course_id,order_index,required")
+            .in_("path_id", track_ids)
+            .order("order_index")
+            .execute()
+        ).data or []
+    course_ids = list({str(row["course_id"]) for row in links if row.get("course_id")})
+    course_map = {}
+    if course_ids:
+        rows = (
+            supabase.table("learnora_courses")
+            .select("id,title,slug,short_description,level,status,ownership,organisation_id,thumbnail_url,estimated_hours")
+            .in_("id", course_ids)
+            .eq("status", "published")
+            .eq("ownership", "learnora")
+            .is_("organisation_id", "null")
+            .execute()
+        ).data or []
+        course_map = {str(row["id"]): row for row in rows}
+    links_by_track = {}
+    for link in links:
+        links_by_track.setdefault(str(link.get("path_id")), []).append(link)
+
     visible = []
     for track in tracks:
         try:
-            visible.append(_public_track_payload(track))
+            visible.append(_public_track_payload_from_rows(
+                track,
+                links_by_track.get(str(track.get("id")), []),
+                course_map,
+            ))
         except HTTPException as exc:
             if exc.status_code != 404:
                 raise
