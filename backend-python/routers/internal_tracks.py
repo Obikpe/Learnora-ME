@@ -131,6 +131,26 @@ def _assert_publishable(track_id: str):
             or course.get("organisation_id") is not None
         ):
             raise HTTPException(status_code=409, detail="Every track course must be a published, global Learnora-owned course before the track can be published.")
+        modules = (
+            supabase.table("course_modules")
+            .select("id")
+            .eq("course_id", str(course["id"]))
+            .eq("status", "published")
+            .execute()
+        ).data or []
+        module_ids = [str(row["id"]) for row in modules if row.get("id")]
+        if not module_ids:
+            raise HTTPException(status_code=409, detail="Every track course must contain at least one published module.")
+        lessons = (
+            supabase.table("learnora_lessons")
+            .select("id")
+            .in_("module_id", module_ids)
+            .eq("status", "published")
+            .limit(1)
+            .execute()
+        ).data or []
+        if not lessons:
+            raise HTTPException(status_code=409, detail="Every track course must contain at least one published lesson.")
 
 
 @router.get("")
@@ -206,8 +226,13 @@ def update_track(
     data = payload.model_dump(exclude_unset=True)
     if not data:
         raise HTTPException(status_code=400, detail="No track changes supplied.")
+    for required_field in ("name", "slug", "status"):
+        if required_field in data and data[required_field] is None:
+            raise HTTPException(status_code=422, detail=f"{required_field} cannot be null.")
     if "name" in data and data["name"] is not None:
         data["name"] = data["name"].strip()
+        if len(data["name"]) < 2:
+            raise HTTPException(status_code=422, detail="Track name must contain at least two characters.")
     if "slug" in data and data["slug"] is not None:
         data["slug"] = _normalise_slug(data["slug"])
         _ensure_unique_slug(data["slug"], str(track["id"]))
