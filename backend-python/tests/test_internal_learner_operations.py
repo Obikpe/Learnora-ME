@@ -36,6 +36,10 @@ class FakeQuery:
         self.filters.append(("eq", column, value))
         return self
 
+    def is_(self, column, value):
+        self.filters.append(("is", column, value))
+        return self
+
     def gte(self, column, value):
         self.filters.append(("gte", column, value))
         return self
@@ -63,6 +67,8 @@ class FakeQuery:
                 rows = [row for row in rows if row.get(column) in value]
             elif kind == "eq":
                 rows = [row for row in rows if row.get(column) == value]
+            elif kind == "is" and value == "null":
+                rows = [row for row in rows if row.get(column) is None]
             elif kind == "gte":
                 rows = [row for row in rows if (row.get(column) or "") >= value]
             elif kind == "ilike":
@@ -140,6 +146,7 @@ class InternalLearnerOperationsTests(unittest.TestCase):
         self.assertEqual(metrics["individual_learners"], 1)
         self.assertEqual(metrics["new_individual_learners_30d"], 1)
         self.assertEqual(metrics["published_learnora_courses"], 2)
+        self.assertEqual(metrics["published_global_tracks"], 0)
         self.assertEqual(metrics["active_course_enrolments"], 1)
         self.assertEqual(metrics["completed_course_enrolments"], 1)
         self.assertEqual(metrics["active_learners_30d"], 1)
