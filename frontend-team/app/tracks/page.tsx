@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Archive, ArrowDown, ArrowUp, BookOpen, Plus, Route, Save, Trash2 } from "lucide-react";
 import Shell from "../../components/Shell";
 import { request, teamMe } from "../../lib/api";
@@ -62,7 +62,7 @@ export default function TracksWorkspace() {
     return courses.filter(course=>!linked.has(String(course.id)));
   },[courses,detail]);
 
-  async function createTrack(e:React.FormEvent) {
+  async function createTrack(e:FormEvent) {
     e.preventDefault();setError("");setNotice("");setSaving(true);
     try {
       const result=await request<any>("/tracks",{method:"POST",body:JSON.stringify({name,slug,description})});
