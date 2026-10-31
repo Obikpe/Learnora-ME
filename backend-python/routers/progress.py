@@ -745,6 +745,8 @@ def track_progress(
         .execute()
     ).data or []
     course_map = {str(row["id"]): row for row in course_rows}
+    if not course_map:
+        raise HTTPException(404, "Track not found.")
     if any(
         link.get("required") is not False
         and str(link.get("course_id")) not in course_map
