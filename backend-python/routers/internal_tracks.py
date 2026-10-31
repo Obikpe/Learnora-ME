@@ -85,13 +85,32 @@ def _course_map(course_ids: list[str]) -> dict:
     return {str(row["id"]): row for row in rows}
 
 
+def _track_curriculum_locked(track_id: str) -> bool:
+    course_ids = list({
+        str(row["course_id"])
+        for row in _track_courses(track_id)
+        if row.get("course_id")
+    })
+    if not course_ids:
+        return False
+    enrolments = (
+        supabase.table("learnora_enrolments")
+        .select("id")
+        .in_("course_id", course_ids)
+        .in_("status", ["active", "completed"])
+        .limit(1)
+        .execute()
+    ).data or []
+    return bool(enrolments)
+
+
 def _track_payload(track: dict, links: list[dict]) -> dict:
     course_map = _course_map([str(row["course_id"]) for row in links if row.get("course_id")])
     courses = []
     for link in links:
         course = course_map.get(str(link.get("course_id")))
         courses.append({**link, "course": course})
-    return {**track, "courses": courses, "course_count": len(courses)}
+    return {**track, "courses": courses, "course_count": len(courses), "curriculum_locked": _track_curriculum_locked(str(track["id"]))}
 
 
 def _assert_track_curriculum_editable(track_id: str):
