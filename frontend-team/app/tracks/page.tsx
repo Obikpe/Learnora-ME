@@ -174,7 +174,7 @@ export default function TracksWorkspace() {
               {!detail.courses?.length&&<p className="py-7 text-sm text-slate-500">Add published Learnora courses to build this track.</p>}
             </div>
             <form onSubmit={addCourse} className="mt-5 flex flex-col gap-2 sm:flex-row"><select value={courseId} onChange={e=>setCourseId(e.target.value)} className="field min-h-11 flex-1"><option value="">Choose a global Learnora course</option>{availableCourses.map(course=><option key={course.id} value={course.id}>{course.title} · {course.status}</option>)}</select><button type="submit" disabled={saving||!courseId} className="mini inline-flex min-h-11 items-center justify-center gap-2"><Plus size={14}/>Add course</button></form>
-            <p className="mt-3 text-[11px] leading-5 text-slate-600">Only global Learnora-owned courses can be linked. Publishing requires every linked course to have published modules and lessons. Once learners have course enrolments, the track curriculum is frozen; create a new track for a different sequence. Unpublished tracks remain available to existing learners with saved enrolments.</p>
+            <p className="mt-3 text-[11px] leading-5 text-slate-600">Only global Learnora-owned courses can be linked. Publishing requires every linked course to have published modules and lessons, plus assessments before modules that unlock later modules. Once learners have course enrolments, the track curriculum is frozen; create a new track for a different sequence. Unpublished tracks remain available to existing learners with saved enrolments.</p>
           </div>
         </>}
       </div>
