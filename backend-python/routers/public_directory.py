@@ -203,7 +203,7 @@ def public_tracks():
     if course_ids:
         rows = (
             supabase.table("learnora_courses")
-            .select("id,title,slug,short_description,level,status,ownership,organisation_id,thumbnail_url,estimated_hours")
+            .select("id,title,slug,short_description,level,status,ownership,organisation_id,thumbnail_url,estimated_hours,settings")
             .in_("id", course_ids)
             .eq("status", "published")
             .eq("ownership", "learnora")
