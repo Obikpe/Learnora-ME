@@ -119,6 +119,8 @@ def _assert_publishable(track_id: str):
     links = _track_courses(track_id)
     if not links:
         raise HTTPException(status_code=409, detail="Add at least one course before publishing this track.")
+    if not any(row.get("required") is not False for row in links):
+        raise HTTPException(status_code=409, detail="A published track must contain at least one required course.")
     course_map = _course_map([str(row["course_id"]) for row in links if row.get("course_id")])
     for link in links:
         course = course_map.get(str(link.get("course_id")))
@@ -235,6 +237,8 @@ def add_track_course(
     track = _global_track(track_id)
     if track.get("status") == "archived":
         raise HTTPException(status_code=409, detail="Archived tracks cannot be edited.")
+    if track.get("status") == "published":
+        raise HTTPException(status_code=409, detail="Unpublish the track before changing its course list.")
     course_id = _uuid(payload.course_id, "Course")
     course_result = (
         supabase.table("learnora_courses")
@@ -289,6 +293,8 @@ def reorder_track_courses(
     staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
 ):
     track = _global_track(track_id)
+    if track.get("status") == "published":
+        raise HTTPException(status_code=409, detail="Unpublish the track before changing course order.")
     current = _track_courses(str(track["id"]))
     current_by_id = {str(row["id"]): row for row in current}
     submitted_ids = [str(item.id) for item in items]
@@ -340,6 +346,8 @@ def remove_track_course(
     staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
 ):
     track = _global_track(track_id)
+    if track.get("status") == "published":
+        raise HTTPException(status_code=409, detail="Unpublish the track before removing a course.")
     course_id = _uuid(course_id, "Course")
     existing = (
         supabase.table("learnora_learning_path_courses")
