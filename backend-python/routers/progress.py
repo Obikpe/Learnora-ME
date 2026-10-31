@@ -779,6 +779,13 @@ def track_progress(
             "completed": False,
         }
         is_required = link.get("required") is not False
+        course_completed = bool(
+            enrolment
+            and (
+                enrolment.get("status") == "completed"
+                or summary["completed"]
+            )
+        )
         item = {
             **link,
             "required": is_required,
@@ -788,14 +795,8 @@ def track_progress(
             "progress": {
                 "total_lessons": summary["total_lessons"],
                 "completed_lessons": summary["completed_lessons"],
-                "progress_percent": summary["progress_percent"],
-                "completed": bool(
-                    enrolment
-                    and (
-                        enrolment.get("status") == "completed"
-                        or summary["completed"]
-                    )
-                ),
+                "progress_percent": 100 if course_completed else summary["progress_percent"],
+                "completed": course_completed,
             },
         }
         course_progress.append(item)
