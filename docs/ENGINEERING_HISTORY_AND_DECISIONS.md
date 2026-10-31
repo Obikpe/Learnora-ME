@@ -340,3 +340,9 @@ Append entries using:
 - **Review preparation:** added `docs/TRACK_REVIEW_SCHEMA_PROPOSAL.md` defining a dedicated track-linked review record, explicit opt-in public consent, moderation status/audit, privacy rules and regression tests. This is a proposal only; no migration/table or public review endpoint exists yet.
 
 - **Track continuity hardening:** track curriculum is frozen once any linked course has active/completed learner enrolments. Unpublished/archived tracks disappear from public discovery and new enrolment, but the authenticated progress endpoint still serves the saved track to learners with required-course enrolments. Analytics now counts only global Learnora courses and reports published global tracks.
+
+### Release verification record — 2026-10-31
+
+- Main HEAD was `41735ba6cdedcc810420693a0cd77aa4d6ce48da` at the verification check. The five workflows triggered for that SHA failed before running any steps (zero steps; runner name blank), so CI has not executed the new tests or frontend builds.
+- Vercel Git deployments are disabled in repository configuration; the latest Learnora ME deployment predates the current code. No deployment was made. The backend Vercel project still references the older `Pheonix-Analytics` repository, unlike the learner frontend project linked to `Learnora-ME`; this must be reconciled before release.
+- `FREE_ACCESS_MODE` remains off by default and was not set in Vercel. No production environment change, database migration/data mutation, or deployment was performed. Live Pheonix SQL schema verification remains blocked by the read-only connection authentication failure.
