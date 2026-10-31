@@ -59,7 +59,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
       const target = nextCourse?.course?.id || track?.courses?.[0]?.course?.id;
       if (target) location.href = "/dashboard/learning/"+encodeURIComponent(target);
     } catch (e:any) {
-      if (e.status === 401 || /sign in|unauthori[sz]ed/i.test(e.message || "")) {
+      if (e.status === 401 || /\(401\)|sign in|unauthori[sz]ed/i.test(e.message || "")) {
         location.href = "/login?next="+encodeURIComponent("/tracks/"+params.id);
         return;
       }
