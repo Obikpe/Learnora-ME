@@ -388,3 +388,47 @@ A feature is not done merely because a route or component exists. It is done whe
 - `docs/active-pheonix-migration-reconciliation.md` — current-schema baseline versus legacy replay reconciliation.
 
 When these sources disagree, inspect the current `main` code and active database catalog, record the discrepancy, and update the documentation rather than silently choosing whichever claim looks newer.
+
+
+---
+
+## 13. Staged launch direction — free learner launch, then paid expansion (31 October 2026)
+
+This is a dated product-direction addendum to the original specification. Sections 1–12 above remain intact as the original product and engineering plan. This section clarifies the immediate launch scope and how it coexists with the original commercial model. The detailed implementation plan is in [FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md](FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md).
+
+### 13.1 Launch strategy
+
+Learnora will first make the individual learner experience free, with no card/payment-method requirement, checkout, paid subscription requirement, or trial-expiry cutoff. The aim is to launch the learning experience, attract learners, gather genuine feedback, and establish trust before introducing paid courses and Pro.
+
+The existing subscription, payment-provider, trial, expiry, entitlement, and Pro work is retained. This strategy does not authorise deletion or replacement of those systems.
+
+### 13.2 Temporary free-access behaviour
+
+A central, reversible, server-enforced free-access mode will grant the intended individual learner access while the free launch is active. The backend—not merely the frontend—must enforce the mode. With the mode enabled, an individual learner must not be blocked by absent payment records, expired trials, or subscription expiry. With the mode disabled, the original paid checks must resume.
+
+Free mode must not weaken authentication, staff permissions, tenant isolation, RLS, creator ownership, unpublished/private content controls, or media access. It must not grant organisation or administrative privileges. Do not rewrite historical subscription/payment records to simulate free access.
+
+### 13.3 Immediate application scope
+
+- **Learnora Teams (frontend-team/):** content operations for tracks, ordered track-course relationships, courses, modules, lessons, video/resource upload and publishing; learner lookup/progress views; trustworthy platform analytics.
+- **Learnora ME (frontend-v02/):** free catalogue discovery, track/course enrolment, lesson/media consumption, supported assessments/activities, progress persistence/resume, and accurate course/track completion.
+- **Shared services:** existing FastAPI backend (backend-python/) and the already-active Pheonix Supabase project. Do not create or switch to a separate Learnora Supabase project. Existing records identify the Pheonix project reference as gihfupzvdpyrmynqgukz; verify the configured target safely before any operation and never expose credentials.
+- **Legacy app:** frontend/ remains outside the current implementation target.
+
+Track/course relationships must be inspected in the current main schema and active Supabase catalog before adding tables. Reuse the canonical model if available. Do not create a competing track system or reuse cohort-only track assignment structures as a public catalogue model.
+
+### 13.4 Track-completion feedback
+
+After backend-confirmed track completion, offer a dismissible 1–5 rating prompt with an optional comment. Submission must not be required to continue learning. Public display requires separate learner consent and moderation. Prevent duplicate submissions or define an explicit edit policy; sanitise user-generated content and provide a removal/reporting path. Public reviews may be indexed after moderation/privacy checks, but search rich-result stars are not guaranteed and self-serving review markup must follow search-engine policies.
+
+### 13.5 Deferred capabilities
+
+Customer organisation workflows, cohorts/programmes, instructor/tutor/creator onboarding and tools, creator sales/payouts, and the full paid commercial model remain part of the original specification. They are deferred in implementation order, not cancelled. Preserve their code, data, migrations, permission boundaries and original documentation.
+
+### 13.6 Paid expansion
+
+A later separately approved stage may introduce paid courses and Pro subscriptions. Before charging, define free-versus-paid catalogue rules, Pro benefits and pricing, renewals/cancellation/refunds/failures, entitlements, existing free-launch learner treatment, and clear notice before any previously free content becomes paid. Preserve earned completion/progress records. Prove the paid path works when free mode is disabled before enabling charges.
+
+### 13.7 Acceptance and release
+
+The immediate free-launch acceptance criteria and execution order are maintained in docs/ROADMAP.md and docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md. A screen or route alone is not evidence of a complete workflow. Verify Teams content creation through learner consumption, progress and completion, including backend authorization and storage. Production migrations, production data changes and deployments remain separate explicit approval gates.
