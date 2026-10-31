@@ -351,3 +351,12 @@ The first learner/free-launch and Teams operations code layers are now present o
 - Progress calculations now use published learner-visible modules and lessons.
 
 Do not mark this release-ready. Remaining acceptance gates: restore GitHub Actions runner execution and obtain passing test/build evidence; verify the checked-in schema against live Pheonix using a working read-only database connection; finish full browser/end-to-end learner and Teams acceptance; design and implement track-linked reviews with separate public consent and moderation; obtain separate approval for backend environment configuration and deployment. No production migration or deployment has been performed. The free mode remains off by default.
+
+
+### Release verification constraints recorded — 2026-10-31
+
+- Latest main commit at this check: `41735ba6cdedcc810420693a0cd77aa4d6ce48da`.
+- All five GitHub Actions workflows triggered for this commit failed before executing a step: every job had zero steps and no assigned runner name. This is a runner-allocation/infrastructure failure, not evidence that the tests or builds passed or failed on the code. Automated acceptance remains unverified.
+- Repository Vercel configuration has Git deployment disabled. The latest Learnora ME deployment predates the current main commit; no deployment was performed. The backend Vercel project is still linked to the older `Pheonix-Analytics` repository while the learner frontend project is linked to `Learnora-ME`; deployment linkage/root configuration must be reconciled before release.
+- `FREE_ACCESS_MODE` remains default-off in code and has not been enabled in Vercel or production. No production database migration, data change, environment-variable change or deployment was made.
+- The read-only SQL connection to the active Pheonix Supabase project remains unavailable, so checked-in baseline schema is not treated as live-schema verification.
