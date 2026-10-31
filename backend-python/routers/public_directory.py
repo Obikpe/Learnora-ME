@@ -20,7 +20,7 @@ def _is_public_course(course: dict, organisation_map: dict, creator_map: dict) -
     settings = course.get("settings") or {}
     ownership = course.get("ownership")
     if ownership == "learnora":
-        return True
+        return course.get("organisation_id") is None
     if ownership == "creator":
         creator = creator_map.get(str(course.get("creator_id")))
         return bool(creator and creator.get("status") in {"approved", "active"})
