@@ -1,0 +1,262 @@
+# Learnora Free Launch → Paid Expansion Plan
+
+**Decision date:** 31 October 2026  
+**Status:** Approved product direction; implementation not yet started by this document update  
+**Applies to:** Learnora ME, Learnora Teams, shared FastAPI backend, and the existing active Pheonix Supabase project  
+**Relationship to existing plans:** This is a dated strategic addendum. It does not replace, erase, or retrospectively rewrite the original product specification, roadmap, security findings, migration history, or organisation/instructor plans.
+
+## 1. Why this addendum exists
+
+The original Learnora plan describes a broader commercial learning platform, including individual learners, creators/instructors, customer organisations, cohorts, subscriptions, payments, entitlements, and internal operations. Considerable product, backend, database, billing, and security work has already been completed toward that model.
+
+The product owner has now chosen a staged launch strategy:
+
+1. Make the learner-facing Learnora service temporarily free to use, without requiring a payment method, payment, subscription purchase, or trial-expiry date.
+2. Concentrate implementation on two applications: **Learnora ME** (the learner experience) and **Learnora Teams** (internal course/content operations and platform oversight).
+3. Make Teams sufficiently complete for staff to build and publish the catalogue: tracks, courses, modules, lessons, videos, and learning resources; and to inspect learner information and platform usage.
+4. Make the learner journey work end to end against that same catalogue.
+5. Invite learners to rate Learnora after completing a track, with optional written feedback and explicit consent before public display.
+6. Once the free service has attracted real learners and earned trust, progressively introduce paid services, including paid courses and a Pro subscription.
+7. Return to the broader organisation and instructor/creator workflows after the two launch-critical applications are operational.
+
+This is a sequencing change, not a cancellation of the original commercial product vision.
+
+## 2. Source-of-truth and preservation rules
+
+- Keep the original sections of `PRODUCT_ENGINEERING_SPEC.md`, `ROADMAP.md`, and the migration/security records. Do not replace them with this plan.
+- Treat this document as the current product sequencing addendum. The roadmap should link to it and state which execution order is current.
+- Keep the original paid implementation, payment provider integration, subscription records, trial logic, entitlement logic, pricing concepts, and Pro planning. Do not delete them, rewrite history, or comment out large blocks of code as a substitute for a controlled feature switch.
+- Record new decisions and actual implementation evidence in `ENGINEERING_HISTORY_AND_DECISIONS.md`.
+- Keep deferred organisation and instructor work in the roadmap. Mark it deferred by sequencing, not removed.
+- Work on the canonical repository `Obikpe/Learnora-ME`, on `main`, unless the product owner explicitly changes that instruction.
+- Active applications: `frontend-v02/` (Learnora ME), `frontend-team/` (Learnora Teams), and `backend-python/` (shared FastAPI backend). Do not use the legacy `frontend/` as the target for new work.
+- **Database target clarification (31 October 2026):** Learnora continues to use the already-active Pheonix Supabase project. Do not create or switch to a separate Learnora Supabase project. Existing engineering records identify the project reference as `gihfupzvdpyrmynqgukz`; confirm the configured target through safe, non-secret environment/project metadata before any operation. Never print or commit credentials.
+- Repository documentation does not itself authorise a production migration, production data change, or deployment. Keep the existing explicit release-approval gates.
+
+## 3. Temporary free-access phase
+
+### 3.1 Intended learner experience
+
+During the free-launch phase, an individual learner must be able to:
+
+- Register and authenticate without entering card details or adding a payment method.
+- Access the free-launch catalogue without purchasing a subscription.
+- Enrol in eligible published tracks/courses without a payment checkout.
+- Continue learning without a seven-day trial cutoff, subscription expiry, or payment-status lockout.
+- Watch available lesson videos, read learning resources, complete supported learning activities, and retain progress.
+- Return to the service without being asked to pay merely because an earlier trial/subscription date has elapsed.
+
+The free phase must not silently delete or rewrite historical subscription, payment, trial, or entitlement records.
+
+### 3.2 Reversible implementation; preserve the paid system
+
+Implement a single, central, server-enforced free-access mode (working name: `FREE_ACCESS_MODE`). The final setting name and storage location must follow the existing configuration conventions and be documented in the environment examples.
+
+When enabled:
+
+- The backend grants the intended free-launch access to individual Learnora learners without requiring an active trial or paid subscription.
+- Payment checkout and payment-method collection are not prerequisites for those learners.
+- Trial and subscription expiry do not block the free-launch learner journey.
+- Existing subscription/payment routes and records remain intact for later reactivation.
+- The frontend reflects the actual backend access decision; hiding a paywall in the UI alone is not sufficient.
+- The mode is centrally controlled and reversible, not implemented as scattered hard-coded exceptions.
+
+When disabled for a future paid launch:
+
+- Existing paid subscription, payment verification, trial, entitlement and expiry checks resume according to the original commercial rules.
+- Pro/course pricing and entitlement rules can be introduced incrementally without reconstructing the billing foundation.
+
+Do not make payment or subscription functions public merely to bypass billing. Do not weaken authentication, session security, staff permissions, database RLS, or audit controls.
+
+### 3.3 Scope boundaries and safety
+
+- Free access applies to the intended individual learner experience. It is not permission to bypass organisation tenant boundaries, cohort assignments, creator ownership, internal staff permissions, or protected administrative operations.
+- Organisation and instructor/creator commercial workflows remain deferred for product implementation, but their existing data and permission boundaries must not be damaged by the free-mode change.
+- Do not grant arbitrary access to unpublished, archived, private, or otherwise restricted content unless an explicit product rule authorises it.
+- Email verification and account security requirements remain unless a separate approved decision changes them.
+- No credit card, payment, paid membership, or trial-expiry requirement may block an individual learner from using the free-launch catalogue.
+- Add backend tests for free access, expired legacy trials, absent payment records, paid-mode regression, role boundaries, and the ability to turn the mode off safely.
+- Do not mass-update subscription statuses or expiry dates to simulate free access.
+
+## 4. Immediate product scope: two applications
+
+### 4.1 Learnora Teams — content and platform operations
+
+Learnora Teams is the operational workspace for Learnora staff. The first goal is to make the content lifecycle dependable, not to finish every organisation or instructor feature.
+
+Required capabilities:
+
+1. **Tracks**
+   - Create, edit, publish, unpublish/archive, and list tracks.
+   - Set track title, slug, description, thumbnail/cover, level/category, and relevant metadata supported by the product.
+   - Add courses to a track and define an explicit, editable order.
+   - Remove/reorder courses without destroying course records or learner history.
+   - Validate that only eligible courses can be attached and that duplicate/invalid links are rejected.
+   - Support track publication and learner-facing visibility.
+
+2. **Courses**
+   - Create, edit, draft, publish, unpublish/archive, and preview Learnora-owned courses.
+   - Manage course metadata, descriptions, thumbnails, level, estimated duration, and catalogue visibility.
+   - Clearly distinguish course ownership and access type; do not let the central content workflow accidentally edit organisation-owned or creator-owned content.
+
+3. **Modules and lessons**
+   - Create, edit, reorder, publish, unpublish/archive modules and lessons.
+   - Support the lesson types already represented by the backend, including video, article/text, practice, quiz, assignment, project, or mixed content where the current schema supports them.
+   - Validate ordering, parent-child relationships, and publication dependencies.
+   - Provide a useful preview of the learner-facing structure.
+
+4. **Videos and learning resources**
+   - Upload videos using the configured storage provider's correct signed-upload flow; verify upload completion and persist the resulting media record.
+   - Support approved external video providers/URLs where already supported.
+   - Attach, replace, and remove learning resources with appropriate metadata.
+   - Show upload progress, validation errors, retry behaviour, and final processing/availability state.
+   - Enforce file type/size constraints and private/public access rules. Never expose service-role credentials or private storage objects through public URLs without an intentional access policy.
+
+5. **Learner and platform oversight**
+   - Search and inspect learner accounts using role-appropriate, privacy-minimised fields.
+   - View learner enrolments, course/track progress, completion, and relevant activity.
+   - Provide platform-level statistics such as registrations, active learners, track/course enrolments, published content, completion rates, and lesson engagement where reliable underlying events exist.
+   - Define each metric (time window, denominator, active definition, and source table/event) so dashboards do not display misleading counts.
+   - Include loading, empty, error, permission-denied, and pagination states.
+
+Organisation management, cohort administration, instructor management, creator applications, payouts, and customer tenant workflows remain part of the larger product plan but are not launch-critical scope for this phase. Preserve existing APIs, schema, and security boundaries while avoiding new feature expansion in those areas.
+
+### 4.2 Learnora ME — learner experience
+
+The learner application must consume the same published catalogue and learning structure managed through Teams.
+
+Required end-to-end journey:
+
+1. Register/sign in and reach the learner experience without a payment method or paid subscription.
+2. Discover published tracks and courses with accurate descriptions and availability.
+3. View track details, course sequence, modules, lessons, and learning requirements.
+4. Enrol in a track or course under the free-launch rules.
+5. Open lessons and access their videos/resources.
+6. Complete supported activities and assessments.
+7. Save and retrieve progress reliably across sessions/devices.
+8. Resume learning from the correct course, module, or lesson.
+9. Complete a course and then a track using explicit completion rules.
+10. See a meaningful completion state and, where supported, a certificate/record that is backed by actual completion data.
+
+Do not present a track as complete merely because a learner opened its final page. Completion rules must be explicit and consistently enforced by the backend.
+
+### 4.3 Shared track/course model
+
+Before adding tables or migrations, inspect the current `main` schema, active Supabase catalog, and existing track/path/course entities. Reuse the intended canonical model where it already exists; do not create a second track system or misuse cohort-specific track assignments.
+
+The learner-facing model must support:
+
+- A track containing an ordered set of courses.
+- A course containing ordered modules.
+- A module containing ordered lessons.
+- Track/course enrolment and learner progress with stable identifiers.
+- Historical completion records that remain meaningful if content is later edited or archived.
+- Clear separation between general public Learnora tracks and cohort-specific track/course assignment rules.
+
+If the current schema cannot represent the general public track-to-course relationship safely, propose a migration with constraints, indexes, RLS/permissions, rollback, and tests. Test it against a disposable database first. Production migration requires separate approval.
+
+## 5. Track-completion ratings and learner feedback
+
+After a learner genuinely completes a track, Learnora ME should offer a small, dismissible feedback prompt.
+
+Requirements:
+
+- Trigger only when the backend confirms track completion.
+- Ask for a rating (for example, 1–5 stars).
+- Allow an optional written comment.
+- Allow the learner to skip or dismiss the prompt without blocking learning.
+- Prevent duplicate submissions for the same learner/track unless an explicit edit policy permits updates.
+- Record the track, learner, rating, comment, timestamps, and moderation/publication state.
+- Ask separately for consent before showing the comment publicly; do not assume completion or submission implies consent.
+- Provide internal moderation controls in Teams: review, approve, reject, hide, and record moderation actions.
+- Publish only approved, consented reviews on a public testimonials/reviews page.
+- Escape/sanitise displayed user content and provide abuse-reporting/removal handling.
+- Use genuine review content and accurate aggregate calculations. Do not fabricate, incentivise undisclosed positive reviews, or mark up self-serving organisation reviews in a way that violates search-engine review-snippet policies.
+- Make public reviews crawlable/indexable only after moderation and privacy checks. Search indexing is a goal, not a guarantee of rich-result stars.
+
+This feedback feature is part of the free-launch trust-building strategy; it must not delay core course creation, publishing, enrolment, and learning workflows.
+
+## 6. Later paid expansion — preserve and reactivate
+
+The paid model remains an intended later stage, not a discarded project.
+
+Potential staged commercial capabilities include:
+
+- Selected paid courses while other courses/tracks remain free.
+- Pro subscription with clearly defined benefits and access rules.
+- Paid learning paths or premium content bundles if justified by usage.
+- Existing payment provider integration and verification.
+- Subscription lifecycle, renewals, cancellation, expiry, receipts, and entitlement enforcement.
+- Organisation and instructor/creator commercial services from the original product plan.
+
+Before charging users, define and document:
+
+- Which content is free versus paid and who can change that classification.
+- Whether existing learners retain access to content they already enrolled in or completed.
+- Pro benefits, price, billing period, cancellation and renewal behaviour.
+- Payment failure, refund, chargeback, grace-period and entitlement-revocation rules.
+- How free-launch learners are treated when paid access is introduced.
+- Clear notices before a previously free item becomes paid; do not retroactively surprise learners or remove earned completion records.
+- Payment provider/webhook verification, idempotency, audit history, tax/consumer requirements applicable to the launch markets, and support/refund processes.
+- Tests proving paid checks work again when free mode is disabled.
+
+No pricing or paid launch date is set by this addendum. A later explicit product decision must approve the commercial rollout.
+
+## 7. Revised execution sequence and acceptance gates
+
+The sequence below governs immediate implementation. The original roadmap phases remain preserved as the wider engineering/security backlog; their unresolved security and release gates still apply wherever they are prerequisites for safe work.
+
+| Order | Workstream | Acceptance evidence |
+|---|---|---|
+| 0 | Establish current baseline and protect the active Pheonix Supabase target | Confirm repository/main SHA, configured project identity without secrets, current schema/catalog, relevant CI state, and existing billing/access code. No production mutation. |
+| 1 | Reversible free-access mode | Central server-side switch; no payment/card/trial-expiry barrier for individual free-launch learners; paid-mode regression tests; organisation/admin boundary tests. |
+| 2 | Teams track/course content management | Staff can create/edit/order/publish tracks and courses using canonical relationships; changes appear correctly in learner catalogue. |
+| 3 | Teams modules, lessons, video and resource management | Full create/edit/reorder/publish/upload/attach journey verified, including storage errors, retries, access rules and media playback. |
+| 4 | Teams learner management and platform analytics | Search/detail views and metrics backed by defined, tested queries/events with privacy controls. |
+| 5 | Learnora ME discovery and learning journey | Learner can discover, enrol, learn, resume, complete activities, and retain progress without payment/expiry interruption. |
+| 6 | Track completion and feedback | Backend-confirmed completion triggers optional rating/comment; consent, moderation, duplicate prevention, public display and indexing rules verified. |
+| 7 | Free-launch release readiness | Both frontends build; relevant backend/database/security suites pass on one SHA; browser E2E for critical journeys; storage and auth tested; rollback/recovery and monitoring documented. |
+| 8 | Deferred original platform work | Resume organisation/cohort and instructor/creator workflows, plus remaining original security, privacy, finance, and operational roadmap items. |
+| 9 | Paid expansion | Explicit commercial approval, staged free/paid catalogue, Pro rules, payment lifecycle and regression acceptance before enabling charges. |
+
+### Definition of complete for the immediate phase
+
+The free-launch foundation is not complete until all of the following are evidenced:
+
+- Individual learner access is free without payment details, checkout, subscription purchase, or trial-expiry cutoff.
+- Paid code and data remain preserved and can be re-enabled through the central mode.
+- Teams can create and publish a track with ordered courses, modules and lessons.
+- Teams can upload and manage videos/resources and the learner can access the published assets.
+- Learners can discover, enrol, complete learning activities, resume, and have progress recorded.
+- Track completion is calculated correctly.
+- Teams can inspect learner information and trustworthy platform metrics.
+- The post-completion feedback flow works with consent and moderation.
+- No cross-tenant, creator ownership, staff permission, RLS, or private-media boundary has been weakened.
+- Critical CI and browser acceptance evidence is recorded on the exact release candidate SHA.
+- Production migrations and deployment have separate explicit authorisation.
+
+## 8. What is deliberately deferred, not cancelled
+
+The following remain in the original specification and roadmap:
+
+- Customer organisation onboarding, workspaces, teams, cohorts, programmes, assignments and reporting.
+- Instructor/tutor onboarding, creator accounts, course ownership, instructor tools, grading, payouts and creator sales.
+- Organisation and creator commercial contracts/entitlements.
+- Full subscription/Pro launch and paid-course catalogue rules.
+- Remaining security, privacy, finance, migration-provenance, distributed rate-limit, deployment and recovery work.
+
+Deferral means these do not lead the current implementation sequence. It does not authorise deleting their code, tables, migrations, documentation, or historical decisions.
+
+## 9. Implementation reporting
+
+For every workstream, update the roadmap and engineering history with:
+
+- Date and exact `main` commit SHA.
+- Files/routes/components/migrations changed.
+- Behaviour completed and known gaps.
+- Tests and CI run URLs/conclusions on that exact SHA.
+- Whether database work was read-only, disposable, staging, or production.
+- Confirmation that the active Pheonix Supabase target was not changed unless a separately approved operation explicitly says otherwise.
+- Remaining risks and the next dependency.
+
+Do not mark work complete because a UI exists or an API route returns success once. Verify the full workflow through the real application boundary and the appropriate database/storage fixture.
