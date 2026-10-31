@@ -1829,7 +1829,6 @@ def _active_organisation_context(user_id: str) -> tuple[str | None, str | None]:
             .eq("user_id", user_id)
             .eq("status", "active")
             .order("joined_at", desc=True)
-            .limit(10)
             .execute()
         ).data or []
         for membership in memberships:
