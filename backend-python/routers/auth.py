@@ -1322,6 +1322,8 @@ def _resolve_learner_access(
         free_access_mode_enabled()
         and is_individual_learner(user.get("role"), "learner")
         and user.get("email_verified_at")
+        and str(user.get("sub_status") or "").lower()
+        in {"trialing", "active", "expired", "cancelled", "free"}
     ):
         return {
             "sub_status": user.get("sub_status") or "expired",
