@@ -153,9 +153,10 @@ def _assert_publishable(track_id: str):
             raise HTTPException(status_code=409, detail="Every track course must be a published, global Learnora-owned course before the track can be published.")
         modules = (
             supabase.table("course_modules")
-            .select("id")
+            .select("id,order_index")
             .eq("course_id", str(course["id"]))
             .eq("status", "published")
+            .order("order_index")
             .execute()
         ).data or []
         module_ids = [str(row["id"]) for row in modules if row.get("id")]
