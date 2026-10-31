@@ -225,6 +225,29 @@ class VideoUploadRequest(BaseModel):
     file_size_bytes: int = Field(..., gt=0, le=2147483648)
     title: Optional[str] = Field(None, max_length=200)
 
+class ResourceUploadRequest(BaseModel):
+    filename: str = Field(..., min_length=1, max_length=255)
+    content_type: Literal[
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/csv",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "text/plain",
+        "application/zip",
+        "application/json",
+    ]
+    file_size_bytes: int = Field(..., gt=0, le=104857600)
+    title: Optional[str] = Field(None, max_length=200)
+
+
 class VideoWrite(BaseModel):
     provider: Literal["supabase", "cloudflare", "mux", "bunny", "vimeo", "youtube", "external", "other"] = "supabase"
     storage_path: Optional[str] = None
@@ -382,6 +405,54 @@ def create_video_upload(
     except Exception as exc:
         print("Video upload URL creation failed:", type(exc).__name__)
         raise HTTPException(status_code=500, detail="Unable to create video upload URL.")
+
+@router.post("/lessons/{lesson_id}/resource-upload")
+def create_resource_upload(
+    lesson_id: str,
+    payload: ResourceUploadRequest,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.resources")),
+):
+    lesson = supabase.table("learnora_lessons").select("id,module_id").eq("id", lesson_id).limit(1).execute()
+    if not lesson.data:
+        raise HTTPException(status_code=404, detail="Lesson not found.")
+    module = supabase.table("course_modules").select("id,course_id").eq("id", lesson.data[0]["module_id"]).limit(1).execute()
+    if not module.data:
+        raise HTTPException(status_code=404, detail="Parent module not found.")
+    course_id = str(module.data[0]["course_id"])
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "-", payload.filename.strip()).strip(".-") or "resource"
+    path = f"courses/{course_id}/lessons/{lesson_id}/resources/{secrets.token_hex(12)}-{safe_name}"
+    try:
+        response = supabase.storage.from_("learnora-course-media").create_signed_upload_url(
+            path,
+            options={"upsert": "false"},
+        )
+        data = getattr(response, "data", None) or response
+        if isinstance(data, dict):
+            token = data.get("token")
+            signed_url = data.get("signedUrl") or data.get("signed_url")
+            response_path = data.get("path") or path
+        else:
+            token = getattr(data, "token", None)
+            signed_url = getattr(data, "signed_url", None) or getattr(data, "signedUrl", None)
+            response_path = getattr(data, "path", None) or path
+        if not token or not signed_url:
+            raise RuntimeError("Supabase did not return a signed resource upload URL.")
+        return {
+            "success": True,
+            "bucket": "learnora-course-media",
+            "path": response_path,
+            "token": token,
+            "signed_url": signed_url,
+            "title": payload.title or payload.filename,
+            "content_type": payload.content_type,
+            "file_size_bytes": payload.file_size_bytes,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print("Resource upload URL creation failed:", type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Unable to create resource upload URL.") from exc
+
 
 @router.post("/lessons/{lesson_id}/videos")
 def create_video(lesson_id: str, payload: VideoWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.video"))):
