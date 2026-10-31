@@ -136,6 +136,7 @@ def _public_track_payload_from_rows(track: dict, links: list[dict], course_map: 
         "name": track.get("name"),
         "slug": track.get("slug"),
         "description": track.get("description"),
+        "status": track.get("status"),
         "created_at": track.get("created_at"),
         "courses": courses,
         "course_count": len(courses),
