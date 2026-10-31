@@ -116,8 +116,8 @@ export default function LearnersPage() {
         <div className="flex items-center justify-between border-t border-white/[.08] px-4 py-3">
           <span className="text-xs text-slate-600">Page {Math.floor(offset / PAGE_SIZE) + 1}</span>
           <div className="flex gap-2">
-            <button type="button" disabled={offset === 0 || loading} onClick={() => void load(Math.max(0, offset - PAGE_SIZE))} className="mini inline-flex items-center gap-1 disabled:opacity-30"><ChevronLeft size={14}/>Previous</button>
-            <button type="button" disabled={!hasMore || loading} onClick={() => void load(offset + PAGE_SIZE)} className="mini inline-flex items-center gap-1 disabled:opacity-30">Next<ChevronRight size={14}/></button>
+            <button type="button" disabled={offset === 0 || loading} onClick={() => void load(Math.max(0, offset - PAGE_SIZE), submittedQuery)} className="mini inline-flex items-center gap-1 disabled:opacity-30"><ChevronLeft size={14}/>Previous</button>
+            <button type="button" disabled={!hasMore || loading} onClick={() => void load(offset + PAGE_SIZE, submittedQuery)} className="mini inline-flex items-center gap-1 disabled:opacity-30">Next<ChevronRight size={14}/></button>
           </div>
         </div>
       </div>
