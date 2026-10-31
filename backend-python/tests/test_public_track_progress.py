@@ -155,6 +155,24 @@ class PublicTrackProgressTests(unittest.TestCase):
         self.assertEqual(result["progress_percent"], 100)
         self.assertTrue(result["completed"])
 
+    def test_archived_course_summary_keeps_module_assessment_locks(self):
+        fixtures = {
+            "learnora_enrolments": [
+                {"id": "enrol-1", "user_id": "learner-1", "course_id": "course-1", "status": "active"}
+            ],
+            "course_modules": [
+                {"id": "module-1", "course_id": "course-1", "status": "archived", "order_index": 0}
+            ],
+            "learnora_lessons": [
+                {"id": "lesson-1", "module_id": "module-1", "status": "archived", "order_index": 0}
+            ],
+            "learnora_lesson_progress": [],
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)), patch.object(progress, "_assert_module_unlocked") as lock_check:
+            result = progress._course_summary("learner-1", "course-1", include_archived=True)
+        lock_check.assert_called_once_with("learner-1", "module-1", include_archived=True)
+        self.assertEqual(result["total_lessons"], 1)
+
     def test_organisation_learner_cannot_use_individual_public_track_progress(self):
         user = SimpleNamespace(id="learner-2", role="witstart", account_type="learner")
         with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)):
