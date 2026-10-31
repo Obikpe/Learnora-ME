@@ -87,6 +87,25 @@ class PublicTrackProgressTests(unittest.TestCase):
         self.assertTrue(result["completed"])
         self.assertEqual(result["progress_percent"], 100)
 
+    def test_existing_learners_keep_progress_access_after_track_unpublish(self):
+        self.fixtures["learnora_learning_paths"][0]["status"] = "draft"
+        summaries = {
+            "course-1": {"total_lessons": 4, "completed_lessons": 4, "progress_percent": 100, "completed": True},
+            "course-2": {"total_lessons": 4, "completed_lessons": 2, "progress_percent": 50, "completed": False},
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id: summaries[course_id]):
+            result = progress.track_progress(self.track_id, user=self.user)
+        self.assertTrue(result["enrolled"])
+        self.assertEqual(result["track"]["status"], "draft")
+
+    def test_unpublished_track_is_hidden_from_learners_without_existing_enrolments(self):
+        self.fixtures["learnora_learning_paths"][0]["status"] = "archived"
+        self.fixtures["learnora_enrolments"] = []
+        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                progress.track_progress(self.track_id, user=self.user)
+        self.assertEqual(raised.exception.status_code, 404)
+
     def test_course_summary_ignores_draft_modules_and_lessons(self):
         fixtures = {
             "learnora_enrolments": [
