@@ -59,8 +59,8 @@ class PublicTrackProgressTests(unittest.TestCase):
                 {"id": "course-2", "title": "Two", "status": "published", "ownership": "learnora", "organisation_id": None},
             ],
             "learnora_enrolments": [
-                {"id": "e1", "user_id": "learner-1", "course_id": "course-1", "status": "completed"},
-                {"id": "e2", "user_id": "learner-1", "course_id": "course-2", "status": "active"},
+                {"id": "e1", "user_id": "learner-1", "course_id": "course-1", "status": "completed", "source_type": f"track_enrolment:{self.track_id}"},
+                {"id": "e2", "user_id": "learner-1", "course_id": "course-2", "status": "active", "source_type": f"track_enrolment:{self.track_id}"},
             ],
         }
         self.user = SimpleNamespace(id="learner-1", role="normal", account_type="learner")
@@ -99,6 +99,15 @@ class PublicTrackProgressTests(unittest.TestCase):
             result = progress.track_progress(self.track_id, user=self.user)
         self.assertTrue(result["enrolled"])
         self.assertEqual(result["track"]["status"], "draft")
+
+    def test_unpublished_track_is_hidden_when_enrolments_belong_to_other_sources(self):
+        self.fixtures["learnora_learning_paths"][0]["status"] = "archived"
+        for row in self.fixtures["learnora_enrolments"]:
+            row["source_type"] = "self_enrolment"
+        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                progress.track_progress(self.track_id, user=self.user)
+        self.assertEqual(raised.exception.status_code, 404)
 
     def test_unpublished_track_is_hidden_from_learners_without_existing_enrolments(self):
         self.fixtures["learnora_learning_paths"][0]["status"] = "archived"
