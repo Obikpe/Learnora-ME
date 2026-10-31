@@ -118,17 +118,22 @@ def _global_track_lookup(track_id: str) -> dict:
 
 def _public_track_payload_from_rows(track: dict, links: list[dict], course_map: dict) -> dict:
     courses = []
+    required_courses = []
     for link in links:
         course = course_map.get(str(link.get("course_id")))
         if course:
-            courses.append({**link, "course": course})
-        elif link.get("required") is True:
+            if link.get("required") is not False:
+                required_courses.append(course)
+            # Internal access settings calculate availability but are not
+            # included in the public course payload.
+            public_course = {key: value for key, value in course.items() if key != "settings"}
+            courses.append({**link, "course": public_course})
+        elif link.get("required") is not False:
             # A published track is hidden if a required course is no longer
             # a published global Learnora course.
             raise HTTPException(404, "Track not found.")
     if not courses:
         raise HTTPException(404, "Track not found.")
-    required_courses = [row["course"] for row in courses if row.get("required") is not False]
     required_count = len(required_courses)
     if required_count == 0:
         raise HTTPException(404, "Track not found.")
