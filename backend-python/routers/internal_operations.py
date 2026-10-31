@@ -765,17 +765,17 @@ def analytics_overview(
         "id", count="exact", head=True
     ).eq("status", "completed").execute()
     lesson_events = supabase.table("learnora_lesson_progress").select(
-        "user_id,completed"
-    ).gte("last_accessed_at", since).limit(10000).execute()
+        "user_id"
+    ).gte("last_accessed_at", since).order("last_accessed_at", desc=True).limit(10000).execute()
     recent_events = lesson_events.data or []
     active_learners = len({
         str(row.get("user_id"))
         for row in recent_events
         if row.get("user_id")
     })
-    recent_completions = sum(
-        1 for row in recent_events if row.get("completed") is True
-    )
+    recent_completions = supabase.table("learnora_lesson_progress").select(
+        "id", count="exact", head=True
+    ).eq("completed", True).gte("completed_at", since).execute()
 
     return {
         "success": True,
@@ -788,7 +788,7 @@ def analytics_overview(
             "active_course_enrolments": int(active_enrolments.count or 0),
             "completed_course_enrolments": int(completed_enrolments.count or 0),
             "active_learners_30d": active_learners,
-            "lesson_completions_30d": recent_completions,
+            "lesson_completions_30d": int(recent_completions.count or 0),
         },
         "definitions": {
             "individual_learners": "Accounts with role normal in public.users.",
@@ -798,7 +798,7 @@ def analytics_overview(
             "active_course_enrolments": "Course enrolments whose status is active.",
             "completed_course_enrolments": "Course enrolments whose status is completed.",
             "active_learners_30d": "Distinct learners with a lesson-progress record accessed in the last 30 days.",
-            "lesson_completions_30d": "Completed lesson-progress records accessed in the last 30 days.",
+            "lesson_completions_30d": "Lesson-progress records whose completion timestamp falls within the last 30 days.",
         },
         "active_learner_sample_capped": len(recent_events) == 10000,
     }
