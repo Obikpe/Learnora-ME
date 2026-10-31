@@ -71,6 +71,7 @@ def resolve_course_access(
         allow_free_access
         and free_access_mode_enabled()
         and not organisation_id
+        and not course.get("organisation_id")
         and course.get("ownership") == "learnora"
     ):
         return {"allowed": True, "source": "free_launch"}
