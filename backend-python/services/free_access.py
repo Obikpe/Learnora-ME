@@ -17,5 +17,5 @@ def is_individual_learner(role: str | None, account_type: str | None) -> bool:
     """Restrict free launch to verified global learner account classes."""
     return (
         str(account_type or "").strip().lower() == "learner"
-        and str(role or "").strip().lower() in {"normal", "witstart"}
+        and str(role or "").strip().lower() == "normal"
     )
