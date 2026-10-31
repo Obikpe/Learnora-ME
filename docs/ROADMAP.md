@@ -360,3 +360,10 @@ Do not mark this release-ready. Remaining acceptance gates: restore GitHub Actio
 - Repository Vercel configuration has Git deployment disabled. The latest Learnora ME deployment predates the current main commit; no deployment was performed. The backend Vercel project is still linked to the older `Pheonix-Analytics` repository while the learner frontend project is linked to `Learnora-ME`; deployment linkage/root configuration must be reconciled before release.
 - `FREE_ACCESS_MODE` remains default-off in code and has not been enabled in Vercel or production. No production database migration, data change, environment-variable change or deployment was made.
 - The read-only SQL connection to the active Pheonix Supabase project remains unavailable, so checked-in baseline schema is not treated as live-schema verification.
+
+
+### Implementation progress — 2026-11-01
+
+The first free-access and global-track hardening changes are committed on `main`. The free-launch resolver now checks active organisation membership before granting individual access and fails closed if that check cannot be completed while the flag is on. Track curriculum lock state is scoped to per-track enrolments; track progress for unpublished tracks requires that track's enrolment source. Withdrawn individual enrolments can be reactivated safely; invited/suspended enrolments are not. Archived-track curriculum edits are rejected, and archived course progress retains assessment-lock checks. Regression tests were added for these paths.
+
+Still outstanding before the planned free launch: run the backend/frontend regression suites on a functioning runner; verify the live Pheonix schema and storage bucket; implement the completion-gated learner review + explicit public-consent + moderation workflow; complete end-to-end acceptance of Teams content/media workflows and learner course/assessment/resume flows; reconcile the backend Vercel project repository linkage. The free-access environment flag remains off and no production migration/deployment was performed.
