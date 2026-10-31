@@ -1314,6 +1314,7 @@ def _find_user(
 
 def _resolve_learner_access(
     user: dict,
+    organisation_id: str | None = None,
 ) -> dict:
 
     now = datetime.now(
@@ -1324,7 +1325,7 @@ def _resolve_learner_access(
     # history. Do not mutate paid/trial rows while the mode is enabled.
     if (
         free_access_mode_enabled()
-        and is_individual_learner(user.get("role"), "learner")
+        and is_individual_learner(user.get("role"), "learner", organisation_id)
         and user.get("email_verified_at")
         and str(user.get("sub_status") or "").lower()
         in {"trialing", "active", "expired", "cancelled", "free"}
@@ -1761,11 +1762,12 @@ def get_current_user(
             ),
         )
 
-    entitlement = (
-        _resolve_learner_access(
-            user
-        )
+    organisation_id, organisation_role = (
+        _active_organisation_context(str(user["id"]))
+        if role != "organisation_prospect"
+        else (None, None)
     )
+    entitlement = _resolve_learner_access(user, organisation_id)
     if role == "organisation_prospect":
         entitlement = {
             **entitlement,
@@ -1773,34 +1775,6 @@ def get_current_user(
             "access_state": "prospect",
             "course_access": False,
         }
-
-    organisation_id = None
-    organisation_role = None
-    if role != "organisation_prospect":
-        try:
-            memberships = (
-                supabase.table("organisation_members")
-                .select("organisation_id,role")
-                .eq("user_id", user["id"])
-                .eq("status", "active")
-                .order("joined_at", desc=True)
-                .limit(10)
-                .execute()
-            ).data or []
-            for membership in memberships:
-                organisation = (
-                    supabase.table("organisations")
-                    .select("id,is_active")
-                    .eq("id", membership["organisation_id"])
-                    .limit(1)
-                    .execute()
-                )
-                if organisation.data and organisation.data[0].get("is_active"):
-                    organisation_id = str(membership["organisation_id"])
-                    organisation_role = str(membership["role"])
-                    break
-        except Exception:
-            pass
 
     return CurrentUser(
         id=(
@@ -1842,6 +1816,40 @@ def get_current_user(
         organisation_id=organisation_id,
         organisation_role=organisation_role,
     )
+
+
+
+
+def _active_organisation_context(user_id: str) -> tuple[str | None, str | None]:
+    """Resolve active organisation membership before applying individual access."""
+    try:
+        memberships = (
+            supabase.table("organisation_members")
+            .select("organisation_id,role")
+            .eq("user_id", user_id)
+            .eq("status", "active")
+            .order("joined_at", desc=True)
+            .limit(10)
+            .execute()
+        ).data or []
+        for membership in memberships:
+            organisation = (
+                supabase.table("organisations")
+                .select("id,is_active")
+                .eq("id", membership["organisation_id"])
+                .limit(1)
+                .execute()
+            )
+            if organisation.data and organisation.data[0].get("is_active"):
+                return str(membership["organisation_id"]), str(membership["role"])
+        return None, None
+    except Exception as exc:
+        if free_access_mode_enabled():
+            raise HTTPException(
+                status_code=503,
+                detail="Your organisation membership could not be verified. Please try again before accessing free learner content.",
+            ) from exc
+        return None, None
 
 
 # ---------------------------------------------------------------------------
@@ -2327,11 +2335,12 @@ def login(
                 f"failed: {exc}"
             )
 
-    entitlement = (
-        _resolve_learner_access(
-            user
-        )
+    organisation_id, organisation_role = (
+        _active_organisation_context(str(user["id"]))
+        if role != "organisation_prospect"
+        else (None, None)
     )
+    entitlement = _resolve_learner_access(user, organisation_id)
     if role == "organisation_prospect":
         entitlement = {
             **entitlement,
@@ -2339,34 +2348,6 @@ def login(
             "access_state": "prospect",
             "course_access": False,
         }
-
-    organisation_id = None
-    organisation_role = None
-    if role != "organisation_prospect":
-        try:
-            memberships = (
-                supabase.table("organisation_members")
-                .select("organisation_id,role")
-                .eq("user_id", user["id"])
-                .eq("status", "active")
-                .order("joined_at", desc=True)
-                .limit(10)
-                .execute()
-            ).data or []
-            for membership in memberships:
-                organisation = (
-                    supabase.table("organisations")
-                    .select("id,is_active")
-                    .eq("id", membership["organisation_id"])
-                    .limit(1)
-                    .execute()
-                )
-                if organisation.data and organisation.data[0].get("is_active"):
-                    organisation_id = str(membership["organisation_id"])
-                    organisation_role = str(membership["role"])
-                    break
-        except Exception:
-            pass
 
     token = make_token(
         email=email,
