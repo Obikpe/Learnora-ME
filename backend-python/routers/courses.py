@@ -613,7 +613,7 @@ def self_enrol_in_free_course(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Allow a learner to enrol only in a published Learnora course explicitly marked free."""
-    if not is_individual_learner(user.role, user.account_type):
+    if user.role not in {"normal", "witstart"}:
         raise HTTPException(403, "This account type cannot self-enrol in learner courses.")
 
     course_result = (
@@ -644,7 +644,7 @@ def self_enrol_in_free_course(
             raise HTTPException(403, "This creator is not approved for course distribution.")
     settings = course.get("settings") or {}
     is_free = (
-        (free_access_mode_enabled() and course.get("ownership") == "learnora")
+        (free_access_mode_enabled() and is_individual_learner(user.role, user.account_type) and course.get("ownership") == "learnora")
         or settings.get("is_free") is True
         or settings.get("access_type") == "free"
         or settings.get("price") == 0
