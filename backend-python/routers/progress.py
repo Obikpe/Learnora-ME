@@ -761,12 +761,15 @@ def track_progress(
 
     enrolments = (
         supabase.table("learnora_enrolments")
-        .select("id,course_id,status,enrolled_at,completed_at")
+        .select("id,course_id,status,enrolled_at,completed_at,source_type")
         .eq("user_id", str(user.id))
         .in_("course_id", list(course_map.keys()))
         .in_("status", ["active", "completed"])
         .execute()
     ).data or []
+    if track.get("status") != "published":
+        track_source = f"track_enrolment:{track_id}"
+        enrolments = [row for row in enrolments if row.get("source_type") == track_source]
     enrolment_map = {str(row.get("course_id")): row for row in enrolments}
 
     course_progress = []
