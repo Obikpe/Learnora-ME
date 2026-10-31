@@ -151,6 +151,17 @@ class InternalTracksTests(unittest.TestCase):
                 internal_tracks._assert_track_curriculum_editable(track_id)
         self.assertEqual(raised.exception.status_code, 409)
 
+    def test_archived_track_course_list_cannot_be_mutated(self):
+        self.fixtures["learnora_learning_paths"][0]["status"] = "archived"
+        with patch.object(internal_tracks, "supabase", TrackSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                internal_tracks.remove_track_course(
+                    "11111111-1111-4111-8111-111111111111",
+                    "course-1",
+                    staff=SimpleNamespace(),
+                )
+        self.assertEqual(raised.exception.status_code, 409)
+
     def test_published_track_course_list_cannot_be_mutated(self):
         self.fixtures["learnora_learning_paths"][0]["status"] = "published"
         with patch.object(internal_tracks, "supabase", TrackSupabase(self.fixtures)):
