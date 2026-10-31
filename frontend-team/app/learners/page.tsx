@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Search, Users, BookOpen, CheckCircle2, Clock3, ChevronLeft, ChevronRight } from "lucide-react";
 import Shell from "../../components/Shell";
 import { request, teamMe } from "../../lib/api";
@@ -35,7 +35,7 @@ export default function LearnersPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function load(nextOffset = offset, search = submittedQuery) {
+  const load = useCallback(async (nextOffset: number, search: string) => {
     setLoading(true);
     setError("");
     try {
@@ -50,12 +50,12 @@ export default function LearnersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     teamMe().then(setMe).catch(e => setError(e.message || "Your staff session could not be loaded."));
     void load(0, "");
-  }, []);
+  }, [load]);
 
   async function openLearner(id: string) {
     setSelected(null);
