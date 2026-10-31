@@ -1,13 +1,13 @@
 # Learnora — Pheonix Analytics
 
-Learnora is maintained as a multi-application repository. The product and engineering documents under `docs/` define the intended product boundaries, data invariants, security requirements, and acceptance gates.
+Learnora is maintained as a multi-application repository. The product and engineering documents under `docs/` define the intended product boundaries, data invariants, security requirements, and acceptance gates. The additive free-launch plan defines the current implementation sequence while preserving the original paid-platform plan.
 
 ## Active applications
 
 - **Learnora ME** — learner and creator-facing application: `frontend-v02/`
 - **Learnora Teams** — organisation and internal operations interface: `frontend-team/`
 - **FastAPI backend** — API and access-control boundary: `backend-python/`
-- **Supabase SQL** — migration history, schema snapshots, and operational SQL: `supabase/`
+- **Supabase SQL** — migration history, schema snapshots, and operational SQL: `supabase/` (Learnora uses the already-active Pheonix Supabase project; do not create or switch to a separate Learnora project)
 - **Engineering documents** — product specification, roadmap, decisions, and migration reconciliation: `docs/`
 
 The root-level legacy `frontend/` and `backend-node/` references in older setup notes are not the source of truth for the current Learnora applications.
@@ -55,10 +55,11 @@ Requirements: Node.js/npm and Python 3.11 or newer.
 
 Do not infer production readiness from this README or a successful frontend build. Browser access to protected data must be mediated by the backend and database permissions. Migration files must be reconciled and tested against disposable databases before any production migration is approved. Changes to this repository do not themselves authorise production database changes or deployments.
 
-Known release gates are tracked in [the engineering roadmap](docs/ROADMAP.md) and [active schema/migration reconciliation](docs/active-pheonix-migration-reconciliation.md). The documented managed-role default-ACL issue and migration provenance gaps must remain open until verified with appropriate evidence.
+Current product sequencing is documented in [the Free Launch → Paid Expansion Plan](docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md). It is an additive plan and does not replace the original paid-platform, organisation, instructor, security, or migration work. Known release gates are tracked in [the engineering roadmap](docs/ROADMAP.md) and [active schema/migration reconciliation](docs/active-pheonix-migration-reconciliation.md). The documented managed-role default-ACL issue and migration provenance gaps must remain open until verified with appropriate evidence.
 
 ## Engineering documents
 
+- [Free Launch → Paid Expansion Plan](docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md)
 - [Product engineering specification](docs/PRODUCT_ENGINEERING_SPEC.md)
 - [Engineering roadmap](docs/ROADMAP.md)
 - [Engineering history and decisions](docs/ENGINEERING_HISTORY_AND_DECISIONS.md)
