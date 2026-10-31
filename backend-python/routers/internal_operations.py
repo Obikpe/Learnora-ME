@@ -615,7 +615,7 @@ def learners(
     query = (
         supabase.table("users")
         .select("id,name,email,role,email_verified_at,created_at,sub_status")
-        .in_("role", ["normal", "witstart"])
+        .eq("role", "normal")
         .order("created_at", desc=True)
         .range(offset, offset + limit - 1)
     )
@@ -787,8 +787,8 @@ def analytics_overview(
             "lesson_completions_30d": recent_completions,
         },
         "definitions": {
-            "individual_learners": "Accounts with role normal or witstart in public.users.",
-            "new_individual_learners_30d": "Individual learner accounts created in the last 30 days.",
+            "individual_learners": "Accounts with role normal in public.users.",
+            "new_individual_learners_30d": "Accounts with role normal created in the last 30 days.",
             "published_learnora_courses": "Published courses owned by Learnora; excludes organisation and creator courses.",
             "active_course_enrolments": "Course enrolments whose status is active.",
             "completed_course_enrolments": "Course enrolments whose status is completed.",
