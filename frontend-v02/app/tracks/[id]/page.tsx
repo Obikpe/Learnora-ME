@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, Circle, LockKeyhole, Route } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Circle, LockKeyhole } from "lucide-react";
 import PublicNav from "../../../components/public/PublicNav";
 import PublicFooter from "../../../components/public/PublicFooter";
 import EmptyState from "../../../components/feedback/EmptyState";
@@ -76,7 +76,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
     try {
       await request<any>("/courses/tracks/"+encodeURIComponent(params.id)+"/enrol", { method: "POST" });
       await loadProgress();
-      const target = nextCourse?.course?.id || track?.courses?.[0]?.course?.id;
+      const target = track?.courses?.find((item:any) => item.required)?.course?.id || track?.courses?.[0]?.course?.id;
       if (target) location.href = "/dashboard/learning/"+encodeURIComponent(target);
     } catch (e:any) {
       if (e.status === 401 || /\(401\)|sign in|unauthori[sz]ed/i.test(e.message || "")) {
