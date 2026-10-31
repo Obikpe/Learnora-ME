@@ -579,7 +579,7 @@ def _assert_module_unlocked(context: PermissionContext, module: dict):
         .select("id,title,order_index")
         .eq("course_id", str(module["course_id"]))
         .lt("order_index", module["order_index"])
-        .neq("status", "archived")
+        .eq("status", "published")
         .order("order_index")
         .execute()
     ).data or []
