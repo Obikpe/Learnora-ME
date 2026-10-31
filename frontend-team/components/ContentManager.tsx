@@ -17,7 +17,17 @@ export default function ContentManager(){
  const loadLessons=async()=>{const requestId=++moduleLoadId.current;const selectedModule=mod;if(!selectedModule){setLessons([]);setLessonId("");setLesson(undefined);setMedia({videos:[],resources:[]});return;}const d=await contentLessons(selectedModule);if(requestId!==moduleLoadId.current||selectedModule!==mod)return;const rows=d.lessons||[];setLessons(rows);if(!rows.some((x:any)=>String(x.id)===lessonId))setLessonId(rows[0]?String(rows[0].id):"")};
  const loadLesson=async()=>{const requestId=++lessonLoadId.current;const selectedLesson=lessonId;if(!selectedLesson){setLesson(undefined);setMedia({videos:[],resources:[]});setTitle("");setDesc("");setBody("");setType("mixed");setStatus("draft");setDuration("");return;}const [l,m]=await Promise.all([contentLesson(selectedLesson),contentLessonMedia(selectedLesson)]);if(requestId!==lessonLoadId.current||selectedLesson!==lessonId)return;const x=l.lesson;setLesson(x);setMedia(m);setTitle(x?.title||"");setDesc(x?.description||"");setBody(x?.content||"");setType(x?.lesson_type||"mixed");setStatus(x?.status||"draft");setDuration(x?.duration_minutes==null?"":String(x.duration_minutes))};
  useEffect(()=>{Promise.all([teamMe(),contentCourses()]).then(([a,b])=>{const rows=b.courses||[];setMe(a);setCourses(rows);const requested=typeof window!=="undefined"?new URLSearchParams(window.location.search).get("course"):null;const selected=rows.find((item:any)=>String(item.id)===String(requested))||rows[0];if(selected)setCourse(String(selected.id))}).catch(e=>setError(e.message||"Content workspace could not be loaded."))},[]);
- useEffect(()=>{if(course){setMods([]);setMod("");setLessons([]);setLessonId("");setLesson(undefined);setMedia({videos:[],resources:[]});setCourseSummary(null);loadMods().catch(e=>setError(e.message));courseStructure(course).then(setCourseSummary).catch(e=>setError(e.message));contentCourse(course).then(d=>{const x=d.course;setCourseData(x);setCourseTitle(x?.title||"");setCourseSlug(x?.slug||"");setCourseDesc(x?.description||"");setCourseLevel(x?.level||"beginner");setCourseStatus(x?.status||"draft")}).catch(e=>setError(e.message))}else{setCourseSummary(null);setCourseData(null);setMods([]);setMod("");setLessons([]);setLessonId("");setLesson(undefined);setMedia({videos:[],resources:[]})return()=>{courseLoadId.current++;moduleLoadId.current++;lessonLoadId.current++}},[course]);
+ useEffect(()=>{
+  if(course){
+   setMods([]);setMod("");setLessons([]);setLessonId("");setLesson(undefined);setMedia({videos:[],resources:[]});setCourseSummary(null);
+   loadMods().catch(e=>setError(e.message));
+   courseStructure(course).then(setCourseSummary).catch(e=>setError(e.message));
+   contentCourse(course).then(d=>{const x=d.course;setCourseData(x);setCourseTitle(x?.title||"");setCourseSlug(x?.slug||"");setCourseDesc(x?.description||"");setCourseLevel(x?.level||"beginner");setCourseStatus(x?.status||"draft")}).catch(e=>setError(e.message));
+  }else{
+   setCourseSummary(null);setCourseData(null);setMods([]);setMod("");setLessons([]);setLessonId("");setLesson(undefined);setMedia({videos:[],resources:[]});
+  }
+  return()=>{courseLoadId.current++;moduleLoadId.current++;lessonLoadId.current++};
+ },[course]);
  useEffect(()=>{if(mod)loadLessons().catch(e=>setError(e.message));return()=>{moduleLoadId.current++}},[mod]);
  useEffect(()=>{loadLesson().catch(e=>setError(e.message));return()=>{lessonLoadId.current++}},[lessonId]);
  if(!me)return <div className="p-10 text-slate-400">Loading secure workspace…</div>;
