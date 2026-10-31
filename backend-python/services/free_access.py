@@ -13,9 +13,14 @@ def free_access_mode_enabled() -> bool:
     }
 
 
-def is_individual_learner(role: str | None, account_type: str | None) -> bool:
-    """Restrict free launch to verified global learner account classes."""
+def is_individual_learner(
+    role: str | None,
+    account_type: str | None,
+    organisation_id: str | None = None,
+) -> bool:
+    """Restrict free launch to global individual learner accounts."""
     return (
-        str(account_type or "").strip().lower() == "learner"
+        not organisation_id
+        and str(account_type or "").strip().lower() == "learner"
         and str(role or "").strip().lower() == "normal"
     )
