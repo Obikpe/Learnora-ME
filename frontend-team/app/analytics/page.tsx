@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Activity, BookOpen, CheckCircle2, GraduationCap, Users, RefreshCw } from "lucide-react";
+import { Activity, BookOpen, CheckCircle2, GraduationCap, Users, RefreshCw, Route } from "lucide-react";
 import Shell from "../../components/Shell";
 import { request, teamMe } from "../../lib/api";
 
@@ -36,6 +36,7 @@ export default function AnalyticsPage() {
     { key: "individual_learners", label: "Individual learners", icon: Users, description: "Verified and unverified learner accounts." },
     { key: "new_individual_learners_30d", label: "New learners · 30 days", icon: GraduationCap, description: "New individual learner registrations." },
     { key: "published_learnora_courses", label: "Published courses", icon: BookOpen, description: "Published courses owned by Learnora." },
+    { key: "published_global_tracks", label: "Published tracks", icon: Route, description: "Published global learner tracks." },
     { key: "active_course_enrolments", label: "Active enrolments", icon: Activity, description: "Enrolments currently marked active." },
     { key: "completed_course_enrolments", label: "Completed courses", icon: CheckCircle2, description: "Enrolments marked completed by the backend." },
     { key: "active_learners_30d", label: "Active learners · 30 days", icon: Users, description: "Distinct learners with recent lesson progress." },
@@ -44,7 +45,7 @@ export default function AnalyticsPage() {
 
   return <Shell roles={me.roles || []} active="analytics">
     <header className="flex flex-wrap items-end justify-between gap-4 border-b border-white/[.1] pb-6">
-      <div><p className="section-kicker">Platform oversight / Analytics</p><h1 className="mt-3 font-display text-4xl tracking-tight sm:text-5xl">Platform analytics</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Live metrics from learner accounts, course enrolments and saved lesson progress. The 30-day activity window is calculated by the backend.</p></div>
+      <div><p className="section-kicker">Platform oversight / Analytics</p><h1 className="mt-3 font-display text-4xl tracking-tight sm:text-5xl">Platform analytics</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Live metrics from individual learner accounts, global tracks, course enrolments and saved lesson progress. The 30-day activity window is calculated by the backend.</p></div>
       <button type="button" onClick={() => void load()} disabled={loading} className="mini inline-flex items-center gap-2 disabled:opacity-50"><RefreshCw size={14} className={loading ? "animate-spin" : ""}/>Refresh</button>
     </header>
 
