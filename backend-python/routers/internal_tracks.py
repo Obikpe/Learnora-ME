@@ -94,6 +94,26 @@ def _track_payload(track: dict, links: list[dict]) -> dict:
     return {**track, "courses": courses, "course_count": len(courses)}
 
 
+def _assert_track_curriculum_editable(track_id: str):
+    links = _track_courses(track_id)
+    course_ids = list({str(row["course_id"]) for row in links if row.get("course_id")})
+    if not course_ids:
+        return
+    enrolments = (
+        supabase.table("learnora_enrolments")
+        .select("id")
+        .in_("course_id", course_ids)
+        .in_("status", ["active", "completed"])
+        .limit(1)
+        .execute()
+    ).data or []
+    if enrolments:
+        raise HTTPException(
+            status_code=409,
+            detail="This track has learner course enrolments. Its curriculum is frozen to preserve learner progress; create a new track for a different course sequence.",
+        )
+
+
 def _normalise_slug(value: str) -> str:
     slug = value.strip().lower()
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
@@ -264,6 +284,7 @@ def add_track_course(
         raise HTTPException(status_code=409, detail="Archived tracks cannot be edited.")
     if track.get("status") == "published":
         raise HTTPException(status_code=409, detail="Unpublish the track before changing its course list.")
+    _assert_track_curriculum_editable(str(track["id"]))
     course_id = _uuid(payload.course_id, "Course")
     course_result = (
         supabase.table("learnora_courses")
@@ -320,6 +341,7 @@ def reorder_track_courses(
     track = _global_track(track_id)
     if track.get("status") == "published":
         raise HTTPException(status_code=409, detail="Unpublish the track before changing course order.")
+    _assert_track_curriculum_editable(str(track["id"]))
     current = _track_courses(str(track["id"]))
     current_by_id = {str(row["id"]): row for row in current}
     submitted_ids = [str(item.id) for item in items]
@@ -382,6 +404,7 @@ def remove_track_course(
     track = _global_track(track_id)
     if track.get("status") == "published":
         raise HTTPException(status_code=409, detail="Unpublish the track before removing a course.")
+    _assert_track_curriculum_editable(str(track["id"]))
     course_id = _uuid(course_id, "Course")
     existing = (
         supabase.table("learnora_learning_path_courses")
