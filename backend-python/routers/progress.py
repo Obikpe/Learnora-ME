@@ -714,7 +714,6 @@ def track_progress(
         .eq("id", track_id)
         .is_("owner_user_id", "null")
         .is_("organisation_id", "null")
-        .eq("status", "published")
         .limit(1)
         .execute()
     )
@@ -739,7 +738,6 @@ def track_progress(
         supabase.table("learnora_courses")
         .select("id,title,slug,short_description,level,status,ownership,organisation_id,thumbnail_url,estimated_hours")
         .in_("id", course_ids)
-        .eq("status", "published")
         .eq("ownership", "learnora")
         .is_("organisation_id", "null")
         .execute()
@@ -762,6 +760,8 @@ def track_progress(
         .in_("status", ["active", "completed"])
         .execute()
     ).data or []
+    if track.get("status") != "published" and not enrolments:
+        raise HTTPException(404, "Track not found.")
     enrolment_map = {str(row.get("course_id")): row for row in enrolments}
 
     course_progress = []
@@ -813,6 +813,8 @@ def track_progress(
     enrolled = bool(required_count) and all(
         item["enrolled"] for item in required_progress
     )
+    if track.get("status") != "published":
+        enrolled = bool(enrolments)
     completed = bool(required_count) and completed_required == required_count
 
     return {
