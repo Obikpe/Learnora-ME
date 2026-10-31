@@ -145,6 +145,10 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    # API responses can contain account, learning, and payment information.
+    # Never allow browsers or intermediary caches to retain them.
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
     # The production API does not serve interactive docs; constrain any
     # accidental HTML/error response without breaking local Swagger tooling.
     if os.getenv("APP_ENV", "production").strip().lower() == "production":
