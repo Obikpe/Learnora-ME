@@ -336,3 +336,5 @@ Append entries using:
 - **Reviews:** not implemented yet. The existing feedback table has no track foreign key, separate public-consent field or moderation state; do not encode track IDs into unrelated columns. A dedicated schema change is still required before review collection/public display.
 - **Migration status:** no migration was required for the global track MVP according to the checked-in baseline, but live SQL schema introspection remains blocked. No database change was applied.
 
+
+- **Review preparation:** added `docs/TRACK_REVIEW_SCHEMA_PROPOSAL.md` defining a dedicated track-linked review record, explicit opt-in public consent, moderation status/audit, privacy rules and regression tests. This is a proposal only; no migration/table or public review endpoint exists yet.
