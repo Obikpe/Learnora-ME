@@ -754,7 +754,7 @@ def analytics_overview(
     ).eq("role", "normal").gte("created_at", since).execute()
     published_courses = supabase.table("learnora_courses").select(
         "id", count="exact", head=True
-    ).eq("ownership", "learnora").eq("status", "published").execute()
+    ).eq("ownership", "learnora").is_("organisation_id", "null").eq("status", "published").execute()
     published_tracks = supabase.table("learnora_learning_paths").select(
         "id", count="exact", head=True
     ).is_("owner_user_id", "null").is_("organisation_id", "null").eq("status", "published").execute()
