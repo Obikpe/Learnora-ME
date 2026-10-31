@@ -6,11 +6,13 @@ All writes are scoped to the authenticated learner and an actual enrolment.
 
 from datetime import datetime, timezone
 from typing import Any, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .auth import CurrentUser, get_current_user, supabase
+from services.free_access import is_individual_learner
 
 router = APIRouter(
     prefix="/api/progress",
@@ -689,6 +691,137 @@ def update_lesson_progress(
         "success": True,
         "progress": result.data[0],
         "course_progress": summary,
+    }
+
+
+
+@router.get("/tracks/{track_id}")
+def track_progress(
+    track_id: str,
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Calculate public track progress from required course completions."""
+    if not is_individual_learner(user.role, user.account_type):
+        raise HTTPException(403, "Public track progress is available to individual learner accounts.")
+    try:
+        track_id = str(UUID(track_id))
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(404, "Track not found.") from None
+
+    track_result = (
+        supabase.table("learnora_learning_paths")
+        .select("id,name,slug,description,status,owner_user_id,organisation_id")
+        .eq("id", track_id)
+        .is_("owner_user_id", "null")
+        .is_("organisation_id", "null")
+        .eq("status", "published")
+        .limit(1)
+        .execute()
+    )
+    if not track_result.data:
+        raise HTTPException(404, "Track not found.")
+    track = track_result.data[0]
+
+    links = (
+        supabase.table("learnora_learning_path_courses")
+        .select("id,course_id,order_index,required")
+        .eq("path_id", track_id)
+        .order("order_index")
+        .execute()
+    ).data or []
+    course_ids = list(dict.fromkeys(
+        str(row["course_id"]) for row in links if row.get("course_id")
+    ))
+    if not course_ids:
+        raise HTTPException(404, "Track not found.")
+
+    course_rows = (
+        supabase.table("learnora_courses")
+        .select("id,title,slug,short_description,level,status,ownership,organisation_id,thumbnail_url,estimated_hours")
+        .in_("id", course_ids)
+        .eq("status", "published")
+        .eq("ownership", "learnora")
+        .is_("organisation_id", "null")
+        .execute()
+    ).data or []
+    course_map = {str(row["id"]): row for row in course_rows}
+    if any(
+        link.get("required") is not False
+        and str(link.get("course_id")) not in course_map
+        for link in links
+    ):
+        raise HTTPException(404, "Track not found.")
+
+    enrolments = (
+        supabase.table("learnora_enrolments")
+        .select("id,course_id,status,enrolled_at,completed_at")
+        .eq("user_id", str(user.id))
+        .in_("course_id", list(course_map.keys()))
+        .in_("status", ["active", "completed"])
+        .execute()
+    ).data or []
+    enrolment_map = {str(row.get("course_id")): row for row in enrolments}
+
+    course_progress = []
+    required_progress = []
+    for link in links:
+        course_id = str(link.get("course_id"))
+        course = course_map.get(course_id)
+        if not course:
+            continue
+        enrolment = enrolment_map.get(course_id)
+        summary = _course_summary(str(user.id), course_id) if enrolment else {
+            "total_lessons": 0,
+            "completed_lessons": 0,
+            "progress_percent": 0,
+            "completed": False,
+        }
+        is_required = link.get("required") is not False
+        item = {
+            **link,
+            "required": is_required,
+            "course": course,
+            "enrolment": enrolment,
+            "enrolled": bool(enrolment),
+            "progress": {
+                "total_lessons": summary["total_lessons"],
+                "completed_lessons": summary["completed_lessons"],
+                "progress_percent": summary["progress_percent"],
+                "completed": bool(
+                    enrolment
+                    and (
+                        enrolment.get("status") == "completed"
+                        or summary["completed"]
+                    )
+                ),
+            },
+        }
+        course_progress.append(item)
+        if is_required:
+            required_progress.append(item)
+
+    required_count = len(required_progress)
+    completed_required = sum(
+        1 for item in required_progress if item["progress"]["completed"]
+    )
+    progress_percent = (
+        round(sum(item["progress"]["progress_percent"] for item in required_progress) / required_count)
+        if required_count else 0
+    )
+    enrolled = bool(required_count) and all(
+        item["enrolled"] for item in required_progress
+    )
+    completed = bool(required_count) and completed_required == required_count
+
+    return {
+        "success": True,
+        "track": track,
+        "enrolled": enrolled,
+        "completed": completed,
+        "progress_percent": progress_percent,
+        "completed_required_courses": completed_required,
+        "required_courses": required_count,
+        "courses": course_progress,
     }
 
 
