@@ -8,10 +8,13 @@ import PublicFooter from "../../../components/public/PublicFooter";
 import EmptyState from "../../../components/feedback/EmptyState";
 import Skeleton from "../../../components/feedback/Skeleton";
 import { request } from "../../../lib/api/client";
+import { currentUser, organisationContext } from "../../../lib/api";
 
 export default function TrackDetailPage({params}:{params:{id:string}}) {
   const [track, setTrack] = useState<any>(null);
   const [progress, setProgress] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [hasOrganisationContext, setHasOrganisationContext] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState("");
@@ -27,6 +30,8 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
 
   useEffect(() => {
     let active = true;
+    setHasOrganisationContext(Boolean(organisationContext()));
+    currentUser().then(me => { if (active) setUser(me); }).catch(() => { if (active) setUser(null); });
     request<any>("/public/tracks/"+encodeURIComponent(params.id))
       .then(async result => {
         if (!active) return;
@@ -97,6 +102,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
   const percent = progress?.progress_percent ?? 0;
   const isEnrolled = Boolean(progress?.enrolled);
   const isCompleted = Boolean(progress?.completed);
+  const individualLearner = user?.role === "normal" && user?.account_type === "learner" && !hasOrganisationContext;
 
   return <>
     <PublicNav/>
@@ -108,7 +114,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
           <div className="flex items-center justify-between text-xs text-slate-500"><span>Track progress</span><span className="tabular-nums">{percent}%</span></div>
           <div className="mt-3 h-2 overflow-hidden bg-white/[.08]"><div className="h-full bg-[var(--gold)] transition-all" style={{width:percent+"%"}}/></div>
           <p className="mt-3 text-xs text-slate-500">{completedCount} of {requiredCount} required courses completed</p>
-          {isCompleted ? <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 size={16}/>Track completed</p> : isEnrolled ? <button type="button" disabled={!nextCourse?.course?.id} onClick={()=>{if(nextCourse?.course?.id)location.href="/dashboard/learning/"+encodeURIComponent(nextCourse.course.id)}} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f] disabled:opacity-40">Continue learning <ArrowRight size={15}/></button> : track?.status!=="published" ? <p className="mt-5 text-xs leading-6 text-slate-500">This track is no longer open for new enrolments.</p> : <button type="button" onClick={()=>void enrol()} disabled={enrolling} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f] disabled:opacity-50">{enrolling?"Enrolling…":"Enrol in this track"} <ArrowRight size={15}/></button>}
+          {isCompleted ? <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 size={16}/>Track completed</p> : isEnrolled ? <button type="button" disabled={!nextCourse?.course?.id} onClick={()=>{if(nextCourse?.course?.id)location.href="/dashboard/learning/"+encodeURIComponent(nextCourse.course.id)}} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f] disabled:opacity-40">Continue learning <ArrowRight size={15}/></button> : track?.status!=="published" ? <p className="mt-5 text-xs leading-6 text-slate-500">This track is no longer open for new enrolments.</p> : !user ? <Link href={"/login?next="+encodeURIComponent("/tracks/"+params.id)} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f]">Sign in to enrol <ArrowRight size={15}/></Link> : individualLearner ? <button type="button" onClick={()=>void enrol()} disabled={enrolling} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[var(--gold)] px-4 text-sm font-bold text-[#16140f] disabled:opacity-50">{enrolling?"Enrolling…":"Enrol in this track"} <ArrowRight size={15}/></button> : user.role==="normal"&&hasOrganisationContext ? <Link href={"/login?next="+encodeURIComponent("/tracks/"+params.id)} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 border border-white/[.16] px-4 text-sm font-semibold text-slate-200">Switch to individual learning <ArrowRight size={15}/></Link> : <p className="mt-5 text-xs leading-6 text-slate-500">Public track enrolment is for individual learner accounts. Use your organisation's assigned learning access.</p>}
         </div>
       </header>
 
