@@ -70,7 +70,7 @@ class PublicTrackProgressTests(unittest.TestCase):
             "course-1": {"total_lessons": 4, "completed_lessons": 4, "progress_percent": 100, "completed": True},
             "course-2": {"total_lessons": 4, "completed_lessons": 2, "progress_percent": 50, "completed": False},
         }
-        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id: summaries[course_id]):
+        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id, **_kwargs: summaries[course_id]):
             result = progress.track_progress(self.track_id, user=self.user)
         self.assertTrue(result["enrolled"])
         self.assertFalse(result["completed"])
@@ -84,7 +84,7 @@ class PublicTrackProgressTests(unittest.TestCase):
             "course-2": {"total_lessons": 4, "completed_lessons": 4, "progress_percent": 100, "completed": True},
         }
         self.fixtures["learnora_enrolments"][1]["status"] = "completed"
-        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id: summaries[course_id]):
+        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id, **_kwargs: summaries[course_id]):
             result = progress.track_progress(self.track_id, user=self.user)
         self.assertTrue(result["completed"])
         self.assertEqual(result["progress_percent"], 100)
@@ -95,7 +95,7 @@ class PublicTrackProgressTests(unittest.TestCase):
             "course-1": {"total_lessons": 4, "completed_lessons": 4, "progress_percent": 100, "completed": True},
             "course-2": {"total_lessons": 4, "completed_lessons": 2, "progress_percent": 50, "completed": False},
         }
-        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id: summaries[course_id]):
+        with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id, **_kwargs: summaries[course_id]):
             result = progress.track_progress(self.track_id, user=self.user)
         self.assertTrue(result["enrolled"])
         self.assertEqual(result["track"]["status"], "draft")
