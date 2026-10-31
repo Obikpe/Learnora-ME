@@ -84,6 +84,13 @@ class TrackEnrolmentTests(unittest.TestCase):
                 courses.self_enrol_in_track(self.track_id, user=user)
         self.assertEqual(raised.exception.status_code, 403)
 
+    def test_individual_role_in_organisation_context_cannot_use_free_track_enrolment(self):
+        user = SimpleNamespace(id="learner-2", role="normal", account_type="learner", organisation_id="org-1")
+        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(courses, "supabase", EnrolmentSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                courses.self_enrol_in_track(self.track_id, user=user)
+        self.assertEqual(raised.exception.status_code, 403)
+
     def test_track_with_tenant_scoped_course_is_not_granted_by_free_mode(self):
         self.fixtures["learnora_courses"][1]["organisation_id"] = "org-1"
         user = SimpleNamespace(id="learner-1", role="normal", account_type="learner")
