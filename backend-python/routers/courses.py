@@ -770,7 +770,7 @@ def self_enrol_in_track(
     existing = (
         supabase.table("learnora_enrolments")
         .select("id,course_id,status,enrolled_at,completed_at")
-        .eq("user_id", user.id)
+        .eq("user_id", str(user.id))
         .in_("course_id", enrolable_course_ids)
         .in_("status", ["active", "completed"])
         .execute()
@@ -784,7 +784,7 @@ def self_enrol_in_track(
             supabase.table("learnora_enrolments")
             .insert([
                 {
-                    "user_id": user.id,
+                    "user_id": str(user.id),
                     "course_id": course_id,
                     "organisation_id": None,
                     "status": "active",
