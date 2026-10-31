@@ -316,8 +316,8 @@ def reorder_track_courses(
                 .eq("path_id", str(track["id"]))
                 .execute()
             )
-            if not updated.data:
-                raise RuntimeError("A track course order update returned no row.")
+            # The PostgREST update can return an empty representation on a
+            # successful write; execute() raising is the failure signal.
     except Exception as exc:
         # Best-effort compensation preserves the original ordering if a later
         # write fails. The operation is deliberately not advertised as atomic.
@@ -341,13 +341,20 @@ def remove_track_course(
 ):
     track = _global_track(track_id)
     course_id = _uuid(course_id, "Course")
-    result = (
+    existing = (
         supabase.table("learnora_learning_path_courses")
-        .delete()
+        .select("id,path_id,course_id,order_index,required")
         .eq("path_id", str(track["id"]))
         .eq("course_id", course_id)
+        .limit(1)
         .execute()
     )
-    if not result.data:
+    if not existing.data:
         raise HTTPException(status_code=404, detail="Track course link not found.")
-    return {"success": True, "removed": result.data[0]}
+    (
+        supabase.table("learnora_learning_path_courses")
+        .delete()
+        .eq("id", existing.data[0]["id"])
+        .execute()
+    )
+    return {"success": True, "removed": existing.data[0]}
