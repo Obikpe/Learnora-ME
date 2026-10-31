@@ -279,3 +279,62 @@ This snapshot records what has been verified from repository metadata; it is not
 | Browser-driven product acceptance | CI evidence covers builds and API/database tests, not every complete browser journey across both applications. | Open. |
 
 Do not merge the draft security PR solely because its recorded checks passed: first compare its current head and migration set to `main`, verify the complete required workflow set on one exact candidate SHA, and establish a safe deployment/migration order. Production database changes, data repair, and deployment remain separate approval gates.
+
+
+---
+
+## Strategic execution addendum — 31 October 2026: free launch before paid expansion
+
+**This section changes the immediate execution order; it does not replace the original P0–P6 roadmap above.** The original priorities, acceptance criteria, organisation/cohort work, instructor/creator scope, security findings, and release requirements remain preserved. See [Free Launch → Paid Expansion Plan](FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md) for the full decision record and detailed acceptance criteria.
+
+### Product direction
+
+Learnora will first launch a usable free learner experience to build a real learner base and collect genuine, moderated feedback. Paid services and Pro subscription are a later stage. The existing paid system is retained; it is not cancelled or to be reconstructed later.
+
+**Database clarification:** Learnora continues to use the already-active Pheonix Supabase project. Do not create or switch to a separate Learnora project. Existing records identify project reference `gihfupzvdpyrmynqgukz`; confirm configured target safely without exposing secrets before any operation. No production migration or deployment is authorised by this documentation update.
+
+### Current implementation focus
+
+Only these two product applications lead feature implementation now:
+
+1. **Learnora Teams (`frontend-team/`)** — internal content and platform operations: tracks, ordered track-course relationships, courses, modules, lessons, video/resource uploads, publishing, learner information, and reliable platform analytics.
+2. **Learnora ME (`frontend-v02/`)** — free learner discovery, track/course enrolment, lessons/media, assessments/activities supported by the product, progress/resume, and accurate course/track completion.
+
+Both use the existing shared FastAPI backend (`backend-python/`) and active Pheonix Supabase project. The legacy `frontend/` is not the target.
+
+### Revised execution order
+
+| Order | Workstream | Exit evidence |
+|---|---|---|
+| 0 | Verify current main baseline, active Pheonix Supabase target, schema and billing/access implementation | Exact SHA and project identity recorded; no production mutation |
+| 1 | Add central, reversible server-side free-access mode | Individual learner can use free catalogue without payment method, checkout, paid subscription or trial expiry; paid checks remain intact and regression-tested when mode is off |
+| 2 | Complete Teams tracks and course catalogue management | Staff can create/edit/order/publish tracks and courses using canonical schema relationships |
+| 3 | Complete Teams curriculum and media management | Modules/lessons, signed video uploads, resources, publication and playback verified end to end |
+| 4 | Complete Teams learner oversight and analytics | Privacy-safe learner views and metrics with documented definitions and tested data sources |
+| 5 | Complete Learnora ME learning journey | Discovery → enrolment → course/module/lesson → supported activities → progress/resume → completion |
+| 6 | Add track-completion rating and optional review | Backend-confirmed completion, optional 1–5 rating/comment, separate publication consent, moderation and safe public display |
+| 7 | Free-launch release acceptance | Both app builds, relevant backend/database/security tests, browser E2E, storage/auth checks, recovery plan and explicit release approval |
+| 8 | Resume deferred original platform work | Organisation/cohort and instructor/creator workflows, plus remaining original security/finance/privacy/release items |
+| 9 | Paid expansion | Separate product approval, free/paid catalogue rules, Pro benefits/pricing, payment lifecycle, learner transition policy and paid-mode regression acceptance |
+
+### Reversible free mode — mandatory constraints
+
+- Use one central server-enforced mode/configuration; do not scatter UI-only paywall bypasses.
+- When enabled, individual free-launch learners must not be blocked by missing payment records, trial status, subscription expiry or card details.
+- Preserve all subscription, payment, Paystack, trial, expiry, pricing, entitlement and Pro implementation/data.
+- When disabled, the original paid enforcement must resume and pass regression tests.
+- Keep authentication, email verification, staff permissions, tenant isolation, RLS, creator ownership and protected/private media controls intact.
+- Do not mass-edit historical subscription records or turn payment routes into unauthenticated endpoints.
+- Free access does not grant cross-organisation or administrative access and does not make unpublished/private content public.
+
+### Deferred scope — retained, not removed
+
+Organisation onboarding/workspaces, teams/cohorts/programmes, instructor/tutor/creator onboarding and tools, creator sales/payouts, organisation contracts/entitlements and the wider original commercial model remain in the original roadmap. They are deferred by sequencing only. Their existing schema, code, security boundaries and documentation must not be deleted or weakened.
+
+### Track completion and public feedback
+
+The learner may be invited to rate Learnora after the backend confirms completion of a track. The prompt must be dismissible; written comment is optional. Public display requires separate consent and moderation. Keep reviews genuine and searchable where appropriate; do not promise Google star-rich-results for self-serving reviews of Learnora itself. This feature must not delay the core Teams content workflow or learner journey.
+
+### Active plan maintenance
+
+For current work, use the sequence in this addendum and the detailed acceptance criteria in `FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md`. The original P0–P6 items remain applicable safety/release gates and the broader backlog; do not interpret this revised sequence as permission to ignore a security issue that directly affects the feature being changed. Record actual completion evidence in the engineering history with the exact main SHA and test results. Production SQL, production data changes and deployment continue to require separate explicit approval.
