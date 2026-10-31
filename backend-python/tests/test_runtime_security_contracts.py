@@ -33,6 +33,11 @@ class RuntimeSecurityContractTests(unittest.TestCase):
         self.assertIn("FRONTEND_URL=http://localhost:3000", env_example)
         self.assertIn("INTERNAL_FRONTEND_URL=http://localhost:3001", env_example)
 
+    def test_api_responses_are_not_cacheable(self):
+        source = (ROOT / "main.py").read_text(encoding="utf-8")
+        self.assertIn('if request.url.path.startswith("/api/"):', source)
+        self.assertIn('response.headers["Cache-Control"] = "no-store"', source)
+
     def test_course_content_errors_do_not_return_database_exception_details(self):
         for relative in ("routers/course_content.py", "routers/internal_content.py"):
             source = (ROOT / relative).read_text(encoding="utf-8")
