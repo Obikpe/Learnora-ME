@@ -43,7 +43,7 @@ class FreeAccessModeTests(unittest.TestCase):
 
     def test_only_global_individual_learner_accounts_are_eligible(self):
         self.assertTrue(is_individual_learner("normal", "learner"))
-        self.assertTrue(is_individual_learner("witstart", "learner"))
+        self.assertFalse(is_individual_learner("witstart", "learner"))
         for role, account_type in (
             ("super_admin", "admin"),
             ("staff_admin", "admin"),
@@ -51,6 +51,7 @@ class FreeAccessModeTests(unittest.TestCase):
             ("normal", "organisation"),
             ("creator", "creator"),
             ("organisation_prospect", "learner"),
+            ("witstart", "learner"),
         ):
             with self.subTest(role=role, account_type=account_type):
                 self.assertFalse(is_individual_learner(role, account_type))
@@ -89,7 +90,7 @@ class FreeAccessModeTests(unittest.TestCase):
         self.assertEqual(result["access_state"], "pending")
 
     def test_admin_or_prospect_role_does_not_receive_individual_free_access(self):
-        for role in ("super_admin", "staff_admin", "organisation_prospect"):
+        for role in ("super_admin", "staff_admin", "organisation_prospect", "witstart"):
             learner = {
                 "id": "account-1",
                 "role": role,
