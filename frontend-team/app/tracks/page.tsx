@@ -142,7 +142,7 @@ export default function TracksWorkspace() {
       <div className="space-y-5">
         <form onSubmit={createTrack} className="border border-white/[.08] bg-[#0e1319] p-5">
           <p className="section-kicker">New track</p><h2 className="mt-2 text-lg font-semibold">Create a draft</h2>
-          <label className="mt-5 block text-xs text-slate-500">Track name<input required minLength={2} maxLength={120} value={name} onChange={e=>{setName(e.target.value);if(!slug||slug===slugify(name))setSlug(slugify(e.target.value)}} className="field mt-2 w-full" placeholder="e.g. Data Analytics Foundations"/></label>
+          <label className="mt-5 block text-xs text-slate-500">Track name<input required minLength={2} maxLength={120} value={name} onChange={e=>{setName(e.target.value);if(!slug||slug===slugify(name))setSlug(slugify(e.target.value))}} className="field mt-2 w-full" placeholder="e.g. Data Analytics Foundations"/></label>
           <label className="mt-4 block text-xs text-slate-500">URL slug<input required minLength={2} maxLength={140} pattern="[a-z0-9]+(-[a-z0-9]+)*" value={slug} onChange={e=>setSlug(e.target.value)} className="field mt-2 w-full" placeholder="data-analytics-foundations"/></label>
           <label className="mt-4 block text-xs text-slate-500">Description<textarea maxLength={5000} value={description} onChange={e=>setDescription(e.target.value)} className="field mt-2 min-h-24 w-full" placeholder="What will learners build or understand?"/></label>
           <button disabled={saving||!name.trim()||!slug.trim()} className="action mt-5 inline-flex items-center gap-2"><Plus size={15}/>Create draft</button>
