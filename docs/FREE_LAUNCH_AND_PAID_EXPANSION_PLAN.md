@@ -317,3 +317,15 @@ The proposed review schema and its consent, moderation, security and test gates 
 
 
 The track manager now freezes a curriculum after course enrolments exist, preventing later edits from silently changing a learner's required sequence. Unpublished/archived tracks are removed from new discovery and enrolment, while learners with existing required-course enrolments can still retrieve their saved track progress. The Teams analytics view also reports published global tracks. These behaviours are covered by regression tests that are committed but currently blocked from execution by GitHub runner assignment failures.
+
+
+### Implementation progress update — 2026-11-01
+
+- The free-launch entitlement resolver now checks active organisation membership before applying individual learner access. If the membership lookup fails while free mode is enabled, authentication fails closed with a temporary service error rather than treating the learner as an individual. The free flag remains server-side and default-off; billing records are not rewritten.
+- Global track management now uses the canonical global learning-path records and their course links. Track enrolments carry a per-track source marker, curriculum freezing is scoped to that track's enrolments, and archived tracks reject curriculum edits. Required/optional course handling and learner progress continuity have regression coverage.
+- Track progress for an unpublished/archived track now requires an enrolment explicitly originating from that track; unrelated self-enrolments no longer expose unpublished track progress. Archived course summaries retain the lesson history path while still invoking module assessment-lock checks.
+- Track enrolment now scopes existing records to individual/global enrolments and reactivates withdrawn records rather than attempting a duplicate insert. Suspended or invited records fail closed instead of being silently reactivated.
+- Public catalogue free labels and analytics are scoped to global Learnora courses/tracks. Additional regression tests cover tenant isolation, independent enrolments, archived-track visibility and enrolment lifecycle.
+- The optional post-completion review and public moderation flow is not yet implemented. It requires an additive review table, RLS/grants, authenticated completion-gated APIs, staff moderation and learner UI. No migration was applied or deployed; live schema verification is still blocked.
+- CI was triggered on the latest commits, but GitHub reports failed jobs with no executed steps/logs (runner allocation unavailable). These are not passing tests and do not establish code failures. Local test execution was also unavailable in this session because the runtime could not resolve GitHub.
+- The active Pheonix Supabase project remains the intended database. A read-only live-schema request failed with password authentication for the read-only database user. No production database, environment variable or deployment was changed.
