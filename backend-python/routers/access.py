@@ -18,6 +18,6 @@ def course_access(course_id:str,user:CurrentUser=Depends(get_current_user)):
         user.id,
         course_id,
         organisation_id,
-        allow_free_access=is_individual_learner(user.role, user.account_type),
+        allow_free_access=is_individual_learner(user.role, user.account_type, getattr(user, "organisation_id", None)),
     )
     return {"success":True,"allowed":bool(result),"access":result}
