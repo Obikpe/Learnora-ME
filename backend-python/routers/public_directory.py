@@ -128,9 +128,17 @@ def _public_track_payload_from_rows(track: dict, links: list[dict], course_map: 
             raise HTTPException(404, "Track not found.")
     if not courses:
         raise HTTPException(404, "Track not found.")
-    required_count = sum(1 for row in courses if row.get("required") is True)
+    required_courses = [row["course"] for row in courses if row.get("required") is not False]
+    required_count = len(required_courses)
     if required_count == 0:
         raise HTTPException(404, "Track not found.")
+    self_enrol_available = all(
+        free_access_mode_enabled()
+        or (course.get("settings") or {}).get("is_free") is True
+        or (course.get("settings") or {}).get("access_type") == "free"
+        or (course.get("settings") or {}).get("price") == 0
+        for course in required_courses
+    )
     return {
         "id": track.get("id"),
         "name": track.get("name"),
@@ -141,6 +149,7 @@ def _public_track_payload_from_rows(track: dict, links: list[dict], course_map: 
         "courses": courses,
         "course_count": len(courses),
         "required_course_count": required_count,
+        "self_enrol_available": self_enrol_available,
     }
 
 
@@ -157,7 +166,7 @@ def _public_track_payload(track: dict) -> dict:
     if course_ids:
         rows = (
             supabase.table("learnora_courses")
-            .select("id,title,slug,short_description,level,status,ownership,organisation_id,thumbnail_url,estimated_hours")
+            .select("id,title,slug,short_description,level,status,ownership,organisation_id,thumbnail_url,estimated_hours,settings")
             .in_("id", course_ids)
             .eq("status", "published")
             .eq("ownership", "learnora")
