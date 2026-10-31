@@ -791,8 +791,8 @@ def analytics_overview(
             "lesson_completions_30d": int(recent_completions.count or 0),
         },
         "definitions": {
-            "individual_learners": "Accounts with role normal in public.users.",
-            "new_individual_learners_30d": "Accounts with role normal created in the last 30 days.",
+            "individual_learners": "Accounts with role normal in public.users; includes users who may also have active organisation memberships.",
+            "new_individual_learners_30d": "Accounts with role normal created in the last 30 days; organisation membership is not excluded.",
             "published_learnora_courses": "Published courses owned by Learnora; excludes organisation and creator courses.",
             "published_global_tracks": "Published global learning paths with no personal owner or organisation scope.",
             "active_course_enrolments": "Course enrolments whose status is active.",
