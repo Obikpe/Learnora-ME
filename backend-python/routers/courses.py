@@ -612,7 +612,7 @@ def self_enrol_in_free_course(
     course_id: str,
     user: CurrentUser = Depends(get_current_user),
 ):
-    """Allow a learner to enrol only in a published Learnora course explicitly marked free."""
+    """Enrol a learner in a published free course or the free-launch catalogue."""
     if user.role not in {"normal", "witstart"}:
         raise HTTPException(403, "This account type cannot self-enrol in learner courses.")
 
