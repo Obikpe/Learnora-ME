@@ -202,9 +202,10 @@ def archive_course(course_id: str, staff: InternalStaffContext = Depends(require
 
 @router.get("/courses/{course_id}/structure")
 def course_structure(course_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
-    course = supabase.table("learnora_courses").select("*").eq("id", course_id).limit(1).execute()
+    _global_learnora_course(course_id)
+    course = supabase.table("learnora_courses").select("*").eq("id", course_id).eq("ownership", "learnora").is_("organisation_id", "null").limit(1).execute()
     if not course.data:
-        raise HTTPException(status_code=404, detail="Course not found.")
+        raise HTTPException(status_code=404, detail="Global Learnora course not found.")
 
     modules = (
         supabase.table("course_modules")
@@ -240,21 +241,25 @@ def course_structure(course_id: str, staff: InternalStaffContext = Depends(requi
 
 @router.get("/courses/{course_id}/modules")
 def modules(course_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    _global_learnora_course(course_id)
     rows = supabase.table("course_modules").select("*").eq("course_id", course_id).order("order_index").execute()
     return {"success": True, "modules": rows.data or []}
 
 @router.get("/modules/{module_id}/lessons")
 def lessons(module_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    _course_for_module(module_id)
     rows = supabase.table("learnora_lessons").select("*").eq("module_id", module_id).order("order_index").execute()
     return {"success": True, "lessons": rows.data or []}
 
 @router.get("/lessons/{lesson_id}")
 def lesson(lesson_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    _module_for_lesson(lesson_id)
     row = supabase.table("learnora_lessons").select("*").eq("id", lesson_id).limit(1).execute()
     return {"success": True, "lesson": (row.data or [None])[0]}
 
 @router.get("/lessons/{lesson_id}/media")
 def lesson_media(lesson_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    _module_for_lesson(lesson_id)
     videos = supabase.table("lesson_videos").select("*").eq("lesson_id", lesson_id).order("created_at", desc=True).execute()
     resources = supabase.table("lesson_resources").select("*").eq("lesson_id", lesson_id).order("created_at", desc=True).execute()
     return {"success": True, "videos": videos.data or [], "resources": resources.data or []}
@@ -336,21 +341,23 @@ def _course_for_module(module_id: str):
     row = supabase.table("course_modules").select("id,course_id").eq("id", module_id).limit(1).execute()
     if not row.data:
         raise HTTPException(status_code=404, detail="Module not found.")
-    return row.data[0]
+    module = row.data[0]
+    _global_learnora_course(str(module["course_id"]))
+    return module
 
 def _module_for_lesson(lesson_id: str):
     row = supabase.table("learnora_lessons").select("id,module_id").eq("id", lesson_id).limit(1).execute()
     if not row.data:
         raise HTTPException(status_code=404, detail="Lesson not found.")
-    return row.data[0]
+    lesson = row.data[0]
+    _course_for_module(str(lesson["module_id"]))
+    return lesson
 
 @router.post("/courses/{course_id}/modules")
 def create_module(course_id: str, payload: ModuleWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
     if not payload.title:
         raise HTTPException(status_code=400, detail="title is required")
-    course = supabase.table("learnora_courses").select("id").eq("id", course_id).limit(1).execute()
-    if not course.data:
-        raise HTTPException(status_code=404, detail="Course not found.")
+    _global_learnora_course(course_id)
     row = supabase.table("course_modules").insert({"course_id": course_id, "title": payload.title.strip(), "description": payload.description, "order_index": payload.order_index or 0, "status": payload.status or "draft"}).execute()
     if not row.data:
         raise HTTPException(status_code=500, detail="Module creation returned no record.")
