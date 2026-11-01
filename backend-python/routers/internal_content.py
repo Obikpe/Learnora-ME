@@ -8,6 +8,44 @@ from typing import Optional, Literal
 
 router = APIRouter(prefix="/api/internal/content", tags=["Internal Content"])
 
+def _assert_course_publishable(course_id: str):
+    modules = (
+        supabase.table("course_modules")
+        .select("id,order_index")
+        .eq("course_id", course_id)
+        .eq("status", "published")
+        .order("order_index")
+        .execute()
+    ).data or []
+    if not modules:
+        raise HTTPException(status_code=409, detail="Add at least one published module before publishing this course.")
+    module_ids = [str(row["id"]) for row in modules if row.get("id")]
+    lessons = (
+        supabase.table("learnora_lessons")
+        .select("id")
+        .in_("module_id", module_ids)
+        .eq("status", "published")
+        .limit(1)
+        .execute()
+    ).data or []
+    if not lessons:
+        raise HTTPException(status_code=409, detail="Add at least one published lesson before publishing this course.")
+    for module in modules[:-1]:
+        quizzes = (
+            supabase.table("quizzes")
+            .select("id")
+            .eq("module_id", str(module["id"]))
+            .eq("is_published", True)
+            .limit(1)
+            .execute()
+        ).data or []
+        if not quizzes:
+            raise HTTPException(
+                status_code=409,
+                detail="Every published module before the final module must have a published assessment so learners can unlock the next module.",
+            )
+
+
 def _assert_course_not_in_published_global_track(course_id: str):
     links = (
         supabase.table("learnora_learning_path_courses")
@@ -65,6 +103,8 @@ class CourseWrite(BaseModel):
 
 @router.post("/courses")
 def create_course(payload: CourseCreate, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    if payload.status != "draft":
+        raise HTTPException(status_code=409, detail="Create courses as drafts, then publish after the curriculum passes validation.")
     slug = payload.slug.strip().lower().replace(" ", "-")
     if supabase.table("learnora_courses").select("id").eq("slug", slug).limit(1).execute().data:
         raise HTTPException(status_code=400, detail="A course with this slug already exists.")
@@ -110,6 +150,8 @@ def update_course(course_id: str, payload: CourseWrite, staff: InternalStaffCont
     data = payload.model_dump(exclude_unset=True)
     resulting_status = data.get("status", current_course.get("status"))
     resulting_ownership = data.get("ownership", current_course.get("ownership"))
+    if resulting_status == "published" and current_course.get("status") != "published":
+        _assert_course_publishable(course_id)
     if resulting_status != "published" or resulting_ownership != "learnora" or current_course.get("organisation_id") is not None:
         _assert_course_not_in_published_global_track(course_id)
     for key in ("title", "slug", "short_description", "description", "level", "ownership", "thumbnail_url"):
