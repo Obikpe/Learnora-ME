@@ -96,7 +96,7 @@ class FreeAccessModeTests(unittest.TestCase):
                 raise RuntimeError("database unavailable")
         with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(auth, "supabase", BrokenSupabase()):
             with self.assertRaises(HTTPException) as raised:
-                auth._active_organisation_context("learner-1")
+                auth._active_organisation_context("learner-1", fail_closed=True)
         self.assertEqual(raised.exception.status_code, 503)
 
     def test_unverified_learner_does_not_receive_free_access(self):
