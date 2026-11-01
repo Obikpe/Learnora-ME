@@ -417,9 +417,7 @@ def archive_lesson(lesson_id: str, staff: InternalStaffContext = Depends(require
 
 @router.patch("/courses/{course_id}/modules/reorder")
 def reorder_modules(course_id: str, items: list[ReorderItem], staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
-    course = supabase.table("learnora_courses").select("id").eq("id", course_id).limit(1).execute()
-    if not course.data:
-        raise HTTPException(status_code=404, detail="Course not found.")
+    _global_learnora_course(course_id)
     for item in items:
         supabase.table("course_modules").update({"order_index": item.order_index}).eq("id", item.id).eq("course_id", course_id).execute()
     return {"success": True}
@@ -437,13 +435,9 @@ def create_video_upload(
     payload: VideoUploadRequest,
     staff: InternalStaffContext = Depends(require_internal_permission("content.video")),
 ):
-    lesson = supabase.table("learnora_lessons").select("id,module_id").eq("id", lesson_id).limit(1).execute()
-    if not lesson.data:
-        raise HTTPException(status_code=404, detail="Lesson not found.")
-    module = supabase.table("course_modules").select("id,course_id").eq("id", lesson.data[0]["module_id"]).limit(1).execute()
-    if not module.data:
-        raise HTTPException(status_code=404, detail="Parent module not found.")
-    course_id = str(module.data[0]["course_id"])
+    lesson = _module_for_lesson(lesson_id)
+    module = _course_for_module(str(lesson["module_id"]))
+    course_id = str(module["course_id"])
     safe_name = re.sub(r"[^A-Za-z0-9._-]+", "-", payload.filename.strip()).strip(".-") or "video"
     path = f"courses/{course_id}/lessons/{lesson_id}/{secrets.token_hex(12)}-{safe_name}"
     try:
@@ -460,8 +454,8 @@ def create_video_upload(
             token = getattr(data, "token", None)
             signed_url = getattr(data, "signed_url", None) or getattr(data, "signedUrl", None)
             response_path = getattr(data, "path", None) or path
-        if not token:
-            raise RuntimeError("Supabase did not return an upload token.")
+        if not token or not signed_url:
+            raise RuntimeError("Supabase did not return a signed upload URL.")
         return {
             "success": True,
             "bucket": "learnora-course-media",
@@ -484,13 +478,9 @@ def create_resource_upload(
     payload: ResourceUploadRequest,
     staff: InternalStaffContext = Depends(require_internal_permission("content.resources")),
 ):
-    lesson = supabase.table("learnora_lessons").select("id,module_id").eq("id", lesson_id).limit(1).execute()
-    if not lesson.data:
-        raise HTTPException(status_code=404, detail="Lesson not found.")
-    module = supabase.table("course_modules").select("id,course_id").eq("id", lesson.data[0]["module_id"]).limit(1).execute()
-    if not module.data:
-        raise HTTPException(status_code=404, detail="Parent module not found.")
-    course_id = str(module.data[0]["course_id"])
+    lesson = _module_for_lesson(lesson_id)
+    module = _course_for_module(str(lesson["module_id"]))
+    course_id = str(module["course_id"])
     safe_name = re.sub(r"[^A-Za-z0-9._-]+", "-", payload.filename.strip()).strip(".-") or "resource"
     path = f"courses/{course_id}/lessons/{lesson_id}/resources/{secrets.token_hex(12)}-{safe_name}"
     try:
@@ -536,6 +526,10 @@ def create_video(lesson_id: str, payload: VideoWrite, staff: InternalStaffContex
 
 @router.patch("/videos/{video_id}")
 def update_video(video_id: str, payload: VideoWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.video"))):
+    existing = supabase.table("lesson_videos").select("id,lesson_id").eq("id", video_id).limit(1).execute()
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Video not found.")
+    _module_for_lesson(str(existing.data[0]["lesson_id"]))
     row = supabase.table("lesson_videos").update(payload.model_dump()).eq("id", video_id).execute()
     if not row.data:
         raise HTTPException(status_code=404, detail="Video not found.")
