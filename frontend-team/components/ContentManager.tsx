@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
 import Shell from "./Shell";
-import {contentCourses,contentCourse,contentModules,contentLessons,contentLesson,contentLessonMedia,courseStructure,createCourse,updateCourse,archiveCourse,createModule,createLesson,updateLesson,archiveModule,archiveLesson,reorderModules,reorderLessons,createVideoUpload,createVideo,createResource} from "../lib/content";
+import {contentCourses,contentCourse,contentModules,contentLessons,contentLesson,contentLessonMedia,courseStructure,createCourse,updateCourse,archiveCourse,createModule,createLesson,updateLesson,archiveModule,archiveLesson,reorderModules,reorderLessons,createVideoUpload,createVideo,createResourceUpload,createResource} from "../lib/content";
 import {teamMe} from "../lib/api";
 
 const types=["video","article","text","practice","quiz","assignment","project","mixed"];
@@ -87,6 +87,22 @@ function Media({lessonId,busy,media,video,setVideo,resource,setResource,act,relo
     <select className="field" value={resource.resource_type} onChange={e=>setResource({...resource,resource_type:e.target.value})}><option value="document">Document</option><option value="pdf">PDF</option><option value="spreadsheet">Spreadsheet</option><option value="image">Image</option><option value="link">Link</option><option value="dataset">Dataset</option><option value="other">Other</option></select>
     <input type="url" className="field" placeholder="External resource URL (https://…)" value={resource.external_url} onChange={e=>setResource({...resource,external_url:e.target.value})}/>
     <input className="field" placeholder="Existing storage path" value={resource.storage_path} onChange={e=>setResource({...resource,storage_path:e.target.value})}/>
+    <label className="block"><span className="label">Upload a resource file (max 100 MB)</span><input className="mt-1 block w-full text-xs text-slate-400" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.jpg,.jpeg,.png,.webp,.gif,.txt,.zip,.json,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,image/jpeg,image/png,image/webp,image/gif,text/plain,application/zip,application/json" onChange={e=>setResource({...resource,_file:e.target.files?.[0]||null})}/></label>
+    <button className="action" disabled={busy||!resource._file} onClick={()=>act(async()=>{
+     const file=resource._file as File;
+     if(!file)throw new Error("Select a resource file first.");
+     if(file.size>104857600)throw new Error("Resource files must be 100 MB or smaller.");
+     const allowed=["application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","text/csv","application/vnd.ms-powerpoint","application/vnd.openxmlformats-officedocument.presentationml.presentation","image/jpeg","image/png","image/webp","image/gif","text/plain","application/zip","application/json"];
+     if(!allowed.includes(file.type))throw new Error("This resource file type is not supported.");
+     const ticket=await createResourceUpload(lessonId,{filename:file.name,content_type:file.type,file_size_bytes:file.size,title:resource.title.trim()||file.name});
+     if(!ticket.signed_url)throw new Error("Resource upload URL was not returned.");
+     const upload=await fetch(ticket.signed_url,{method:"PUT",headers:{"Content-Type":file.type},body:file});
+     if(!upload.ok)throw new Error("Resource upload failed ("+upload.status+").");
+     const resourceType=file.type==="application/pdf"?"pdf":file.type.startsWith("image/")?"image":["application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"].includes(file.type)?"spreadsheet":["text/csv","application/json"].includes(file.type)?"dataset":"document";
+     await createResource(lessonId,{title:resource.title.trim()||file.name,resource_type:resourceType,storage_path:ticket.path,file_size_bytes:file.size});
+     setResource({title:"",resource_type:"document",external_url:"",storage_path:""});
+     await reload();
+    },"Resource uploaded and attached.")}>Upload & attach resource</button>
     <button className="action" disabled={busy||!resource.title.trim()||!hasResourceReference} onClick={()=>act(async()=>{
      if(resource.external_url.trim()&&!/^https:\/\//i.test(resource.external_url.trim()))throw new Error("External resources must use HTTPS.");
      await createResource(lessonId,{...resource,title:resource.title.trim(),external_url:resource.external_url.trim()||null,storage_path:resource.storage_path.trim()||null});
