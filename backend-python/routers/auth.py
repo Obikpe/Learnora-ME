@@ -1763,7 +1763,7 @@ def get_current_user(
         )
 
     organisation_id, organisation_role = (
-        _active_organisation_context(str(user["id"]))
+        _active_organisation_context(str(user["id"]), fail_closed=role == "normal")
         if role != "organisation_prospect"
         else (None, None)
     )
@@ -1820,7 +1820,7 @@ def get_current_user(
 
 
 
-def _active_organisation_context(user_id: str) -> tuple[str | None, str | None]:
+def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tuple[str | None, str | None]:
     """Resolve active organisation membership before applying individual access."""
     try:
         memberships = (
@@ -1843,7 +1843,7 @@ def _active_organisation_context(user_id: str) -> tuple[str | None, str | None]:
                 return str(membership["organisation_id"]), str(membership["role"])
         return None, None
     except Exception as exc:
-        if free_access_mode_enabled():
+        if free_access_mode_enabled() and fail_closed:
             raise HTTPException(
                 status_code=503,
                 detail="Your organisation membership could not be verified. Please try again before accessing free learner content.",
