@@ -68,10 +68,7 @@ function Media({lessonId,busy,media,video,setVideo,resource,setResource,act,relo
      setVideo({provider:"youtube",title:"",external_video_id:"",storage_path:"",status:"ready",is_private:true});
      await reload();
     },"Video uploaded and attached.")}>Upload & attach video</button>
-    <div className="grid gap-2 sm:grid-cols-2">
-     <label className="text-xs text-slate-500">Processing state<select className="field mt-1" value={video.status} onChange={e=>setVideo({...video,status:e.target.value})}><option value="pending">Pending</option><option value="processing">Processing</option><option value="ready">Ready</option><option value="failed">Failed</option></select></label>
-     <label className="flex items-center gap-2 self-end pb-3 text-xs text-slate-400"><input type="checkbox" checked={video.is_private} onChange={e=>setVideo({...video,is_private:e.target.checked})}/>Keep video private</label>
-    </div>
+    <label className="block text-xs text-slate-500">Processing state<select className="field mt-1" value={video.status} onChange={e=>setVideo({...video,status:e.target.value})}><option value="pending">Pending</option><option value="processing">Processing</option><option value="ready">Ready</option><option value="failed">Failed</option></select></label>
     <button className="action" disabled={busy||!hasVideoReference} onClick={()=>act(async()=>{
      await createVideo(lessonId,{...video,external_video_id:video.external_video_id.trim()||null,storage_path:video.storage_path.trim()||null,title:video.title.trim()||null});
      setVideo({provider:"youtube",title:"",external_video_id:"",storage_path:"",status:"pending",is_private:true});
