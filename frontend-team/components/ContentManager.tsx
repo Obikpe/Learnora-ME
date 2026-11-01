@@ -56,7 +56,7 @@ function Media({lessonId,busy,media,video,setVideo,resource,setResource,act,relo
     <input className="field" placeholder="External video ID or reference" value={video.external_video_id} onChange={e=>setVideo({...video,external_video_id:e.target.value})}/>
     <input className="field" placeholder="Storage path (for an existing stored video)" value={video.storage_path} onChange={e=>setVideo({...video,storage_path:e.target.value})}/>
     <label className="block"><span className="label">Upload course video</span><input className="mt-1 block w-full text-xs text-slate-400" type="file" accept="video/mp4,video/webm,video/quicktime,video/mpeg,video/x-msvideo" onChange={e=>setVideo({...video,_file:e.target.files?.[0]||null})}/></label>
-    <button className="action" disabled={act===undefined||!video._file} onClick={()=>act(async()=>{
+    <button className="action" disabled={busy||act===undefined||!video._file} onClick={()=>act(async()=>{
      const file=video._file as File;
      if(!file)throw new Error("Select a video file first.");
      if(file.size>2147483648)throw new Error("Video files must be 2 GB or smaller.");
