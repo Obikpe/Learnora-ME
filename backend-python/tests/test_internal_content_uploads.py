@@ -18,12 +18,15 @@ class UploadQuery:
         self.table_name = table
     def select(self, *_args, **_kwargs): return self
     def eq(self, *_args, **_kwargs): return self
+    def is_(self, *_args, **_kwargs): return self
     def limit(self, *_args, **_kwargs): return self
     def execute(self):
         if self.table_name == "learnora_lessons":
             return SimpleNamespace(data=[{"id": "lesson-1", "module_id": "module-1"}])
         if self.table_name == "course_modules":
             return SimpleNamespace(data=[{"id": "module-1", "course_id": "course-1"}])
+        if self.table_name == "learnora_courses":
+            return SimpleNamespace(data=[{"id": "course-1", "ownership": "learnora", "organisation_id": None}])
         return SimpleNamespace(data=[])
 
 
