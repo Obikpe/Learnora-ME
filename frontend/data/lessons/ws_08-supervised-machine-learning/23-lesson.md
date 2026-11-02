@@ -1,41 +1,38 @@
-# Lesson 23: Error Analysis and Diagnostics
+# Lesson 23: Multi-Class Classification
 
 ## Learning outcomes
 Explain the technique, implement the example, interpret the output and justify when the method is suitable.
 
 ## 1. Core explanation
-Error analysis asks where and why a model fails. For regression, inspect residuals against predictions, features, time and important groups. For classification, examine false positives and false negatives, confidence scores and subgroup metrics. Read misclassified examples where permitted and look for systematic patterns.
+Multiclass classification predicts one of more than two mutually exclusive classes. One-vs-rest trains a binary classifier for each class; one-vs-one trains classifiers for pairs. Some algorithms handle multiclass natively. Class probabilities should sum to one when the model provides a normalised multiclass probability distribution.
 
-Errors may come from poor labels, missing features, distribution shift, data quality, an unsuitable objective or a model that is too simple. Do not immediately add complexity. First verify that target and features are correct and that the evaluation split represents the intended use.
+A confusion matrix reveals which classes are confused. Accuracy alone can hide poor recall for a rare class. Macro averaging gives each class equal weight; weighted averaging weights by support. Choose the average based on the application and report per-class results.
 
-Prioritise errors by impact. A model can have a strong overall score but fail badly on a small, important group. Document what is known, what is hypothesised and what needs further evidence. Avoid exposing personal data in debugging reports; use secure, minimal examples.
+Class labels may have a natural hierarchy or order. If errors have different severity, a standard multiclass metric may not reflect the cost. Consider ordinal methods or a cost matrix where justified.
 
 ## 2. Worked Python example
 Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. Some dataset loaders may require internet access on first use.
 
 ```python
-import pandas as pd
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_wine
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix, classification_report
 
-data = load_breast_cancer(as_frame=True)
+data = load_wine(as_frame=True)
 Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
-    test_size=.2, random_state=42, stratify=data.target)
-model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000)).fit(Xtr, ytr)
-errors = Xte.copy()
-errors["actual"] = yte
-errors["predicted"] = model.predict(Xte)
-print(errors[errors.actual != errors.predicted].head())
+    test_size=.25, random_state=42, stratify=data.target)
+model = RandomForestClassifier(n_estimators=200, random_state=42).fit(Xtr, ytr)
+pred = model.predict(Xte)
+print(confusion_matrix(yte, pred))
+print(classification_report(yte, pred, target_names=data.target_names))
 ```
 
 ## 3. Interpretation and checks
 Record the target, sample size, split design, metric and model settings. Inspect class-wise results or residuals, not only the headline score. Keep the test set untouched during model selection and report dataset limitations.
 
 ## 4. Guided practice
-Inspect misclassified rows. Look for a feature range or subgroup where errors concentrate. State one hypothesis, then design a validation analysis that could confirm or reject it.
+Identify the class with the lowest recall. Explain why macro F1 and weighted F1 may differ and choose which should be highlighted when class frequencies are unequal.
 
 ## 5. Independent practice
 Extend the example with another model or evaluation view. Compare candidates using the same training/validation design. Write a short report for a non-technical stakeholder and state what further validation is required.
