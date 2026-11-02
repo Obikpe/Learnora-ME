@@ -411,3 +411,11 @@ Append entries using:
 - Consolidated general CI to one workflow/job and narrowed the expensive cohort database workflow to cohort-specific paths. The latest general workflow remained queued; the queued state is not a pass.
 - Existing production Teams/backend deployment metadata referenced `Pheonix-Analytics`; the new staging deployments explicitly reference `Learnora-ME`. Manual production deployment can use the current repository source, but future automatic Git deployment linkage still needs a deliberate Vercel Git connection check.
 - Vercel showed no runtime error clusters for the existing production projects in the previous 24 hours. This is not a substitute for authenticated learner/staff acceptance on the new staging deployments.
+
+
+### Gmail API email transport — 2 November 2026
+
+- Replaced the direct Gmail SMTP and Resend email transport in `backend-python/routers/auth.py` with the Gmail API over HTTPS. OAuth refresh-token exchange and `users.messages.send` use the least-privilege `gmail.send` scope; MIME messages are base64url encoded.
+- Verification email, resend-verification, password-reset content, token hashing/expiry, and account state transitions are unchanged. The transport deliberately does not retry an ambiguous message-send failure to avoid duplicate emails.
+- Added `docs/GMAIL_API_SETUP.md`, the backend environment example, and targeted Gmail API contract tests. No Google OAuth credentials have been provisioned and no production environment variables or deployment have been changed. Production email delivery remains blocked until the owner creates/authorises the Google OAuth client and supplies the Gmail API variables in the backend Vercel project.
+- Google classifies `gmail.send` as a sensitive OAuth scope. External OAuth apps left in Testing issue refresh tokens that expire after seven days; complete the applicable verification/publishing steps for ongoing production use. See the linked Google OAuth and Gmail API guidance in the setup document.
