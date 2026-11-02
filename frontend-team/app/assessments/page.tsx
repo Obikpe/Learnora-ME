@@ -22,7 +22,7 @@ export default function AssessmentsWorkspace(){
   const lessonGroups=await Promise.all((result.modules||[]).map(async(m:any)=>({module:m,lessons:(await contentLessons(String(m.id))).lessons||[]})));
   setLessonOptions(lessonGroups.flatMap((group:any)=>group.lessons.map((lesson:any)=>({...lesson,module_title:group.module.title}))));
  },[]);
- useEffect(()=>{Promise.all([teamMe(),contentCourses()]).then(([user,result])=>{setMe(user);const rows=result.courses||[];setCourses(rows);if(rows.length)setCourseId(String(rows[0].id));}).catch(e=>setError(e.message||"Assessment workspace could not be loaded.")).finally(()=>setLoading(false));},[]);
+ useEffect(()=>{Promise.all([teamMe(),contentCourses()]).then(([user,result])=>{setMe(user.staff||user);const rows=result.courses||[];setCourses(rows);if(rows.length)setCourseId(String(rows[0].id));}).catch(e=>setError(e.message||"Assessment workspace could not be loaded.")).finally(()=>setLoading(false));},[]);
  useEffect(()=>{if(courseId)load(courseId).catch(e=>setError(e.message||"Course assessments could not be loaded."));setQuiz(null);setQuizDetail(null);setAssignment(null);setSubmissions([]);},[courseId,load]);
 
  async function refresh(){if(courseId)await load(courseId);}
