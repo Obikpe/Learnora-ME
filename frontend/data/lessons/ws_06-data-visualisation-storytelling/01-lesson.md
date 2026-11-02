@@ -60,7 +60,7 @@ Install the libraries:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install numpy pandas matplotlib seaborn scipy
+python -m pip install numpy pandas "matplotlib>=3.9" "seaborn>=0.13" scipy
 ```
 
 - **NumPy** provides arrays and numerical operations.
