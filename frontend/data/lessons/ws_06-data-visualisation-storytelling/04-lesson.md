@@ -1,52 +1,201 @@
-# Lesson 4: Visualisation with Matplotlib
+# Lesson 4: Histograms, Frequency and Density
 
 ## Learning outcomes
+You should be able to distinguish a histogram from a bar chart; explain bins, frequency, relative frequency and density; build histograms with `ax.hist()`; choose bin widths; overlay density curves; create cumulative views; and explain when a histogram is and is not suitable.
 
-By the end of this lesson, you should be able to create Matplotlib figures and axes; build line, bar, scatter and histogram charts; label titles, axes and units; control figure layout; save figures; and explain the figure/axes distinction.
+## 1. Why use a histogram?
 
-## 1. Concepts and reasoning
-Matplotlib separates a Figure (the whole canvas) from Axes (the plotting area). The reliable object-oriented pattern is to create them with subplots, draw using methods such as plot, bar or scatter, configure labels and limits, then display or save the figure.
+A histogram shows the distribution of a numerical variable. A distribution describes the values that occur and how often they occur. It can reveal the centre, spread, skewness, multiple peaks, gaps and unusual observations.
 
-Keep data preparation separate from plotting so values can be inspected before drawing. Sort time-series records by date. Sort category values when ranking is the message. Use a deliberate figure size, readable tick labels and meaningful units. If labels overlap, adjust the layout rather than shrinking text until it becomes unreadable.
+Imagine scores from 500 learners. A table of all 500 scores is difficult to scan. A histogram groups values into intervals called **bins**. The height of each bar tells how many observations fall within that interval (or a related frequency/density measure).
 
-A chart that renders is not automatically interpretable. Default axis labels, unexplained abbreviations and missing units make a chart difficult to reuse. Save a final figure with a descriptive filename and sufficient resolution for the report in which it will appear.
+A histogram answers questions such as:
+- Are most scores low, middle or high?
+- Is the distribution symmetric or skewed?
+- Are there two peaks, suggesting different subgroups?
+- Are there unusually extreme values?
+- Is the spread narrow or wide?
 
-## 2. Worked example
-Run this in VS Code. Install the required libraries if they are not already available: `python -m pip install pandas matplotlib seaborn`.
+Use a histogram for a numerical variable. Do not use it for names such as department or region. Use a bar chart for categories.
+
+## 2. Bins and bin edges
+
+A **bin** is an interval of numerical values. Suppose scores range from 0 to 100. You might choose intervals 0–10, 10–20, 20–30 and so on. The boundaries separating intervals are called **bin edges**.
+
+The number and width of bins change the picture:
+
+- Too few wide bins can hide important structure.
+- Too many narrow bins can make random noise look like meaningful patterns.
+- Different bin widths can make two histograms difficult to compare.
+
+There is no single perfect bin count for every dataset. Try a sensible starting rule, inspect the result and explain your choice. For formal comparisons, use consistent bin edges across groups.
+
+## 3. The Matplotlib function: ax.hist()
+
+The general form is:
 
 ```python
-import pandas as pd
-import matplotlib.pyplot as plt
-
-monthly = pd.DataFrame({
-    "month": ["Jan", "Feb", "Mar", "Apr"],
-    "orders": [42, 51, 47, 63]
-})
-fig, ax = plt.subplots(figsize=(7, 4), layout="constrained")
-ax.bar(monthly["month"], monthly["orders"])
-ax.set_title("Orders received by month")
-ax.set_xlabel("Month")
-ax.set_ylabel("Number of orders")
-ax.set_ylim(0, 70)
-ax.grid(axis="y", alpha=0.2)
-plt.show()
-fig.savefig("orders_by_month.png", dpi=160, bbox_inches="tight")
+ax.hist(values, bins=10, range=None, density=False,
+        cumulative=False, histtype="bar", alpha=1.0,
+        edgecolor=None, label=None)
 ```
 
-## 3. Interpreting the output
-Describe the variables and units shown. Separate what the data visibly demonstrates from your explanation of why it happened. Check whether the axes, ordering, missing values and sample size could change the interpretation. A visual pattern is a clue for further analysis, not a substitute for checking the data.
+Important arguments:
 
-## 4. Guided practice
-Recreate the chart as a line chart. Explain which chart better communicates monthly change and which better communicates discrete monthly totals. Save both charts and compare readability at presentation size.
+- `values`: numerical observations.
+- `bins`: number of bins, a sequence of bin edges, or a rule such as `"auto"`.
+- `range`: lower and upper range to include.
+- `density=False`: plot counts by default; if True, normalise so the total histogram area is 1.
+- `cumulative=True`: show cumulative counts or cumulative density.
+- `histtype`: commonly `"bar"`, `"step"` or `"stepfilled"`.
+- `alpha`: transparency.
+- `edgecolor`: border colour.
+- `label`: legend label.
 
-## 5. Independent practice
-Use a dataset with at least two meaningful variables. Write the analytical question before plotting. Inspect data types and missing values, make a chart, and write a short interpretation with one limitation and one follow-up question.
+## 4. First histogram
 
-## 6. Knowledge check
-1. Which data types are involved?
-2. What question does this chart or technique answer?
-3. What would make the result misleading?
-4. What additional evidence would strengthen your interpretation?
+```python
+import matplotlib.pyplot as plt
+
+scores = [45, 52, 58, 60, 61, 63, 64, 65, 66, 67,
+          68, 69, 70, 71, 72, 73, 74, 75, 77, 80,
+          82, 85, 88, 91, 95]
+
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.hist(scores, bins=8, color="cornflowerblue",
+        edgecolor="white")
+ax.set(title="Distribution of learner scores",
+       xlabel="Score (out of 100)", ylabel="Number of learners")
+plt.show()
+```
+
+The y-axis says “Number of learners” because `density` is left at its default value, False. Each bar's height is the number of scores inside that bin.
+
+## 5. Choose bin edges deliberately
+
+You can let Matplotlib choose a binning rule:
+
+```python
+ax.hist(scores, bins="auto")
+```
+
+Or specify a number:
+
+```python
+ax.hist(scores, bins=10)
+```
+
+Or supply exact edges:
+
+```python
+edges = [0, 20, 40, 60, 80, 100]
+ax.hist(scores, bins=edges)
+```
+
+Explicit edges are useful when comparing the same measurement across cohorts or years. If one group uses 0–10, 10–20 and another uses 0–5, 5–10, their bar heights cannot be compared directly.
+
+## 6. Frequency versus density
+
+**Frequency** is a count. **Relative frequency** is a proportion of all observations. **Probability density** is scaled so that the total area under the histogram equals 1.
+
+When bins have equal width, count heights are easy to compare. When bins have unequal widths, raw counts alone can be misleading because wider intervals have more opportunity to contain observations. Density accounts for bin width.
+
+```python
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.hist(scores, bins=8, density=True,
+        color="darkorange", edgecolor="white")
+ax.set(title="Score distribution (probability density)",
+       xlabel="Score", ylabel="Density")
+plt.show()
+```
+
+The y-axis is not the number of learners. The height is density; the area of a bar represents the proportion of observations in that interval.
+
+## 7. Compare two distributions
+
+Overlaying distributions helps compare groups. Use transparency or outline histograms so one group does not completely hide the other:
+
+```python
+import matplotlib.pyplot as plt
+
+class_a = [55, 61, 63, 65, 67, 69, 70, 72, 74, 77, 81, 85]
+class_b = [48, 52, 58, 60, 62, 64, 66, 68, 70, 72, 74, 78]
+
+bins = range(40, 101, 10)
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.hist(class_a, bins=bins, alpha=0.55, label="Class A")
+ax.hist(class_b, bins=bins, alpha=0.55, label="Class B")
+ax.set(title="Score distributions by class",
+       xlabel="Score", ylabel="Learners")
+ax.legend()
+plt.show()
+```
+
+The same bin edges are used for both groups. This is important. If the distributions overlap heavily, use side-by-side histograms, density curves or a box/violin plot rather than trying to decode two layers of bars.
+
+## 8. Cumulative histograms
+
+A cumulative histogram answers “how many observations are at or below this value?”:
+
+```python
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.hist(scores, bins=10, cumulative=True,
+        histtype="step", linewidth=2)
+ax.set(title="Cumulative number of scores",
+       xlabel="Score", ylabel="Cumulative learners")
+plt.show()
+```
+
+With `cumulative=True`, each step includes the observations in the current and all earlier bins. This is useful for threshold questions such as “How many learners scored 70 or below?” The exact answer depends on the bin edges, so do not treat the step as an exact empirical cumulative distribution unless the bins are sufficiently fine or you use a dedicated ECDF.
+
+## 9. Histogram and KDE: different views
+
+A **kernel density estimate (KDE)** is a smoothed estimate of a distribution. It replaces bars with a smooth curve. Smoothing depends on a bandwidth parameter: too much smoothing hides features; too little creates a noisy curve. A KDE can extend beyond the actual minimum and maximum, so it should not be mistaken for observed values.
+
+Seaborn will be taught in detail later. For now, see the idea:
+
+```python
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.histplot(data=scores, bins=8, stat="density",
+             kde=True, edgecolor="white")
+plt.xlabel("Score")
+plt.ylabel("Density")
+plt.title("Score distribution with a smoothed density estimate")
+plt.show()
+```
+
+The histogram shows binned observations; the KDE is a model-based smooth summary. They answer related but not identical questions.
+
+## 10. When not to use a histogram
+
+- For categories: use a bar or count chart.
+- For a tiny sample: show individual points or a dot plot as well.
+- For multiple groups with different bin edges: standardise the bins first.
+- For strongly skewed values: consider a log scale only when values are positive and the transformation is explained.
+- For exact threshold counts: calculate the count directly rather than estimating it visually.
+
+## 11. Guided practice
+
+1. Plot the score list with 5, 10 and 20 bins.
+2. Explain what detail appears or disappears.
+3. Change `density=False` to `density=True` and rewrite the y-axis label.
+4. Compare two classes using identical bin edges.
+5. Create a cumulative histogram and answer a threshold question.
+
+## 12. Independent practice
+
+Choose a numerical variable with at least 100 observations. Make a histogram using an explicitly justified bin choice. Make a second version with a different bin count and explain why the apparent shape changes. Report the sample size, units, centre, spread, skewness or multiple peaks if visible, and any limitation.
+
+## Knowledge check
+
+1. What is a bin?
+2. How is a histogram different from a bar chart?
+3. What does `density=True` change?
+4. Why should two group histograms use the same bin edges?
+5. What does a KDE curve represent, and why can smoothing mislead?
 
 ## Lesson summary
-A good visualisation makes the intended comparison easy, labels its scales and units, and does not imply more certainty than the data supports.
+
+Histograms show how numerical observations are distributed. The choice of bins is part of the analysis, not a cosmetic setting. Always label whether the y-axis represents counts or density, use consistent bins for comparisons and consider individual observations or other distribution charts when the sample is small.
