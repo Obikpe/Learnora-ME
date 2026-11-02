@@ -208,45 +208,7 @@ PASSWORD_RESET_PATH = (
 
 
 # ---------------------------------------------------------------------------
-# EMAIL / RESEND
-# ---------------------------------------------------------------------------
-
-RESEND_API_URL = (
-    "https://api.resend.com/emails"
-)
-
-RESEND_API_KEY = (
-    os.getenv(
-        "RESEND_API_KEY",
-        "",
-    )
-    .strip()
-)
-
-RESEND_FROM_EMAIL = (
-    os.getenv(
-        "RESEND_FROM_EMAIL",
-        "",
-    )
-    .strip()
-)
-
-RESEND_FROM_NAME = (
-    os.getenv(
-        "RESEND_FROM_NAME",
-        "Learnora Me",
-    )
-    .strip()
-)
-
-# Gmail SMTP is preferred when configured. Resend remains available as a
-# backwards-compatible HTTP API fallback.
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
-SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME", "").strip()
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").replace(" ", "").strip()
-SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "").strip() or SMTP_USERNAME
-SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Learnora Me").strip()
+# EMAIL CONFIGURATION is defined below the auth helpers.
 
 
 EMAIL_VERIFICATION_TTL_MINUTES = int(
