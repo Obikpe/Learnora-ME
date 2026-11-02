@@ -1,7 +1,8 @@
 # Lesson 15: Precision-Recall and ROC Analysis
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Calculate precision, recall, F1, specificity and balanced accuracy; interpret a confusion matrix; and choose classification metrics based on class balance and error costs.
 
 ## 1. Core explanation
 A ROC curve plots true-positive rate against false-positive rate across thresholds. ROC-AUC measures ranking ability across thresholds. A precision-recall curve plots precision against recall and is often more informative for rare positive classes. The baseline precision in a PR curve is related to positive-class prevalence.
