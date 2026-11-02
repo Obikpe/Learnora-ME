@@ -24,7 +24,7 @@ An attribute describes an entity. Student name belongs to students; course title
 A primary key uniquely identifies each row. It must be unique and cannot be NULL. In SQLite, `INTEGER PRIMARY KEY` aliases the rowid for an ordinary rowid table and automatically assigns an integer when omitted.
 
 ```sql
-CREATE TABLE students (
+CREATE TABLE IF NOT EXISTS students (
     student_id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     email TEXT UNIQUE
@@ -38,12 +38,12 @@ The ID is a stable identifier. Email is constrained to be unique here, but an em
 A foreign key links a child record to a referenced parent record:
 
 ```sql
-CREATE TABLE courses (
+CREATE TABLE IF NOT EXISTS courses (
     course_id INTEGER PRIMARY KEY,
     course_title TEXT NOT NULL
 );
 
-CREATE TABLE enrolments (
+CREATE TABLE IF NOT EXISTS enrolments (
     enrolment_id INTEGER PRIMARY KEY,
     student_id INTEGER NOT NULL,
     course_id INTEGER NOT NULL,
