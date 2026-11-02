@@ -1,7 +1,8 @@
 # Lesson 23: Feature Engineering and Evaluation Project
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Maintain a reproducible experiment log with hypothesis, data version, code version, split seed, parameters and metrics; change one factor at a time; and document rejected as well as successful experiments.
 
 ## 1. Core explanation
 The project applies feature engineering and evaluation controls to a real analytical question. Define prediction timestamp, unit of observation, target horizon and action. Audit candidate features for availability, missingness, leakage, redundancy and ethical risk. Build transformations in a Pipeline or ColumnTransformer.
