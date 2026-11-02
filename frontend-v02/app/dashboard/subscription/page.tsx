@@ -96,7 +96,7 @@ export default function SubscriptionPage() {
       <section className="mt-7 max-w-3xl rounded-2xl border border-white/[.08] bg-[#0e1319] p-6 sm:p-8">
         <p className="text-xs font-bold uppercase tracking-[.18em] gold">Free launch</p>
         <h2 className="mt-3 text-2xl font-semibold">Your learning is not on a trial.</h2>
-        <p className="mt-3 text-sm leading-7 text-slate-400">Your access to the free Learnora catalogue does not expire because of a trial date. Existing billing records are preserved, and this page will reflect any future changes to the learner plan.</p>
+        <p className="mt-3 text-sm leading-7 text-slate-400">You can continue learning without a payment method or recurring subscription.</p>
         <a href="/courses" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-[#d7ad35] px-5 py-3 text-sm font-bold text-black">Explore courses</a>
       </section>
     </Shell>;
