@@ -1,0 +1,3 @@
+-- Rollback for 20261102120000_project_submission_integrity.sql.
+DROP INDEX IF EXISTS public.project_submissions_one_active_per_learner_idx;
+DROP INDEX IF EXISTS public.skill_evidence_project_submission_skill_unique_idx;
