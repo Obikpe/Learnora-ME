@@ -74,6 +74,20 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("revocation_reason text", sql)
         self.assertIn("DROP COLUMN IF EXISTS revoked_at", rollback.read_text(encoding="utf-8"))
 
+    def test_project_submission_integrity_migration_is_additive_and_reversible(self):
+        migration = ACTIVE_DIR / "20261102120000_project_submission_integrity.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261102120000_project_submission_integrity.rollback.sql"
+        self.assertTrue(migration.is_file())
+        self.assertTrue(rollback.is_file())
+        sql = migration.read_text(encoding="utf-8")
+        self.assertIn("project_submissions_one_active_per_learner_idx", sql)
+        self.assertIn("skill_evidence_project_submission_skill_unique_idx", sql)
+        self.assertIn("WHERE status IN ('submitted','reviewed','approved')", sql)
+        self.assertIn("WHERE evidence_type = 'project' AND source_id IS NOT NULL", sql)
+        rollback_sql = rollback.read_text(encoding="utf-8")
+        self.assertIn("DROP INDEX IF EXISTS public.project_submissions_one_active_per_learner_idx", rollback_sql)
+        self.assertIn("DROP INDEX IF EXISTS public.skill_evidence_project_submission_skill_unique_idx", rollback_sql)
+
     def test_quota_fix_preserves_unlimited_monthly_limit_contract(self):
         sql = (ACTIVE_DIR / "20261020232148_allow_unlimited_monthly_ai_quota.sql").read_text(
             encoding="utf-8"
