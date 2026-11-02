@@ -1,7 +1,8 @@
 # Lesson 24: Communicating Uncertainty and Limitations
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Communicate uncertainty from sampling, measurement, missingness and modelling; state the population and time window; and make recommendations proportionate to evidence strength.
 
 ## 1. Core explanation
 Every analysis has uncertainty: sampling variation, measurement error, missing data, model assumptions, changing populations and incomplete coverage. Communicate what is known, how strong the evidence is and what remains unknown. Avoid false precision and absolute claims.
