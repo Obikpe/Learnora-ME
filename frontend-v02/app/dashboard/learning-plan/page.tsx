@@ -3,10 +3,10 @@
 import {useCallback,useEffect,useState} from "react";
 import Link from "next/link";
 import {ArrowLeft,ArrowRight,CalendarDays,Clock3,RefreshCw,Sparkles} from "lucide-react";
-import Shell from "../../../../components/dashboard/Shell";
-import Skeleton from "../../../../components/feedback/Skeleton";
-import EmptyState from "../../../../components/feedback/EmptyState";
-import {request} from "../../../../lib/api/client";
+import Shell from "../../../components/dashboard/Shell";
+import Skeleton from "../../../components/feedback/Skeleton";
+import EmptyState from "../../../components/feedback/EmptyState";
+import {request} from "../../../lib/api/client";
 
 export default function LearningPlanPage(){
  const [tracks,setTracks]=useState<any[]>([]);
