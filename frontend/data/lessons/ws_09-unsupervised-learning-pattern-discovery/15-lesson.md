@@ -1,7 +1,8 @@
 # Lesson 15: Unsupervised Learning in Practice
 
 ## Learning outcomes
-Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Plan an unsupervised analysis by defining the observation unit, intended use, feature representation and validation approach; compare methods; and set criteria for reporting inconclusive results.
 
 ## 1. Core explanation
 An unsupervised project needs a clear objective even though it has no labelled target. Define the unit of observation, feature representation, purpose and intended use. Decide whether the output is for exploration, segmentation, anomaly triage or dimensionality reduction. Establish how usefulness will be judged before running algorithms.
