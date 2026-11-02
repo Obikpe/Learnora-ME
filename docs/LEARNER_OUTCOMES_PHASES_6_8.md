@@ -37,7 +37,7 @@ The active schema already has `certificates` with a unique `certificate_number`,
 
 ### Existing foundation
 
-The active schema already has `projects` and `project_submissions`. The existing Learnora Teams project page was present in the repository, but its project/skill management backend was not registered.
+The active schema already has `projects` and `project_submissions`. The backend project/skill management APIs were already registered; this checkpoint adds a dedicated Learnora Teams Practice Lab page and connects it to those APIs.
 
 ### Implemented
 
