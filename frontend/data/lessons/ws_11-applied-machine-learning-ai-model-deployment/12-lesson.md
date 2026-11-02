@@ -13,7 +13,7 @@ For an ML API, the image should include application code and runtime dependencie
 ## 2. Worked example
 Run the Python example in VS Code. Install relevant packages with `python -m pip install numpy pandas scipy scikit-learn`. Cloud services and hosted models are not required for the local examples.
 
-```python
+```dockerfile
 # Dockerfile example for a FastAPI service
 FROM python:3.12-slim
 WORKDIR /app
