@@ -1,7 +1,8 @@
 # Lesson 13: Building a Defensible Predictive Model
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Build a defensible predictive model with a clear target and prediction time; compare against a baseline; use leakage-safe preprocessing; and communicate evaluation limits.
 
 ## 1. Core explanation
 A defensible model project begins with a decision and target that can be measured. Establish a baseline, define prediction time, audit features for leakage, choose a split that represents deployment and select metrics based on error costs. Keep preprocessing and model selection within training data.
