@@ -32,16 +32,19 @@ class FrontendSecurityContractTests(unittest.TestCase):
         sidebar = (ROOT / "frontend-v02" / "components" / "dashboard" / "Sidebar.tsx").read_text(encoding="utf-8")
         ai_api = (ROOT / "backend-python" / "routers" / "ai.py").read_text(encoding="utf-8")
         ai_page = (ROOT / "frontend-v02" / "app" / "dashboard" / "ai" / "page.tsx").read_text(encoding="utf-8")
-        self.assertIn('hideTutor={Boolean(quizData)||quizOpening}', player)
+        self.assertIn('hideTutor={Boolean(quizData)||quizOpening||Boolean(orphanedQuizSession)}', player)
         self.assertIn('hideTutor={hideTutor}', shell)
-        self.assertIn('!(hideTutor&&key==="ai")', sidebar)
+        self.assertIn('!((hideTutor||quizSessionActive)&&key==="ai")', sidebar)
         self.assertNotIn("Ask tutor about this quiz", player)
-        self.assertIn("if(quizData||quizOpening)return", player)
+        self.assertIn("if(quizData||quizOpening||orphanedQuizSession)return", player)
         self.assertIn("_assert_no_active_quiz_session(str(user.id))", ai_api)
-        self.assertIn('sessionStorage.getItem("learnora_quiz_active")==="1"', ai_page)
+        self.assertIn("isQuizActiveInThisTab()", ai_page)
         self.assertIn("Tutor unavailable during quizzes", ai_page)
         self.assertIn('request<any>("/progress/quiz-sessions/me")', ai_page)
         self.assertIn("if(!quizGuardChecked)", ai_page)
+        self.assertIn('client_session_id=', player)
+        self.assertIn('"/heartbeat"', player)
+        self.assertIn("getQuizTabId", ai_page)
 
     def test_certificate_verification_has_one_route_and_displays_revocation(self):
         route = ROOT / "frontend-v02" / "app" / "verify-certificate"
