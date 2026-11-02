@@ -1,7 +1,8 @@
 # Lesson 12: Cross-Validation Design
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Choose train, validation and test roles; design stratified, grouped or time-aware splits; keep a final test set untouched; and explain the risk of repeated test-set decisions.
 
 ## 1. Core explanation
 Cross-validation estimates how a workflow performs across several training/validation partitions. K-fold splits data into k folds; stratified k-fold preserves class proportions; group k-fold keeps groups intact; time-series split trains on earlier observations and validates on later ones. The choice must match the dependence and time structure of the data.
