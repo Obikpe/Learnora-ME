@@ -116,7 +116,7 @@ The optional AI plan uses the existing AI provider/quota service; it does not gr
 ## 8. Verification and known limitations
 
 - New backend regression files cover assessment authoring constraints and assessment-based course completion; learning-plan scheduling tests were added. Existing publication-readiness fixtures were updated to include answerable quiz questions.
-- GitHub Actions workflows were queued for the implementation commit `6ab5f2c635a0f8d9737ccd4f69d4b8d06bf3822f` at the time of the latest check. Their queued state is not a pass. The exact final documentation/code SHA must have all required workflows completed successfully before this work is marked evidence-backed.
+- GitHub Actions workflows were queued for the implementation commit `d18f302b0179ceed3651538c9a56fce25e094f3b` at the time of the latest check. Their queued state is not a pass. The exact final documentation/code SHA must have all required workflows completed successfully before this work is marked evidence-backed.
 - No local Python suite or frontend production build has been run in this environment.
 - No live Supabase migration, data mutation, Vercel environment change, or deployment was performed.
 - The new learning-plan migration requires disposable/staging replay and explicit release approval before deployment.
