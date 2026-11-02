@@ -210,6 +210,19 @@ def create_project(body: ProjectCreate, staff: InternalStaffContext = Depends(re
 def update_project(project_id: str, body: ProjectWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
     project = _project(project_id)
     payload = body.model_dump(exclude_unset=True)
+    if set(payload) - {"is_published"}:
+        prior_submissions = (
+            supabase.table("project_submissions")
+            .select("id")
+            .eq("project_id", project_id)
+            .limit(1)
+            .execute()
+        ).data or []
+        if prior_submissions:
+            raise HTTPException(
+                409,
+                "Project instructions, course association and skill mapping are frozen after the first learner submission. Create a new project for a changed brief.",
+            )
     if project.get("is_published"):
         if payload.get("is_published") is not False or len(payload) != 1:
             raise HTTPException(409, "Unpublish this project before editing its content.")
