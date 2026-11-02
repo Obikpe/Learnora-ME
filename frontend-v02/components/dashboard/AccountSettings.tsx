@@ -62,7 +62,7 @@ export default function AccountSettings({ user }: { user: any }) {
 
   const access = user?.access_state || user?.sub_status || "Not provided";
   const hasOwnerMembership = (user?.organisation_memberships || []).some((membership: any) => membership.role === "owner" && membership.status === "active");
-  const canDeleteAccount = user?.account_type === "learner" && user?.role === "normal" && !hasOwnerMembership;
+  const canDeleteAccount = user?.account_type === "learner" && user?.role === "normal" && user?.organisation_role !== "owner" && !hasOwnerMembership;
   return <div className="mt-7 grid gap-5 xl:grid-cols-[.85fr_1.15fr]">
     <section className="h-fit rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-6">
       <div className="flex items-center gap-3"><div className="rounded-xl bg-[#d7ad35]/10 p-2.5"><UserRound className="gold" size={19}/></div><div><h2 className="font-semibold">Account information</h2><p className="mt-1 text-xs text-slate-500">Your account details.</p></div></div>
