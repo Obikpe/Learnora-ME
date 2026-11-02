@@ -1,7 +1,8 @@
 # Lesson 1: Understanding Unsupervised Learning
 
 ## Learning outcomes
-Explain the unsupervised-learning concept, implement the worked example, interpret the output and assess whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Explain how unsupervised learning differs from supervised learning; identify an appropriate no-label question; distinguish clustering, dimensionality reduction and anomaly detection; and state why discovered structure needs validation.
 
 ## 1. Core explanation
 Unsupervised learning looks for structure when the dataset has no supplied target label. The algorithm receives features but not a correct answer for each row. Common goals include grouping similar observations, reducing the number of dimensions, detecting unusual cases and discovering co-occurrence patterns.
