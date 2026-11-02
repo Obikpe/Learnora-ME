@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Build a preprocessing workflow with Pipeline and ColumnTransformer; keep numeric and categorical steps separate; fit transformations within cross-validation; and inspect the transformed feature space.
+By the end of this lesson, you should be able to Choose train, validation and test roles; design stratified, grouped or time-aware splits; keep a final test set untouched; and explain the risk of repeated test-set decisions.
 
 ## 1. Core explanation
 The training set fits model parameters. Validation data or cross-validation supports model and hyperparameter selection. The test set estimates final performance on unseen data and must remain untouched until the choices are fixed. Repeatedly checking test performance turns the test set into another validation set and creates optimism.
