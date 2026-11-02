@@ -1,7 +1,8 @@
 # Lesson 13: Cloud Deployment Concepts
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Compare VM, container and serverless hosting; plan environment configuration, network access, logging, spending limits and rollback; and identify data residency and retention constraints.
 
 ## 1. Core explanation
 Cloud deployment runs an application on infrastructure managed by a cloud provider. Common options include virtual machines, containers, managed application platforms and serverless functions. The choice affects scaling, cost, cold starts, networking, data residency, logging and operational responsibility.
