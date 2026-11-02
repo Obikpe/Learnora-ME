@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, ChevronDown, Menu, X, Sun, Moon, LifeBuoy } from "lucide-react";
 import Logo from "../brand/Logo";
 
 const audiences = [
@@ -19,6 +19,19 @@ const links = [
 export default function PublicNav() {
   const [open, setOpen] = useState(false);
   const [audienceOpen, setAudienceOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  useEffect(() => {
+    const saved = window.localStorage.getItem("learnora_theme");
+    const initial = saved === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = initial;
+    setTheme(initial);
+  }, []);
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    window.localStorage.setItem("learnora_theme", next);
+  };
   const close = () => { setOpen(false); setAudienceOpen(false); };
 
   return (
@@ -43,7 +56,9 @@ export default function PublicNav() {
           {links.map(item => <a key={item.href} href={item.href} className="rounded-lg px-1 py-3 text-sm text-slate-300 transition-colors hover:text-white focus-visible:outline-offset-2">{item.title}</a>)}
         </nav>
 
-        <div className="hidden items-center gap-5 lg:flex">
+        <div className="hidden items-center gap-3 lg:flex">
+          <button type="button" onClick={toggleTheme} aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]">{theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}</button>
+          <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Contact Learnora support" title="Contact support" className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]"><LifeBuoy size={17}/></a>
           <a href="/login" className="rounded-lg px-2 py-3 text-sm text-slate-300 transition-colors hover:text-white">Sign in</a>
           <a href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--gold)] px-4 text-sm font-semibold text-[#16140f] transition-colors hover:bg-[var(--gold-light)]">Get started <ArrowRight size={15}/></a>
         </div>
@@ -59,6 +74,10 @@ export default function PublicNav() {
           {links.map(item => <a key={item.href} href={item.href} onClick={close} className="flex min-h-12 items-center justify-between border-b border-white/[.06] px-3 text-sm text-slate-200">{item.title}<ArrowRight size={15} className="text-slate-600"/></a>)}
           <p className="px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[.18em] text-slate-600">Choose your path</p>
           {audiences.map(item => <a key={item.href} href={item.href} onClick={close} className="rounded-lg px-3 py-3 hover:bg-white/[.04]"><span className="block text-sm font-semibold">{item.title}</span><span className="mt-1 block text-xs text-slate-500">{item.detail}</span></a>)}
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[.08] pt-4">
+            <button type="button" onClick={toggleTheme} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/[.14] px-3 text-sm text-slate-300">{theme === "light" ? <Moon size={16}/> : <Sun size={16}/>} {theme === "light" ? "Dark theme" : "Light theme"}</button>
+            <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" onClick={close} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/[.14] px-3 text-sm text-slate-300"><LifeBuoy size={16}/> Support</a>
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <a href="/login" onClick={close} className="grid min-h-12 place-items-center rounded-lg border border-white/[.14] text-sm font-semibold">Sign in</a>
             <a href="/register" onClick={close} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--gold)] text-sm font-semibold text-[#16140f]">Get started <ArrowRight size={15}/></a>
