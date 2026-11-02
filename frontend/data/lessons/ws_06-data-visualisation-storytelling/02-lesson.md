@@ -1,7 +1,8 @@
 # Lesson 2: Understanding Data Types and Visual Variables
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the central ideas, select an appropriate method, implement it in Python, interpret the output and identify limitations.
+
+By the end of this lesson, you should be able to distinguish categorical, ordinal, discrete and continuous variables; explain how marks, position, length, area, colour and shape encode data; choose encodings suited to variable types; and identify perceptual and accessibility problems.
 
 ## 1. Concepts and reasoning
 Chart choice begins with the meaning of each field. Numerical data may be continuous (temperature, duration) or discrete counts (number of visits). Categorical data describes groups such as department or product. Ordinal categories have a meaningful order (low, medium, high); nominal categories do not. Dates and times are ordered values and need temporal handling.
