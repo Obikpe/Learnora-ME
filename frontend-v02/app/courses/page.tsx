@@ -33,12 +33,12 @@ export default function Courses() {
   useEffect(() => { loadCourses(); }, []);
 
   const levels = useMemo(() => ["all", ...Array.from(new Set(items.map(c => String(c.level || "").trim()).filter(Boolean)))], [items]);
-  const tracks = useMemo(() => ["all", ...Array.from(new Set(items.map(c => String(c.settings?.track || c.track || "").trim()).filter(Boolean))).sort((a,b) => a.localeCompare(b))], [items]);
+  const tracks = useMemo(() => ["all", ...Array.from(new Set(items.flatMap(c => (Array.isArray(c.tracks) ? c.tracks : []).map((t:any) => String(t.name || "").trim()).filter(Boolean)))).sort((a,b) => a.localeCompare(b))], [items]);
   const filtered = useMemo(() => items.filter(c => {
-    const courseTrack = String(c.settings?.track || c.track || "").trim();
+    const courseTracks = Array.isArray(c.tracks) ? c.tracks.map((t:any) => String(t.name || "")) : [];
     const topics = Array.isArray(c.settings?.topics) ? c.settings.topics.join(" ") : "";
-    const text = [c.title, c.short_description, c.description, c.level, courseTrack, topics].filter(Boolean).join(" ").toLowerCase();
-    return text.includes(query.trim().toLowerCase()) && (level === "all" || c.level === level) && (track === "all" || courseTrack === track);
+    const text = [c.title, c.short_description, c.description, c.level, courseTracks.join(" "), topics].filter(Boolean).join(" ").toLowerCase();
+    return text.includes(query.trim().toLowerCase()) && (level === "all" || c.level === level) && (track === "all" || courseTracks.includes(track));
   }), [items, query, level, track]);
 
   const usedImages = new Set<string>([IMAGES.hero,IMAGES.learners,IMAGES.instructors,IMAGES.organisations,IMAGES.portfolio,IMAGES.studio,IMAGES.library,IMAGES.workshop,IMAGES.tutors,IMAGES.community,IMAGES.aboutHero,IMAGES.aboutVision,IMAGES.learnerPage,IMAGES.instructorPage,IMAGES.organisationPage,IMAGES.login].map(url => url.split("?")[0]));
@@ -98,7 +98,7 @@ export default function Courses() {
               <div className="relative h-52 overflow-hidden bg-[#151c24]">
                 {image ? <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"/> : <div className="flex h-full items-end justify-between p-5"><span className="font-display text-6xl text-white/10">{String(i+1).padStart(2,"0")}</span><span className="text-xs uppercase tracking-[.18em] text-[#f2d477]">Learnora / Course</span></div>}
                 <span className="absolute left-4 top-4 border border-white/15 bg-[#080a0d] px-3 py-1.5 text-[10px] uppercase tracking-[.15em] text-slate-200">{course.level || "All levels"}</span>
-                {(course.settings?.track || course.track) && <span className="absolute bottom-4 left-4 max-w-[85%] truncate border border-[#d7ad35]/35 bg-[#080a0d]/90 px-3 py-1.5 text-[10px] uppercase tracking-[.12em] text-[#f2d477]">{course.settings?.track || course.track}</span>}
+                {Array.isArray(course.tracks)&&course.tracks.length>0&&<span className="absolute bottom-4 left-4 max-w-[85%] truncate border border-[#d7ad35]/35 bg-[#080a0d]/90 px-3 py-1.5 text-[10px] uppercase tracking-[.12em] text-[#f2d477]">{course.tracks.slice(0,2).map((t:any)=>t.name).join(" · ")}</span>}
               </div>
               <div className="p-5 sm:p-6">
                 <h2 className="font-display text-2xl leading-snug">{course.title}</h2>
