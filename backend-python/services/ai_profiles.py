@@ -369,6 +369,7 @@ async def generate(
     message,
     organisation_id=None,
     conversation_id=None,
+    learning_context=None,
 ):
     limits = _effective_limits(user_id, organisation_id, feature)
 
@@ -422,6 +423,8 @@ async def generate(
     context = _learning_context(user_id, organisation_id)
     if context:
         messages.append({"role": "system", "content": context})
+    if learning_context:
+        messages.append({"role": "system", "content": str(learning_context)[:12000]})
 
     messages.extend(_history(conversation_id))
     messages.append({"role": "user", "content": message})
