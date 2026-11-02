@@ -1,7 +1,8 @@
 # Lesson 2: Preparing Data Without a Target
 
 ## Learning outcomes
-Explain the unsupervised-learning concept, implement the worked example, interpret the output and assess whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Prepare a feature matrix without a target; inspect missingness, types and scales; choose defensible transformations; and explain how feature representation affects distance-based methods.
 
 ## 1. Core explanation
 Without a target, feature selection depends on the question and the concept you want the algorithm to represent. For customer segmentation, transaction frequency, average basket size and recency may be meaningful. Customer ID is not a behavioural measure. For document clustering, word or embedding features represent text content. Irrelevant features can dominate distances and obscure useful structure.
