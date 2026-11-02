@@ -1,7 +1,8 @@
 # Lesson 7: Binning, Interactions and Polynomial Features
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Create bins, polynomial terms and interaction features; explain what new structure they represent; compare interpretability and complexity; and avoid data-driven binning leakage.
 
 ## 1. Core explanation
 Binning converts a continuous feature into intervals. It can simplify non-linear relationships and produce interpretable groups, but loses information and depends on chosen cut points. Use domain-defined thresholds where possible; otherwise learn quantile or uniform bins from training data.
