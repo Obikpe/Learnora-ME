@@ -1,7 +1,8 @@
 # Lesson 12: Containerisation Concepts with Docker
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Explain Docker images, containers and Dockerfiles; build a minimal API image; expose the required port; and identify base-image, privilege, secret and dependency risks.
 
 ## 1. Core explanation
 A container packages an application with its runtime dependencies so it behaves consistently across environments. A Docker image is the build artefact; a container is a running instance. A Dockerfile describes how to build the image. Containers share the host kernel and are generally lighter than full virtual machines.
