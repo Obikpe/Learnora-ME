@@ -1,85 +1,51 @@
-# Lesson 04: Visualisation with Matplotlib
-
-## Why this lesson matters
-
-This lesson is part of **ws_06 data visualisation storytelling**. It builds on earlier work and prepares you for the next stage. The goal is not to memorise commands: it is to understand the problem, choose an appropriate method, implement it in Python, inspect the result and explain what the result does and does not establish.
+# Lesson 4: Visualisation with Matplotlib
 
 ## Learning outcomes
+By the end of this lesson, you should be able to explain the central ideas, select an appropriate method, implement it in Python, interpret the output and identify limitations.
 
-By the end, you should be able to:
-- Explain the central idea and the problem this method addresses.
-- Identify the data, assumptions and conditions needed to use it.
-- Implement a basic version in Python and explain the important lines.
-- Interpret the output, recognise common failure modes and communicate limitations.
-- Apply the method to a small realistic data-science question.
+## 1. Concepts and reasoning
+Matplotlib separates a Figure (the whole canvas) from Axes (the plotting area). The reliable object-oriented pattern is to create them with subplots, draw using methods such as plot, bar or scatter, configure labels and limits, then display or save the figure.
 
-## 1. Start with the problem
+Keep data preparation separate from plotting so values can be inspected before drawing. Sort time-series records by date. Sort category values when ranking is the message. Use a deliberate figure size, readable tick labels and meaningful units. If labels overlap, adjust the layout rather than shrinking text until it becomes unreadable.
 
-Before choosing a technique, state the question in plain language. Identify the unit being analysed (a person, transaction, product, day or observation), the outcome or quantity of interest, the available variables and the decision the analysis should support. This prevents a common mistake: selecting a familiar algorithm or chart first and then trying to invent a question for it.
+A chart that renders is not automatically interpretable. Default axis labels, unexplained abbreviations and missing units make a chart difficult to reuse. Save a final figure with a descriptive filename and sufficient resolution for the report in which it will appear.
 
-Write down what one row represents. Check whether rows are independent, whether identifiers are duplicated, whether values are missing and whether the time period is appropriate. A method cannot repair a poorly defined question or an unsuitable dataset.
-
-## 2. Understand the concept
-
-**Visualisation with Matplotlib** should be understood as a tool within a wider analytical workflow. Learn its purpose, the assumptions behind it, the kind of input it expects and the form of output it produces. Distinguish what the method calculates from the interpretation an analyst makes. A numerical result is evidence to investigate, not automatically a conclusion.
-
-For a first attempt, use a small dataset that can be inspected manually. Predict what you expect to happen before running the code. Then compare the actual output with that expectation. This habit makes debugging and interpretation much easier.
-
-## 3. A Python starting point
-
-The following is a teaching pattern. It assumes that a DataFrame named `data` has already been loaded and that the named columns exist. Adapt the columns to your dataset rather than copying names blindly.
+## 2. Worked example
+Run this in VS Code. Install the required libraries if they are not already available: `python -m pip install pandas matplotlib seaborn`.
 
 ```python
+import pandas as pd
 import matplotlib.pyplot as plt
 
-months = ["Jan", "Feb", "Mar", "Apr"]
-revenue = [12, 15, 13, 19]
-fig, ax = plt.subplots(figsize=(8, 4))
-ax.plot(months, revenue, marker="o")
-ax.set(title="Monthly revenue", xlabel="Month", ylabel="Revenue (₦m)")
-ax.grid(alpha=0.25)
-plt.tight_layout()
+monthly = pd.DataFrame({
+    "month": ["Jan", "Feb", "Mar", "Apr"],
+    "orders": [42, 51, 47, 63]
+})
+fig, ax = plt.subplots(figsize=(7, 4), layout="constrained")
+ax.bar(monthly["month"], monthly["orders"])
+ax.set_title("Orders received by month")
+ax.set_xlabel("Month")
+ax.set_ylabel("Number of orders")
+ax.set_ylim(0, 70)
+ax.grid(axis="y", alpha=0.2)
 plt.show()
+fig.savefig("orders_by_month.png", dpi=160, bbox_inches="tight")
 ```
 
-Read the code from top to bottom. Identify the input variables, the operation being performed and the output. Check dimensions and data types before fitting a model or producing a chart. Fix warnings and errors at their source rather than suppressing them.
+## 3. Interpreting the output
+Describe the variables and units shown. Separate what the data visibly demonstrates from your explanation of why it happened. Check whether the axes, ordering, missing values and sample size could change the interpretation. A visual pattern is a clue for further analysis, not a substitute for checking the data.
 
-## 4. Work through the result
+## 4. Guided practice
+Recreate the chart as a line chart. Explain which chart better communicates monthly change and which better communicates discrete monthly totals. Save both charts and compare readability at presentation size.
 
-Ask four questions:
-1. What exactly did the code calculate or produce?
-2. Which rows and columns contributed to the result?
-3. Which assumptions would make the result misleading?
-4. What independent check could confirm that the result is plausible?
+## 5. Independent practice
+Use a dataset with at least two meaningful variables. Write the analytical question before plotting. Inspect data types and missing values, make a chart, and write a short interpretation with one limitation and one follow-up question.
 
-Compare a small sample with a manual calculation or a simple baseline. If the output is unexpected, inspect the data first, then the parameters and finally the method. Do not keep changing settings until a preferred result appears.
+## 6. Knowledge check
+1. Which data types are involved?
+2. What question does this chart or technique answer?
+3. What would make the result misleading?
+4. What additional evidence would strengthen your interpretation?
 
-## 5. Common mistakes
-
-- Applying a technique before defining the analytical question.
-- Ignoring missing values, unusual observations or duplicate records.
-- Using variables that would not be available at the time a real prediction or decision is made.
-- Treating a metric, chart or model output as proof of causation.
-- Failing to record the dataset, parameters, random seed and software versions.
-- Reporting a result without explaining its uncertainty and limitations.
-
-## Guided practice
-
-1. Explain the lesson's central concept in your own words.
-2. Identify a suitable small dataset and describe its row-level unit.
-3. Run the example after checking that the required columns exist.
-4. Change one input or setting and describe how the output changes.
-5. Inspect at least five observations and verify that the output is plausible.
-6. Write down one limitation and one additional check you would perform.
-
-## Independent practice
-
-Choose a small, relevant dataset and formulate one clear question that this lesson's method can help answer. Create a reproducible Python script, document the input columns and preprocessing, run the method, inspect the output and write a short interpretation. Include the assumptions, one alternative explanation and a limitation. Your work should be understandable to another learner who has not watched you run it.
-
-## Summary
-
-The key skill is to connect the analytical question, the data, the method and the interpretation. Understand the assumptions, make the workflow reproducible, inspect outputs and communicate limitations. The next lesson extends this idea to a more demanding problem.
-
-## Further reflection
-
-What would change if the dataset were ten times larger, contained more missing values or came from a different population? Which parts of your workflow would remain valid, and which would need to be reconsidered?
+## Lesson summary
+A good visualisation makes the intended comparison easy, labels its scales and units, and does not imply more certainty than the data supports.
