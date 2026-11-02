@@ -92,11 +92,25 @@ class QuizSessionLifecycleTests(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertGreater(datetime.fromisoformat(result["expires_at"]),datetime.now(timezone.utc)+timedelta(minutes=100))
 
-    def test_close_session_deletes_only_the_calling_users_session(self):
-        db=FakeSupabase({"quiz_active_sessions":[
-            {"id":"session-1","quiz_id":"quiz-1","user_id":"learner-1"},
-            {"id":"session-2","quiz_id":"quiz-1","user_id":"learner-2"},
-        ]})
+    def test_unsubmitted_session_cannot_be_closed_to_restore_tutor_access(self):
+        db=FakeSupabase({
+            "quiz_active_sessions":[{"id":"session-1","quiz_id":"quiz-1","user_id":"learner-1","started_at":"2026-11-02T10:00:00+00:00"}],
+            "quiz_attempts":[],
+        })
+        with patch.object(progress,"supabase",db):
+            with self.assertRaises(HTTPException) as raised:
+                progress.close_quiz_session("quiz-1","session-1",self.user)
+        self.assertEqual(raised.exception.status_code,409)
+        self.assertEqual(len(db.tables["quiz_active_sessions"]),1)
+
+    def test_submitted_attempt_closes_only_the_calling_users_session(self):
+        db=FakeSupabase({
+            "quiz_active_sessions":[
+                {"id":"session-1","quiz_id":"quiz-1","user_id":"learner-1","started_at":"2026-11-02T10:00:00+00:00"},
+                {"id":"session-2","quiz_id":"quiz-1","user_id":"learner-2","started_at":"2026-11-02T10:00:00+00:00"},
+            ],
+            "quiz_attempts":[{"id":"attempt-1","quiz_id":"quiz-1","user_id":"learner-1","submitted_at":"2026-11-02T10:15:00+00:00"}],
+        })
         with patch.object(progress,"supabase",db):
             result=progress.close_quiz_session("quiz-1","session-1",self.user)
         self.assertTrue(result["success"])
