@@ -22,10 +22,9 @@ results = pd.DataFrame({
     "actual": [1, 1, 0, 0, 1, 1, 0, 0],
     "predicted": [1, 1, 0, 0, 1, 0, 0, 0]
 })
-print(results.groupby("group").apply(
-    lambda g: accuracy_score(g["actual"], g["predicted"]),
-    include_groups=False
-))
+for group_name, group_rows in results.groupby("group"):
+    score = accuracy_score(group_rows["actual"], group_rows["predicted"])
+    print(group_name, "accuracy:", score)
 ```
 
 ## 3. Interpretation
