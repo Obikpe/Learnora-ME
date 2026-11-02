@@ -79,6 +79,7 @@ This uses a path relative to the source file rather than relying on the terminal
 
 ```python
 import pandas as pd
+from contextlib import closing
 from .db import get_connection
 
 def load_orders(start_date, end_date):
@@ -191,6 +192,19 @@ def run(start_date, end_date):
 ```
 
 The imports assume you have organised the functions into the named modules. If you keep the code in one file, remove those imports and define the functions above run(). Logging records progress without printing every row. The connection is explicitly closed with contextlib.closing; the nested connection context commits on success and rolls back on failure. The sqlite3 connection context manager alone does not close the connection.
+
+The root-level entry point can be small:
+
+```python
+# run_pipeline.py
+from src.pipeline import run
+
+if __name__ == "__main__":
+    result = run("2026-01-01", "2026-05-01")
+    print(result)
+```
+
+Run it from the project root with `python run_pipeline.py`. The date range uses an inclusive start and exclusive end.
 
 ## 9. Idempotency and repeatability
 
