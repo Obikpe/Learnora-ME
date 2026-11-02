@@ -31,9 +31,7 @@ export default function Toast({ title, message, type = "success", onClose }: { t
           <p className="mt-1 text-sm leading-6 text-slate-300">{message}</p>
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-white/5">
-        <div className="h-full origin-left animate-[toast-shrink_5s_linear_forwards] bg-[var(--gold)]" />
-      </div>
+      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-[var(--gold)]/70" />
     </div>
   );
 }
