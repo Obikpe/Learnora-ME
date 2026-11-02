@@ -115,6 +115,16 @@ jobs:
           done
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/learner_learning_plans_assertions.sql
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/quiz_active_sessions_assertions.sql
+          psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          \\i supabase/rollback/20261102100000_quiz_active_sessions.rollback.sql
+          DO $ BEGIN
+            IF to_regclass('public.quiz_active_sessions') IS NOT NULL THEN
+              RAISE EXCEPTION 'quiz_active_sessions rollback did not remove the table';
+            END IF;
+          END $;
+          ROLLBACK;
+          SQL
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "NOTIFY pgrst, 'reload schema'"
       - name: Start local PostgREST and Supabase REST path proxy
         env:
