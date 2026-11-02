@@ -36,7 +36,7 @@ plt.show()
 State the analytical question, population, variables, units and denominator. Check missingness and sample size. Distinguish observations from explanations and recommendations. Design for the actual audience and the size at which the visual will be viewed.
 
 ## 4. Guided practice
-Inspect the penguins dataset. Identify one pair of variables that separates species visually and one pair that overlaps. Explain why a visual cluster is not automatically a reliable classifier.
+Inspect the Iris dataset. Identify one pair of measurements that separates species visually and one pair that overlaps. Explain why a visual cluster is not automatically a reliable classifier.
 
 ## 5. Independent practice
 Apply the lesson to a dataset. Create a chart or artefact, write a caption that states the main message and caveat, and ask another person to interpret it without your explanation.
