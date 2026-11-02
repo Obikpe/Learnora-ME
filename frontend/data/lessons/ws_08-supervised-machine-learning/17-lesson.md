@@ -11,29 +11,46 @@ Gaussian Naive Bayes models continuous features with a normal distribution withi
 Naive Bayes is fast and provides a useful baseline. Its probability estimates can be poorly calibrated when independence assumptions fail. Evaluate predictive quality and calibration separately. For text, fit vectorisation on training text only to avoid vocabulary leakage.
 
 ## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas matplotlib scikit-learn`. Some dataset loaders may need internet access on first use.
+Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas matplotlib scikit-learn`. This example uses a small local teaching corpus, so it runs without downloading a dataset.
 
 ```python
-from sklearn.datasets import fetch_20newsgroups
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
+from sklearn.metrics import classification_report
 
-data = fetch_20newsgroups(subset="train", categories=["sci.space", "rec.sport.baseball"],
-                          remove=("headers", "footers", "quotes"))
-Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
-    test_size=.25, random_state=42, stratify=data.target)
+# Small local teaching corpus: no download or internet connection needed.
+texts = [
+    "space mission rocket orbit astronaut satellite",
+    "astronomy telescope planet galaxy space science",
+    "rocket launch spacecraft lunar exploration",
+    "satellite orbit mission space station",
+    "planet astronomy stars telescope observation",
+    "astronaut spacecraft launch moon mission",
+    "baseball pitcher strikes batter inning game",
+    "baseball team scored runs home plate",
+    "pitcher threw ball and batter hit a home run",
+    "baseball league season team championship",
+    "catcher and pitcher prepared for the next inning",
+    "baseball player hit a double and scored",
+]
+labels = ["space"] * 6 + ["baseball"] * 6
+X_train, X_test, y_train, y_test = train_test_split(
+    texts, labels, test_size=0.33, random_state=42, stratify=labels
+)
 model = make_pipeline(CountVectorizer(), MultinomialNB())
-model.fit(Xtr, ytr)
-print("Test accuracy:", model.score(Xte, yte))
+model.fit(X_train, y_train)
+predictions = model.predict(X_test)
+print(classification_report(y_test, predictions, zero_division=0))
+print("Example prediction:", model.predict(["rocket launch and orbit"])[0])
 ```
 
 ## 3. Interpretation and checks
 Record the target, sample size, split design, metric and model settings. Inspect class-wise results or residuals, not only the headline score. Keep the test set untouched during model selection and report the limitations of the dataset.
 
 ## 4. Guided practice
-Explain why word counts are non-negative and suit MultinomialNB. Try TF-IDF features and compare. Note that downloading this dataset requires internet access; use a locally saved text sample if offline.
+Explain why word counts are non-negative and suit MultinomialNB. Try TF-IDF features and compare. Change the local text examples, keep labels aligned with the texts, and compare how the vocabulary changes. This small corpus is only for learning the workflow; it is too small to support a real-world performance claim.
 
 ## 5. Independent practice
 Extend the example with a second model or a different evaluation view. Keep a record of every change and compare candidates using the same training/validation design. Write a short report for a non-technical stakeholder.
