@@ -1,33 +1,34 @@
-# Lesson 23: Reproducible Model Improvement Workflow
+# Lesson 23: Feature Engineering and Evaluation Project
 
 ## Learning outcomes
 Explain the technique, implement it in Python and justify the validation choices.
 
 ## 1. Core explanation
-An improvement workflow is a controlled experiment. Start with a baseline and a written hypothesis, change one meaningful factor, evaluate using the same split and metric, and record the result. Examples include adding a feature, changing regularisation, adjusting class weights or using a different model family.
+The project applies feature engineering and evaluation controls to a real analytical question. Define prediction timestamp, unit of observation, target horizon and action. Audit candidate features for availability, missingness, leakage, redundancy and ethical risk. Build transformations in a Pipeline or ColumnTransformer.
 
-Keep experiment records: dataset version, code commit, package versions, split seed, preprocessing, hyperparameters, metric and date. Do not delete failed experiments; they explain decisions. Ensure each candidate is compared on identical evaluation data.
+Establish a baseline, then compare at least two feature sets or model workflows using the same cross-validation design. Use metrics suited to the target and inspect errors across relevant groups. Tune only on training data and reserve a final test set. Document transformation decisions and rejected features.
 
-The final improvement should be meaningful, reproducible and defensible. If improvement is within normal score variability, report that honestly. Re-run the selected workflow from a clean environment and preserve the untouched test set for final evaluation.
+The deliverable is a reproducible report and codebase. Explain whether engineered features improve validation in a stable and practically meaningful way. State limitations, deployment assumptions and monitoring requirements.
 
 ## 2. Worked Python example
 Run in VS Code using the course virtual environment. Install packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
 
 ```python
-import pandas as pd
-experiments = pd.DataFrame([
-    {"id": "baseline", "change": "Dummy median", "mae": 12.4, "seed": 42},
-    {"id": "e01", "change": "Ridge alpha=1", "mae": 10.8, "seed": 42},
-    {"id": "e02", "change": "Ridge alpha=10", "mae": 11.1, "seed": 42}
-])
-print(experiments.sort_values("mae"))
+# Project deliverables
+# problem_statement.md: decision, target, prediction timestamp, error costs
+# data_dictionary.csv: feature, meaning, type, source, availability time
+# src/preprocess.py: leakage-safe transformations
+# src/train.py: baseline and candidate pipelines
+# reports/evaluation.md: CV results, test result, error analysis
+# README.md: environment, run instructions, limitations
+# Keep preprocessing and model fitting in one sklearn Pipeline.
 ```
 
 ## 3. Interpretation and safeguards
 State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune thresholds, select features or choose hyperparameters.
 
 ## 4. Guided practice
-Create an experiment log for three model changes. State the hypothesis before each run, use identical validation folds and write a decision note explaining which change to retain.
+Submit a feature-engineering project. Rubric: problem framing 15%, leakage prevention 20%, transformation rationale 20%, validation and metrics 20%, error analysis 15%, reproducibility and communication 10%. Include one rejected feature and explain why it was excluded.
 
 ## 5. Independent practice
 Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
