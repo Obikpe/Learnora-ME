@@ -4,7 +4,7 @@ from typing import Any, Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from .auth import supabase
+from .auth import log_audit_event, supabase
 from .internal_auth import InternalStaffContext, require_internal_permission
 
 router = APIRouter(prefix="/api/internal/assessments", tags=["Internal Assessments"])
@@ -460,7 +460,7 @@ def grade_assignment_submission(assignment_id: str, submission_id: str, body: Gr
     maximum = assignment.get("max_score")
     if maximum is not None and body.score > float(maximum):
         raise HTTPException(422, "The grade cannot exceed the assignment's maximum score.")
-    submission_rows = supabase.table("assignment_submissions").select("id,assignment_id").eq("id", submission_id).eq("assignment_id", assignment_id).limit(1).execute().data or []
+    submission_rows = supabase.table("assignment_submissions").select("id,assignment_id,user_id").eq("id", submission_id).eq("assignment_id", assignment_id).limit(1).execute().data or []
     if not submission_rows:
         raise HTTPException(404, "Submission not found for this assignment.")
     from datetime import datetime, timezone
@@ -473,4 +473,19 @@ def grade_assignment_submission(assignment_id: str, submission_id: str, body: Gr
     }).eq("id", submission_id).eq("assignment_id", assignment_id).execute()
     if not saved.data:
         raise HTTPException(500, "Grade could not be saved.")
+    log_audit_event(
+        action="assignment_submission_graded",
+        email=staff.email,
+        account_type="staff",
+        role="staff",
+        metadata={
+            "staff_id": staff.staff_id,
+            "learner_user_id": submission_rows[0].get("user_id"),
+            "course_id": str(assignment["course_id"]),
+            "assignment_id": assignment_id,
+            "submission_id": submission_id,
+            "score": body.score,
+            "max_score": maximum,
+        },
+    )
     return {"success": True, "submission": saved.data[0]}
