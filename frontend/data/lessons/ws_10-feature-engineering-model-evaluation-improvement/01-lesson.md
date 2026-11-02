@@ -1,7 +1,8 @@
 # Lesson 1: Feature Engineering as a Modelling Discipline
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Explain feature engineering as the construction of prediction-time inputs; aggregate raw records at the correct observation grain; create recency, frequency and monetary features; and document availability and meaning.
 
 ## 1. Core explanation
 Feature engineering creates useful model inputs from raw fields. A feature is not simply any column available in a database; it must represent information available at prediction time and relate to the problem. Domain knowledge guides transformations such as ratios, recency, counts, rates, lags and interactions.
