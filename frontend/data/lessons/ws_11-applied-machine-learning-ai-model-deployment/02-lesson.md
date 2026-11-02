@@ -1,7 +1,8 @@
 # Lesson 2: Choosing and Framing an Applied Problem
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Frame an applied prediction problem around a stakeholder decision; define prediction time, target, intended action, success metric and guardrails; and recognise when a simpler non-ML solution is more appropriate.
 
 ## 1. Core explanation
 An applied ML project starts with a real decision, not an algorithm. Identify the stakeholder, current process, decision timing, action triggered by a prediction and the cost of errors. Decide whether a predictive model adds value compared with a rule, report or process change.
