@@ -272,6 +272,7 @@ def course_performance(course_id: str, staff: InternalStaffContext = Depends(req
     ).data or []
     quiz_ids = [str(row["id"]) for row in quizzes]
     quiz_title_map = {str(row["id"]): row.get("title") for row in quizzes}
+    quiz_threshold_map = {str(row["id"]): effective_passing_score(row) for row in quizzes}
     attempts = (
         supabase.table("quiz_attempts")
         .select("id,user_id,quiz_id,score,passed,submitted_at")
@@ -325,7 +326,7 @@ def course_performance(course_id: str, staff: InternalStaffContext = Depends(req
             "quiz_attempts": [{**row, "quiz_title": quiz_title_map.get(str(row.get("quiz_id")))} for row in learner_attempts],
             "assignment_submissions": [{**row, "assignment_title": assignment_title_map.get(str(row.get("assignment_id")))} for row in learner_submissions],
             "assessment_summary": {
-                "quizzes_passed": len({str(row["quiz_id"]) for row in learner_attempts if row.get("passed")}),
+                "quizzes_passed": len({str(row["quiz_id"]) for row in learner_attempts if row.get("passed") is True and float(row.get("score") or 0) >= quiz_threshold_map.get(str(row.get("quiz_id")), 70)}),
                 "quizzes_total": len(quizzes),
                 "assignments_graded": sum(1 for row in learner_submissions if row.get("status") == "graded"),
                 "assignments_total": len(assignments),
