@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useState} from "react";
+import {useCallback,useEffect,useState,type FormEvent} from "react";
 import {ArrowUpRight,BookOpen,CheckCircle2,Code2,FlaskConical,Send} from "lucide-react";
 import {request} from "../../../lib/api/client";
 import Shell from "../../../components/dashboard/Shell";
@@ -8,9 +8,9 @@ import EmptyState from "../../../components/feedback/EmptyState";
 export default function PracticeLabPage(){
  const [projects,setProjects]=useState<any[]>([]),[selected,setSelected]=useState<any>(null),[mine,setMine]=useState<any[]>([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const [summary,setSummary]=useState(""),[repo,setRepo]=useState(""),[live,setLive]=useState(""),[link,setLink]=useState("");
- async function load(){setLoading(true);setError("");try{const [p,m]=await Promise.all([request<any>("/evidence/projects"),request<any>("/evidence/projects/me")]);setProjects(p.projects||[]);setMine(m.submissions||[]);}catch(e:any){setError(e.message||"Practice Lab could not be loaded.");}finally{setLoading(false);}}
- useEffect(()=>{void load()},[]);
- async function submit(e:React.FormEvent){e.preventDefault();if(!selected)return;setBusy(true);setError("");setNotice("");try{await request("/evidence/projects/"+encodeURIComponent(selected.id)+"/submissions",{method:"POST",body:JSON.stringify({title:selected.title,description:summary,repository_url:repo||null,live_url:live||null,submission_url:link||null})});setSummary("");setRepo("");setLive("");setLink("");setSelected(null);setNotice("Your project has been submitted for review.");await load();}catch(e:any){setError(e.message||"Submission could not be saved.");}finally{setBusy(false);}}
+ const load=useCallback(async()=>{setLoading(true);setError("");try{const [p,m]=await Promise.all([request<any>("/evidence/projects"),request<any>("/evidence/projects/me")]);setProjects(p.projects||[]);setMine(m.submissions||[]);}catch(e:any){setError(e.message||"Practice Lab could not be loaded.");}finally{setLoading(false);}},[]);
+ useEffect(()=>{void load()},[load]);
+ async function submit(e:FormEvent){e.preventDefault();if(!selected)return;setBusy(true);setError("");setNotice("");try{await request("/evidence/projects/"+encodeURIComponent(selected.id)+"/submissions",{method:"POST",body:JSON.stringify({title:selected.title,description:summary,repository_url:repo||null,live_url:live||null,submission_url:link||null})});setSummary("");setRepo("");setLive("");setLink("");setSelected(null);setNotice("Your project has been submitted for review.");await load();}catch(e:any){setError(e.message||"Submission could not be saved.");}finally{setBusy(false);}}
  const submitted=new Set(mine.filter(x=>["submitted","reviewed","approved"].includes(x.status)).map(x=>String(x.project_id)));
  return <Shell active="practice"><header className="border-b border-white/[.08] pb-6"><p className="text-xs font-bold uppercase tracking-[.18em] gold">Build, practise, demonstrate</p><h1 className="mt-3 font-display text-4xl sm:text-5xl">Practice Lab</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Work through practical challenges connected to your enrolled courses. Submit a clear explanation and links to your work; Learnora staff review approved projects before they count as skill evidence.</p></header>
  {error&&<div role="alert" className="mt-5 rounded-xl border border-red-400/20 bg-red-400/[.04] p-4 text-sm text-red-200">{error}</div>}{notice&&<div role="status" className="mt-5 rounded-xl border border-emerald-400/20 bg-emerald-400/[.04] p-4 text-sm text-emerald-200">{notice}</div>}
