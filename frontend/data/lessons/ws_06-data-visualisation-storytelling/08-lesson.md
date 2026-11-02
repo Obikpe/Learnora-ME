@@ -1,7 +1,8 @@
 # Lesson 8: Relationships and Bivariate Analysis
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to inspect relationships between two numeric variables; distinguish Pearson correlation from Spearman correlation; choose scatter, regression or grouped-distribution plots; identify outliers and subgroup effects; and explain why association does not establish causation.
 
 ## 1. Core explanation
 Bivariate analysis studies how two variables vary together. For two numeric variables, a scatter plot shows direction, form, strength and unusual points. Pearson correlation measures linear association and ranges from -1 to +1. A value near zero does not rule out a curved relationship. Spearman correlation uses ranks and can detect monotonic relationships that are not linear.
