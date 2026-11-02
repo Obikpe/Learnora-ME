@@ -1,7 +1,8 @@
 # Lesson 25: Working with Stakeholders and Feedback
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Clarify stakeholder definitions, filters, refresh needs and intended decisions; document agreements and actions; and challenge requests that would misrepresent analytical evidence.
 
 ## 1. Core explanation
 Stakeholder work begins with listening and clarifying. Different stakeholders may use the same word differently: active customer, completed course or late delivery needs a shared definition. Confirm assumptions in writing and show early outputs to catch misunderstandings before the project is complete.
