@@ -4,7 +4,7 @@ Progress is stored in Supabase, never in the ephemeral Vercel filesystem.
 All writes are scoped to the authenticated learner and an actual enrolment.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from uuid import UUID
 
@@ -396,6 +396,19 @@ def get_quiz(quiz_id: str, user: CurrentUser = Depends(get_current_user)):
         raise HTTPException(403, "You are not enrolled in this course.")
     if quiz.get("module_id"):
         _assert_module_unlocked(str(user.id), str(quiz["module_id"]))
+    now = datetime.now(timezone.utc)
+    try:
+        supabase.table("quiz_active_sessions").upsert({
+            "user_id": str(user.id),
+            "quiz_id": str(quiz_id),
+            "course_id": str(quiz["course_id"]),
+            "lesson_id": str(quiz.get("lesson_id")) if quiz.get("lesson_id") else None,
+            "started_at": now.isoformat(),
+            "expires_at": (now + timedelta(hours=2)).isoformat(),
+        }, on_conflict="user_id,quiz_id").execute()
+    except Exception as exc:
+        print(f"Quiz session protection could not be established: {type(exc).__name__}")
+        raise HTTPException(503, "Quiz protection is temporarily unavailable. Please retry.") from None
     questions = (supabase.table("quiz_questions")
         .select("id,question,question_type,options,points,order_index")
         .eq("quiz_id", quiz_id).order("order_index").execute()).data or []
@@ -472,7 +485,17 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
     }).execute())
     if not inserted.data:
         raise HTTPException(500, "Unable to save quiz attempt.")
+    try:
+        supabase.table("quiz_active_sessions").delete().eq("user_id", str(user.id)).eq("quiz_id", str(quiz_id)).execute()
+    except Exception as exc:
+        print(f"Completed quiz session cleanup deferred: {type(exc).__name__}")
     return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score}
+
+
+@router.delete("/quizzes/{quiz_id}/session")
+def close_quiz_session(quiz_id: str, user: CurrentUser = Depends(get_current_user)):
+    supabase.table("quiz_active_sessions").delete().eq("user_id", str(user.id)).eq("quiz_id", str(quiz_id)).execute()
+    return {"success": True}
 
 
 @router.get("/assignments/{assignment_id}")
