@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.quiz_active_sessions (
   lesson_id uuid NULL REFERENCES public.learnora_lessons(id) ON DELETE SET NULL,
   started_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL,
-  CONSTRAINT quiz_active_sessions_expiry_after_start CHECK (expires_at > started_at),
+  CONSTRAINT quiz_active_sessions_expiry_after_start CHECK (expires_at > started_at)
 );
 CREATE INDEX IF NOT EXISTS quiz_active_sessions_user_expiry_idx
   ON public.quiz_active_sessions (user_id, expires_at);
