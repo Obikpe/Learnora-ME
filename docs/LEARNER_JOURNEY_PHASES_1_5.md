@@ -49,11 +49,11 @@ The canonical model is established by the checked-in schema baseline and existin
 
 | Phase | Implementation | Remaining acceptance |
 |---|---|---|
-| 1. Architecture and relationships | Canonical track → course → module → lesson and assessment relationships retained; publication validation strengthened | Live schema comparison and full regression run |
+| 1. Architecture and relationships | Canonical track → course → module → lesson and assessment relationships retained; publication validation strengthened | Live Pheonix SQL catalogue revalidation remains blocked by the read-only database authentication failure; repository/CI schema checks pass |
 | 2. Discovery and track browsing | Public course payloads expose real published track membership; course catalogue filters by track; track catalogue supports search and level filters | Browser/mobile acceptance |
-| 3. Optional AI learning plans | Profile-based plan generation, saved versions, weekly course schedule, AI-generated weekly guidance and fallback; learner workspace and dashboard entry | Apply additive plan migration in a disposable/staging database; verify provider/fallback and browser journey |
-| 4. Assessments, grading and completion | Teams quiz/assignment authoring, answer validation, assignment grading, learner performance view, assessment-aware course completion | Test suite and end-to-end learner/Teams acceptance |
-| 5. Contextual AI tutor | Verified course/lesson/assessment context, learner progress and recent attempts; answer keys excluded | Provider-level tests, browser acceptance and privacy review |
+| 3. Optional AI learning plans | Profile-based plan generation, saved versions, weekly course schedule, validated AI guidance and rule-based fallback; individual-learner access boundary | Disposable PostgreSQL migration/RLS/grant/rollback checks pass in CI; active Supabase migration and provider/browser acceptance remain |
+| 4. Assessments, grading and completion | Teams quiz settings and question editing, assignment configuration/editing, answer validation, grading audit events, learner performance, and assessment-aware completion | Automated regression/build checks pass; browser-driven learner/Teams acceptance and immutable grade-revision history remain |
+| 5. Contextual AI tutor | Verified course/lesson/assessment context, lesson progress, recent quiz attempts and assignment feedback; answer keys excluded and assessment-to-lesson scope enforced | Provider-level, browser and privacy acceptance remain |
 
 A route or component existing is not treated as production acceptance. CI and live-schema evidence must be recorded separately.
 
@@ -73,7 +73,7 @@ The plan is saved as a versioned record in `learner_learning_plans`; generating 
 
 **Database dependency:** `supabase/migrations/20261102090000_learner_learning_plans.sql` creates the new table with an owner FK, track FK, bounded weekly-time constraint, JSONB plan data, active/archive status, index, RLS enabled, and an explicit `service_role` grant. `anon` and `authenticated` receive no direct table grants. A rollback file is in `supabase/rollback/`.
 
-This migration has **not** been applied to the active Supabase project or to staging. The plan API cannot be enabled in a deployed environment until the migration has been tested against a disposable/staging database and applied through the approved release process. Supabase's Data API default-grant changes mean the explicit server-role grant is intentional; the table remains backend-only.
+The migration is replayed by the Cohort Learning Access CI workflow against a disposable PostgreSQL database restored from the checked-in catalog schema. Assertions verify table creation, RLS, browser-role denial, service-role privileges and the checked-in rollback (inside a transaction). That replay passed on implementation checkpoint `8e21f264744a1a49d26d0f81b3272f1c5d72f24a`. It has **not** been applied to the active Pheonix Supabase project. The active project's read-only SQL connection still fails password authentication, and no staging branch is available. Apply it to the active project only through a separately approved release process.
 
 ## 5. Phase 4 — assessment authoring, grading and completion
 
@@ -82,16 +82,17 @@ Learnora Teams now has an Assessments workspace and permission-protected APIs to
 - list course modules, quizzes and assignments;
 - create draft quizzes attached to a course/module/lesson;
 - configure passing score (70–100%) and maximum attempts;
-- add/remove supported auto-graded multiple-choice and true/false questions;
+- add, edit and remove supported auto-graded multiple-choice and true/false questions while the quiz is a draft;
+- edit draft quiz title, description, passing threshold and attempt limit;
 - validate correct answers against configured options before publishing;
 - publish/unpublish quizzes;
-- create and publish course/lesson assignments;
+- create, edit and publish course/lesson assignments, including instructions, lesson association, maximum score and optional due date; published assignment settings must be unpublished before editing;
 - review learner assignment submissions and save score, feedback, grader identity and grading time;
 - inspect per-course learner lesson progress, quiz attempts and assignment grading.
 
-Existing module unlocking remains assessment-aware. Course completion now requires all learner-visible published lessons to be completed, every published quiz to have a passing attempt at its configured threshold, and every published assignment's latest submission to be graded at 70% or above of its configured maximum score. The course progress percentage counts lesson and published-assessment completion units. Track completion continues to use required-course completion, so assessment gates flow through to track progress.
+Module unlocking checks every published quiz in each earlier module against that quiz's configured threshold; an earlier module with no published quiz does not deadlock progression. Course completion requires all learner-visible published lessons to be completed, every published quiz to have a passing attempt at its configured threshold, and every published assignment's latest submission to be graded at 70% or above of its configured maximum score. The course progress percentage counts lesson and published-assessment completion units. Track completion continues to use required-course completion, so assessment gates flow through to track progress.
 
-A published assessment is treated as required for completion. Unpublished drafts do not block completion. A course with no published assessments retains lesson-only completion. Assignment grading is currently a single latest-submission grade; each staff grading action is recorded in `audit_logs`, but a separate immutable grade-revision history and resubmission workflow are not introduced here.
+A published assessment is treated as required for completion. Unpublished drafts do not block completion. A course with no published assessments retains lesson-only completion. Assignment grading is currently based on the latest submission. Each staff grading action is recorded in `audit_logs`; a separate immutable grade-revision history and learner resubmission workflow remain future work.
 
 ## 6. Phase 5 — contextual AI tutor
 
@@ -103,7 +104,7 @@ The backend does not trust client-supplied lesson content. It verifies:
 - the module is unlocked for that learner;
 - any attached assessment is published and belongs to that course.
 
-It then loads the course/module/lesson metadata, lesson text (bounded), saved learner lesson progress, assessment questions/options without answer keys, and the learner's recent quiz outcomes. The contextual tutor is started in a fresh conversation to avoid mixing an unrelated saved conversation into a lesson handoff. The AI is instructed not to reveal or infer answer keys and to coach reasoning rather than simply disclose solutions.
+It then loads course/module/lesson metadata, bounded lesson text, saved learner lesson progress, assessment questions/options without answer keys, recent quiz outcomes, and recent assignment outcomes/staff feedback. An attached quiz must belong to the active lesson or its module. Course material and staff feedback are treated as untrusted reference data. The contextual tutor is started in a fresh conversation to avoid mixing an unrelated saved conversation into a lesson handoff. The AI is instructed not to reveal or infer answer keys and to coach reasoning rather than simply disclose solutions.
 
 General tutor use remains available without a course context. The contextual path is optional and does not alter enrolments, progress, curriculum, or assessments.
 
@@ -115,14 +116,13 @@ The optional AI plan uses the existing AI provider/quota service; it does not gr
 
 ## 8. Verification and known limitations
 
-- New backend regression files cover assessment authoring constraints and assessment-based course completion; learning-plan scheduling tests were added. Existing publication-readiness fixtures were updated to include answerable quiz questions.
-- GitHub Actions workflows were queued for the implementation commit `5e6527009fb07e160696869e0864ceb207fd9310` at the time of the latest check. The latest code-checkpoint workflows were still queued, not passing evidence: [backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41416399989), [backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/41416400119), [frontend builds](https://github.com/Obikpe/Learnora-ME/actions/runs/41416399968), [quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/41416400031), and [cohort-learning tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41416400015). Their queued state is not a pass. The exact final documentation/code SHA must have all required workflows completed successfully before this work is marked evidence-backed.
-- No local Python suite or frontend production build has been run in this environment.
-- No live Supabase migration, data mutation, Vercel environment change, or deployment was performed.
-- The new learning-plan migration requires disposable/staging replay and explicit release approval before deployment.
-- Full browser/mobile acceptance of discovery, course completion, Teams assessment workflows, AI tutor context, and the plan generation/fallback path remains outstanding.
-- The current AI plan's week allocation is deterministic from published course estimates; the AI personalises each week's focus, practice and reflection. This is deliberate: the AI cannot alter the underlying curriculum or invent courses.
-- The Teams question editor supports creating/removing questions; existing question edits can be done through the protected API after unpublishing, but an in-place edit form is not yet exposed in the UI.
-- Assignment grades record `graded_by` and `graded_at`, but a separate immutable grade-change audit stream is not yet implemented.
+- Regression coverage now includes assessment completion thresholds/latest assignment submissions, module unlocking (configured thresholds and no-quiz modules), individual-only onboarding/plan access, quiz/assignment publication/edit guards, and learning-plan scheduling.
+- All five GitHub Actions workflows passed on implementation checkpoint `8e21f264744a1a49d26d0f81b3272f1c5d72f24a`: [backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366731), [backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366705), [all three frontend production builds](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366775), [quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366744), and [cohort-learning plus disposable database migration tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366779).
+- The disposable PostgreSQL workflow applied `20261102090000_learner_learning_plans.sql`, verified RLS and role grants, and executed the rollback inside a transaction. This does not constitute a migration of the live Pheonix project.
+- The live Pheonix SQL catalogue remains unverified because the read-only database connection fails password authentication. No staging Supabase branch was available. No live migration, production data mutation, Vercel environment change, or deployment was performed.
+- Full browser/mobile acceptance of discovery, course completion, Teams assessment workflows, AI tutor context, and the plan generation/fallback path remains outstanding. The CI frontend builds are production builds, not browser-driven acceptance tests.
+- The AI plan's week allocation is deterministic from published course estimates; the AI personalises each week's focus, practice and reflection. The AI cannot alter the underlying curriculum or invent courses.
+- Teams now exposes in-place editing for draft quiz settings/questions and draft assignment settings. Published assessments must be unpublished before editing.
+- Each staff grading action is recorded in `audit_logs`; a separate immutable grade-revision history and learner resubmission workflow remain future work.
 
-Do not mark the five phases release-complete until the remaining acceptance evidence above is recorded on the exact candidate SHA.
+The five phases are implementation-complete and automated-CI-verified on the checkpoint above. Do not treat that as production-release approval: live schema verification, browser/mobile acceptance, and the separately approved live migration/deployment remain release gates.

@@ -453,24 +453,24 @@ The cohort-specific `learnora_tracks` / `cohort_track_courses` relationship rema
 
 An individual learner may optionally generate a plan from their saved onboarding profile and a published global track, or from the published global course catalogue. The schedule references only existing course IDs and follows the track's existing order. The AI may personalise weekly focus, practice and reflection prompts, but it may not create or reorder courses, modules or lessons. A rule-based fallback is clearly identified when structured AI output is unavailable or invalid.
 
-Plan state is stored separately in `learner_learning_plans`; plan completion is not course completion. The table is backend-only, RLS-enabled, and grants only the server role. The migration is not applied to production and must pass disposable/staging verification before release.
+Plan state is stored separately in `learner_learning_plans`; plan completion is not course completion. The table is backend-only, RLS-enabled, and grants only the server role. The migration and rollback pass the disposable PostgreSQL CI replay with RLS/grant assertions; the live Pheonix project remains unapplied and its SQL catalogue remains unverified because the read-only DB connection fails authentication.
 
 ### 14.3 Assessment and course completion policy
 
-Teams staff with the relevant internal permissions can configure and publish supported auto-graded multiple-choice and true/false quizzes, and create/publish manually graded assignments. Correct-answer keys are not returned to learner-facing quiz APIs or contextual AI prompts. Assignment grades store the grader and timestamp.
+Teams staff with the relevant internal permissions can configure and publish supported auto-graded multiple-choice and true/false quizzes, edit draft quiz settings/questions, and create/edit/publish manually graded assignments with lesson association and optional due dates. Published assessment settings must be unpublished before editing. Correct-answer keys are not returned to learner-facing quiz APIs or contextual AI prompts. Assignment grades store the grader and timestamp, and every grading action is written to `audit_logs`.
 
 Course completion requires:
 - all learner-visible published lessons completed;
 - a passing attempt for every published quiz, using that quiz's configured threshold; and
 - the latest submission for every published assignment graded at 70% or above of its maximum score.
 
-All published assessments are treated as required. Unpublished drafts do not affect learner completion. A course without published assessments retains lesson-only completion. Track completion remains derived from required course completion.
+All published assessments are treated as required for course completion. Unpublished drafts do not affect learner completion. A course without published assessments retains lesson-only completion. Earlier-module unlocking checks published quizzes against their configured thresholds; modules without a published quiz do not deadlock progression. Track completion remains derived from required course completion.
 
-Each staff grading action is recorded in `audit_logs`; a separate immutable grade-revision history and assignment resubmission workflow remain future work.
+A separate immutable grade-revision history and learner resubmission workflow remain future work.
 
 ### 14.4 Contextual AI tutor
 
-The learner player may attach course, lesson and optional assessment identifiers to a tutor request. The backend revalidates enrolment, course/lesson membership, publication state and module unlock state, then loads lesson content, saved lesson progress, question/options without answer keys, and recent attempt outcomes. Client-supplied content is not trusted. Contextual handoffs start a fresh conversation; general tutor conversations remain supported.
+The learner player may attach course, lesson and optional assessment identifiers to a tutor request. The backend revalidates enrolment, course/lesson membership, publication state, module unlock state, and that an attached quiz belongs to the active lesson/module. It loads lesson content, saved lesson progress, question/options without answer keys, recent quiz outcomes, and recent assignment outcomes/staff feedback. Course content and feedback are untrusted reference data. Contextual handoffs start a fresh conversation; general tutor conversations remain supported.
 
 ### 14.5 Learnora Teams responsibilities
 
@@ -480,4 +480,4 @@ Teams continues to manage the canonical global tracks, ordered course relationsh
 
 No payment, Paystack, subscription, trial, expiry, entitlement or Pro implementation is removed or rewritten by this extension. The existing server-side free-access mode remains default-off until separately configured and deployed. The plan feature does not require payment details or a paid subscription.
 
-The learning-plan migration is additive and has not been applied to the active Supabase project. Do not deploy the plan API before the migration is replayed and verified in a disposable/staging database. CI, both frontend builds, API regression tests, browser/mobile acceptance and migration verification must pass on the exact candidate SHA. No production deployment or migration is authorised by this specification update.
+The learning-plan migration is additive; its disposable PostgreSQL CI replay, RLS/grant assertions and transactional rollback passed on checkpoint `8e21f264744a1a49d26d0f81b3272f1c5d72f24a`. It has not been applied to the active Supabase project. All five CI workflows (backend tests, backend verification, three frontend builds, quality checks, and cohort/disposable migration tests) passed on that exact checkpoint. Live Pheonix SQL revalidation remains blocked by read-only DB authentication; browser/mobile acceptance, provider/fallback acceptance, and separately approved live migration/deployment remain release gates. No production deployment or migration was authorised.

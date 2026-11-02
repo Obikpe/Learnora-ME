@@ -353,3 +353,12 @@ The immediate learner experience has been expanded into five implementation phas
 ### Current acceptance state
 
 The implementation and regression tests are committed to `main`, but CI runs must complete successfully on the exact final SHA. Browser/mobile journeys, AI provider/fallback behaviour, Teams grading/performance views and disposable/staging migration verification remain required. The free-launch flag remains default-off until separately configured and deployed. The existing paid implementation and its reactivation path remain preserved.
+
+
+### Learner journey phases 1–5 verification update — 2026-11-02
+
+The phase 1–5 implementation and regression coverage are recorded in [LEARNER_JOURNEY_PHASES_1_5.md](LEARNER_JOURNEY_PHASES_1_5.md). All five GitHub Actions workflows passed on implementation checkpoint `8e21f264744a1a49d26d0f81b3272f1c5d72f24a`: [backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366731), [backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366705), [all frontend production builds](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366775), [quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366744), and [cohort-learning/disposable migration tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366779).
+
+The learner learning-plan migration was applied and checked against the disposable PostgreSQL schema in CI, including RLS, browser-role grants, server-role privileges and transactional rollback. It was **not** applied to the active Pheonix Supabase project. The active project's read-only SQL connection still fails password authentication, and no staging Supabase branch is available. No production database, environment variable, free-access flag or deployment was changed.
+
+The free-launch and paid-expansion separation remains unchanged: `FREE_ACCESS_MODE` is server-side and default-off; Paystack, subscription, trial, expiry, entitlement and Pro code/data remain preserved. Browser/mobile acceptance, live schema revalidation, AI provider/fallback acceptance and separately approved live migration/deployment remain release gates.
