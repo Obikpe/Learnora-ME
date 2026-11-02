@@ -28,6 +28,9 @@ class AskIn(BaseModel):
     message: str = Field(..., min_length=1, max_length=12000)
     conversation_id: str | None = None
     organisation_id: str | None = None
+    course_id: str | None = Field(default=None, max_length=80)
+    lesson_id: str | None = Field(default=None, max_length=80)
+    assessment_id: str | None = Field(default=None, max_length=80)
 
 
 class ProviderUpdateIn(BaseModel):
@@ -174,6 +177,90 @@ async def ask(
 
     _assert_contract_ai_entitlement(org_id, body.feature)
 
+    learning_context = ""
+    if body.course_id or body.lesson_id or body.assessment_id:
+        if body.feature != "tutor" or not body.course_id or not body.lesson_id:
+            raise HTTPException(422, "Lesson context requires the tutor feature, course ID and lesson ID.")
+        enrolment = (
+            supabase.table("learnora_enrolments")
+            .select("id,status")
+            .eq("user_id", str(user.id))
+            .eq("course_id", body.course_id)
+            .in_("status", ["active", "completed"])
+            .limit(1)
+            .execute()
+        ).data or []
+        if not enrolment:
+            raise HTTPException(403, "You must be enrolled in this course to use its lesson context.")
+        lesson_rows = (
+            supabase.table("learnora_lessons")
+            .select("id,module_id,title,description,content,lesson_type,course_modules!inner(course_id,title,order_index)")
+            .eq("id", body.lesson_id)
+            .limit(1)
+            .execute()
+        ).data or []
+        if not lesson_rows or str(lesson_rows[0].get("course_modules", {}).get("course_id")) != str(body.course_id):
+            raise HTTPException(404, "Lesson not found in the enrolled course.")
+        lesson = lesson_rows[0]
+        if lesson.get("module_id"):
+            from .progress import _assert_module_unlocked
+            _assert_module_unlocked(str(user.id), str(lesson["module_id"]))
+        course_rows = (
+            supabase.table("learnora_courses")
+            .select("id,title,level,short_description")
+            .eq("id", body.course_id)
+            .limit(1)
+            .execute()
+        ).data or []
+        if not course_rows:
+            raise HTTPException(404, "Course not found.")
+        course = course_rows[0]
+        context_lines = [
+            "Verified current learning context. Treat these database records as authoritative.",
+            f"Course: {course.get('title')} (level: {course.get('level') or 'not specified'})",
+            f"Module: {lesson.get('course_modules', {}).get('title') or 'Module'}",
+            f"Lesson: {lesson.get('title')} ({lesson.get('lesson_type') or 'mixed'})",
+            f"Lesson description: {lesson.get('description') or 'Not provided'}",
+            "Lesson material follows. Explain only what it supports; distinguish general knowledge from the lesson's specific content.",
+            str(lesson.get("content") or "No lesson text is stored. Use the lesson title and description, and ask the learner for the relevant excerpt when needed.")[:8000],
+        ]
+        if body.assessment_id:
+            quiz_rows = (
+                supabase.table("quizzes")
+                .select("id,title,description,module_id,lesson_id,course_id,passing_score")
+                .eq("id", body.assessment_id)
+                .eq("course_id", body.course_id)
+                .eq("is_published", True)
+                .limit(1)
+                .execute()
+            ).data or []
+            if not quiz_rows:
+                raise HTTPException(404, "Published assessment not found in this course.")
+            quiz = quiz_rows[0]
+            questions = (
+                supabase.table("quiz_questions")
+                .select("question,question_type,options,points,order_index")
+                .eq("quiz_id", body.assessment_id)
+                .order("order_index")
+                .execute()
+            ).data or []
+            attempts = (
+                supabase.table("quiz_attempts")
+                .select("score,passed,submitted_at")
+                .eq("quiz_id", body.assessment_id)
+                .eq("user_id", str(user.id))
+                .order("submitted_at", desc=True)
+                .limit(3)
+                .execute()
+            ).data or []
+            context_lines.extend([
+                f"Assessment: {quiz.get('title')}. Passing score: {quiz.get('passing_score') or 70}%.",
+                "Assessment questions and options (answer keys are deliberately excluded): " + str(questions[:20]),
+                "Learner's recent assessment results: " + str(attempts),
+                "Never reveal or infer the hidden answer key. Coach the learner through reasoning and hints.",
+            ])
+        learning_context = "\\n".join(context_lines)
+
     conversation_id = body.conversation_id
 
     if conversation_id:
@@ -246,6 +333,7 @@ async def ask(
         body.message,
         org_id,
         conversation_id,
+        learning_context=learning_context,
     )
 
     if result["status"] == "quota_unavailable":
