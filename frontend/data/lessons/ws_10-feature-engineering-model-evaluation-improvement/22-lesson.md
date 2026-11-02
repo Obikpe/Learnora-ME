@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Plot learning curves to compare training and validation performance as sample size grows; diagnose high bias and high variance; and explain when more data or a different model may help.
+By the end of this lesson, you should be able to Compare model scores on identical folds; inspect paired differences and variability; distinguish statistical from practical significance; and consider operational cost, fairness and maintainability.
 
 ## 1. Core explanation
 Model scores vary with sample, split and random seed. A small difference in mean cross-validation score may not be meaningful. Report fold-level variability, sample size and uncertainty. If comparing models on the same folds, their scores are paired; inspect the distribution of differences rather than comparing rounded means alone.
