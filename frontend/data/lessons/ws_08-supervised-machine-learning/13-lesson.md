@@ -1,7 +1,8 @@
 # Lesson 13: Decision Trees
 
 ## Learning outcomes
-Explain the technique, implement the worked example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Explain how decision trees split feature space; control complexity with depth and leaf constraints; inspect a plotted tree; and compare training and test performance.
 
 ## 1. Core explanation
 A decision tree repeatedly splits the feature space using rules such as “age is less than 30”. Each split aims to create child groups that are more homogeneous in their target. Classification trees commonly use Gini impurity or entropy; regression trees reduce squared error or another criterion.
