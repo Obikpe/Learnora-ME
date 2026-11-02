@@ -1,17 +1,17 @@
 # Lesson 20: Presenting Projects and Demonstrating Work
 
 ## Learning outcomes
-Apply the professional practice, produce the capstone artefact and communicate evidence and limitations clearly.
+Apply the professional practice, produce a project artefact and communicate decisions with evidence.
 
 ## 1. Core explanation
-A project presentation should lead the audience through a decision narrative: context, question, evidence, method, result, limitation and recommendation. Start with the problem rather than the software. Show only the technical detail needed to establish credibility and answer likely questions.
+A project presentation should lead the audience through a decision narrative: context, question, evidence, method, result, limitation and recommendation. Start with the problem rather than the software. Show only technical detail needed to establish credibility and answer likely questions.
 
 Demonstrate a working artefact where possible. Prepare a backup screenshot or recorded walkthrough in case the live environment fails. Rehearse transitions, check that charts are legible and ensure the demo uses safe data. Be ready to explain why a method was chosen and what alternatives were rejected.
 
 Do not claim that a model is production-ready if it is only a notebook experiment. Distinguish prototype, validated pilot and deployed system. Invite questions and acknowledge uncertainty rather than improvising unsupported explanations.
 
 ## 2. Worked example or template
-Run the Python example in VS Code where applicable. Adapt paths and fields to your own dataset; do not publish restricted records.
+Use the example as a starting point and adapt it to your own project. Python examples run in VS Code; shell commands should be entered in the VS Code terminal.
 
 ```python
 presentation = [
@@ -27,20 +27,20 @@ for slide in presentation:
     print(slide)
 ```
 
-## 3. Capstone application
-Maintain a decision log and connect every analysis step to the project charter. Preserve provenance and reproducibility. Separate observed results from interpretation and recommendations.
+## 3. Professional application
+Keep claims evidence-based. Document sources, assumptions, licences, decisions and limitations. A portfolio project should be understandable and reproducible without access to private data or undocumented local files.
 
 ## 4. Guided practice
 Prepare a five-minute presentation of a project. Write the first 30 seconds, select two visuals and prepare answers to three questions about data quality, model validity and limitations.
 
 ## 5. Independent practice
-Complete the corresponding capstone deliverable. Ask a reviewer to reproduce or challenge one result and record the changes made in response.
+Create or improve the corresponding project artefact in your repository. Ask another person to review it and record what was unclear or incomplete.
 
 ## 6. Knowledge check
-1. What evidence does this deliverable provide?
-2. Which assumptions or limitations affect the conclusion?
-3. How can another person reproduce the work?
-4. What is the next responsible action?
+1. What is the purpose of this professional practice?
+2. What evidence should be preserved?
+3. Which risks or constraints need to be disclosed?
+4. How will another person verify the work?
 
 ## Lesson summary
-A capstone demonstrates an end-to-end professional process: a well-framed question, defensible data, reproducible analysis, validation, clear communication and responsible publication.
+Professional data science combines sound analysis with ethical judgement, reproducible practice and clear communication.
