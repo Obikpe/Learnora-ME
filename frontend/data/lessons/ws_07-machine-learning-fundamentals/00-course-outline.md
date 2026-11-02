@@ -1,38 +1,35 @@
 # Machine Learning Fundamentals
-Course: ws_07
-Level: Beginner to intermediate
-Duration: 12h • 16 lessons
-Prerequisite: WS01–WS06; Python, Pandas, statistics, data cleaning and visualisation
+
+**Course:** ws_07  
+**Duration:** 12h  
+**Lessons:** 16  
+**Environment:** Python 3 in VS Code; course-appropriate libraries and tools.
 
 ## Course purpose
-Introduce machine learning as a disciplined process for learning patterns from data. This course builds conceptual understanding and small Python experiments before the specialised supervised and unsupervised courses. Use NumPy, Pandas, Matplotlib and scikit-learn.
 
-## Learning outcomes
-Define machine learning and its limits; distinguish learning paradigms; frame problems; understand features, targets and datasets; establish baselines; split data correctly; recognise overfitting and underfitting; understand model evaluation; and build a first reproducible scikit-learn workflow.
+This course is a structured self-study programme for data science learners. It moves from foundational ideas to practical implementation, interpretation, evaluation and a final applied task. Learners should be able to follow the notes without relying on a tutor to supply missing explanations. Every lesson should define new terminology, explain why a technique is used, demonstrate it with a small example before increasing complexity, discuss assumptions and common errors, and provide guided and independent practice.
 
-## Lesson sequence
-01. What Machine Learning Is — learning from examples, rules vs models, prediction vs explanation, realistic expectations.
-02. Where Machine Learning Fits in Data Science — problem framing, data lifecycle, decision context and when not to use ML.
-03. Types of Machine Learning — supervised, unsupervised, semi-supervised and reinforcement learning at conceptual level.
-04. The Machine Learning Vocabulary — observations, features, targets, labels, parameters, hyperparameters and predictions.
-05. Representing Data for Models — rows/columns, numeric/categorical/text/time data, arrays, DataFrames and feature matrices.
-06. Problem Framing — regression, classification, clustering, ranking, forecasting, target definition and leakage risks.
-07. The End-to-End ML Workflow — business question, data, split, preprocessing, training, evaluation, deployment and monitoring.
-08. Baselines and Simple Rules — naive predictors, majority class, mean/median baselines and why comparison matters.
-09. Training, Validation and Test Data — purpose of each split, random state, stratification and time-aware splitting.
-10. Generalisation, Overfitting and Underfitting — model complexity, learning curves conceptually, bias-variance intuition.
-11. Features, Targets and Data Leakage — leakage examples, temporal leakage, target leakage and prevention.
-12. Introduction to scikit-learn — estimators, fit, predict, transform, pipelines and consistent APIs.
-13. A First Regression Workflow — prepare data, split, baseline, fit a simple model and inspect predictions.
-14. A First Classification Workflow — labels, class balance, baseline classifier, predictions and confusion matrix intuition.
-15. Evaluating Models Responsibly — metrics depend on problem, error costs, imbalance, uncertainty and limits.
-16. Mini-project and ML Readiness Review — reproducible workflow, model card-style summary and bridge to supervised learning.
+## Learning journey
 
-## Tools
-Python, VS Code/Jupyter, NumPy, Pandas, Matplotlib and scikit-learn. Every model example must use Python; explain library abstractions instead of treating fit/predict as magic.
+1. **What Machine Learning Is and When to Use It**
+2. **Types of Machine Learning**
+3. **The End-to-End Machine Learning Workflow**
+4. **Datasets, Features and Targets**
+5. **Mathematics Refresher: Vectors and Matrices**
+6. **Mathematics Refresher: Statistics and Probability**
+7. **Mathematics Refresher: Calculus and Optimisation**
+8. **Python Tools for Machine Learning**
+9. **Exploratory Data Analysis for ML**
+10. **Preparing Data for Learning**
+11. **Training, Validation and Test Sets**
+12. **Loss Functions and Learning**
+13. **Underfitting, Overfitting and Generalisation**
+14. **Baseline Models and Evaluation**
+15. **Ethics, Bias and Responsible ML**
+16. **A Complete First ML Project**
 
-## Assessment
-Problem-framing exercises, split-design exercises, baseline comparison and a mini-project with a documented question, dataset, baseline, evaluation and limitations.
+## Teaching and assessment standard
 
-## Completion standard
-Learners understand the full ML workflow and can build and explain a basic scikit-learn experiment without confusing model accuracy with real-world usefulness.
+Lessons build on earlier concepts and use consistent datasets and terminology where practical. Python examples should be runnable in VS Code, with imports, expected input structure and package requirements stated. Mathematical ideas should be explained intuitively before notation is introduced. Examples must explain both the code and the meaning of its output. Learners should practise checking assumptions, validating results, identifying limitations and communicating conclusions. Visuals should clarify concepts, processes, model behaviour or analytical findings rather than decorate the notes.
+
+Assessment should include frequent short exercises, independent practice and a final applied project or portfolio artefact. Learners must document their data sources, preprocessing decisions, assumptions, evaluation choices and limitations. No result should be presented as causal or generalisable without appropriate evidence.
