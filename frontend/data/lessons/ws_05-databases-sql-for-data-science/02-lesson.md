@@ -125,7 +125,8 @@ cursor.execute("""
         student_id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
         programme TEXT,
-        age INTEGER
+        age INTEGER,
+        email TEXT UNIQUE
     );
 """)
 
