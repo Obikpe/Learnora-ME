@@ -1,7 +1,8 @@
 # Lesson 22: Reproducible Model Improvement Workflow
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Compare model scores on identical folds; inspect paired differences and variability; distinguish statistical from practical significance; and consider operational cost, fairness and maintainability.
 
 ## 1. Core explanation
 An improvement workflow is a controlled experiment. Start with a baseline and a written hypothesis, change one meaningful factor, evaluate using the same split and metric, and record the result. Examples include adding a feature, changing regularisation, adjusting class weights or using a different model family.
