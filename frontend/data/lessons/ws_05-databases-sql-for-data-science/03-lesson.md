@@ -181,7 +181,7 @@ Notice that after `fetchone()`, the cursor has advanced. `fetchall()` returns on
 
 ## Independent practice
 
-Create a `courses` table with `course_id`, `course_name` and `duration_hours`. Insert at least four courses. Write queries to retrieve all columns, retrieve only course names, calculate duration in minutes, and list distinct duration values. Explain why the calculated duration is not automatically stored in the table.
+Use the seeded `courses` table with `course_id`, `course_title` and `duration_hours`. Insert at least four courses. Write queries to retrieve all columns, retrieve only course names, calculate duration in minutes, and list distinct duration values. Explain why the calculated duration is not automatically stored in the table.
 
 ## Common mistakes
 
