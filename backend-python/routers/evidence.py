@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from uuid import UUID
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -53,14 +54,6 @@ def _enrolled(user_id, course_id):
 def my_evidence(
     user: CurrentUser = Depends(get_current_user),
 ):
-    skills = (
-        supabase
-        .table("learner_skills")
-        .select("*")
-        .eq("user_id", user.id)
-        .execute()
-    )
-
     evidence = (
         supabase
         .table("skill_evidence")
@@ -87,7 +80,6 @@ def my_evidence(
         .execute()
     )
 
-    stored_skill_rows = skills.data or []
     evidence_rows = evidence.data or []
     certificate_rows = certificates.data or []
     definitions = (
@@ -261,6 +253,8 @@ def available_projects(user: CurrentUser = Depends(get_current_user)):
             .select("id,title,status")
             .in_("id", course_ids)
             .eq("status", "published")
+            .eq("ownership", "learnora")
+            .is_("organisation_id", "null")
             .execute()
         ).data or []
         course_map = {str(row["id"]): row for row in course_rows}
@@ -380,14 +374,33 @@ def submit_project(
 
     course_id = project_row.get("course_id")
 
-    if course_id and not _enrolled(
-        user.id,
-        str(course_id),
-    ):
-        raise HTTPException(
-            403,
-            "You must be enrolled in the course before submitting this project.",
-        )
+    if course_id:
+        course_rows = (
+            supabase.table("learnora_courses")
+            .select("id,status,ownership,organisation_id")
+            .eq("id", str(course_id))
+            .limit(1)
+            .execute()
+        ).data or []
+        if (
+            not course_rows
+            or course_rows[0].get("status") != "published"
+            or course_rows[0].get("ownership") != "learnora"
+            or course_rows[0].get("organisation_id") is not None
+        ):
+            raise HTTPException(409, "This project is not attached to an available global Learnora course.")
+        if not _enrolled(user.id, str(course_id)):
+            raise HTTPException(
+                403,
+                "You must be enrolled in the course before submitting this project.",
+            )
+
+    for field_name in ("repository_url", "live_url", "submission_url"):
+        value = getattr(body, field_name)
+        if value:
+            parsed = urlparse(value.strip())
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise HTTPException(422, f"{field_name.replace('_', ' ').title()} must be a valid HTTP or HTTPS URL.")
 
     existing = (
         supabase
