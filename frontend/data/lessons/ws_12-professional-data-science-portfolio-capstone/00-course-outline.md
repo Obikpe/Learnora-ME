@@ -1,54 +1,51 @@
 # Professional Data Science, Portfolio & Capstone
-Course: ws_12
-Level: Advanced / professional practice
-Duration: 28h • 32 lessons
-Prerequisite: WS01–WS11; ability to work independently with Python, data analysis and machine learning
+
+**Course:** ws_12  
+**Duration:** 28h  
+**Lessons:** 32  
+**Environment:** Python 3 in VS Code; course-appropriate libraries and tools.
 
 ## Course purpose
-Consolidate the pathway into professional practice. Learners scope a real analytical problem, source and govern data, build a reproducible Python analysis or model, communicate evidence, publish a portfolio project and prepare to discuss their decisions with employers or clients. The capstone must demonstrate sound reasoning, not merely attractive charts or a high model score.
 
-## Learning outcomes
-Translate stakeholder needs into analytical questions; define scope and success criteria; plan data acquisition and governance; build reproducible Python projects; select suitable analytical methods; validate results; communicate uncertainty; document code and decisions; publish a professional portfolio; and defend work in a technical presentation.
+This course is a structured self-study programme for data science learners. It moves from foundational ideas to practical implementation, interpretation, evaluation and a final applied task. Learners should be able to follow the notes without relying on a tutor to supply missing explanations. Every lesson should define new terminology, explain why a technique is used, demonstrate it with a small example before increasing complexity, discuss assumptions and common errors, and provide guided and independent practice.
 
-## Lesson sequence
-01. What Professional Data Science Work Looks Like — roles, deliverables, collaboration and accountability.
-02. Finding and Evaluating Project Problems — relevance, feasibility, data availability and decision value.
-03. Stakeholder Discovery and Problem Framing — questions, constraints, users, decisions and success measures.
-04. Defining Scope and Analytical Plan — assumptions, milestones, risks, deliverables and change control.
-05. Data Sourcing and Documentation — public/private sources, provenance, licensing, access and reproducibility.
-06. Data Ethics, Privacy and Governance — consent, minimisation, sensitive attributes, retention and safe sharing.
-07. Designing a Reproducible Python Repository — folders, environments, configuration, notebooks and scripts.
-08. Data Contracts and Quality Gates — schema expectations, validation, logging and failure handling.
-09. Analytical Method Selection — descriptive, diagnostic, predictive and prescriptive questions.
-10. Building a Defensible Baseline — simple benchmark, rationale and success criteria.
-11. Advanced Analysis and Model Choice — selecting suitable methods and explaining trade-offs.
-12. Validation and Robustness Review — leakage audit, sensitivity, uncertainty and subgroup checks.
-13. From Results to Decisions — evidence, recommendations, costs, risks and implementation context.
-14. Writing an Analytical Report — executive summary, methods, findings, limitations and appendices.
-15. Designing Effective Data Visuals — chart purpose, integrity, accessibility and narrative sequence.
-16. Presenting Technical Work to Non-Technical Audiences — plain language, questions and defensible claims.
-17. Writing a Strong Project README — problem, setup, data, method, results, limitations and reproduction.
-18. Code Quality and Maintainability — functions, naming, modularity, comments, tests and review.
-19. Git and GitHub for Data Projects — commits, branches, issues, releases and collaboration.
-20. Publishing a Safe Portfolio Project — licensing, data privacy, environment setup and artifact choices.
-21. Project Case Study Writing — context, action, evidence, outcome and lessons without exaggeration.
-22. Building a Data Science Portfolio — project selection, sequencing, presentation and audience.
-23. CV and Application Evidence — translating project work into truthful skills and measurable outcomes.
-24. Technical Interview Preparation — Python, Pandas, SQL, statistics, ML reasoning and project defence.
-25. Client and Stakeholder Communication — requirements, progress updates, scope, delivery and handover.
-26. Capstone Proposal and Review — question, data, methods, milestones, risks and acceptance criteria.
-27. Capstone Implementation I: Data and Analysis — acquire, inspect, clean, explore and document.
-28. Capstone Implementation II: Modelling or Advanced Analysis — method, baseline, validation and iteration.
-29. Capstone Implementation III: Communication and Packaging — visuals, report, repository and reproducibility.
-30. Capstone Quality Assurance — rerun, audit, limitations, privacy and final acceptance checklist.
-31. Capstone Presentation and Defence — demonstrate, explain choices, answer critique and reflect.
-32. Career Transition and Continuous Development — learning plan, professional standards and next steps.
+## Learning journey
 
-## Capstone requirements
-A complete Python project with a well-framed question, documented data source, reproducible environment, quality checks, appropriate analysis or model, baseline, validation, visual evidence, written report, limitations, safe public repository and a presentation. Learners may choose a non-ML analytical project if that better fits the question; using machine learning without a justified need is not rewarded.
+1. **The Professional Data Scientist's Role**
+2. **Turning a Vague Request into an Analytical Problem**
+3. **Research Questions and Success Criteria**
+4. **Finding and Assessing Data Sources**
+5. **Data Ethics, Privacy and Licensing**
+6. **Project Planning and Scoping**
+7. **Reproducible Project Structure**
+8. **Git and GitHub for Data Work**
+9. **Writing Clear READMEs and Documentation**
+10. **Data Cleaning Evidence and Decisions**
+11. **Exploratory Analysis for Stakeholders**
+12. **Statistical Reasoning in Project Work**
+13. **Building a Defensible Predictive Model**
+14. **Evaluation and Error Analysis**
+15. **Visual Communication and Reporting**
+16. **Writing an Executive Summary**
+17. **Designing a Portfolio Website**
+18. **Selecting and Positioning Portfolio Projects**
+19. **Writing Strong Case Studies**
+20. **Presenting Projects and Demonstrating Work**
+21. **CV and LinkedIn for Data Roles**
+22. **Technical Interview Preparation**
+23. **SQL and Python Assessment Practice**
+24. **Communicating Uncertainty and Limitations**
+25. **Working with Stakeholders and Feedback**
+26. **Professional Conduct and Responsible Data Practice**
+27. **Capstone: Select and Frame the Problem**
+28. **Capstone: Data Acquisition and Preparation**
+29. **Capstone: Analysis and Modelling**
+30. **Capstone: Validation and Iteration**
+31. **Capstone: Final Report and Presentation**
+32. **Capstone: Portfolio Publication and Reflection**
 
-## Assessment
-Proposal review, milestone reviews, code/reproducibility review, report and presentation. Evaluate analytical judgement, correctness, transparency, communication and professional conduct.
+## Teaching and assessment standard
 
-## Completion standard
-Learners can independently deliver and defend a complete, ethical, reproducible data-science project and present it as credible evidence of their skills.
+Lessons build on earlier concepts and use consistent datasets and terminology where practical. Python examples should be runnable in VS Code, with imports, expected input structure and package requirements stated. Mathematical ideas should be explained intuitively before notation is introduced. Examples must explain both the code and the meaning of its output. Learners should practise checking assumptions, validating results, identifying limitations and communicating conclusions. Visuals should clarify concepts, processes, model behaviour or analytical findings rather than decorate the notes.
+
+Assessment should include frequent short exercises, independent practice and a final applied project or portfolio artefact. Learners must document their data sources, preprocessing decisions, assumptions, evaluation choices and limitations. No result should be presented as causal or generalisable without appropriate evidence.
