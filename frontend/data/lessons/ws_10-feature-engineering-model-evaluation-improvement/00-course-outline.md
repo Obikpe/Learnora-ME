@@ -1,46 +1,43 @@
 # Feature Engineering, Model Evaluation & Improvement
-Course: ws_10
-Level: Intermediate to advanced
-Duration: 18h • 24 lessons
-Prerequisite: WS01–WS09; Python, statistics, Pandas, supervised and unsupervised learning
+
+**Course:** ws_10  
+**Duration:** 18h  
+**Lessons:** 24  
+**Environment:** Python 3 in VS Code; course-appropriate libraries and tools.
 
 ## Course purpose
-Improve the quality and reliability of machine-learning systems through thoughtful feature design, leakage-safe preprocessing, rigorous evaluation, error analysis and controlled optimisation. This course deepens model practice rather than simply adding algorithms.
 
-## Learning outcomes
-Design useful features; encode and transform variables; handle missingness and outliers; build preprocessing pipelines; use cross-validation correctly; select metrics; tune models efficiently; interpret errors; assess calibration and subgroup performance; and document reproducible improvements.
+This course is a structured self-study programme for data science learners. It moves from foundational ideas to practical implementation, interpretation, evaluation and a final applied task. Learners should be able to follow the notes without relying on a tutor to supply missing explanations. Every lesson should define new terminology, explain why a technique is used, demonstrate it with a small example before increasing complexity, discuss assumptions and common errors, and provide guided and independent practice.
 
-## Lesson sequence
-01. Why Features Matter — representation, signal, domain knowledge and the limits of feature engineering.
-02. Feature Engineering Workflow — define hypothesis, inspect raw variables, create candidates and validate usefulness.
-03. Numeric Transformations — scaling, log/power transforms, bins, ratios and zero/negative-value cautions.
-04. Categorical Feature Engineering — one-hot, ordinal, frequency and rare-category handling.
-05. Date and Time Features — calendar parts, elapsed time, cyclical encodings and temporal leakage.
-06. Text-Derived Features — token counts, TF-IDF overview, text length and privacy concerns.
-07. Interaction and Polynomial Features — interactions, nonlinearities, complexity and regularisation.
-08. Domain-Based Features — rates, aggregates, behavioural windows and point-in-time correctness.
-09. Missing-Value Strategies — imputation, missingness indicators and missing-not-at-random caveats.
-10. Outlier Treatment and Robust Methods — investigation, clipping, robust scaling and preserving valid extremes.
-11. Feature Selection — filter, wrapper and embedded methods; stability and leakage risks.
-12. Leakage-Safe Preprocessing Pipelines — ColumnTransformer, Pipeline, fit/transform boundaries and reproducibility.
-13. Evaluation Design and Data Splitting — random, stratified, grouped and time-based validation.
-14. Cross-Validation in Practice — fold design, variance, repeated CV and computational trade-offs.
-15. Choosing Metrics for the Decision — regression/classification metrics, asymmetric costs and business thresholds.
-16. Calibration and Probability Quality — calibration curves, Brier score concepts and probability interpretation.
-17. Error Analysis — residual slices, confusion matrix slices, subgroup and segment-level diagnostics.
-18. Threshold and Cost Optimisation — decision thresholds, expected cost and operational constraints.
-19. Hyperparameter Search Strategies — grid, random, successive halving concepts and search-space design.
-20. Feature Importance and Explainability — permutation importance, coefficients, tree importance and correlated-feature caveats.
-21. Robustness, Sensitivity and Stability — perturbation, drift, resampling and stability across folds.
-22. Fairness and Subgroup Evaluation — group metrics, trade-offs, small samples and responsible interpretation.
-23. Controlled Model Improvement Experiment — baseline, one change at a time, experiment log and reproducible comparison.
-24. Model Improvement Capstone — defend feature choices, validation design, metrics, errors and final recommendation.
+## Learning journey
 
-## Tools
-Python, Pandas, NumPy, scikit-learn, Matplotlib and Seaborn. Use pipelines and explicit split boundaries. Avoid unnecessary expensive searches.
+1. **Feature Engineering as a Modelling Discipline**
+2. **Data Leakage and Leakage Prevention**
+3. **Missing-Value Strategies**
+4. **Encoding Categorical Variables**
+5. **Scaling and Transforming Numerical Features**
+6. **Date, Time and Text Features**
+7. **Binning, Interactions and Polynomial Features**
+8. **Feature Selection Fundamentals**
+9. **Filter and Wrapper Feature Selection**
+10. **Embedded Feature Selection**
+11. **Pipelines and ColumnTransformer**
+12. **Train/Validation/Test Strategy**
+13. **Cross-Validation Design**
+14. **Regression Evaluation Metrics**
+15. **Classification Evaluation Metrics**
+16. **Precision-Recall and ROC Analysis**
+17. **Threshold Tuning and Cost-Sensitive Decisions**
+18. **Bias-Variance Trade-Off**
+19. **Hyperparameter Search**
+20. **Randomised and Bayesian Search Concepts**
+21. **Learning Curves and Error Diagnosis**
+22. **Model Comparison and Statistical Caution**
+23. **Reproducible Model Improvement Workflow**
+24. **Feature Engineering and Evaluation Project**
 
-## Assessment
-Feature design exercises, leakage audits, metric selection, error-analysis reports and a capstone demonstrating measured improvement over a baseline.
+## Teaching and assessment standard
 
-## Completion standard
-Learners can improve models systematically and explain whether an apparent gain is valid, stable, meaningful and safe to use.
+Lessons build on earlier concepts and use consistent datasets and terminology where practical. Python examples should be runnable in VS Code, with imports, expected input structure and package requirements stated. Mathematical ideas should be explained intuitively before notation is introduced. Examples must explain both the code and the meaning of its output. Learners should practise checking assumptions, validating results, identifying limitations and communicating conclusions. Visuals should clarify concepts, processes, model behaviour or analytical findings rather than decorate the notes.
+
+Assessment should include frequent short exercises, independent practice and a final applied project or portfolio artefact. Learners must document their data sources, preprocessing decisions, assumptions, evaluation choices and limitations. No result should be presented as causal or generalisable without appropriate evidence.
