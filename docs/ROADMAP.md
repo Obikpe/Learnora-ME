@@ -428,9 +428,17 @@ The read-only connection to the active Pheonix Supabase project is now available
 
 The active migration ledger still does not include `20261102090000_learner_learning_plans`, and `public.learner_learning_plans` is absent. That pre-existing Phase 3 release dependency remains unapplied. No production migration, data mutation, environment change, free-mode activation or deployment was performed.
 
-The new Phase 6–8 code is committed on `main`; browser acceptance and CI evidence are still outstanding. Do not mark production release readiness until those gates have evidence.
+The new Phase 6–8 code is committed on `main`; staging builds are now successful, but browser acceptance, final CI success, production migration approval and production deployment remain outstanding. Do not mark production release readiness until those gates have evidence.
 
 
 ### Phase 6–8 implementation follow-up — 2 November 2026
 
 The learner-outcomes follow-up adds an auditable certificate revocation workflow and strengthens the quiz tutor lock across the frontend and backend. Teams has a credential register; public verification reports revoked credentials as invalid without disclosing internal revocation notes. Learner project history distinguishes approved and returned work, and only approved evidence mapped to the source project contributes to skill mastery. The two new schema migrations remain unapplied pending disposable replay and the separately required production approval. Automated workflow runs on the evolving main branch were still queued at the last status check; do not report them as passing until the final SHA completes. Phase 9 and the earlier track-review/consent proposal remain deferred.
+
+### Release readiness recheck — 2 November 2026
+
+The learner, Teams and backend applications have successful Vercel staging builds from the canonical `Learnora-ME` repository. The staging builds verify framework compilation, frontend type checking/static generation and backend Python packaging, but not authenticated end-to-end workflows.
+
+The production backend's reversible `FREE_ACCESS_MODE=true` setting is prepared and will take effect on the next production deployment. The live Supabase database still lacks the four additive 2 November migrations required by the current learner-outcomes code. Those migrations must be replayed in a disposable database, reviewed and explicitly approved before applying them to the active Pheonix project.
+
+General CI has been consolidated to one release workflow; the final run remains queued and is not yet evidence of success. Production deployment and browser acceptance are not yet complete. The older Teams/backend production deployments reference the former `Pheonix-Analytics` repository; release deployments must use `Obikpe/Learnora-ME` with the correct monorepo root directories. Preserve the existing production domains and same-origin API proxy.
