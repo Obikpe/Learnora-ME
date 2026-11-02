@@ -1,7 +1,8 @@
 # Lesson 9: Testing ML Applications
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Write endpoint tests with FastAPI TestClient; test valid and invalid requests; check response codes and schema; and separate unit, integration and model-behaviour tests.
 
 ## 1. Core explanation
 Testing an ML application includes ordinary software tests and model-specific checks. Unit tests cover feature transformations and validation functions. Integration tests exercise the API and model artefact together. Contract tests check request and response schemas. Regression tests compare outputs on known examples within an acceptable tolerance.
