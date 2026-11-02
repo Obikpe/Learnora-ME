@@ -5,11 +5,13 @@ CREATE TABLE IF NOT EXISTS public.quiz_active_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   quiz_id uuid NOT NULL REFERENCES public.quizzes(id) ON DELETE CASCADE,
+  client_session_id uuid NOT NULL,
   course_id uuid NOT NULL REFERENCES public.learnora_courses(id) ON DELETE CASCADE,
   lesson_id uuid NULL REFERENCES public.learnora_lessons(id) ON DELETE SET NULL,
   started_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL,
-  CONSTRAINT quiz_active_sessions_expiry_after_start CHECK (expires_at > started_at)
+  CONSTRAINT quiz_active_sessions_expiry_after_start CHECK (expires_at > started_at),
+  CONSTRAINT quiz_active_sessions_user_quiz_tab_unique UNIQUE (user_id, quiz_id, client_session_id)
 );
 CREATE INDEX IF NOT EXISTS quiz_active_sessions_user_expiry_idx
   ON public.quiz_active_sessions (user_id, expires_at);
