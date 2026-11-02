@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
-import {ArrowUpRight,BookOpen,CheckCircle2,Code2,ExternalLink,FlaskConical,Send} from "lucide-react";
+import {ArrowUpRight,BookOpen,CheckCircle2,Code2,FlaskConical,Send} from "lucide-react";
 import {request} from "../../../lib/api/client";
 import Shell from "../../../components/dashboard/Shell";
 import EmptyState from "../../../components/feedback/EmptyState";
