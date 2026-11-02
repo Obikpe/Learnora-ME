@@ -194,7 +194,7 @@ async def ask(
             raise HTTPException(403, "You must be enrolled in this course to use its lesson context.")
         lesson_rows = (
             supabase.table("learnora_lessons")
-            .select("id,module_id,title,description,content,lesson_type,course_modules!inner(course_id,title,order_index)")
+            .select("id,module_id,title,description,content,lesson_type,status,course_modules!inner(course_id,title,order_index)")
             .eq("id", body.lesson_id)
             .limit(1)
             .execute()
@@ -202,6 +202,8 @@ async def ask(
         if not lesson_rows or str(lesson_rows[0].get("course_modules", {}).get("course_id")) != str(body.course_id):
             raise HTTPException(404, "Lesson not found in the enrolled course.")
         lesson = lesson_rows[0]
+        if lesson.get("status") != "published":
+            raise HTTPException(404, "Published lesson not found.")
         if lesson.get("module_id"):
             from .progress import _assert_module_unlocked
             _assert_module_unlocked(str(user.id), str(lesson["module_id"]))
@@ -215,6 +217,14 @@ async def ask(
         if not course_rows:
             raise HTTPException(404, "Course not found.")
         course = course_rows[0]
+        lesson_progress = (
+            supabase.table("learnora_lesson_progress")
+            .select("progress_percent,completed,last_position_seconds,last_accessed_at")
+            .eq("user_id", str(user.id))
+            .eq("lesson_id", body.lesson_id)
+            .limit(1)
+            .execute()
+        ).data or []
         context_lines = [
             "Verified current learning context. Treat these database records as authoritative.",
             f"Course: {course.get('title')} (level: {course.get('level') or 'not specified'})",
@@ -223,6 +233,7 @@ async def ask(
             f"Lesson description: {lesson.get('description') or 'Not provided'}",
             "Lesson material follows. Explain only what it supports; distinguish general knowledge from the lesson's specific content.",
             str(lesson.get("content") or "No lesson text is stored. Use the lesson title and description, and ask the learner for the relevant excerpt when needed.")[:8000],
+            "Learner progress on this lesson: " + str(lesson_progress[0] if lesson_progress else "No progress record yet."),
         ]
         if body.assessment_id:
             quiz_rows = (
