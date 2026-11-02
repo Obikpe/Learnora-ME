@@ -52,6 +52,9 @@ class CoursePublicationTests(unittest.TestCase):
             "quizzes": [
                 {"id": "quiz-1", "module_id": "module-1", "is_published": True}
             ],
+            "quiz_questions": [
+                {"id": "question-1", "quiz_id": "quiz-1", "question_type": "multiple_choice", "options": ["A", "B"], "correct_answer": "A"}
+            ],
         }
 
     def test_published_course_requires_a_published_module(self):
