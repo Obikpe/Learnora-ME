@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Calculate precision, recall, F1, specificity and balanced accuracy; interpret a confusion matrix; and choose classification metrics based on class balance and error costs.
+By the end of this lesson, you should be able to Plot ROC and precision-recall curves; calculate ROC AUC and average precision; explain why PR analysis is informative for rare positives; and distinguish ranking from threshold performance.
 
 ## 1. Core explanation
 A ROC curve plots true-positive rate against false-positive rate across thresholds. ROC-AUC measures ranking ability across thresholds. A precision-recall curve plots precision against recall and is often more informative for rare positive classes. The baseline precision in a PR curve is related to positive-class prevalence.
