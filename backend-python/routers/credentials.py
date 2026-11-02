@@ -122,12 +122,13 @@ def issue_course_certificate(
             "Complete every published lesson and required assessment before claiming this certificate.",
         )
 
-    number = _certificate_number(str(user.id), course_id)
+    # Check by learner/course first so a JWT secret rotation cannot issue a
+    # second certificate for a course that was already certified.
     existing = (
         supabase.table("certificates")
         .select("id,user_id,course_id,certificate_number,issued_at,metadata")
-        .eq("certificate_number", number)
         .eq("user_id", user.id)
+        .eq("course_id", course_id)
         .limit(1)
         .execute()
     ).data or []
@@ -138,6 +139,7 @@ def issue_course_certificate(
             "certificate": _certificate_view(existing[0], course.get("title")),
         }
 
+    number = _certificate_number(str(user.id), course_id)
     payload = {
         "user_id": user.id,
         "course_id": course_id,
