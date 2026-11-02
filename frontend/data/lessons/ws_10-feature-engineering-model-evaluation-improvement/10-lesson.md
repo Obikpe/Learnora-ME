@@ -1,7 +1,8 @@
 # Lesson 10: Embedded Feature Selection
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Explain Lasso as an embedded sparse-selection method; fit coefficients with scaled features; count non-zero coefficients; and explain why selected features are not automatically causal or universally important.
 
 ## 1. Core explanation
 Embedded methods perform selection as part of model fitting. Lasso can shrink some coefficients exactly to zero. Tree-based models can rank variables by split contribution, although impurity importance has known biases. Elastic Net combines L1 and L2 penalties and can be more stable when predictors are correlated.
