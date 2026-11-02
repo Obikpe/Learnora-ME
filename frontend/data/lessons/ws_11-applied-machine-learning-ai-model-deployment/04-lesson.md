@@ -1,7 +1,8 @@
 # Lesson 4: Saving Models and Preprocessing Together
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Save preprocessing and the estimator as one versioned pipeline; reload it with joblib; compare predictions before and after persistence; and document compatibility and security risks.
 
 ## 1. Core explanation
 Save the complete fitted Pipeline rather than the estimator alone. If training used scaling, imputation or encoding, inference must use the same fitted transformations and feature order. Saving only the estimator can lead to inconsistent preprocessing and invalid predictions.
