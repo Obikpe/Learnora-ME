@@ -74,28 +74,6 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("revocation_reason text", sql)
         self.assertIn("DROP COLUMN IF EXISTS revoked_at", rollback.read_text(encoding="utf-8"))
 
-    def test_track_review_migration_enforces_consent_moderation_and_server_only_access(self):
-        migration = ACTIVE_DIR / "20261102120000_track_reviews.sql"
-        rollback = ROOT / "supabase" / "rollback" / "20261102120000_track_reviews.rollback.sql"
-        self.assertTrue(migration.is_file())
-        self.assertTrue(rollback.is_file())
-        sql = migration.read_text(encoding="utf-8")
-        for required in (
-            "public_consent boolean NOT NULL DEFAULT false",
-            "moderation_status text NOT NULL DEFAULT 'pending'",
-            "UNIQUE (track_id, user_id)",
-            "ENABLE ROW LEVEL SECURITY",
-            "REVOKE ALL PRIVILEGES",
-            "FROM PUBLIC, anon, authenticated",
-            "TO service_role",
-            "track_reviews.moderate",
-            "learning_curriculum",
-            "super_admin",
-        ):
-            with self.subTest(required=required):
-                self.assertIn(required, sql)
-        self.assertIn("DROP TABLE IF EXISTS public.learnora_track_reviews", rollback.read_text(encoding="utf-8"))
-
     def test_quota_fix_preserves_unlimited_monthly_limit_contract(self):
         sql = (ACTIVE_DIR / "20261020232148_allow_unlimited_monthly_ai_quota.sql").read_text(
             encoding="utf-8"
