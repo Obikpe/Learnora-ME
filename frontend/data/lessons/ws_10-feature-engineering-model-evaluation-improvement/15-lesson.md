@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Calculate MAE, MSE, RMSE and R-squared; interpret their units and penalties; inspect residuals; and choose regression metrics based on the actual decision.
+By the end of this lesson, you should be able to Calculate precision, recall, F1, specificity and balanced accuracy; interpret a confusion matrix; and choose classification metrics based on class balance and error costs.
 
 ## 1. Core explanation
 Accuracy is the proportion of correct labels. Precision is the proportion of predicted positives that are truly positive; recall is the proportion of actual positives found. Specificity measures the proportion of negatives correctly rejected. F1 is the harmonic mean of precision and recall. Balanced accuracy averages recall across classes.
