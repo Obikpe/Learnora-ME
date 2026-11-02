@@ -121,7 +121,7 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
     for previous in previous_modules:
         quizzes = (
             supabase.table("quizzes")
-            .select("id,title")
+            .select("id,title,passing_score")
             .eq("module_id", previous["id"])
             .eq("is_published", True)
             .execute()
@@ -132,20 +132,21 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
                 f'Module "{previous.get("title") or "previous module"}" has no published assessment yet. Contact your instructor or organisation administrator.',
             )
         for quiz in quizzes:
+            threshold = effective_passing_score(quiz)
             attempts = (
                 supabase.table("quiz_attempts")
                 .select("id,score,passed")
                 .eq("quiz_id", quiz["id"])
                 .eq("user_id", user_id)
                 .eq("passed", True)
-                .gte("score", 70)
+                .gte("score", threshold)
                 .limit(1)
                 .execute()
             ).data or []
             if not attempts:
                 raise HTTPException(
                     423,
-                    f'Pass the assessment for "{previous.get("title") or "the previous module"}" with at least 70% to unlock the next module.',
+                    f'Pass the assessment for "{previous.get("title") or "the previous module"}" with at least {threshold:g}% to unlock the next module.',
                 )
 
 
