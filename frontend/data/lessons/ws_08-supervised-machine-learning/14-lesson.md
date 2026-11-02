@@ -1,7 +1,8 @@
 # Lesson 14: Random Forests
 
 ## Learning outcomes
-Explain the technique, implement the worked example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Explain bootstrap aggregation and random feature selection in random forests; fit a classifier; compare its performance with a baseline; and interpret permutation importance with caution.
 
 ## 1. Core explanation
 A random forest combines many decision trees. Each tree is trained on a bootstrap sample, and each split considers a random subset of features. Classification combines votes; regression averages predictions. The diversity among trees reduces variance compared with a single deep tree.
