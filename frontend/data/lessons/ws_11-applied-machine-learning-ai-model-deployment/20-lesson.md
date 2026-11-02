@@ -1,7 +1,8 @@
 # Lesson 20: Responsible AI, Privacy and Security
 
 ## Learning outcomes
-Explain the production concept, implement the example and evaluate the system against its intended use.
+
+By the end of this lesson, you should be able to Apply responsible-AI controls for data minimisation, access, secrets, validation, monitoring and oversight; identify privacy and security risks; and define escalation and appeal paths.
 
 ## 1. Core explanation
 Responsible AI is a lifecycle discipline. Identify who is affected, what decisions the system influences and what harm can occur from errors, bias, misuse or over-reliance. Use data minimisation, purpose limitation, access control, retention limits and appropriate consent or lawful basis. Avoid collecting sensitive information merely because it may improve a metric.
