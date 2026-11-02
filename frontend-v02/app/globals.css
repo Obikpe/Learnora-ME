@@ -116,6 +116,7 @@ html[data-theme="light"] .glass { background: #fff; border-color: var(--line); }
 html[data-theme="light"] .field { background: #fff; color: #172033; border-color: var(--line-strong); }
 html[data-theme="light"] ::selection { background: rgba(155,116,35,.2); color: #172033; }
 
+html[data-theme="light"] [class*="bg-[#07090c]"],
 html[data-theme="light"] [class*="bg-[#080a0d]"],
 html[data-theme="light"] [class*="bg-[#0b0f14]"],
 html[data-theme="light"] [class*="bg-[#10151b]"],
