@@ -1,39 +1,37 @@
-# Lesson 11: Interpreting PCA and Explained Variance
+# Lesson 11: Other Dimensionality Reduction Methods
 
 ## Learning outcomes
 Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
 
 ## 1. Core explanation
-Explained variance ratio is the fraction of total variance captured by each principal component. The cumulative sum indicates how much variance is retained by the first k components. A scree plot shows variance explained by each component and can reveal diminishing returns.
+PCA is linear, so it may not preserve non-linear structure. t-SNE focuses on preserving local neighbourhoods for visualisation; UMAP also aims to preserve neighbourhood structure and can often scale better. These methods can reveal visual groupings but their axes generally have no direct physical meaning.
 
-PCA loadings describe each original feature's contribution to a component. The sign of a component can flip without changing the solution, so do not attach meaning to a positive or negative sign without considering the full loading pattern. Features with large absolute loadings contribute strongly.
+Parameters matter. In t-SNE, perplexity controls a notion of neighbourhood size; different values and random seeds can change the map. UMAP's n_neighbors and min_dist affect local/global structure and cluster compactness. Distances between far-apart islands in a 2-D embedding should not automatically be interpreted as meaningful global distances.
 
-High explained variance does not guarantee that components preserve information needed for a prediction. Variance is not the same as target relevance. Interpret PCA as a summary of feature variation, not proof of causal factors.
+Use embeddings for exploration, not proof that natural clusters exist. Validate patterns in the original feature space and test stability. A 2-D embedding is not a substitute for robust model evaluation.
 
 ## 2. Worked Python example
 Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
 
 ```python
-import matplotlib.pyplot as plt
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_digits
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 
-data = load_iris(as_frame=True)
+data = load_digits()
 Z = StandardScaler().fit_transform(data.data)
-pca = PCA().fit(Z)
-cum = pca.explained_variance_ratio_.cumsum()
-plt.plot(range(1, len(cum)+1), cum, marker="o")
-plt.xlabel("Number of components"); plt.ylabel("Cumulative explained variance")
-plt.ylim(0, 1.05); plt.grid(alpha=.2); plt.show()
-print(pca.components_)
+coords = PCA(n_components=2, random_state=42).fit_transform(Z)
+plt.scatter(coords[:, 0], coords[:, 1], c=data.target, s=8, cmap="tab10")
+plt.title("Digits projected into two PCA components")
+plt.xlabel("PC1"); plt.ylabel("PC2"); plt.show()
 ```
 
 ## 3. Interpretation
 Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
 
 ## 4. Guided practice
-Choose the number of components needed to retain at least 90% of variance. Inspect loadings and write a cautious plain-language description of the first component.
+If umap-learn is installed, create a UMAP embedding and compare it with PCA. Explain why visual separation in a 2-D map does not guarantee predictive accuracy.
 
 ## 5. Independent practice
 Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
