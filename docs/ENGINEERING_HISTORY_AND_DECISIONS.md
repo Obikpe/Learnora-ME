@@ -451,3 +451,4 @@ Append entries using:
 - The backend AI endpoint no longer applies a user-wide `quiz_active_sessions` lock. It continues to reject requests that explicitly include `assessment_id`, keeping assessment-specific tutor context unavailable.
 - Replaced the old global-lock regression tests with a contract asserting that active sessions do not globally block tutor requests while explicit assessment context remains prohibited.
 - No tests, builds, browser checks, CI, migrations, or production deployment were run.
+- Quiz-session recovery in the course player now matches the current browser tab's client session ID only. An active quiz in another tab no longer creates a false 'unfinished quiz in this tab' state.
