@@ -1,7 +1,8 @@
 # Lesson 3: Research Questions and Success Criteria
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Write a testable research question and define measurable success criteria; identify outcome, comparison and observation period; and explain confounding and limits to causal interpretation.
 
 ## 1. Core explanation
 A research question narrows the analysis to something answerable with available data. A descriptive question asks what happened; a comparative question asks how groups differ; an association question asks whether variables move together; a predictive question asks how accurately an outcome can be estimated; a causal question asks what would happen under an intervention.
