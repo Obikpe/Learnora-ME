@@ -74,6 +74,22 @@ def _assert_course_publishable(course_id: str):
                 except HTTPException as exc:
                     raise HTTPException(409, "Every published module assessment must contain supported, answerable questions before the course can be published.") from None
 
+    assignments = (
+        supabase.table("assignments")
+        .select("id,lesson_id,description,instructions,max_score")
+        .eq("course_id", course_id)
+        .eq("is_published", True)
+        .execute()
+    ).data or []
+    for assignment in assignments:
+        if not (assignment.get("instructions") or assignment.get("description")):
+            raise HTTPException(409, "Every published assignment must include learner instructions before the course can be published.")
+        if assignment.get("max_score") is not None and float(assignment["max_score"]) <= 0:
+            raise HTTPException(409, "Every published assignment must have a positive maximum score.")
+        if assignment.get("lesson_id"):
+            from .internal_assessments import _validate_assessment_location
+            _validate_assessment_location(course_id, None, str(assignment["lesson_id"]), require_published=True)
+
 
 def _assert_course_not_in_published_global_track(course_id: str):
     links = (
