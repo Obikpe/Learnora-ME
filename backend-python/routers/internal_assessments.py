@@ -138,6 +138,8 @@ def _question_rows(quiz_id: str):
 
 def _validate_question_payload(question: dict):
     question_type = str(question.get("question_type") or "").lower()
+    if question_type not in {"multiple_choice", "single_choice", "mcq", "true_false", "boolean"}:
+        raise HTTPException(422, "This question type is not supported by automatic grading.")
     answer = question.get("correct_answer")
     if answer is None or (isinstance(answer, str) and not answer.strip()):
         raise HTTPException(422, "Provide a correct answer for every auto-graded question.")
@@ -164,6 +166,8 @@ def _validate_question_payload(question: dict):
     if isinstance(answer, dict):
         answer = answer.get("value", answer.get("answer", answer.get("label", "")))
     answers = answer if isinstance(answer, list) else [answer]
+    if question_type in {"single_choice", "mcq"} and len(answers) != 1:
+        raise HTTPException(422, "Single-choice questions must have exactly one correct answer.")
     if any(str(value).strip().casefold() not in values for value in answers):
         raise HTTPException(422, "The correct answer must match one of the configured answer options.")
 
@@ -341,6 +345,8 @@ def update_quiz(quiz_id: str, body: QuizWrite, staff: InternalStaffContext = Dep
     updates = body.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(400, "No quiz changes supplied.")
+    if any(key in updates and updates[key] is None for key in ("title", "passing_score", "is_published")):
+        raise HTTPException(422, "Quiz title, passing score and publication status cannot be null.")
     if updates.get("is_published") is True:
         _assert_quiz_publishable(quiz_id)
     if quiz.get("is_published") and any(key != "is_published" for key in updates):
@@ -413,6 +419,8 @@ def update_assignment(assignment_id: str, body: AssignmentWrite, staff: Internal
     updates = body.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(400, "No assignment changes supplied.")
+    if any(key in updates and updates[key] is None for key in ("title", "is_published")):
+        raise HTTPException(422, "Assignment title and publication status cannot be null.")
     if updates.get("is_published") is True and not (updates.get("instructions") or updates.get("description")):
         current = supabase.table("assignments").select("description,instructions").eq("id", assignment_id).limit(1).execute().data or []
         if not current or not (current[0].get("instructions") or current[0].get("description")):
