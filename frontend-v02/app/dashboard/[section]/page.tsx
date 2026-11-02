@@ -12,7 +12,7 @@ import CommunityBoard from "../../../components/dashboard/CommunityBoard";
 import AccountSettings from "../../../components/dashboard/AccountSettings";
 import Skeleton from "../../../components/feedback/Skeleton";
 
-const labels:any={learning:"My learning",discover:"Discover",practice:"Practise",projects:"Projects",skills:"Skills",evidence:"Evidence",certificates:"Certificates",community:"Community",settings:"Settings"};
+const labels:any={portfolio:"Portfolio",learning:"My learning",discover:"Discover",practice:"Practise",projects:"Projects",skills:"Skills",evidence:"Evidence",certificates:"Certificates",community:"Community",settings:"Settings"};
 const descriptions:any={
  learning:"Return to enrolled courses and continue where you left off.",
  discover:"Explore published courses that are available to your account.",
