@@ -1,7 +1,8 @@
 # Lesson 21: Model Comparison and Statistical Caution
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Plot learning curves to compare training and validation performance as sample size grows; diagnose high bias and high variance; and explain when more data or a different model may help.
 
 ## 1. Core explanation
 Model scores vary with sample, split and random seed. A small difference in mean cross-validation score may not be meaningful. Report fold-level variability, sample size and uncertainty. If comparing models on the same folds, their scores are paired; inspect the distribution of differences rather than comparing rounded means alone.
