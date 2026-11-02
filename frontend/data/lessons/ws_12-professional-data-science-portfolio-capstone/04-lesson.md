@@ -1,7 +1,8 @@
 # Lesson 4: Finding and Assessing Data Sources
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Find potential data sources; assess ownership, provenance, coverage, freshness, definitions and licence; and document why a source is or is not fit for the project question.
 
 ## 1. Core explanation
 Data may come from internal databases, public portals, APIs, surveys, sensors or licensed providers. Assess relevance, coverage, collection method, update frequency, missingness, definitions, provenance and permitted use. A large dataset is not automatically representative or accurate.
