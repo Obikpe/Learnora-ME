@@ -181,5 +181,43 @@ class PublicTrackProgressTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
 
+    def test_published_quizzes_and_assignments_are_completion_gates(self):
+        fixtures = {
+            "quizzes": [{"id": "quiz-1", "title": "Module check", "passing_score": 70, "course_id": "course-1", "is_published": True}],
+            "quiz_attempts": [{"quiz_id": "quiz-1", "user_id": "learner-1", "score": 69, "passed": False}],
+            "assignments": [{"id": "assignment-1", "title": "Practical task", "course_id": "course-1", "max_score": 100, "is_published": True}],
+            "assignment_submissions": [{"id": "submission-1", "assignment_id": "assignment-1", "user_id": "learner-1", "status": "graded", "score": 69, "graded_at": "2026-11-01T12:00:00Z"}],
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
+            result = progress._course_assessment_summary("learner-1", "course-1")
+        self.assertEqual(result["total_assessments"], 2)
+        self.assertEqual(result["completed_assessments"], 0)
+        self.assertFalse(result["completed"])
+
+    def test_quiz_pass_and_assignment_grade_at_seventy_percent_complete_gates(self):
+        fixtures = {
+            "quizzes": [{"id": "quiz-1", "title": "Module check", "passing_score": 80, "course_id": "course-1", "is_published": True}],
+            "quiz_attempts": [{"quiz_id": "quiz-1", "user_id": "learner-1", "score": 80, "passed": True}],
+            "assignments": [{"id": "assignment-1", "title": "Practical task", "course_id": "course-1", "max_score": 100, "is_published": True}],
+            "assignment_submissions": [{"id": "submission-1", "assignment_id": "assignment-1", "user_id": "learner-1", "status": "graded", "score": 70, "graded_at": "2026-11-01T12:00:00Z"}],
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
+            result = progress._course_assessment_summary("learner-1", "course-1")
+        self.assertEqual(result["completed_assessments"], 2)
+        self.assertTrue(result["completed"])
+
+    def test_ungraded_assignment_does_not_count_as_complete(self):
+        fixtures = {
+            "quizzes": [],
+            "quiz_attempts": [],
+            "assignments": [{"id": "assignment-1", "title": "Practical task", "course_id": "course-1", "max_score": 100, "is_published": True}],
+            "assignment_submissions": [{"id": "submission-1", "assignment_id": "assignment-1", "user_id": "learner-1", "status": "submitted", "score": None, "graded_at": None}],
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
+            result = progress._course_assessment_summary("learner-1", "course-1")
+        self.assertEqual(result["completed_assessments"], 0)
+        self.assertFalse(result["completed"])
+
+
 if __name__ == "__main__":
     unittest.main()
