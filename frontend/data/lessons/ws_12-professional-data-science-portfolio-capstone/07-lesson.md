@@ -1,7 +1,8 @@
 # Lesson 7: Reproducible Project Structure
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Organise a reproducible data project into raw data, processed data, notebooks, source code, reports and tests; use paths and scripts consistently; and explain why raw data should be preserved.
 
 ## 1. Core explanation
 A clean project structure separates raw data, processed data, notebooks, reusable source code, reports, tests and configuration. Keep raw data immutable where possible and generate processed data through scripts. Notebooks are useful for exploration, but reusable logic should move into functions or modules.
