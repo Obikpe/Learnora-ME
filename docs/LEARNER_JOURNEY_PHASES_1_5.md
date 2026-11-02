@@ -91,7 +91,7 @@ Learnora Teams now has an Assessments workspace and permission-protected APIs to
 
 Existing module unlocking remains assessment-aware. Course completion now requires all learner-visible published lessons to be completed, every published quiz to have a passing attempt at its configured threshold, and every published assignment's latest submission to be graded at 70% or above of its configured maximum score. The course progress percentage counts lesson and published-assessment completion units. Track completion continues to use required-course completion, so assessment gates flow through to track progress.
 
-A published assessment is treated as required for completion. Unpublished drafts do not block completion. A course with no published assessments retains lesson-only completion. Assignment grading is currently a single latest-submission grade; a separate grade-revision audit history and resubmission workflow are not introduced here.
+A published assessment is treated as required for completion. Unpublished drafts do not block completion. A course with no published assessments retains lesson-only completion. Assignment grading is currently a single latest-submission grade; each staff grading action is recorded in `audit_logs`, but a separate immutable grade-revision history and resubmission workflow are not introduced here.
 
 ## 6. Phase 5 — contextual AI tutor
 
@@ -116,7 +116,7 @@ The optional AI plan uses the existing AI provider/quota service; it does not gr
 ## 8. Verification and known limitations
 
 - New backend regression files cover assessment authoring constraints and assessment-based course completion; learning-plan scheduling tests were added. Existing publication-readiness fixtures were updated to include answerable quiz questions.
-- GitHub Actions workflows were queued for the implementation commit `d18f302b0179ceed3651538c9a56fce25e094f3b` at the time of the latest check. Their queued state is not a pass. The exact final documentation/code SHA must have all required workflows completed successfully before this work is marked evidence-backed.
+- GitHub Actions workflows were queued for the implementation commit `f3739b1fd94e1c33de3a0bd2911ed619598ade52` at the time of the latest check. The latest code-checkpoint workflows were still queued, not passing evidence: [backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41415927169), [backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/41415926931), [frontend builds](https://github.com/Obikpe/Learnora-ME/actions/runs/41415927081), [quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/41415927065), and [cohort-learning tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41415926987). Their queued state is not a pass. The exact final documentation/code SHA must have all required workflows completed successfully before this work is marked evidence-backed.
 - No local Python suite or frontend production build has been run in this environment.
 - No live Supabase migration, data mutation, Vercel environment change, or deployment was performed.
 - The new learning-plan migration requires disposable/staging replay and explicit release approval before deployment.
