@@ -1,7 +1,8 @@
 # Lesson 5: Mathematics Refresher: Vectors and Matrices
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the key concepts, identify when they apply, implement the worked example in VS Code, and recognise the method's limitations.
+
+By the end of this lesson, you should be able to Represent observations as vectors and datasets as matrices; interpret dimensions and shapes; calculate a weighted sum using a dot product; and explain how matrix operations support model predictions.
 
 ## 1. Core explanation
 A feature row can be represented as a vector: an ordered list of numbers. If an example has three features, its vector has three coordinates. A dataset with n observations and p features can be represented as an n by p matrix. Rows are observations; columns are features. Keeping this orientation straight prevents many shape errors in Python.
