@@ -1,6 +1,6 @@
 # Track completion reviews — schema proposal
 
-**Status:** Migration and API/UI implementation prepared on `main`; disposable CI validation pending. Not applied to the active Supabase project or deployed.  
+**Status:** Proposed only — not migrated or deployed  
 **Date:** 2026-10-31  
 **Scope:** Learnora ME individual learner track reviews
 
@@ -60,4 +60,4 @@ Do not promise Google review stars or rich-result eligibility. A first-party cou
 
 ## Migration gate
 
-The live Pheonix schema was checked through a read-only connection: `learnora_feedback` is lesson-oriented and `learnora_track_reviews` does not exist. The dedicated migration, rollback, database assertions, and CI disposable-PostgreSQL rehearsal have now been added to the repository. The CI run must pass before this schema is considered validated. The migration has **not** been applied to the active production Supabase project. Applying it there still requires explicit approval.
+The live Pheonix schema was checked through a read-only connection: `learnora_feedback` is lesson-oriented and `learnora_track_reviews` does not exist. This feature is deferred behind the user-confirmed learner-outcomes sequence (Phase 6 certificates, Phase 7 Practice Lab, Phase 8 skill mastery and portfolio). Before any future implementation, reconfirm the live schema, prepare a migration and rollback, test it in an approved disposable environment, and obtain explicit approval before applying it to the active production project. No migration has been created or applied for this proposal.
