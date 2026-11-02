@@ -104,17 +104,28 @@ The backend does not trust client-supplied lesson content. It verifies:
 - the module is unlocked for that learner;
 - any attached assessment is published and belongs to that course.
 
-It then loads course/module/lesson metadata, bounded lesson text, saved learner lesson progress, assessment questions/options without answer keys, recent quiz outcomes, and recent assignment outcomes/staff feedback. An attached quiz must belong to the active lesson or its module. Course material and staff feedback are treated as untrusted reference data. The contextual tutor is started in a fresh conversation to avoid mixing an unrelated saved conversation into a lesson handoff. The AI is instructed not to reveal or infer answer keys and to coach reasoning rather than simply disclose solutions.
+It then loads course/module/lesson metadata, bounded lesson text, saved learner lesson progress, assessment questions/options without answer keys, recent quiz outcomes, and recent assignment outcomes/staff feedback. An attached quiz must belong to the active lesson or its module. Course material and staff feedback are treated as untrusted reference data. The contextual tutor is started in a fresh conversation to avoid mixing an unrelated saved conversation into a lesson handoff. The AI is instructed not to reveal or infer answer keys and to coach reasoning rather than simply disclose solutions. The tutor must also be completely hidden and inaccessible during active quizzes; this is a mandatory UI/backend policy and browser-acceptance gate, not merely a prompt instruction.
+
+**Quiz visibility rule (mandatory): the AI tutor must not be visible, launchable, or otherwise accessible anywhere in an active quiz-taking experience.** Hide/remove the tutor entry point, floating launcher, chat panel, contextual handoff and keyboard/accessibility entry points for the entire quiz attempt, including question navigation, review and submission states. Do not rely on the model prompt or omission of answer keys as the control. The learner may use the tutor from ordinary lesson/course learning surfaces outside an active quiz; returning to the quiz must not preserve an accessible tutor overlay or allow a tutor request to be submitted against the quiz. Enforce this in the UI and, where requests can be made independently of the UI, in the backend request policy. Browser acceptance must verify that no tutor affordance or tutor response can be reached during an active quiz.
 
 General tutor use remains available without a course context. The contextual path is optional and does not alter enrolments, progress, curriculum, or assessments.
 
-## 7. Free-launch and paid-system protection
+## 7. Next milestone and Phase 6 sequence
+
+The next milestone is deliberately limited to two release-readiness workstreams:
+
+1. **Live Supabase verification:** regain a working read-only connection to the active Pheonix project, verify the live SQL catalogue, migration ledger, RLS and grants against the checked-in baseline, reconcile the additive learning-plan migration, and document an approved, reversible migration plan. Do not apply a production migration or mutate production data without separate explicit approval.
+2. **Browser-based acceptance:** exercise learner discovery/enrolment, course and track progress, optional learning-plan generation and fallback, quiz/assignment completion, Teams assessment authoring/grading/performance, and contextual tutor behaviour. Specifically verify the tutor is completely unavailable throughout every active quiz state. Record browser evidence and defects on the exact candidate SHA; production builds alone are insufficient.
+
+Once those two workstreams pass and any separately required migration approval is obtained, proceed directly to **Phase 6 — track completion and learner feedback**: completion-gated, dismissible feedback; optional rating/comment; explicit consent before public display; staff moderation; duplicate prevention; and privacy-safe public rendering. Do not insert unrelated feature phases between this acceptance milestone and Phase 6.
+
+## 8. Free-launch and paid-system protection
 
 No free-access resolver, Paystack integration, checkout, subscription, trial, expiry, entitlement, Pro, or payment-history code was removed or rewritten for these phases. The central `FREE_ACCESS_MODE` remains server-side and default-off. These features do not introduce a payment method, paid subscription, checkout, or trial-expiry requirement for the individual learner journey.
 
 The optional AI plan uses the existing AI provider/quota service; it does not grant organisation, staff, creator, or administrative access. Existing authentication, course access, tenant scope, private media, and internal staff permission boundaries remain in force.
 
-## 8. Verification and known limitations
+## 9. Verification and known limitations
 
 - Regression coverage now includes assessment completion thresholds/latest assignment submissions, module unlocking (configured thresholds and no-quiz modules), individual-only onboarding/plan access, quiz/assignment publication/edit guards, and learning-plan scheduling.
 - All five GitHub Actions workflows passed on implementation checkpoint `8e21f264744a1a49d26d0f81b3272f1c5d72f24a`: [backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366731), [backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366705), [all three frontend production builds](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366775), [quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366744), and [cohort-learning plus disposable database migration tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366779).
