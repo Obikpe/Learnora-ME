@@ -329,3 +329,27 @@ The track manager now freezes a curriculum after course enrolments exist, preven
 - The optional post-completion review and public moderation flow is not yet implemented. It requires an additive review table, RLS/grants, authenticated completion-gated APIs, staff moderation and learner UI. No migration was applied or deployed; live schema verification is still blocked.
 - CI was triggered on the latest commits, but GitHub reports failed jobs with no executed steps/logs (runner allocation unavailable). These are not passing tests and do not establish code failures. Local test execution was also unavailable in this session because the runtime could not resolve GitHub.
 - The active Pheonix Supabase project remains the intended database. A read-only live-schema request failed with password authentication for the read-only database user. No production database, environment variable or deployment was changed.
+
+
+
+## 11. Learner journey expansion — 2 November 2026
+
+The immediate learner experience has been expanded into five implementation phases, recorded in [LEARNER_JOURNEY_PHASES_1_5.md](LEARNER_JOURNEY_PHASES_1_5.md):
+
+1. Confirm and preserve the canonical global track → course → module → lesson architecture.
+2. Improve discovery using actual published track/course relationships.
+3. Offer an optional AI-assisted personalised learning plan based on onboarding preferences and the published catalogue. The plan is stored separately and cannot alter track curriculum.
+4. Let Teams configure quizzes and assignments, grade assignment submissions, and monitor learner performance. Course completion now includes published assessment outcomes as well as lesson completion.
+5. Give the AI tutor verified course/lesson/optional quiz context, current lesson progress and recent attempts, without sending answer keys.
+
+### Free-launch safeguards
+
+- No changes were made to the central `FREE_ACCESS_MODE`, Paystack, checkout, subscription, trial, expiry, entitlement, or Pro implementation.
+- No payment method, paid subscription, checkout or trial-expiry requirement was introduced for the individual learner experience.
+- The AI plan uses the existing AI provider/quota service and remains optional.
+- The new plan-storage migration is additive, backend-only, RLS-enabled, and explicitly grants the server role only. It has **not** been applied to the active Supabase project. It must be tested on a disposable/staging database before deployment.
+- No production data mutation, environment change or deployment was performed.
+
+### Current acceptance state
+
+The implementation and regression tests are committed to `main`, but CI runs must complete successfully on the exact final SHA. Browser/mobile journeys, AI provider/fallback behaviour, Teams grading/performance views and disposable/staging migration verification remain required. The free-launch flag remains default-off until separately configured and deployed. The existing paid implementation and its reactivation path remain preserved.
