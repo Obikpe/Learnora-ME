@@ -1,7 +1,8 @@
 # Lesson 27: Capstone: Select and Frame the Problem
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Select a capstone problem with a meaningful decision, answerable question, accessible data and feasible scope; define success criteria, risks and exclusions in a project charter.
 
 ## 1. Core explanation
 The capstone begins with a problem that is meaningful, answerable and appropriately scoped. Choose a topic where data can be accessed legally and where you can produce a useful analytical deliverable. Avoid selecting a complex model before understanding the question.
