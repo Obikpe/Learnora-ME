@@ -30,6 +30,9 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn("account_snapshot jsonb NOT NULL", migration)
         self.assertIn("password_hash = NULL", migration)
         self.assertIn("account_status = 'deleted'", migration)
+        self.assertIn("SET status = 'suspended'", migration)
+        self.assertIn("expires_at = NULL", migration)
+        self.assertIn("trial_ends_at = NULL", migration)
         self.assertIn("email = 'deleted+'", migration)
         self.assertNotIn("DELETE FROM PUBLIC.USERS", migration.upper())
 
