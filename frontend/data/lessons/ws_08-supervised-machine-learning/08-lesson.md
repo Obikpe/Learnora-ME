@@ -1,7 +1,8 @@
 # Lesson 8: Regression Metrics and Residual Analysis
 
 ## Learning outcomes
-Explain the supervised-learning concept, implement the method in Python, interpret its output and identify assumptions and common failure modes.
+
+By the end of this lesson, you should be able to Calculate MAE, MSE, RMSE and R-squared; interpret residuals and their units; compare the effect of large errors; and identify when each metric can mislead.
 
 ## 1. Core explanation
 Regression metrics summarise different aspects of error. MAE is the average absolute residual and is easy to interpret in target units. MSE averages squared residuals and penalises large errors more strongly. RMSE is the square root of MSE and returns to target units. R-squared compares model error with a mean-prediction reference, but can be negative on test data.
