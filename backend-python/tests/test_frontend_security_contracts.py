@@ -26,6 +26,18 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('sessionStorage.getItem("phx_session_epoch") || "implicit"', auth)
         self.assertIn('const BASE=""', client)
 
+    def test_ai_tutor_is_hidden_and_unavailable_during_active_quizzes(self):
+        player = (ROOT / "frontend-v02" / "app" / "dashboard" / "learning" / "[courseId]" / "page.tsx").read_text(encoding="utf-8")
+        shell = (ROOT / "frontend-v02" / "components" / "dashboard" / "Shell.tsx").read_text(encoding="utf-8")
+        sidebar = (ROOT / "frontend-v02" / "components" / "dashboard" / "Sidebar.tsx").read_text(encoding="utf-8")
+        ai_api = (ROOT / "backend-python" / "routers" / "ai.py").read_text(encoding="utf-8")
+        self.assertIn('hideTutor={Boolean(quizData)||quizOpening}', player)
+        self.assertIn('hideTutor={hideTutor}', shell)
+        self.assertIn('!(hideTutor&&key==="ai")', sidebar)
+        self.assertNotIn("Ask tutor about this quiz", player)
+        self.assertIn("if(quizData||quizOpening)return", player)
+        self.assertIn("_assert_no_active_quiz_session(str(user.id))", ai_api)
+
     def test_frontend_api_proxies_are_configured_for_same_origin_cookies(self):
         for relative in ("frontend-v02/next.config.mjs", "frontend-team/next.config.mjs"):
             source = (ROOT / relative).read_text(encoding="utf-8")
