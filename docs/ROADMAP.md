@@ -408,3 +408,22 @@ Do not begin unrelated feature work yet. The next milestone is restricted to:
 2. **Browser-based acceptance:** verify learner discovery/enrolment, track/course progress, optional AI plan and fallback, assessment flows, Teams authoring/grading/performance, and contextual tutoring. The AI tutor must be completely hidden and inaccessible during every active quiz state (including navigation, review and submission), with no floating launcher, chat panel, keyboard/accessibility route or contextual tutor request available. Prompt-level instructions are not an adequate substitute for UI and backend enforcement.
 
 After these two workstreams pass, proceed directly to **Phase 6 — track completion and feedback**: completion-gated dismissible prompt, optional rating/comment, explicit public-display consent, staff moderation, duplicate prevention and privacy-safe public display. No unrelated phase should be inserted between acceptance and Phase 6. Production migration/deployment remains separately authorised.
+
+## Revised learner-outcomes priority — 2 November 2026
+
+The product owner has confirmed a revised feature order after learner journey phases 1–5. This new order takes priority over the earlier proposed immediate Phase 6 track-feedback milestone below; that feedback proposal is retained as deferred backlog work.
+
+1. **Phase 6 — Certificates and verification**
+2. **Phase 7 — Practice Lab and project submissions**
+3. **Phase 8 — Skill mastery map and learner portfolio**
+4. **Phase 9 — Learning companion and community (later)**
+
+Implementation details and acceptance boundaries are recorded in [Learner Outcomes Phases 6–8](LEARNER_OUTCOMES_PHASES_6_8.md). The official curriculum remains fixed; optional AI learning plans cannot modify it. Free-launch and paid-system protection remain mandatory.
+
+### Live database revalidation — 2 November 2026
+
+The read-only connection to the active Pheonix Supabase project is now available. Relevant certificate, project, submission and skill table columns, constraints, indexes, RLS and grants were checked. RLS is enabled and the inspected tables grant direct access only to `service_role`; no `anon` or `authenticated` grants were found. The certificate-number and skill-name uniqueness constraints required by the new APIs are present.
+
+The active migration ledger still does not include `20261102090000_learner_learning_plans`, and `public.learner_learning_plans` is absent. That pre-existing Phase 3 release dependency remains unapplied. No production migration, data mutation, environment change, free-mode activation or deployment was performed.
+
+The new Phase 6–8 code is committed on `main`; browser acceptance and CI evidence are still outstanding. Do not mark production release readiness until those gates have evidence.
