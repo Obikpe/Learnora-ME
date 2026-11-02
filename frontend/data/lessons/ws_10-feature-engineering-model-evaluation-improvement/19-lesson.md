@@ -1,7 +1,8 @@
 # Lesson 19: Randomised and Bayesian Search Concepts
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Use GridSearchCV to tune hyperparameters; build a search around a leakage-safe pipeline; define a suitable scoring metric and cross-validation splitter; and report the best configuration without test-set tuning.
 
 ## 1. Core explanation
 Randomised search samples hyperparameter combinations from defined distributions rather than testing every point in a grid. It is useful when some parameters have wide ranges or when model training is expensive. Log-uniform distributions are often suitable for parameters spanning orders of magnitude, such as regularisation strength.
