@@ -10,7 +10,7 @@ import { register } from "../../lib/api";
 export default function Register() {
   const [name,setName]=useState(""),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[error,setError]=useState(""),[acceptedTerms,setAcceptedTerms]=useState(false),[busy,setBusy]=useState(false),[showPassword,setShowPassword]=useState(false);
   const router=useRouter();
-  function openVerification(){router.push("/verify-email?email="+encodeURIComponent(email.trim().toLowerCase()));}
+  function openVerification(){router.push("/check-email?email="+encodeURIComponent(email.trim().toLowerCase()));}
   async function submit(e:any) {
     e.preventDefault();setError("");setBusy(true);
     try { await register(name,email,password);openVerification(); }
