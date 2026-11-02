@@ -1,42 +1,41 @@
-# Lesson 27: End-to-End Regression Case Study
+# Lesson 27: End-to-End Classification Case Study
 
 ## Learning outcomes
 Explain the technique, implement the example, interpret the output and justify when the method is suitable.
 
 ## 1. Core explanation
-This case study predicts a continuous target using the California housing dataset bundled with scikit-learn. The purpose is to practise a complete workflow, not to create a property valuation product. The dataset has limitations in geography, collection period and feature meaning; predictions must not be used for lending, pricing or individual decisions without substantial further validation.
+Build a classification case study around the Wine dataset. Define the target as one of three wine classes, inspect class balance, split with stratification, compare a baseline and candidate, then inspect the confusion matrix and per-class precision and recall. The dataset is educational and small; a high score does not imply performance on commercial wine samples or other populations.
 
-Define the target, split the data, build a baseline, train a pipeline, evaluate with MAE and RMSE, and inspect residuals. If a dataset has geographic or temporal structure, a random split may overstate performance on genuinely new locations or future periods. Discuss the intended generalisation setting.
+Compare logistic regression with a tree ensemble. Explain scaling requirements and why the algorithms behave differently. Use cross-validation on training data for selection, then one final test evaluation. Inspect which classes are confused and consider whether those errors have equal practical importance.
 
-A good report explains target units, test sample, baseline, candidate model and error profile. Avoid presenting one metric as a guarantee for every neighbourhood or property type.
+The report should state data source, target encoding, split, metrics and limitations. Avoid treating the label names as objectively meaningful categories beyond the dataset's definitions.
 
 ## 2. Worked Python example
 Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. Some dataset loaders may require internet access on first use.
 
 ```python
-from sklearn.datasets import fetch_california_housing
+from sklearn.datasets import load_wine
 from sklearn.model_selection import train_test_split
-from sklearn.dummy import DummyRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report
 
-data = fetch_california_housing(as_frame=True)
+data = load_wine(as_frame=True)
 Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
-    test_size=.2, random_state=42)
-models = [DummyRegressor(strategy="median"),
-          RandomForestRegressor(n_estimators=150, min_samples_leaf=3, random_state=42)]
-for model in models:
-    model.fit(Xtr, ytr)
-    p = model.predict(Xte)
-    print(type(model).__name__, "MAE", mean_absolute_error(yte, p),
-          "RMSE", mean_squared_error(yte, p)**.5)
+    test_size=.25, random_state=11, stratify=data.target)
+model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=3000))
+model.fit(Xtr, ytr)
+pred = model.predict(Xte)
+print(confusion_matrix(yte, pred))
+print(classification_report(yte, pred, target_names=data.target_names))
 ```
 
 ## 3. Interpretation and checks
 Record the target, sample size, split design, metric and model settings. Inspect class-wise results or residuals, not only the headline score. Keep the test set untouched during model selection and report dataset limitations.
 
 ## 4. Guided practice
-Write the regression case-study report. Include target units, split rationale, baseline comparison, MAE and RMSE, residual limitations and a statement that the demonstration is not a deployable valuation system.
+Compare class-wise recall and confusion matrix. Write a stakeholder summary with one strength, one weakness, one dataset limitation and the next validation step.
 
 ## 5. Independent practice
 Extend the example with another model or evaluation view. Compare candidates using the same training/validation design. Write a short report for a non-technical stakeholder and state what further validation is required.
