@@ -15,11 +15,19 @@ Simpson's paradox can occur when a trend within each subgroup reverses when grou
 Run in VS Code. Install required packages with `python -m pip install pandas numpy matplotlib seaborn plotly`.
 
 ```python
+from sklearn.datasets import load_iris
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-penguins = sns.load_dataset("penguins").dropna()
-sns.pairplot(penguins, vars=["bill_length_mm", "bill_depth_mm", "flipper_length_mm"],
+data = load_iris(as_frame=True)
+df = data.frame.rename(columns={
+    "sepal length (cm)": "sepal_length_cm",
+    "sepal width (cm)": "sepal_width_cm",
+    "petal length (cm)": "petal_length_cm",
+    "petal width (cm)": "petal_width_cm",
+})
+df["species"] = df["target"].map(dict(enumerate(data.target_names)))
+sns.pairplot(df, vars=["sepal_length_cm", "sepal_width_cm", "petal_length_cm"],
              hue="species", corner=True)
 plt.show()
 ```
