@@ -367,3 +367,33 @@ Do not mark this release-ready. Remaining acceptance gates: restore GitHub Actio
 The first free-access and global-track hardening changes are committed on `main`. The free-launch resolver now checks active organisation membership before granting individual access and fails closed if that check cannot be completed while the flag is on. Track curriculum lock state is scoped to per-track enrolments; track progress for unpublished tracks requires that track's enrolment source. Withdrawn individual enrolments can be reactivated safely; invited/suspended enrolments are not. Archived-track curriculum edits are rejected, and archived course progress retains assessment-lock checks. Regression tests were added for these paths.
 
 Still outstanding before the planned free launch: run the backend/frontend regression suites on a functioning runner; verify the live Pheonix schema and storage bucket; implement the completion-gated learner review + explicit public-consent + moderation workflow; complete end-to-end acceptance of Teams content/media workflows and learner course/assessment/resume flows; reconcile the backend Vercel project repository linkage. The free-access environment flag remains off and no production migration/deployment was performed.
+
+
+
+## Learner journey extension — phases 1–5 (2 November 2026)
+
+This is an additive extension to the 31 October free-launch sequence. It does not replace the original P0–P6 roadmap, deferred organisation/instructor/creator work, or paid-expansion plan. See [Learner Journey Phases 1–5](LEARNER_JOURNEY_PHASES_1_5.md) for the architecture and implementation record.
+
+| Phase | Work | Implementation status | Remaining gate |
+|---|---|---|---|
+| 1 | Confirm track/course/module/lesson architecture | Canonical global track model remains `learnora_learning_paths` → `learnora_learning_path_courses` → `learnora_courses` → `course_modules` → `learnora_lessons`; cohort track tables remain separate | Live schema revalidation and regression acceptance |
+| 2 | Improve course discovery and track browsing | Public course payloads now include real published global track memberships; catalogue filters by actual track; track browse supports search and level filters | Browser/mobile acceptance |
+| 3 | Optional AI onboarding and personalised plans | Optional plan API/workspace added; plan uses onboarding profile and published catalogue; AI supplies validated weekly focus/practice/reflection; plan never changes curriculum | New additive plan migration must be tested/applied before deployment; provider/fallback E2E |
+| 4 | Assessments, grading and completion | Teams quiz/assignment authoring, answer validation, assignment grading, learner performance view, and assessment-aware course completion added | Regression/CI and end-to-end acceptance; grade-revision audit remains open |
+| 5 | Contextual AI tutor | Tutor receives verified course/lesson/optional quiz context, progress and recent attempts; answer keys are excluded | Provider and browser acceptance |
+
+### Completion rules introduced
+
+- Published lessons count toward course completion; drafts and archived content do not count as current learner work.
+- Every published quiz must have a passing attempt at its configured threshold.
+- Every published assignment must have a latest submission graded at 70% or above of its maximum score.
+- Published assessments are required; unpublished drafts do not block completion. Courses with no published assessments retain lesson-only completion.
+- Track completion continues to derive from required course completion; no separate learner-plan completion state is introduced.
+
+### Free-launch protection
+
+These additions do not change the central `FREE_ACCESS_MODE`, Paystack, checkout, subscription, trial, expiry, entitlement, or Pro implementation. The free flag remains server-side and default-off until separately configured and deployed. The new learning-plan table is backend-only with RLS enabled and an explicit `service_role` grant; its migration has not been applied to the active project. No production migration, data change, environment change, or deployment was performed for this work.
+
+### Verification status
+
+Regression tests and frontend changes have been committed, but queued GitHub Actions runs are not passing evidence. The exact final candidate must complete the backend tests, syntax checks, both active frontend builds, quality checks, and cohort-learning tests. Full browser/mobile acceptance and disposable/staging migration verification remain required. Do not mark these phases release-complete solely because code has been committed.
