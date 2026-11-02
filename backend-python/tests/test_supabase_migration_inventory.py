@@ -51,6 +51,10 @@ PENDING_VERSIONS = [
     "20261026151000",
     "20261026153000",
     "20261102090000",
+    "20261102100000",
+    "20261102110000",
+    "20261102120000",
+    "20261102130000",
 ]
 EXPECTED_VERSIONS = sorted(APPLIED_VERSIONS + PENDING_VERSIONS)
 
@@ -64,6 +68,12 @@ class SupabaseMigrationInventoryTests(unittest.TestCase):
         self.assertTrue(set(PENDING_VERSIONS).issubset(set(versions)))
         self.assertTrue(all(re.fullmatch(r"\d{14}", version) for version in versions))
         self.assertTrue(all(path.stat().st_size > 0 for path in files))
+        account_deletion = (ACTIVE_MIGRATIONS / "20261102130000_learner_account_deletion.sql").read_text(encoding="utf-8")
+        self.assertIn("deleted_account_history", account_deletion)
+        self.assertIn("complete_learner_account_deletion", account_deletion)
+        self.assertIn("SECURITY DEFINER", account_deletion)
+        self.assertIn("account_status = 'deleted'", account_deletion)
+        self.assertNotIn("DELETE FROM PUBLIC.USERS", account_deletion.upper())
 
     def test_unreconciled_legacy_candidates_are_not_active_migrations(self):
         self.assertFalse(any(ACTIVE_MIGRATIONS.glob("00[1-9]_*.sql")))
