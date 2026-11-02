@@ -1,6 +1,6 @@
 "use client";
 import {useCallback,useEffect,useState} from "react";
-import {Award,ExternalLink,Printer,RefreshCw,ShieldCheck} from "lucide-react";
+import {Award,ExternalLink,RefreshCw,ShieldCheck} from "lucide-react";
 import {request} from "../../../lib/api/client";
 import Shell from "../../../components/dashboard/Shell";
 import Skeleton from "../../../components/feedback/Skeleton";
