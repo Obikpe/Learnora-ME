@@ -100,6 +100,12 @@ jobs:
           API_TEST_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/cohort_api_staging
         run: |
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/baselines/active-pheonix-public-schema.sql
+          psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO public.learnora_staff_roles (name, slug, description, is_system_role, status)
+          VALUES
+            ('Super Admin', 'super_admin', 'CI fixture role.', true, 'active'),
+            ('Learning & Curriculum', 'learning_curriculum', 'CI fixture role.', false, 'active');
+          SQL
           # Apply only the new release-candidate migrations on top of the catalog
           # snapshot so the API test exercises the exact post-migration schema.
           for migration in \
