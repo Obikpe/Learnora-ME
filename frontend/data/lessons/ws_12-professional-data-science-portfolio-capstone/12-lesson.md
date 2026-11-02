@@ -1,7 +1,8 @@
 # Lesson 12: Statistical Reasoning in Project Work
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Choose appropriate descriptive and inferential methods; explain sampling, variation, confidence intervals and test assumptions; and avoid treating a p-value as proof of practical importance or causation.
 
 ## 1. Core explanation
 Statistical reasoning helps distinguish patterns from random variation. A sample statistic describes the observed sample; inference uses assumptions to reason about a wider population. Confidence intervals express uncertainty around an estimate under a method's assumptions. A p-value is the probability of data at least as extreme under a specified null model; it is not the probability that the null hypothesis is true.
