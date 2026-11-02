@@ -389,7 +389,7 @@ def course_activities(course_id: str, user: CurrentUser = Depends(get_current_us
 def my_active_quiz_session(user: CurrentUser = Depends(get_current_user)):
     try:
         rows = (supabase.table("quiz_active_sessions")
-            .select("quiz_id,course_id,expires_at")
+            .select("id,quiz_id,course_id,expires_at")
             .eq("user_id", str(user.id))
             .gt("expires_at", datetime.now(timezone.utc).isoformat())
             .order("expires_at", desc=True)
@@ -402,10 +402,45 @@ def my_active_quiz_session(user: CurrentUser = Depends(get_current_user)):
         return {"active": False}
     return {
         "active": True,
+        "session_id": rows[0].get("id"),
         "quiz_id": rows[0].get("quiz_id"),
         "course_id": rows[0].get("course_id"),
         "expires_at": rows[0].get("expires_at"),
     }
+
+
+@router.delete("/quiz-sessions/me")
+def close_all_quiz_sessions(user: CurrentUser = Depends(get_current_user)):
+    supabase.table("quiz_active_sessions").delete().eq("user_id", str(user.id)).execute()
+    return {"success": True}
+
+
+@router.post("/quizzes/{quiz_id}/session/{session_id}/heartbeat")
+def heartbeat_quiz_session(quiz_id: str, session_id: str, user: CurrentUser = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    rows = (
+        supabase.table("quiz_active_sessions")
+        .select("id")
+        .eq("id", str(session_id))
+        .eq("user_id", str(user.id))
+        .eq("quiz_id", str(quiz_id))
+        .gt("expires_at", now.isoformat())
+        .limit(1)
+        .execute()
+    ).data or []
+    if not rows:
+        raise HTTPException(409, "This quiz session has expired. Reopen the quiz to continue.")
+    saved = (
+        supabase.table("quiz_active_sessions")
+        .update({"expires_at": (now + timedelta(hours=2)).isoformat()})
+        .eq("id", str(session_id))
+        .eq("user_id", str(user.id))
+        .eq("quiz_id", str(quiz_id))
+        .execute()
+    ).data or []
+    if not saved:
+        raise HTTPException(503, "The active quiz session could not be renewed.")
+    return {"success": True, "expires_at": saved[0].get("expires_at")}
 
 
 @router.get("/quizzes/{quiz_id}")
