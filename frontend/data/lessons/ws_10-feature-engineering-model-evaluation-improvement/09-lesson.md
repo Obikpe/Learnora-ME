@@ -1,7 +1,8 @@
 # Lesson 9: Filter and Wrapper Feature Selection
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Compare filter scores with Recursive Feature Elimination; fit selection only on training data; interpret the selected feature set; and assess selection stability across samples.
 
 ## 1. Core explanation
 Filter methods score features using statistical properties before fitting a model. Examples include correlation, chi-square and ANOVA F-tests. They are fast but may miss interactions and can be sensitive to assumptions. Chi-square requires non-negative feature values; do not apply it blindly to standardised negative values.
