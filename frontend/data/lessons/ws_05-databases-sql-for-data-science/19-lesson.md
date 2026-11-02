@@ -29,10 +29,11 @@ sql_data_science/
 ├── data/
 │   └── learning.db
 ├── src/
-│   ├── db.py
-│   ├── queries.py
-│   ├── validation.py
-│   └── pipeline.py
+│   ├── db.py          # connection creation and configuration
+│   ├── load.py        # load_orders()
+│   ├── validation.py  # validate_orders()
+│   ├── transform.py   # build_regional_summary()
+│   └── pipeline.py    # run() orchestration
 ├── outputs/
 └── run_pipeline.py
 ```
