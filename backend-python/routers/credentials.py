@@ -175,7 +175,7 @@ def issue_course_certificate(
         # A concurrent request may have inserted the same deterministic credential.
         row = (
             supabase.table("certificates")
-            .select("id,user_id,course_id,certificate_number,issued_at,metadata")
+            .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
             .eq("certificate_number", number)
             .eq("user_id", user.id)
             .limit(1)
@@ -231,6 +231,35 @@ def verify_certificate(certificate_number: str):
             "credential_type": metadata.get("credential_type") or "course_completion",
             "issuer": "Learnora ME",
         },
+    }
+
+
+@router.get("/internal")
+def internal_certificates(staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    rows = (
+        supabase.table("certificates")
+        .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revoked_by,revocation_reason")
+        .order("issued_at", desc=True)
+        .limit(200)
+        .execute()
+    ).data or []
+    user_ids = list({str(row["user_id"]) for row in rows if row.get("user_id")})
+    course_ids = list({str(row["course_id"]) for row in rows if row.get("course_id")})
+    users = supabase.table("users").select("id,name,email").in_("id", user_ids).execute().data or [] if user_ids else []
+    courses = supabase.table("learnora_courses").select("id,title").in_("id", course_ids).execute().data or [] if course_ids else []
+    user_map = {str(row["id"]): row for row in users}
+    course_map = {str(row["id"]): row for row in courses}
+    return {
+        "success": True,
+        "certificates": [
+            {
+                **_certificate_view(row, course_map.get(str(row.get("course_id")), {}).get("title")),
+                "learner": user_map.get(str(row.get("user_id"))),
+                "revoked_by": row.get("revoked_by"),
+            }
+            for row in rows
+        ],
+        "limit": 200,
     }
 
 
