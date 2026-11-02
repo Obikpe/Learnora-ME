@@ -48,7 +48,7 @@ def _assert_course_publishable(course_id: str):
     for module in modules[:-1]:
         quizzes = (
             supabase.table("quizzes")
-            .select("id")
+            .select("id,module_id,lesson_id")
             .eq("module_id", str(module["id"]))
             .eq("is_published", True)
             .execute()
@@ -59,6 +59,8 @@ def _assert_course_publishable(course_id: str):
                 detail="Every published module before the final module must have a published assessment so learners can unlock the next module.",
             )
         for quiz in quizzes:
+            from .internal_assessments import _validate_assessment_location
+            _validate_assessment_location(course_id, quiz.get("module_id"), quiz.get("lesson_id"), require_published=True)
             questions = (
                 supabase.table("quiz_questions")
                 .select("id,question_type,options,correct_answer")
