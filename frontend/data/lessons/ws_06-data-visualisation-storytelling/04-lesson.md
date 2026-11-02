@@ -158,7 +158,7 @@ Seaborn will be taught in detail later. For now, see the idea:
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-sns.histplot(data=scores, bins=8, stat="density",
+sns.histplot(x=scores, bins=8, stat="density",
              kde=True, edgecolor="white")
 plt.xlabel("Score")
 plt.ylabel("Density")
