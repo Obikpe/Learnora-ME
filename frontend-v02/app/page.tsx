@@ -6,14 +6,6 @@ import AudienceCards from "../components/public/AudienceCards";
 import { IMAGES } from "../lib/constants";
 import { ArrowDownRight, ArrowRight, Compass, FileCheck2, GraduationCap, Network, Sparkles } from "lucide-react";
 
-const stages = [
-  { n: "01", title: "Learn with intention", text: "Follow structured learning that helps you understand the ideas, not simply move through a list of lessons." },
-  { n: "02", title: "Practise with feedback", text: "Try concepts, make mistakes safely, and use feedback to decide what to revisit." },
-  { n: "03", title: "Build something real", text: "Apply what you know in projects, assignments and practical challenges that have a clear purpose." },
-  { n: "04", title: "Keep evidence", text: "Collect work, assessment results and reviews that show what you have actually demonstrated." },
-  { n: "05", title: "Show your growth", text: "Bring your skills, projects and learning record together in a portfolio you can explain and share." },
-];
-
 export default function Home() {
   return <>
     <PublicNav />
