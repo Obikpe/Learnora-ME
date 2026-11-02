@@ -441,3 +441,13 @@ Append entries using:
 
 
 **Migration ledger reconciliation note:** A read-only check of the live `supabase_migrations.schema_migrations` table found two additional applied versions, `20261102210054` (`shared_auth_rate_limits`) and `20261102210056` (`shared_api_rate_limit`), which do not currently have matching timestamped files in `supabase/migrations`. The repository also contains earlier files with related names. These entries must be reconciled against their recorded SQL before using a bulk migration push; they have not been replayed or modified during this work.
+
+### Quiz-page-scoped AI tutor access — 3 November 2026
+
+- Corrected the overly broad quiz lock. An active or unfinished quiz session is not a global AI tutor lock. The restriction applies only while the learner is on the active quiz/test interface.
+- `Sidebar.tsx` no longer queries `/progress/quiz-sessions/me` to decide whether the AI tutor navigation item is visible. The course player supplies the explicit `hideTutor` state while quiz content is open/opening.
+- The AI page no longer checks the user's server-side active quiz sessions or blocks itself because a session exists in another tab or a prior page. Leaving the quiz interface restores AI access even if the assessment session remains unfinished.
+- The course player no longer treats an orphaned session as a reason to hide the AI tutor or remove the lesson-level AI action. The learner can resume the quiz or use AI after leaving the quiz interface.
+- The backend AI endpoint no longer applies a user-wide `quiz_active_sessions` lock. It continues to reject requests that explicitly include `assessment_id`, keeping assessment-specific tutor context unavailable.
+- Replaced the old global-lock regression tests with a contract asserting that active sessions do not globally block tutor requests while explicit assessment context remains prohibited.
+- No tests, builds, browser checks, CI, migrations, or production deployment were run.
