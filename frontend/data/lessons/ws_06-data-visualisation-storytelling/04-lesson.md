@@ -1,7 +1,8 @@
 # Lesson 4: Visualisation with Matplotlib
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the central ideas, select an appropriate method, implement it in Python, interpret the output and identify limitations.
+
+By the end of this lesson, you should be able to create Matplotlib figures and axes; build line, bar, scatter and histogram charts; label titles, axes and units; control figure layout; save figures; and explain the figure/axes distinction.
 
 ## 1. Concepts and reasoning
 Matplotlib separates a Figure (the whole canvas) from Axes (the plotting area). The reliable object-oriented pattern is to create them with subplots, draw using methods such as plot, bar or scatter, configure labels and limits, then display or save the figure.
