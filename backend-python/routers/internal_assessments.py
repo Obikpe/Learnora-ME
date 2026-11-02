@@ -263,6 +263,7 @@ def course_performance(course_id: str, staff: InternalStaffContext = Depends(req
         .execute()
     ).data or []
     quiz_ids = [str(row["id"]) for row in quizzes]
+    quiz_title_map = {str(row["id"]): row.get("title") for row in quizzes}
     attempts = (
         supabase.table("quiz_attempts")
         .select("id,user_id,quiz_id,score,passed,submitted_at")
@@ -279,6 +280,7 @@ def course_performance(course_id: str, staff: InternalStaffContext = Depends(req
         .execute()
     ).data or []
     assignment_ids = [str(row["id"]) for row in assignments]
+    assignment_title_map = {str(row["id"]): row.get("title") for row in assignments}
     submissions = (
         supabase.table("assignment_submissions")
         .select("id,user_id,assignment_id,status,score,feedback,submitted_at,graded_at")
@@ -312,8 +314,8 @@ def course_performance(course_id: str, staff: InternalStaffContext = Depends(req
                 "completed": sum(1 for row in learner_progress if row.get("completed")),
                 "tracked": len(learner_progress),
             },
-            "quiz_attempts": learner_attempts,
-            "assignment_submissions": learner_submissions,
+            "quiz_attempts": [{**row, "quiz_title": quiz_title_map.get(str(row.get("quiz_id")))} for row in learner_attempts],
+            "assignment_submissions": [{**row, "assignment_title": assignment_title_map.get(str(row.get("assignment_id")))} for row in learner_submissions],
             "assessment_summary": {
                 "quizzes_passed": len({str(row["quiz_id"]) for row in learner_attempts if row.get("passed")}),
                 "quizzes_total": len(quizzes),
