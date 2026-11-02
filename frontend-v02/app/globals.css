@@ -3,6 +3,26 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --bg-soft: #ffffff;
+  --panel: #ffffff;
+  --panel-raised: #f8fafc;
+  --panel-hover: #eef2f7;
+  --gold: #9b7423;
+  --gold-light: #916b1c;
+  --gold-deep: #765313;
+  --text: #172033;
+  --muted: #526078;
+  --subtle: #718096;
+  --line: rgba(23, 32, 51, .12);
+  --line-strong: rgba(23, 32, 51, .2);
+  --radius-card: 1.25rem;
+  --radius-control: .7rem;
+  --content-width: 82rem;
+  --nav-height: 5rem;
+}
+:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #090b0e;
   --bg-soft: #0c1015;
@@ -17,10 +37,6 @@
   --subtle: #727d89;
   --line: rgba(233, 229, 216, .12);
   --line-strong: rgba(233, 229, 216, .2);
-  --radius-card: 1.25rem;
-  --radius-control: .7rem;
-  --content-width: 82rem;
-  --nav-height: 5rem;
 }
 * { box-sizing: border-box; }
 html {
@@ -92,3 +108,53 @@ img { color: transparent; }
   from { transform: scaleX(1); }
   to { transform: scaleX(0); }
 }
+
+
+html[data-theme="light"] body { background: var(--bg); color: var(--text); }
+html[data-theme="light"] .gold { color: var(--gold-light); }
+html[data-theme="light"] .glass { background: #fff; border-color: var(--line); }
+html[data-theme="light"] .field { background: #fff; color: #172033; border-color: var(--line-strong); }
+html[data-theme="light"] ::selection { background: rgba(155,116,35,.2); color: #172033; }
+
+html[data-theme="light"] [class*="bg-[#090b0e]"],
+html[data-theme="light"] [class*="bg-[#090c10]"],
+html[data-theme="light"] [class*="bg-[#0b0f13]"],
+html[data-theme="light"] [class*="bg-[#0c1015]"],
+html[data-theme="light"] [class*="bg-[#0e1319]"],
+html[data-theme="light"] [class*="bg-[#11161d]"],
+html[data-theme="light"] [class*="bg-[#11171e]"],
+html[data-theme="light"] [class*="bg-[#171f28]"] {
+  background-color: #fff !important;
+}
+html[data-theme="light"] [class*="bg-black/15"],
+html[data-theme="light"] [class*="bg-black/20"] { background-color: #f1f4f8 !important; }
+html[data-theme="light"] [class*="border-white"],
+html[data-theme="light"] [class*="divide-white"] { border-color: rgba(23,32,51,.12) !important; }
+html[data-theme="light"] .text-white,
+html[data-theme="light"] .text-slate-100,
+html[data-theme="light"] .text-slate-200,
+html[data-theme="light"] .text-slate-300 { color: #172033 !important; }
+html[data-theme="light"] .text-slate-400 { color: #526078 !important; }
+html[data-theme="light"] .text-slate-500 { color: #64748b !important; }
+html[data-theme="light"] .text-slate-600 { color: #718096 !important; }
+html[data-theme="light"] [class*="placeholder:text-slate"]::placeholder { color: #718096; }
+html[data-theme="light"] [class*="hover:text-white"]:hover { color: #172033 !important; }
+html[data-theme="light"] [class*="hover:bg-white"]:hover { background-color: rgba(23,32,51,.05) !important; }
+html[data-theme="light"] [class*="bg-[#d7ad35]"],
+html[data-theme="light"] [class*="bg-[#d5b15b]"] { background-color: #d5b15b !important; }
+html[data-theme="light"] [class*="text-black"] { color: #171717 !important; }
+html[data-theme="light"] [class*="bg-red-600"] { background-color: #dc2626 !important; }
+html[data-theme="light"] [class*="text-red-200"] { color: #b91c1c !important; }
+html[data-theme="light"] [class*="text-red-300"] { color: #b91c1c !important; }
+
+html[data-theme="dark"] body { background: var(--bg); color: var(--text); }
+html[data-theme="dark"] .gold { color: var(--gold-light); }
+
+* { scrollbar-width: thin; scrollbar-color: #aab4c2 transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(100,116,139,.45); border: 3px solid transparent; border-radius: 999px; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,.7); border: 2px solid transparent; background-clip: padding-box; }
+html[data-theme="dark"] * { scrollbar-color: #475569 transparent; }
+html[data-theme="dark"] *::-webkit-scrollbar-thumb { background: rgba(148,163,184,.35); border: 3px solid transparent; background-clip: padding-box; }
+html[data-theme="dark"] *::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.6); border: 2px solid transparent; background-clip: padding-box; }
