@@ -1,114 +1,74 @@
-# Lesson 18: Data Visualisation Capstone and Review
+# Lesson 18: Visualisation Portfolio Project
 
 ## Project brief
-Create a complete visual analysis in Python using a dataset cleaned in WS04 or a relational summary produced in WS05. The project must answer a real question, use appropriate charts and communicate findings honestly.
+
+Create a reproducible visual analysis that answers a meaningful question and communicates the result to a defined audience. Use a public or synthetic dataset. If the dataset contains personal information, do not publish it; use an appropriately anonymised or synthetic alternative.
 
 ## Learning outcomes
-Plan a visual analysis, choose suitable encodings, build a consistent set of charts, assess accessibility and integrity, communicate a narrative, and deliver a reproducible Python project.
+Select a suitable dataset; formulate an analytical question; clean and inspect data; choose and build appropriate charts; explain findings; document limitations; and publish a reproducible project.
 
-## 1. Define the project question
-Write one primary question and no more than four supporting questions. State:
-- audience and decision;
-- unit of analysis;
-- time period and population;
-- important metrics and their definitions;
-- data limitations that may affect interpretation.
+## Part A — Define the question
+Write one main question and up to three supporting questions. Define the population, unit of analysis, time period and intended audience. Avoid questions so broad that they cannot be answered with the available variables.
 
-A question such as “How did monthly completed-order revenue change?” is testable if the dataset contains order dates, status and revenue fields. “Why did revenue fall?” may require additional evidence beyond transaction records.
+## Part B — Inspect and prepare
+Use Pandas to inspect dimensions, data types, missingness, duplicates and unusual values. Record cleaning decisions. Do not silently discard inconvenient records. Explain how each transformation affects the population and interpretation.
 
-## 2. Prepare the analysis dataset
-Use Python to load the data and inspect it:
-```python
-import pandas as pd
+## Part C — Design the visual analysis
+Create at least four charts serving different analytical purposes:
+- One distribution chart.
+- One comparison across categories or groups.
+- One relationship chart.
+- One time-series chart if the dataset has a meaningful time variable; otherwise justify an alternative.
 
-df = pd.read_csv("data/analysis_dataset.csv")
-print(df.shape)
-print(df.dtypes)
-print(df.isna().sum())
-print(df.head())
-```
-Confirm the row grain, date range, missingness, duplicate keys and metric definitions. Do not create charts from an unvalidated dataset.
+Use clear labels, units, sensible scales and accessible contrast. Each chart should answer a specific question rather than repeat the same message.
 
-## 3. Plan the chart set
-Choose visuals based on the questions:
-- trend over time: line chart;
-- category comparison: sorted bar chart;
-- distribution: histogram or boxplot;
-- relationship: scatterplot;
-- composition: stacked bar only when the components and total are meaningful.
+## Part D — Interpret findings
+For every chart, write:
+1. What is visibly shown?
+2. What pattern or difference is important?
+3. What alternative explanation might exist?
+4. What cannot be inferred?
+5. What additional data would strengthen the analysis?
 
-Each chart must add a distinct piece of evidence. Do not choose a chart because it looks impressive.
+Do not claim causation from a descriptive chart.
 
-## 4. Apply a consistent Python style
-```python
-import matplotlib.pyplot as plt
-
-fig, ax = plt.subplots(figsize=(9, 5))
-ax.bar(category_summary["category"],
-       category_summary["revenue"])
-ax.set_title("Revenue by product category")
-ax.set_xlabel("Product category")
-ax.set_ylabel("Revenue (currency units)")
-ax.tick_params(axis="x", rotation=30)
-fig.tight_layout()
-fig.savefig("outputs/category_revenue.png", dpi=200)
-plt.show()
-```
-Use readable labels, sensible ordering, sufficient contrast and clear units. Save figures into a project output folder so they can be included in a report.
-
-## 5. Review visual integrity
-Before submitting, check:
-- axes begin and end in a way that does not exaggerate differences;
-- time intervals are correctly ordered and consistently spaced;
-- denominators are stated for rates and percentages;
-- missing values are not silently treated as zero;
-- categories are not omitted without explanation;
-- colour is not the only way information is encoded;
-- sample sizes and uncertainty are visible where they matter;
-- titles and captions match the data actually plotted.
-
-## 6. Build the story
-Use a short sequence: context, question, evidence, interpretation and action. State what the analysis cannot establish. If your data is observational, do not imply that one variable caused another merely because they move together.
-
-## 7. Deliver a reproducible project
+## Part E — Deliver the project
 Suggested structure:
+
 ```text
-visualisation-capstone/
-    data/README.md
-    notebooks/analysis.ipynb
-    src/prepare_data.py
-    outputs/figures/
-    report.md
-    README.md
-    requirements.txt
+visualisation-project/
+├── data/
+├── notebooks/
+├── src/
+├── figures/
+├── report.md
+└── README.md
 ```
-Document where the data came from, how it can be accessed, the Python packages required and the steps to reproduce each chart. Do not publish personal or confidential source data.
+
+Keep raw data separate from processed data. Document the source, licence, date retrieved, packages and steps needed to reproduce the figures.
 
 ## Assessment rubric
-| Area | Weight | Evidence |
-|---|---:|---|
-| Question and audience | 10% | Clear decision context and scope |
-| Data preparation | 15% | Quality checks and correct definitions |
-| Chart selection | 20% | Appropriate visuals for analytical questions |
-| Visual design and integrity | 20% | Readability, accessibility and honest scales |
-| Story and interpretation | 20% | Evidence-led narrative and useful action |
-| Reproducibility | 15% | Code, setup and outputs can be recreated |
+| Area | Weight |
+|---|---:|
+| Question and audience definition | 10% |
+| Data inspection and preparation | 15% |
+| Chart choice and technical execution | 25% |
+| Visual clarity and accessibility | 15% |
+| Interpretation and storytelling | 20% |
+| Reproducibility and limitations | 15% |
 
 ## Submission checklist
 - [ ] The question and audience are explicit.
-- [ ] The data source and row grain are documented.
-- [ ] Every chart answers a question.
-- [ ] Labels, units, titles and captions are clear.
-- [ ] Missingness and limitations are disclosed.
-- [ ] No unsupported causal claims are made.
-- [ ] Charts are saved and referenced in the report.
-- [ ] The project can be reproduced from its README.
+- [ ] Data source and licence are documented.
+- [ ] Cleaning decisions are recorded.
+- [ ] Each chart has a purpose, title, labels and units.
+- [ ] Colour and scales do not mislead.
+- [ ] Findings are supported by the displayed evidence.
+- [ ] Limitations and alternative explanations are stated.
+- [ ] Another learner can reproduce the project.
 
 ## Reflection
-Which chart changed your understanding most? Which chart did you remove because it added little? What additional data would improve the analysis? What could a decision-maker misunderstand?
+Which chart changed your understanding of the dataset most? Which design choice made the result clearer? What additional data would you request before recommending action?
 
-## Bridge to WS07
-Visual analysis helps explain what happened and what patterns exist. Machine learning introduces a different goal: learning patterns from examples to make predictions or discover structure. The next course begins with problem framing, baselines, data splits and generalisation before building more complex models.
-
-## Completion standard
-You can turn a validated Python dataset into a coherent, accessible and reproducible visual story, while explaining what the evidence does and does not support.
+## Course completion
+A strong visualisation project is not a gallery of attractive charts. It is a transparent analytical argument: a clear question, appropriate evidence, careful design, honest interpretation and a reproducible workflow.
