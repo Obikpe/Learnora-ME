@@ -39,7 +39,7 @@ axes[0, 0].set_title("Orders over time")
 axes[0, 0].set_ylabel("Orders")
 
 sns.barplot(data=df, x="region", y="orders",
-            estimator="sum", errorbar=None, ax=axes[0, 1])
+            estimator=sum, errorbar=None, ax=axes[0, 1])
 axes[0, 1].set_title("Total orders by region")
 axes[0, 1].set_ylabel("Orders")
 
