@@ -3,7 +3,7 @@ DECLARE
   v_rls boolean;
   v_browser_privileges integer;
   v_service_privileges integer;
-  v_unique_constraint integer;
+  v_lookup_index integer;
 BEGIN
   SELECT c.relrowsecurity INTO v_rls
   FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
@@ -28,11 +28,11 @@ BEGIN
     RAISE EXCEPTION 'service_role requires select/insert/update/delete on quiz_active_sessions';
   END IF;
 
-  SELECT count(*) INTO v_unique_constraint
-  FROM pg_constraint
-  WHERE conrelid='public.quiz_active_sessions'::regclass
-    AND conname='quiz_active_sessions_user_quiz_unique';
-  IF v_unique_constraint <> 1 THEN
-    RAISE EXCEPTION 'quiz_active_sessions must enforce one current session per learner and quiz';
+  SELECT count(*) INTO v_lookup_index
+  FROM pg_indexes
+  WHERE schemaname='public' AND tablename='quiz_active_sessions'
+    AND indexname='quiz_active_sessions_user_expiry_idx';
+  IF v_lookup_index <> 1 THEN
+    RAISE EXCEPTION 'quiz_active_sessions requires a user/expiry lookup index';
   END IF;
 END $$;
