@@ -222,7 +222,12 @@ def course_performance(course_id: str, staff: InternalStaffContext = Depends(req
         .order("enrolled_at", desc=True)
         .execute()
     ).data or []
-    user_ids = list({str(row["user_id"]) for row in enrolments if row.get("user_id")})
+    latest_enrolment_by_user = {}
+    for row in enrolments:
+        if row.get("user_id"):
+            latest_enrolment_by_user.setdefault(str(row["user_id"]), row)
+    enrolments = list(latest_enrolment_by_user.values())
+    user_ids = list(latest_enrolment_by_user)
     if not user_ids:
         return {"success": True, "course_id": course_id, "learners": [], "count": 0}
     users = supabase.table("users").select("id,name,email,role").in_("id", user_ids).execute().data or []
@@ -287,8 +292,12 @@ def course_performance(course_id: str, staff: InternalStaffContext = Depends(req
         by_user_progress.setdefault(str(row["user_id"]), []).append(row)
     for row in attempts:
         by_user_attempts.setdefault(str(row["user_id"]), []).append(row)
+    latest_submission_by_user_assignment = {}
     for row in submissions:
-        by_user_submissions.setdefault(str(row["user_id"]), []).append(row)
+        key = (str(row.get("user_id")), str(row.get("assignment_id")))
+        latest_submission_by_user_assignment.setdefault(key, row)
+    for (submission_user_id, _assignment_id), row in latest_submission_by_user_assignment.items():
+        by_user_submissions.setdefault(submission_user_id, []).append(row)
     learners = []
     for enrolment in enrolments:
         user_id = str(enrolment.get("user_id"))
