@@ -371,3 +371,12 @@ The AI tutor must be completely unavailable during any active quiz attempt. Lear
 The product owner has since defined the next learner-outcomes sequence as Phase 6 certificates and verification, Phase 7 Practice Lab and project submissions, and Phase 8 skill mastery map and learner portfolio. This sequence is recorded in `LEARNER_OUTCOMES_PHASES_6_8.md`; the earlier track-completion feedback proposal remains backlog work. The active Pheonix schema was rechecked read-only: the existing credential, project, submission, skill and evidence tables are present with RLS enabled and service-role-only direct grants. No production migration or data mutation was performed. CI and browser/mobile acceptance remain release gates.
 
 The free-access mode remains default-off until separately configured and deployed; all paid/payment code remains preserved. These features have not added payment, subscription, trial or expiry checks.
+
+## Implementation checkpoint — 2 November 2026
+
+The initial status line above records the document's approval date, not the current implementation state.
+
+- The backend already supports the central reversible `FREE_ACCESS_MODE` server-side access switch, with tests distinguishing individual learners from organisations/cohorts and preserving the paid access path.
+- The backend Vercel Production environment now has `FREE_ACCESS_MODE=true`. This is a reversible environment setting; it becomes active when the next backend Production deployment is made.
+- No subscription, Paystack, payment, trial or Pro code has been deleted. No payment/subscription history has been mass-updated.
+- Production deployment remains gated by the outstanding additive Supabase migrations and their disposable replay/approval process. The free-mode setting is prepared but is not yet active in the currently running production backend deployment.
