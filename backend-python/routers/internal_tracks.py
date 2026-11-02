@@ -205,8 +205,16 @@ def _assert_publishable(track_id: str):
             if not quizzes:
                 raise HTTPException(status_code=409, detail="Every published module before the final module must have a published assessment so learners can unlock the next module.")
             for quiz in quizzes:
-                from .internal_assessments import _validate_assessment_location
-                _validate_assessment_location(str(course["id"]), quiz.get("module_id"), quiz.get("lesson_id"), require_published=True)
+                if quiz.get("lesson_id"):
+                    lesson_rows = (
+                        supabase.table("learnora_lessons")
+                        .select("id,module_id,status")
+                        .eq("id", str(quiz["lesson_id"]))
+                        .limit(1)
+                        .execute()
+                    ).data or []
+                    if not lesson_rows or lesson_rows[0].get("status") != "published" or str(lesson_rows[0].get("module_id")) != str(previous_module["id"]):
+                        raise HTTPException(409, "A published module quiz must be attached to a published lesson in the same module.")
                 questions = (
                     supabase.table("quiz_questions")
                     .select("id,question_type,options,correct_answer")
@@ -234,8 +242,15 @@ def _assert_publishable(track_id: str):
             if assignment.get("max_score") is not None and float(assignment["max_score"]) <= 0:
                 raise HTTPException(409, "Every published assignment must have a positive maximum score.")
             if assignment.get("lesson_id"):
-                from .internal_assessments import _validate_assessment_location
-                _validate_assessment_location(str(course["id"]), None, str(assignment["lesson_id"]), require_published=True)
+                lesson_rows = (
+                    supabase.table("learnora_lessons")
+                    .select("id,module_id,status")
+                    .eq("id", str(assignment["lesson_id"]))
+                    .limit(1)
+                    .execute()
+                ).data or []
+                if not lesson_rows or lesson_rows[0].get("status") != "published" or str(lesson_rows[0].get("module_id")) not in set(module_ids):
+                    raise HTTPException(409, "A published assignment must be attached to a published lesson in this track course.")
 
 
 @router.get("")
