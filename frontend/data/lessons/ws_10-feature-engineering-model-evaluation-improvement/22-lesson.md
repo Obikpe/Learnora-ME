@@ -1,33 +1,33 @@
-# Lesson 22: Model Comparison and Statistical Caution
+# Lesson 22: Reproducible Model Improvement Workflow
 
 ## Learning outcomes
 Explain the technique, implement it in Python and justify the validation choices.
 
 ## 1. Core explanation
-Model scores vary with sample, split and random seed. A small difference in mean cross-validation score may not be meaningful. Report fold-level variability, sample size and uncertainty. If comparing models on the same folds, their scores are paired; inspect the distribution of differences rather than comparing rounded means alone.
+An improvement workflow is a controlled experiment. Start with a baseline and a written hypothesis, change one meaningful factor, evaluate using the same split and metric, and record the result. Examples include adding a feature, changing regularisation, adjusting class weights or using a different model family.
 
-Repeatedly selecting the best among many candidates can produce optimistic estimates. Nested cross-validation can estimate the full selection process, while a final held-out test provides a final check. Neither removes sampling bias or future distribution shift.
+Keep experiment records: dataset version, code commit, package versions, split seed, preprocessing, hyperparameters, metric and date. Do not delete failed experiments; they explain decisions. Ensure each candidate is compared on identical evaluation data.
 
-Statistical significance is not the same as practical value. Consider effect size, operational cost, fairness, interpretability and latency. If two models perform similarly, prefer the simpler and more maintainable one unless a clear benefit justifies complexity.
+The final improvement should be meaningful, reproducible and defensible. If improvement is within normal score variability, report that honestly. Re-run the selected workflow from a clean environment and preserve the untouched test set for final evaluation.
 
 ## 2. Worked Python example
 Run in VS Code using the course virtual environment. Install packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
 
 ```python
-import numpy as np
-scores_a = np.array([.91, .90, .93, .89, .92])
-scores_b = np.array([.92, .91, .92, .90, .93])
-differences = scores_b - scores_a
-print("Mean A:", scores_a.mean(), "Mean B:", scores_b.mean())
-print("Fold differences:", differences)
-print("Mean paired difference:", differences.mean())
+import pandas as pd
+experiments = pd.DataFrame([
+    {"id": "baseline", "change": "Dummy median", "mae": 12.4, "seed": 42},
+    {"id": "e01", "change": "Ridge alpha=1", "mae": 10.8, "seed": 42},
+    {"id": "e02", "change": "Ridge alpha=10", "mae": 11.1, "seed": 42}
+])
+print(experiments.sort_values("mae"))
 ```
 
 ## 3. Interpretation and safeguards
 State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune thresholds, select features or choose hyperparameters.
 
 ## 4. Guided practice
-Interpret the paired fold differences. Explain why five folds do not prove a universal performance advantage and why practical cost should influence the choice.
+Create an experiment log for three model changes. State the hypothesis before each run, use identical validation folds and write a decision note explaining which change to retain.
 
 ## 5. Independent practice
 Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
