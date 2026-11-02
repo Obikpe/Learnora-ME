@@ -188,7 +188,7 @@ Using the students table:
 
 ## Independent practice
 
-Create an `orders` table with order ID, customer, region, order date and amount. Insert at least eight rows, including different regions, repeated customers, a missing optional value and amounts on the boundaries of a range. Write at least eight filtering queries. For each query, explain in plain language exactly why each returned row qualifies.
+Run `python scripts/seed_course_data.py` once if you have not already done so. Use the seeded `orders` table (eight sample orders across four regions and four customers). Write at least eight filtering queries, including a date range, a region, a status, a minimum amount and a combined condition. For each query, explain in plain language exactly why each returned row qualifies. Add one new order with a missing optional amount only after checking the table schema and constraints.
 
 ## Lesson summary
 
