@@ -1,15 +1,31 @@
 """Tests for optional learning plans and canonical track separation."""
 import os
 import unittest
+from types import SimpleNamespace
 
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
+from fastapi import HTTPException
 from routers import learning_plans
 
 
 class LearningPlanTests(unittest.TestCase):
+    def test_only_individual_learners_can_use_personal_plans(self):
+        learning_plans._assert_individual(SimpleNamespace(
+            role="normal", account_type="learner", organisation_id=None,
+        ))
+        for user in (
+            SimpleNamespace(role="normal", account_type="cohort", organisation_id="org-1"),
+            SimpleNamespace(role="normal", account_type="learner", organisation_id="org-1"),
+            SimpleNamespace(role="staff_admin", account_type="admin", organisation_id=None),
+        ):
+            with self.subTest(user=user):
+                with self.assertRaises(HTTPException) as raised:
+                    learning_plans._assert_individual(user)
+                self.assertEqual(raised.exception.status_code, 403)
+
     def test_schedule_uses_only_supplied_catalogue_course_ids(self):
         courses = [
             {"id": "course-a", "title": "Foundations", "estimated_hours": 2, "required": True},
