@@ -1,7 +1,8 @@
 # Lesson 6: Date, Time and Text Features
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Extract calendar and time features from timestamps; encode cyclical time with sine and cosine; derive text features carefully; and prevent timezone or future-information leakage.
 
 ## 1. Core explanation
 Dates and text contain useful structure but need transformations. Date features may include day of week, month, elapsed time, weekend flag or time since a prior event. Cyclical fields such as hour or month can be represented with sine and cosine so that December and January are close on the circle. Avoid creating a future-derived feature.
