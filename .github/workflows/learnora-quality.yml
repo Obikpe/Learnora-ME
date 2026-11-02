@@ -46,7 +46,24 @@ jobs:
         run: python -m pip install -r backend-python/requirements.txt
 
       - name: Compile backend
-        run: python -m compileall -q backend-python
+        working-directory: backend-python
+        run: python -m compileall -q .
+
+      - name: Install compatible test client and static checker
+        run: python -m pip install "httpx<0.28" ruff
+
+      - name: Check Python undefined names and syntax
+        working-directory: backend-python
+        run: ruff check . --select E9,F821,F811
+
+      - name: Import backend application
+        working-directory: backend-python
+        env:
+          APP_ENV: development
+          SUPABASE_URL: https://example.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.test-signature
+          JWT_SECRET: learnora-ci-only-secret-32-characters-minimum
+        run: python -c "import main; print('Learnora application import passed')"
 
       - name: Run focused production regressions
         working-directory: backend-python
@@ -60,10 +77,36 @@ jobs:
             test_free_access_mode.py \
             test_frontend_security_contracts.py \
             test_migration_inventory.py \
-            test_supabase_migration_inventory.py
+            test_supabase_migration_inventory.py \\
+            test_quiz_tutor_lock.py
           do
             python -m unittest discover -s tests -p "$test_file"
           done
+
+      - name: Smoke-test backend HTTP startup
+        working-directory: backend-python
+        env:
+          APP_ENV: development
+          SUPABASE_URL: https://example.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.test-signature
+          JWT_SECRET: learnora-ci-only-secret-32-characters-minimum
+        run: |
+          python -m uvicorn main:app --host 127.0.0.1 --port 8000 >/tmp/learnora-backend.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import time
+          import urllib.request
+          for _ in range(30):
+              try:
+                  with urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=2) as response:
+                      if response.status == 200:
+                          print(response.read().decode())
+                          raise SystemExit(0)
+              except Exception:
+                  time.sleep(1)
+          raise SystemExit("Backend health endpoint did not become ready")
+          PY
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84bd3f7d6820020 # v4.4.0
