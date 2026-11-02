@@ -1,7 +1,8 @@
 # Lesson 9: Exploratory Data Analysis for ML
 
 ## Learning outcomes
-Explain the method, implement the example in Python, interpret its result, and identify risks that could invalidate the conclusion.
+
+By the end of this lesson, you should be able to Profile an ML dataset's dimensions, types, missing values, duplicates and target distribution; inspect numeric summaries; identify imbalance and suspicious fields; and record data-quality issues before training.
 
 ## 1. Concepts and reasoning
 Exploratory data analysis (EDA) checks whether a dataset is suitable for modelling and helps uncover errors before they become model behaviour. Inspect dimensions, data types, duplicate rows, missingness, ranges, category frequencies and target distribution. Use descriptive statistics and visualisations to detect skew, impossible values and unusual subgroups.
