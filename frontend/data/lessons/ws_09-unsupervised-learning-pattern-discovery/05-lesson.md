@@ -1,7 +1,8 @@
 # Lesson 5: Choosing the Number of Clusters
 
 ## Learning outcomes
-Explain the unsupervised-learning concept, implement the worked example, interpret the output and assess whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Use inertia and silhouette score to compare candidate cluster counts; interpret an elbow plot cautiously; and explain why internal metrics cannot establish that clusters are useful business segments.
 
 ## 1. Core explanation
 The k value controls how many groups K-means produces. The elbow method plots within-cluster sum of squares against k. The curve always decreases as k increases, so look for a point where additional clusters give diminishing improvement rather than treating the elbow as a mathematical proof.
