@@ -1,7 +1,8 @@
 # Lesson 21: Deployment Project: Build and Serve a Model
 
 ## Learning outcomes
-Explain the production concept, implement the example and evaluate the system against its intended use.
+
+By the end of this lesson, you should be able to Build a small prediction API around a saved pipeline; validate request schema; return prediction and model version; write tests; and document run, monitoring and rollback instructions.
 
 ## 1. Core explanation
 This project combines model development with a small local prediction service. Select a public educational dataset, define the target and intended use, create a reproducible preprocessing-and-model Pipeline, evaluate it on a held-out set and save the complete artefact. Build an API that validates inputs and returns a prediction with a model version.
