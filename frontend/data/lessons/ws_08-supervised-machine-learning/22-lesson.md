@@ -1,7 +1,8 @@
 # Lesson 22: Error Analysis and Diagnostics
 
 ## Learning outcomes
-Explain the technique, implement the example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Inspect false positives, false negatives or large residuals; identify patterns in error cases; compare errors across meaningful subgroups; and propose evidence-based improvements without tuning on the test set.
 
 ## 1. Core explanation
 Error analysis asks where and why a model fails. For regression, inspect residuals against predictions, features, time and important groups. For classification, examine false positives and false negatives, confidence scores and subgroup metrics. Read misclassified examples where permitted and look for systematic patterns.
