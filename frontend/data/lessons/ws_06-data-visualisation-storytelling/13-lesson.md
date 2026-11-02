@@ -1,7 +1,8 @@
 # Lesson 13: Statistical Uncertainty and Honest Charts
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to distinguish standard deviation, standard error and confidence intervals; show sample sizes and denominators; explain sources of uncertainty; and design charts that avoid false precision and misleading scales.
 
 ## 1. Core explanation
 Every chart contains uncertainty from sampling, measurement, missingness and modelling choices. A point estimate is not the whole story. Error bars may represent standard deviation, standard error or a confidence interval; these are different quantities and must be labelled. Overlapping intervals do not automatically prove that two groups are equal, and non-overlap is not a universal significance test.
