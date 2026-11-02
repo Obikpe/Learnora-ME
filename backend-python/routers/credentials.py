@@ -47,6 +47,7 @@ def _certificate_view(row: dict, course_title: str | None = None) -> dict:
         "id": row.get("id"),
         "certificate_number": row.get("certificate_number"),
         "issued_at": row.get("issued_at"),
+        "status": "revoked" if row.get("revoked_at") else "valid",
         "revoked_at": row.get("revoked_at"),
         "revocation_reason": row.get("revocation_reason"),
         "valid": not bool(row.get("revoked_at")),
@@ -137,13 +138,15 @@ def issue_course_certificate(
     # second certificate for a course that was already certified.
     existing = (
         supabase.table("certificates")
-        .select("id,user_id,course_id,certificate_number,issued_at,metadata")
+        .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
         .eq("user_id", user.id)
         .eq("course_id", course_id)
         .limit(1)
         .execute()
     ).data or []
     if existing:
+        if existing[0].get("revoked_at"):
+            raise HTTPException(409, "This certificate has been revoked and cannot be reissued. Contact Learnora support.")
         return {
             "success": True,
             "already_issued": True,
@@ -198,7 +201,7 @@ def verify_certificate(certificate_number: str):
         raise HTTPException(404, "Certificate not found.")
     rows = (
         supabase.table("certificates")
-        .select("id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
+        .select("id,course_id,certificate_number,issued_at,metadata,revoked_at")
         .eq("certificate_number", number)
         .limit(1)
         .execute()
@@ -222,7 +225,6 @@ def verify_certificate(certificate_number: str):
             "certificate_number": row.get("certificate_number"),
             "status": "revoked" if row.get("revoked_at") else "valid",
             "revoked_at": row.get("revoked_at"),
-            "revocation_reason": row.get("revocation_reason"),
             "issued_at": row.get("issued_at"),
             "course_title": (course_rows[0].get("title") if course_rows else None) or metadata.get("course_title") or "Learnora course",
             "recipient_name": metadata.get("recipient_name") or "Learnora learner",
