@@ -1,7 +1,8 @@
 # Lesson 26: End-to-End Regression Case Study
 
 ## Learning outcomes
-Explain the technique, implement the example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Complete a regression case study using a bundled dataset; compare a dummy baseline with a candidate model; report MAE and RMSE; inspect residuals; and explain the dataset's limits and target meaning.
 
 ## 1. Core explanation
 This case study predicts a continuous target using the diabetes progression dataset bundled with scikit-learn. Its target is a quantitative measure of disease progression one year after baseline in the study dataset; it is not a diagnosis, an individual risk probability or a clinical treatment recommendation. The purpose is to practise a regression workflow, not to create a medical decision-support product. The dataset is small and historical, so its relationships should not be generalised to current patients or used for clinical decisions.
