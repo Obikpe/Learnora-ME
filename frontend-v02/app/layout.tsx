@@ -28,10 +28,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#090b0e",
-  colorScheme: "dark",
+  themeColor: "#f5f7fb",
+  colorScheme: "light",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en" data-theme="light"><body>{children}</body></html>;
 }
