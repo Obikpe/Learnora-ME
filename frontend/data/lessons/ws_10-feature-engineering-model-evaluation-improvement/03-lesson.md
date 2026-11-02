@@ -1,7 +1,8 @@
 # Lesson 3: Missing-Value Strategies
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Compare mean, median, most-frequent and indicator-based missing-value strategies; implement SimpleImputer; inspect missingness patterns; and explain why imputation must be fitted inside training folds.
 
 ## 1. Core explanation
 Missing data can arise because a value was not measured, was not applicable, was refused or was lost. These mechanisms have different implications. Before imputation, quantify missingness by field, group and time. Ask whether missingness itself contains information and whether it may be related to the target.
