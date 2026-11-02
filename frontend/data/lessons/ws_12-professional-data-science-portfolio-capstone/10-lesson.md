@@ -1,7 +1,8 @@
 # Lesson 10: Data Cleaning Evidence and Decisions
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Record data-cleaning decisions with evidence; standardise categories; flag invalid values and duplicates; preserve raw records; and explain why each correction is justified.
 
 ## 1. Core explanation
 Data cleaning should be evidence-led. Start by identifying duplicate records, invalid values, inconsistent categories, impossible dates, missingness and unexpected data types. Do not remove a row simply because it is unusual. Determine whether it is an error, a valid rare case or a separate population.
