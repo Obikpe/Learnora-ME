@@ -1,7 +1,8 @@
 # Lesson 18: Handling Imbalanced Classes
 
 ## Learning outcomes
-Explain the technique, implement the worked example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Explain why class imbalance can make accuracy misleading; inspect class proportions; compare class weighting; and evaluate minority-class precision, recall and the operational cost of errors.
 
 ## 1. Core explanation
 Class imbalance occurs when one class is much rarer than another. Accuracy can hide poor minority-class detection. Use precision, recall, F1, PR-AUC and confusion matrices according to the decision. Precision-recall curves are often informative when the positive class is rare because they focus on positive predictions.
