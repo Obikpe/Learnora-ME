@@ -1,7 +1,8 @@
 # Lesson 3: Building a Reproducible Supervised Workflow
 
 ## Learning outcomes
-Explain the supervised-learning concept, implement the method in Python, interpret its output and identify assumptions and common failure modes.
+
+By the end of this lesson, you should be able to Build a reproducible supervised workflow using a train/test split, a preprocessing-and-model pipeline, a baseline and an appropriate metric; and explain how to keep test data separate from model selection.
 
 ## 1. Core explanation
 A supervised workflow should be reproducible from raw data to final metric. Keep data loading, validation, splitting, preprocessing, model fitting and evaluation explicit. Use a fixed random seed when a random split is appropriate, but remember that a seed alone does not guarantee full reproducibility across library versions or hardware.
