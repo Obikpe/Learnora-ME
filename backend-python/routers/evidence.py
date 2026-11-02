@@ -31,12 +31,6 @@ class ProjectSubmissionIn(BaseModel):
 
 
 ALLOWED_EVIDENCE_TYPES = {
-    "project",
-    "assessment",
-    "course",
-    "certificate",
-    "portfolio",
-    "work",
     "manual",
 }
 
@@ -93,23 +87,56 @@ def my_evidence(
         .execute()
     )
 
-    skill_rows = skills.data or []
+    stored_skill_rows = skills.data or []
     evidence_rows = evidence.data or []
     certificate_rows = certificates.data or []
-    skill_ids = list({
-        str(row["skill_id"])
-        for row in [*skill_rows, *evidence_rows]
-        if row.get("skill_id")
+    definitions = (
+        supabase.table("skills")
+        .select("id,name,category,description")
+        .order("name")
+        .execute()
+    ).data or []
+    skill_map = {str(row["id"]): row for row in definitions}
+    project_source_ids = list({
+        str(row["source_id"])
+        for row in evidence_rows
+        if row.get("evidence_type") == "project" and row.get("source_id")
     })
-    skill_map = {}
-    if skill_ids:
-        definitions = (
-            supabase.table("skills")
-            .select("id,name,category,description")
-            .in_("id", skill_ids)
+    verified_project_map = {}
+    if project_source_ids:
+        verified_projects = (
+            supabase.table("project_submissions")
+            .select("id,user_id,status,score,project_id")
+            .in_("id", project_source_ids)
+            .eq("user_id", user.id)
+            .eq("status", "approved")
             .execute()
         ).data or []
-        skill_map = {str(row["id"]): row for row in definitions}
+        verified_project_map = {str(row["id"]): row for row in verified_projects}
+    mastery_scores = {}
+    for row in evidence_rows:
+        source_id = str(row.get("source_id") or "")
+        if row.get("evidence_type") != "project" or source_id not in verified_project_map:
+            continue
+        skill_id = str(row.get("skill_id") or "")
+        score = verified_project_map[source_id].get("score", row.get("score"))
+        if skill_id and score is not None:
+            mastery_scores.setdefault(skill_id, []).append(float(score))
+    enriched_skill_rows = []
+    for definition in definitions:
+        values = mastery_scores.get(str(definition["id"]), [])
+        proficiency = round(sum(values) / len(values), 1) if values else 0
+        status = "advanced" if proficiency >= 85 else "competent" if proficiency >= 70 else "developing" if values else "not_started"
+        enriched_skill_rows.append({
+            **definition,
+            "skill_id": str(definition["id"]),
+            "skill_name": definition.get("name"),
+            "proficiency": proficiency,
+            "status": status,
+            "verified_evidence_count": len(values),
+        })
+    known_skill_ids = {str(row["id"]) for row in definitions}
+    stored_skill_rows = [row for row in stored_skill_rows if str(row.get("skill_id")) in known_skill_ids]
 
     course_ids = list({
         str(row["course_id"])
@@ -139,7 +166,12 @@ def my_evidence(
             **row,
             "skill": skill_map.get(str(row.get("skill_id"))),
             "skill_name": (skill_map.get(str(row.get("skill_id"))) or {}).get("name"),
-            "verification_state": "not_verified",
+            "verification_state": (
+                "verified"
+                if row.get("evidence_type") == "project"
+                and str(row.get("source_id") or "") in verified_project_map
+                else "not_verified"
+            ),
         }
         for row in evidence_rows
     ]
@@ -153,7 +185,7 @@ def my_evidence(
 
     return {
         "success": True,
-        "skills": enriched_skills,
+        "skills": enriched_skill_rows,
         "evidence": enriched_evidence,
         "badges": badges.data or [],
         "certificates": enriched_certificates,
@@ -170,8 +202,10 @@ def add_evidence(
     if evidence_type not in ALLOWED_EVIDENCE_TYPES:
         raise HTTPException(
             400,
-            "Unsupported evidence type.",
+            "Only personal notes may be added manually. Verified project and assessment evidence is created by Learnora after review.",
         )
+    if body.score is not None or body.source_id is not None:
+        raise HTTPException(422, "Manual evidence cannot claim a score or attach an unverified source.")
 
     skill = (
         supabase
@@ -217,6 +251,55 @@ def add_evidence(
         "success": True,
         "evidence": result.data[0],
     }
+
+
+@router.get("/projects")
+def available_projects(user: CurrentUser = Depends(get_current_user)):
+    """Published practice projects available to the authenticated learner."""
+    rows = (
+        supabase.table("projects")
+        .select("id,course_id,title,description,instructions,skills,created_at")
+        .eq("is_published", True)
+        .order("created_at", desc=True)
+        .execute()
+    ).data or []
+    course_ids = list({str(row["course_id"]) for row in rows if row.get("course_id")})
+    course_map = {}
+    enrolled_ids = set()
+    if course_ids:
+        course_rows = (
+            supabase.table("learnora_courses")
+            .select("id,title,status")
+            .in_("id", course_ids)
+            .eq("status", "published")
+            .execute()
+        ).data or []
+        course_map = {str(row["id"]): row for row in course_rows}
+        enrolments = (
+            supabase.table("learnora_enrolments")
+            .select("course_id")
+            .eq("user_id", user.id)
+            .in_("course_id", course_ids)
+            .in_("status", ["active", "completed"])
+            .execute()
+        ).data or []
+        enrolled_ids = {str(row["course_id"]) for row in enrolments}
+    skill_ids = list({str(value) for row in rows for value in (row.get("skills") or [])})
+    skill_map = {}
+    if skill_ids:
+        skill_rows = supabase.table("skills").select("id,name,category").in_("id", skill_ids).execute().data or []
+        skill_map = {str(row["id"]): row for row in skill_rows}
+    available = []
+    for row in rows:
+        course_id = str(row.get("course_id") or "")
+        if course_id and (course_id not in enrolled_ids or course_id not in course_map):
+            continue
+        available.append({
+            **row,
+            "course": course_map.get(course_id) if course_id else None,
+            "skill_records": [skill_map[str(value)] for value in (row.get("skills") or []) if str(value) in skill_map],
+        })
+    return {"success": True, "projects": available}
 
 
 @router.get("/projects/me")
@@ -323,7 +406,7 @@ def submit_project(
         .select("id,status")
         .eq("project_id", project_id)
         .eq("user_id", user.id)
-        .in_("status", ["submitted", "under_review", "approved"])
+        .in_("status", ["submitted", "reviewed", "approved"])
         .limit(1)
         .execute()
     )
