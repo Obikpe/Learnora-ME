@@ -63,6 +63,14 @@ def _clean_comment(value: str | None) -> str | None:
 def public_track_reviews(track_id: str):
     track_id = _track_id(track_id)
     track = _public_track(track_id)
+    ratings = (
+        supabase.table("learnora_track_reviews")
+        .select("rating")
+        .eq("track_id", track_id)
+        .eq("public_consent", True)
+        .eq("moderation_status", "approved")
+        .execute()
+    ).data or []
     rows = (
         supabase.table("learnora_track_reviews")
         .select("id,rating,comment,created_at")
@@ -73,12 +81,12 @@ def public_track_reviews(track_id: str):
         .limit(50)
         .execute()
     ).data or []
-    ratings = [int(row["rating"]) for row in rows]
+    rating_values = [int(row["rating"]) for row in ratings]
     return {
         "success": True,
         "track": {"id": track["id"], "name": track["name"], "slug": track.get("slug")},
-        "average_rating": round(sum(ratings) / len(ratings), 1) if ratings else None,
-        "rating_count": len(ratings),
+        "average_rating": round(sum(rating_values) / len(rating_values), 1) if rating_values else None,
+        "rating_count": len(rating_values),
         "reviews": rows,
     }
 
