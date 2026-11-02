@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, Layers3, Target, FolderKanban } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Layers3, Target, FolderKanban } from "lucide-react";
 import Logo from "../../components/brand/Logo";
 import Toast from "../../components/feedback/Toast";
 import { register } from "../../lib/api";
