@@ -31,12 +31,15 @@ class FrontendSecurityContractTests(unittest.TestCase):
         shell = (ROOT / "frontend-v02" / "components" / "dashboard" / "Shell.tsx").read_text(encoding="utf-8")
         sidebar = (ROOT / "frontend-v02" / "components" / "dashboard" / "Sidebar.tsx").read_text(encoding="utf-8")
         ai_api = (ROOT / "backend-python" / "routers" / "ai.py").read_text(encoding="utf-8")
+        ai_page = (ROOT / "frontend-v02" / "app" / "dashboard" / "ai" / "page.tsx").read_text(encoding="utf-8")
         self.assertIn('hideTutor={Boolean(quizData)||quizOpening}', player)
         self.assertIn('hideTutor={hideTutor}', shell)
         self.assertIn('!(hideTutor&&key==="ai")', sidebar)
         self.assertNotIn("Ask tutor about this quiz", player)
         self.assertIn("if(quizData||quizOpening)return", player)
         self.assertIn("_assert_no_active_quiz_session(str(user.id))", ai_api)
+        self.assertIn('sessionStorage.getItem("learnora_quiz_active")==="1"', ai_page)
+        self.assertIn("Tutor unavailable during quizzes", ai_page)
 
     def test_frontend_api_proxies_are_configured_for_same_origin_cookies(self):
         for relative in ("frontend-v02/next.config.mjs", "frontend-team/next.config.mjs"):
