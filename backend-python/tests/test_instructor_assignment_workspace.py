@@ -32,6 +32,9 @@ class Query:
     def order(self, *_args, **_kwargs):
         return self
 
+    def limit(self, *_args, **_kwargs):
+        return self
+
     def execute(self):
         rows = self.db.rows.get(self.table_name, [])
         for key, operation, value in self.filters:
