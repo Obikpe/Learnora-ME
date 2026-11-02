@@ -70,7 +70,7 @@ print("Pandas result:")
 print(pandas_result)
 ```
 
-Both approaches should return two active users for January 2026 and two for February 2026. The event rows are not the same as active users: user 1 has two January events but contributes one active user for January.
+Both approaches should return three active users for January 2026 (users 1, 2 and 3) and two for February 2026 (users 2 and 3). The event rows are not the same as active users: user 1 has two January events but contributes one active user for January.
 
 ## 3. Important edge cases
 
