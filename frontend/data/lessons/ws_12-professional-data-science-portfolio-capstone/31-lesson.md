@@ -1,7 +1,8 @@
 # Lesson 31: Capstone: Final Report and Presentation
 
 ## Learning outcomes
-Apply the professional practice, produce the capstone artefact and communicate evidence and limitations clearly.
+
+By the end of this lesson, you should be able to Write and present the final capstone report with problem, data provenance, preparation, methods, validation, results, limitations, ethics and recommendations; and answer reviewer questions.
 
 ## 1. Core explanation
 The final report connects the problem, data, method, evidence and recommendation. Include an executive summary, question, data source and licence, preparation, analysis, results, limitations and next steps. Charts need clear labels, units, source notes and appropriate scales.
