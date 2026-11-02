@@ -1,38 +1,35 @@
 # Unsupervised Learning & Pattern Discovery
-Course: ws_09
-Level: Beginner to advanced
-Duration: 12h • 16 lessons
-Prerequisite: WS01–WS08; Python, statistics, Pandas, visualisation and supervised-learning vocabulary
+
+**Course:** ws_09  
+**Duration:** 12h  
+**Lessons:** 16  
+**Environment:** Python 3 in VS Code; course-appropriate libraries and tools.
 
 ## Course purpose
-Teach methods for discovering structure when a dataset has no target label. Learners use Python to explore similarity, clusters, lower-dimensional representations and association patterns, while learning why unsupervised results require careful validation and interpretation.
 
-## Learning outcomes
-Explain unsupervised learning; prepare data for distance-based methods; scale and encode features; apply clustering; choose and critique cluster counts; use dimensionality reduction; detect anomalies; explore association patterns; and communicate uncertainty in discovered structure.
+This course is a structured self-study programme for data science learners. It moves from foundational ideas to practical implementation, interpretation, evaluation and a final applied task. Learners should be able to follow the notes without relying on a tutor to supply missing explanations. Every lesson should define new terminology, explain why a technique is used, demonstrate it with a small example before increasing complexity, discuss assumptions and common errors, and provide guided and independent practice.
 
-## Lesson sequence
-01. What Unsupervised Learning Can and Cannot Do — no target labels, discovery vs proof, use cases and limitations.
-02. Preparing Data for Pattern Discovery — feature selection, data types, missingness, duplicates and meaningful units.
-03. Similarity, Distance and Scaling — Euclidean/Manhattan distance, standardisation, normalisation and mixed features.
-04. Clustering Concepts — what a cluster represents, assumptions, shape, density and business meaning.
-05. K-Means Clustering — centroids, assignment/update loop, inertia and scikit-learn implementation.
-06. Choosing the Number of Clusters — elbow method, silhouette score, stability and practical interpretability.
-07. Hierarchical Clustering — linkage, dendrogram intuition, distance thresholds and use cases.
-08. DBSCAN and Density-Based Clustering — core/border/noise points, eps, min_samples and variable-density limitations.
-09. Comparing and Validating Clusters — internal metrics, stability, profiling and avoiding claims of natural truth.
-10. Dimensionality Reduction — why reduce dimensions, variance, compression and visualisation vs modelling.
-11. Principal Component Analysis — centring, scaling, components, explained variance and reconstruction intuition.
-12. t-SNE and UMAP Concepts — neighbourhood preservation, visual interpretation, parameter sensitivity and caveats.
-13. Anomaly and Outlier Detection — isolation forest, local outlier factor concepts, contamination and review workflow.
-14. Association Pattern Discovery — transaction baskets, support, confidence, lift and Apriori-style interpretation.
-15. Profiling and Communicating Discovered Groups — segment descriptions, charts, stability, ethics and actionability.
-16. Unsupervised Learning Project — full Python workflow, method comparison, limitations and reproducible report.
+## Learning journey
 
-## Tools
-Python, Pandas, NumPy, Matplotlib, Seaborn and scikit-learn. Use optional packages only when installation and computational requirements are explained.
+1. **Understanding Unsupervised Learning**
+2. **Preparing Data Without a Target**
+3. **Distance and Similarity Measures**
+4. **K-Means Clustering**
+5. **Choosing the Number of Clusters**
+6. **Hierarchical Clustering and Dendrograms**
+7. **DBSCAN and Density-Based Clustering**
+8. **Comparing and Validating Clusters**
+9. **Principal Component Analysis**
+10. **Interpreting PCA and Explained Variance**
+11. **Other Dimensionality Reduction Methods**
+12. **Anomaly and Outlier Detection**
+13. **Association Patterns and Co-Occurrence**
+14. **Interpreting and Profiling Segments**
+15. **Unsupervised Learning in Practice**
+16. **Unsupervised Learning Project**
 
-## Assessment
-Distance/scaling exercises, clustering comparisons, PCA interpretation and a project that profiles discovered groups without overstating what clusters mean.
+## Teaching and assessment standard
 
-## Completion standard
-Learners can apply and critique common unsupervised methods, justify preprocessing and communicate discovered patterns as evidence to investigate rather than unquestionable facts.
+Lessons build on earlier concepts and use consistent datasets and terminology where practical. Python examples should be runnable in VS Code, with imports, expected input structure and package requirements stated. Mathematical ideas should be explained intuitively before notation is introduced. Examples must explain both the code and the meaning of its output. Learners should practise checking assumptions, validating results, identifying limitations and communicating conclusions. Visuals should clarify concepts, processes, model behaviour or analytical findings rather than decorate the notes.
+
+Assessment should include frequent short exercises, independent practice and a final applied project or portfolio artefact. Learners must document their data sources, preprocessing decisions, assumptions, evaluation choices and limitations. No result should be presented as causal or generalisable without appropriate evidence.
