@@ -397,6 +397,13 @@ def get_quiz(quiz_id: str, user: CurrentUser = Depends(get_current_user)):
         raise HTTPException(403, "You are not enrolled in this course.")
     if quiz.get("module_id"):
         _assert_module_unlocked(str(user.id), str(quiz["module_id"]))
+    questions = (supabase.table("quiz_questions")
+        .select("id,question,question_type,options,points,order_index")
+        .eq("quiz_id", quiz_id).order("order_index").execute()).data or []
+    attempts = (supabase.table("quiz_attempts")
+        .select("id,score,passed,submitted_at")
+        .eq("quiz_id", quiz_id).eq("user_id", user.id)
+        .order("submitted_at", desc=True).execute()).data or []
     now = datetime.now(timezone.utc)
     try:
         session_rows = supabase.table("quiz_active_sessions").insert({
@@ -412,13 +419,6 @@ def get_quiz(quiz_id: str, user: CurrentUser = Depends(get_current_user)):
     except Exception as exc:
         print(f"Quiz session protection could not be established: {type(exc).__name__}")
         raise HTTPException(503, "Quiz protection is temporarily unavailable. Please retry.") from None
-    questions = (supabase.table("quiz_questions")
-        .select("id,question,question_type,options,points,order_index")
-        .eq("quiz_id", quiz_id).order("order_index").execute()).data or []
-    attempts = (supabase.table("quiz_attempts")
-        .select("id,score,passed,submitted_at")
-        .eq("quiz_id", quiz_id).eq("user_id", user.id)
-        .order("submitted_at", desc=True).execute()).data or []
     return {"success": True, "quiz": quiz, "questions": questions, "attempts": attempts, "session_id": session_rows[0]["id"]}
 
 
