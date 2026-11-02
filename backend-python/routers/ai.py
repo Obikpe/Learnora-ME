@@ -248,6 +248,21 @@ async def ask(
             if not quiz_rows:
                 raise HTTPException(404, "Published assessment not found in this course.")
             quiz = quiz_rows[0]
+            quiz_module_id = quiz.get("module_id")
+            if not quiz_module_id and quiz.get("lesson_id"):
+                quiz_lesson_rows = (
+                    supabase.table("learnora_lessons")
+                    .select("id,module_id,status")
+                    .eq("id", quiz["lesson_id"])
+                    .limit(1)
+                    .execute()
+                ).data or []
+                if not quiz_lesson_rows or quiz_lesson_rows[0].get("status") != "published":
+                    raise HTTPException(404, "Published assessment lesson not found.")
+                quiz_module_id = quiz_lesson_rows[0].get("module_id")
+            if quiz_module_id:
+                from .progress import _assert_module_unlocked
+                _assert_module_unlocked(str(user.id), str(quiz_module_id))
             questions = (
                 supabase.table("quiz_questions")
                 .select("question,question_type,options,points,order_index")
