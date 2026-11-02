@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Compare K-fold, StratifiedKFold, GroupKFold and TimeSeriesSplit; select a splitter that matches the data structure; and explain what each validation score estimates.
+By the end of this lesson, you should be able to Calculate MAE, MSE, RMSE and R-squared; interpret their units and penalties; inspect residuals; and choose regression metrics based on the actual decision.
 
 ## 1. Core explanation
 MAE is the average absolute error and is easy to interpret in target units. MSE squares residuals and penalises large errors; RMSE returns to target units. R-squared compares model squared error with a mean-prediction reference and can be negative on test data. MAPE expresses percentage error but behaves badly when actual values are zero or near zero.
