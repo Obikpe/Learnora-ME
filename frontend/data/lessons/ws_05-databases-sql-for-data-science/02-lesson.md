@@ -38,6 +38,7 @@ sql_data_science/
 ├── data/
 │   └── learning.db
 ├── scripts/
+│   └── seed_course_data.py
 └── notebooks/
 ```
 
@@ -152,7 +153,21 @@ with sqlite3.connect("data/learning.db") as connection:
 
 The `PRAGMA table_info` command is SQLite-specific and reports column information. The `with` statement manages the transaction: it commits on successful exit and rolls back if an exception occurs. Important: the sqlite3 connection context manager does **not** close the connection. For a short script, explicitly call `connection.close()` in a `finally` block, or use a dedicated closing pattern. Lesson 16 explains connection lifecycle management in detail.
 
-## 9. Common setup problems
+## 9. Prepare the shared course dataset
+
+Several later lessons use the same small training-centre and sales examples. To avoid asking you to invent a different table every time, the course includes a repeatable seed script at `scripts/seed_course_data.py`. It creates the teaching tables and inserts a small set of sample records. It does not delete your existing work; it uses `CREATE TABLE IF NOT EXISTS` and `INSERT OR IGNORE`.
+
+From the project root in the VS Code terminal, run:
+
+```bash
+python scripts/seed_course_data.py
+```
+
+The script creates or updates `data/learning.db`. It includes students, courses, enrolments, customers, orders, activities, monthly summaries and other small reference tables used by later examples. Read the script before running it so you understand which tables it creates. You can run it again safely to restore missing sample rows, but it will not overwrite existing rows with the same primary keys.
+
+The course examples that use a table should either introduce its creation or refer to this shared seed script. If a lesson asks you to practise changing a table, use a copy or a separate practice database so you do not accidentally damage the shared examples.
+
+## 10. Common setup problems
 
 - **`python` not recognised:** verify installation and PATH; on some systems use `python3` or the Windows launcher `py`.
 - **Wrong interpreter:** select the intended interpreter in VS Code.
