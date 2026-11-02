@@ -358,15 +358,6 @@ def review_project_submission(
     if not saved:
         raise HTTPException(500, "Project review could not be saved.")
 
-    if body.decision == "returned":
-        # Once the status is returned, mastery verification excludes these
-        # records immediately, even if evidence cleanup needs a retry.
-        try:
-            supabase.table("skill_evidence").delete().eq("user_id", learner_id).eq("evidence_type", "project").eq("source_id", submission_id).execute()
-        except Exception as exc:
-            print(f"Returned project evidence cleanup failed: {type(exc).__name__}")
-            raise HTTPException(503, "The submission was returned, but evidence cleanup needs to be retried.") from None
-
     log_audit_event(
         action="project_submission_reviewed",
         email=staff.email,
@@ -381,4 +372,14 @@ def review_project_submission(
             "score": body.score,
         },
     )
+
+    if body.decision == "returned":
+        # Once the status is returned, mastery verification excludes these
+        # records immediately, even if evidence cleanup needs a retry.
+        try:
+            supabase.table("skill_evidence").delete().eq("user_id", learner_id).eq("evidence_type", "project").eq("source_id", submission_id).execute()
+        except Exception as exc:
+            print(f"Returned project evidence cleanup failed: {type(exc).__name__}")
+            raise HTTPException(503, "The submission was returned, but evidence cleanup needs to be retried.") from None
+
     return {"success": True, "submission": saved[0]}
