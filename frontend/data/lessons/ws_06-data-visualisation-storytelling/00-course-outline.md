@@ -1,40 +1,37 @@
 # Data Visualisation & Storytelling
-Course: ws_06
-Level: Beginner to advanced
-Duration: 12h • 18 lessons
-Prerequisite: WS01–WS05; Python, Pandas, descriptive statistics and SQL-to-Pandas workflows
+
+**Course:** ws_06  
+**Duration:** 12h  
+**Lessons:** 18  
+**Environment:** Python 3 in VS Code; course-appropriate libraries and tools.
 
 ## Course purpose
-Teach learners to turn validated data into accurate, readable and decision-oriented visual communication using Python. All practical work is performed in Python in VS Code or notebooks. Core libraries: Matplotlib and Seaborn; introduce Plotly for interactive visualisation where appropriate.
 
-## Learning outcomes
-Choose charts based on analytical questions and data types; understand visual perception and design; create and customise charts; visualise distributions, comparisons, relationships and time series; build multi-chart analytical views; annotate uncertainty and limitations; create interactive charts; and communicate a coherent data story.
+This course is a structured self-study programme for data science learners. It moves from foundational ideas to practical implementation, interpretation, evaluation and a final applied task. Learners should be able to follow the notes without relying on a tutor to supply missing explanations. Every lesson should define new terminology, explain why a technique is used, demonstrate it with a small example before increasing complexity, discuss assumptions and common errors, and provide guided and independent practice.
 
-## Lesson sequence
-01. Why Visualise Data? Questions, Audiences and Evidence — purpose, exploratory vs explanatory charts, audience and analytical context.
-02. Python Visualisation Environment — Matplotlib, Seaborn, Plotly installation/imports, VS Code notebooks/scripts, reproducibility.
-03. Chart Grammar and Visual Encoding — marks, channels, position, length, area, colour, shape, scales and perceptual accuracy.
-04. Choosing the Right Chart — comparison, composition, distribution, relationship, ranking, time and geographic questions.
-05. Matplotlib Foundations — Figure/Axes, pyplot vs object-oriented interface, labels, titles, ticks, legends and saving.
-06. Categorical Comparisons — bar charts, grouped/stacked bars, ordering, horizontal bars and avoiding misleading comparisons.
-07. Distributions — histograms, KDE, boxplots, violin plots, bins, skewness, outliers and sample size.
-08. Relationships and Correlation — scatterplots, pairplots, regression overlays, correlation limits and confounding.
-09. Time-Series Visualisation — date handling, line charts, resampling, seasonality, rolling averages and gaps.
-10. Composition, Rates and Proportions — stacked charts, 100% bars, small multiples, denominators and when pie charts fail.
-11. Seaborn for Statistical Graphics — themes, semantic mappings, categorical plots, distribution plots and facets.
-12. Advanced Matplotlib Design — annotations, reference lines, subplots, shared axes, layout, typography and export quality.
-13. Plotly and Interactive Exploration — hover, zoom, filters, facets, interactive scatter/line/bar and responsible interactivity.
-14. Dashboards and Multi-View Analysis in Python — chart coordination, KPI summaries, layout, consistency and lightweight dashboard concepts.
-15. Visual Integrity and Accessibility — truncation, dual axes, colour vision, contrast, uncertainty, missingness and ethical presentation.
-16. From Analysis to Narrative — audience, context, tension, evidence, insight, recommendation and narrative structure.
-17. Build a Complete Data Story — question-led chart sequence, captions, annotations, narrative flow and stakeholder brief.
-18. Visualisation Capstone and Review — end-to-end Python story, peer-review rubric, reproducibility and transition to machine learning.
+## Learning journey
 
-## Tools and datasets
-Python, Pandas, Matplotlib, Seaborn, Plotly, Jupyter notebooks or Python scripts. Reuse cleaned datasets from WS04 and SQL-derived summaries from WS05. Keep data provenance and definitions visible.
+1. **Why Data Visualisation Matters**
+2. **Understanding Data Types and Visual Variables**
+3. **Choosing the Right Chart**
+4. **Visualisation with Matplotlib**
+5. **Customising and Annotating Charts**
+6. **Exploratory Visualisation with Seaborn**
+7. **Distributions and Univariate Analysis**
+8. **Relationships and Bivariate Analysis**
+9. **Multivariate Visualisation**
+10. **Time-Series Visualisation**
+11. **Categorical Comparisons and Composition**
+12. **Visualising Missing Data and Data Quality**
+13. **Statistical Uncertainty and Honest Charts**
+14. **Interactive Visualisation Concepts**
+15. **Dashboard Design and Layout**
+16. **Data Storytelling and Narrative Structure**
+17. **Presenting Insights to Different Audiences**
+18. **Visualisation Portfolio Project**
 
-## Assessment
-Chart-selection exercises, chart critique, a visual integrity checklist, and a capstone containing a question-led story with at least five purposeful visuals, captions, findings, recommendations and limitations.
+## Teaching and assessment standard
 
-## Completion standard
-Learners can select, build, critique and explain visualisations in Python, then present evidence without distorting the data.
+Lessons build on earlier concepts and use consistent datasets and terminology where practical. Python examples should be runnable in VS Code, with imports, expected input structure and package requirements stated. Mathematical ideas should be explained intuitively before notation is introduced. Examples must explain both the code and the meaning of its output. Learners should practise checking assumptions, validating results, identifying limitations and communicating conclusions. Visuals should clarify concepts, processes, model behaviour or analytical findings rather than decorate the notes.
+
+Assessment should include frequent short exercises, independent practice and a final applied project or portfolio artefact. Learners must document their data sources, preprocessing decisions, assumptions, evaluation choices and limitations. No result should be presented as causal or generalisable without appropriate evidence.
