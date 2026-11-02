@@ -1,7 +1,8 @@
 # Lesson 18: Selecting and Positioning Portfolio Projects
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Select a balanced set of portfolio projects; map each project to demonstrated skills; prioritise quality and evidence over quantity; and explain the intended audience for each project.
 
 ## 1. Core explanation
 A strong portfolio demonstrates breadth and depth. Select projects that show different capabilities: data cleaning and SQL, exploratory analysis and visualisation, statistical reasoning, supervised or unsupervised modelling, and an applied end-to-end workflow. Do not include several projects that all demonstrate the same small skill.
