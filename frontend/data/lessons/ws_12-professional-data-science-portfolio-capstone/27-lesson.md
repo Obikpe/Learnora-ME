@@ -1,7 +1,7 @@
 # Lesson 27: Capstone: Select and Frame the Problem
 
 ## Learning outcomes
-Apply the professional practice, produce the capstone artefact and communicate evidence and limitations clearly.
+Apply the professional practice, produce a project artefact and communicate decisions with evidence.
 
 ## 1. Core explanation
 The capstone begins with a problem that is meaningful, answerable and appropriately scoped. Choose a topic where data can be accessed legally and where you can produce a useful analytical deliverable. Avoid selecting a complex model before understanding the question.
@@ -11,7 +11,7 @@ Write a project charter: background, stakeholder, decision, research question, u
 A strong capstone can be descriptive rather than predictive. The project should demonstrate sound reasoning and evidence. If the data cannot answer the question, revise the scope early rather than forcing a model onto unsuitable data.
 
 ## 2. Worked example or template
-Run the Python example in VS Code where applicable. Adapt paths and fields to your own dataset; do not publish restricted records.
+Use the example as a starting point and adapt it to your own project. Python examples run in VS Code; shell commands should be entered in the VS Code terminal.
 
 ```python
 charter = {
@@ -25,20 +25,20 @@ charter = {
 print(charter)
 ```
 
-## 3. Capstone application
-Maintain a decision log and connect every analysis step to the project charter. Preserve provenance and reproducibility. Separate observed results from interpretation and recommendations.
+## 3. Professional application
+Keep claims evidence-based. Document sources, assumptions, licences, decisions and limitations. A portfolio project should be understandable and reproducible without access to private data or undocumented local files.
 
 ## 4. Guided practice
 Submit a capstone charter for a project you can complete with available data. Include a clear question, data source plan, success criteria, scope exclusions, ethical review and risks.
 
 ## 5. Independent practice
-Complete the corresponding capstone deliverable. Ask a reviewer to reproduce or challenge one result and record the changes made in response.
+Create or improve the corresponding project artefact in your repository. Ask another person to review it and record what was unclear or incomplete.
 
 ## 6. Knowledge check
-1. What evidence does this deliverable provide?
-2. Which assumptions or limitations affect the conclusion?
-3. How can another person reproduce the work?
-4. What is the next responsible action?
+1. What is the purpose of this professional practice?
+2. What evidence should be preserved?
+3. Which risks or constraints need to be disclosed?
+4. How will another person verify the work?
 
 ## Lesson summary
-A capstone demonstrates an end-to-end professional process: a well-framed question, defensible data, reproducible analysis, validation, clear communication and responsible publication.
+Professional data science combines sound analysis with ethical judgement, reproducible practice and clear communication.
