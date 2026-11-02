@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Compass, Target, FolderKanban, Sparkles, FileCheck2, Award, MessageCircle, BrainCircuit, Bell, Settings, LayoutDashboard, LogOut, Users, Building2, Activity, ShieldCheck, CircleDollarSign, Layers3, LineChart, LockKeyhole, CreditCard, Menu, X, ChevronRight, Route } from "lucide-react";
 import { clearToken, currentUser } from "../../lib/api";
-import { isQuizActiveInThisTab } from "../../lib/quiz-session";
-import { request } from "../../lib/api/client";
 
 const learner:any[]=[
   ["overview","Overview",LayoutDashboard],["learning","My learning",BookOpen],["tracks","My learning tracks",Route],["discover","Discover",Compass],["practice","Practise",Target],["projects","Projects",FolderKanban],["skills","Skills",Sparkles],["portfolio","Portfolio",FolderKanban],["evidence","Evidence",FileCheck2],["certificates","Certificates",Award],["community","Community",MessageCircle],["ai","AI tutor",BrainCircuit],["creator","Creator studio",Users],["notifications","Notifications",Bell],["subscription","Subscription",CreditCard],["settings","Settings",Settings]
@@ -28,11 +26,9 @@ export default function Sidebar({admin=false,role="",active,hideTutor=false}:{ad
   const [canTeach,setCanTeach]=useState(false);
   const [isCohortAccount,setIsCohortAccount]=useState(false);
   const [isFreeAccess,setIsFreeAccess]=useState(false);
-  const [quizSessionActive,setQuizSessionActive]=useState(false);
-  useEffect(()=>{if(admin)return;let cancelled=false;const refresh=()=>{setQuizSessionActive(isQuizActiveInThisTab());request<any>("/progress/quiz-sessions/me").then((result:any)=>{if(!cancelled)setQuizSessionActive(Boolean(result.active));}).catch(()=>{if(!cancelled)setQuizSessionActive(true);});};refresh();window.addEventListener("learnora-quiz-session-updated",refresh);return()=>{cancelled=true;window.removeEventListener("learnora-quiz-session-updated",refresh);};},[admin]);
   useEffect(()=>{let cancelled=false;currentUser().then((me:any)=>{if(!cancelled){setCanTeach((me.organisation_memberships||[]).some((membership:any)=>membership.role==="instructor"&&membership.status==="active"));setIsCohortAccount(me.account_type==="cohort");setIsFreeAccess(me.access_state==="free"&&me.course_access===true);}}).catch(()=>{});return()=>{cancelled=true};},[]);
   const learnerItems=canTeach?[...learner,["instructor","Teaching",Users]]:learner;
-  const items=admin?(role==="super_admin"?superAdmin:orgAdmin):learnerItems.filter(([key])=>!((isCohortAccount||isFreeAccess)&&key==="subscription")&&!((hideTutor||quizSessionActive)&&key==="ai"));
+  const items=admin?(role==="super_admin"?superAdmin:orgAdmin):learnerItems.filter(([key])=>!((isCohortAccount||isFreeAccess)&&key==="subscription")&&!(hideTutor&&key==="ai"));
   const logout=()=>{clearToken();location.href="/login"};
   const brand=<Link href={admin?"/dashboard/admin/overview":"/dashboard"} className="flex h-20 shrink-0 items-center px-6 font-display text-2xl">Learnora <span className="ml-1 text-[var(--gold-light)]">ME</span></Link>;
   return <>
