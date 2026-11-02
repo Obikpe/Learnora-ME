@@ -405,7 +405,7 @@ Append entries using:
 ### Release preparation and deployment evidence — 2 November 2026
 
 - Built the current `Learnora-ME` source explicitly into the existing Vercel projects using the monorepo roots `frontend-v02`, `frontend-team` and `backend-python`. All three staging deployments reached READY; the learner and Teams builds completed Next.js compile/typecheck/static generation, and the backend build completed under Python 3.12.
-- Staging deployment IDs: learner `dpl_HWmkfWuybYhABMbXgRZ9DZEFCgm4`; Teams `dpl_7hiqZUWwurpQSaAncjgCyYSzceEv`; backend `dpl_DTamp1i4THKQbvSzP4HghZxtY8Vx`. No production alias was promoted.
+- Staging deployment IDs: learner `dpl_4mC59NuvVS3HadiU3pTWZfo1RDiT`; Teams `dpl_7hiqZUWwurpQSaAncjgCyYSzceEv`; backend `dpl_8JoHQYyighk6542J6AmazrJ9wxHs`. No production alias was promoted.
 - Added `FREE_ACCESS_MODE=true` to the backend Vercel Production environment only. It is reversible and applies on the next production deployment. Existing paid billing paths were not deleted or rewritten.
 - The live Supabase ledger still ends at `20261028171902`; the four 2 November migrations remain unapplied. Catalog inspection confirms the quiz session table and certificate revocation columns are absent. Do not deploy the new backend to production until those dependencies have passed disposable replay and received separate production migration approval.
 - Consolidated general CI to one workflow/job and narrowed the expensive cohort database workflow to cohort-specific paths. The latest general workflow remained queued; the queued state is not a pass.
