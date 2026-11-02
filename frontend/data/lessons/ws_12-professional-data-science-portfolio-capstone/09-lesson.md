@@ -1,7 +1,8 @@
 # Lesson 9: Writing Clear READMEs and Documentation
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Write a README that explains the problem, data source, environment, reproduction steps, methods, findings and limitations; and make the project understandable to a new reviewer.
 
 ## 1. Core explanation
 A README is the entry point for a project. It should explain the problem, why it matters, the data source and licence, how to set up the environment, how to reproduce the analysis, what was found and what the limitations are. A reader should not need to inspect every notebook to understand the project.
