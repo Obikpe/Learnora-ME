@@ -97,6 +97,8 @@ class InternalTracksTests(unittest.TestCase):
                 {"id": "lesson-1", "module_id": "module-1", "status": "published"},
                 {"id": "lesson-2", "module_id": "module-2", "status": "published"},
             ],
+            "quizzes": [{"id": "quiz-1", "module_id": "module-1", "is_published": True}],
+            "quiz_questions": [{"id": "question-1", "quiz_id": "quiz-1", "question_type": "multiple_choice", "options": ["A", "B"], "correct_answer": "A"}],
         }
 
     def test_global_track_scope_excludes_personal_and_organisation_paths(self):
