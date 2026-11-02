@@ -466,7 +466,7 @@ Course completion requires:
 
 All published assessments are treated as required. Unpublished drafts do not affect learner completion. A course without published assessments retains lesson-only completion. Track completion remains derived from required course completion.
 
-A separate immutable grade-revision audit and assignment resubmission workflow remain future work; the current grade endpoint records the latest grader, score, feedback and timestamp.
+Each staff grading action is recorded in `audit_logs`; a separate immutable grade-revision history and assignment resubmission workflow remain future work.
 
 ### 14.4 Contextual AI tutor
 
