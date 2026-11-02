@@ -1,7 +1,8 @@
 # Lesson 6: Project Planning and Scoping
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Create a project scope, milestone plan and acceptance criteria; estimate dependencies and risks; and define what is explicitly out of scope.
 
 ## 1. Core explanation
 A project scope defines the problem, deliverables, timeline, dependencies and exclusions. Break work into milestones such as problem framing, data audit, analysis, modelling, validation and communication. Estimate effort and identify risks early: inaccessible data, unclear definitions, small sample size or changing stakeholder needs.
