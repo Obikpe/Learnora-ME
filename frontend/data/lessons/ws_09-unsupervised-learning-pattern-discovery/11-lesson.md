@@ -1,7 +1,8 @@
 # Lesson 11: Other Dimensionality Reduction Methods
 
 ## Learning outcomes
-Compare linear and non-linear dimensionality reduction; explain what PCA, t-SNE and UMAP preserve; configure a 2-D embedding; and identify why an embedding is exploratory rather than proof of clusters.
+
+By the end of this lesson, you should be able to Compare PCA with t-SNE and UMAP; configure a 2-D embedding; explain neighbourhood preservation and parameter sensitivity; and avoid interpreting map distances or visual islands as proof of clusters.
 
 ## 1. Core explanation
 PCA is linear, so it may not preserve non-linear structure. t-SNE focuses on preserving local neighbourhoods for visualisation; UMAP also aims to preserve neighbourhood structure and can often scale better. These methods can reveal visual groupings but their axes generally have no direct physical meaning.
