@@ -24,6 +24,7 @@ class Query:
     def is_(self, column, value): self.filters.append(("is", column, value)); return self
     def in_(self, column, values): self.filters.append(("in", column, list(values))); return self
     def lt(self, column, value): self.filters.append(("lt", column, value)); return self
+    def gte(self, column, value): self.filters.append(("gte", column, value)); return self
     def order(self, *_args, **_kwargs): return self
     def limit(self, value): self.limit_value = value; return self
 
@@ -34,6 +35,7 @@ class Query:
             elif kind == "is" and value == "null": rows = [row for row in rows if row.get(column) is None]
             elif kind == "in": rows = [row for row in rows if row.get(column) in value]
             elif kind == "lt": rows = [row for row in rows if (row.get(column) or 0) < value]
+            elif kind == "gte": rows = [row for row in rows if (row.get(column) or 0) >= value]
         if self.limit_value is not None: rows = rows[:self.limit_value]
         return SimpleNamespace(data=rows)
 
@@ -180,6 +182,40 @@ class PublicTrackProgressTests(unittest.TestCase):
                 progress.track_progress(self.track_id, user=user)
         self.assertEqual(raised.exception.status_code, 403)
 
+
+    def test_module_unlock_respects_quiz_configured_threshold(self):
+        fixtures = {
+            "course_modules": [
+                {"id": "module-1", "course_id": "course-1", "order_index": 1, "status": "published"},
+                {"id": "module-2", "course_id": "course-1", "order_index": 2, "status": "published"},
+            ],
+            "quizzes": [
+                {"id": "quiz-1", "title": "Module 1 quiz", "module_id": "module-1", "passing_score": 85, "is_published": True},
+            ],
+            "quiz_attempts": [
+                {"id": "attempt-1", "quiz_id": "quiz-1", "user_id": "learner-1", "score": 80, "passed": True},
+            ],
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                progress._assert_module_unlocked("learner-1", "module-2")
+        self.assertEqual(raised.exception.status_code, 423)
+
+    def test_module_unlock_succeeds_at_configured_quiz_threshold(self):
+        fixtures = {
+            "course_modules": [
+                {"id": "module-1", "course_id": "course-1", "order_index": 1, "status": "published"},
+                {"id": "module-2", "course_id": "course-1", "order_index": 2, "status": "published"},
+            ],
+            "quizzes": [
+                {"id": "quiz-1", "title": "Module 1 quiz", "module_id": "module-1", "passing_score": 85, "is_published": True},
+            ],
+            "quiz_attempts": [
+                {"id": "attempt-1", "quiz_id": "quiz-1", "user_id": "learner-1", "score": 85, "passed": True},
+            ],
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
+            progress._assert_module_unlocked("learner-1", "module-2")
 
     def test_published_quizzes_and_assignments_are_completion_gates(self):
         fixtures = {
