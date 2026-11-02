@@ -77,7 +77,7 @@ PairGrid gives more control over the diagonal and two triangles:
 grid = sns.PairGrid(df, vars=["study_hours", "attendance", "score"])
 grid.map_lower(sns.scatterplot, alpha=0.7)
 grid.map_diag(sns.histplot)
-grid.map_upper(sns.kdeplot, levels=4)
+grid.map_upper(sns.regplot, scatter_kws={"alpha": 0.5})
 plt.show()
 ```
 
