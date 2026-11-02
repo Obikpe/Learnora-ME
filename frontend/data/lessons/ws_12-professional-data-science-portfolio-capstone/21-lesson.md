@@ -1,7 +1,8 @@
 # Lesson 21: CV and LinkedIn for Data Roles
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Tailor a CV and LinkedIn profile to data roles; write evidence-based action-method-outcome bullets; align dates and project claims; and remove unsubstantiated metrics.
 
 ## 1. Core explanation
 A CV and professional profile should make relevant evidence easy to find. Tailor the headline and summary to the role. Describe experience using action, method and outcome: what you did, with which tools or approach, and what changed or was delivered. Use measurable results only when you can substantiate them.
