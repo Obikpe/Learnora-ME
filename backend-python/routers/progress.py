@@ -527,10 +527,6 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
     }).execute())
     if not inserted.data:
         raise HTTPException(500, "Unable to save quiz attempt.")
-    try:
-        supabase.table("quiz_active_sessions").delete().eq("id", str(body.session_id)).eq("user_id", str(user.id)).eq("quiz_id", str(quiz_id)).execute()
-    except Exception as exc:
-        print(f"Completed quiz session cleanup deferred: {type(exc).__name__}")
     return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score}
 
 
