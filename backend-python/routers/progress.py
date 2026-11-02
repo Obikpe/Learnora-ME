@@ -526,6 +526,33 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
 
 @router.delete("/quizzes/{quiz_id}/session/{session_id}")
 def close_quiz_session(quiz_id: str, session_id: str, user: CurrentUser = Depends(get_current_user)):
+    sessions = (
+        supabase.table("quiz_active_sessions")
+        .select("id,started_at")
+        .eq("id", str(session_id))
+        .eq("user_id", str(user.id))
+        .eq("quiz_id", str(quiz_id))
+        .limit(1)
+        .execute()
+    ).data or []
+    if not sessions:
+        return {"success": True, "already_closed": True}
+
+    # Only a submitted attempt created after this session started can release
+    # the server-side tutor lock. Directly calling this endpoint mid-quiz
+    # must not restore access to the AI tutor.
+    attempts = (
+        supabase.table("quiz_attempts")
+        .select("id")
+        .eq("user_id", str(user.id))
+        .eq("quiz_id", str(quiz_id))
+        .gt("submitted_at", str(sessions[0].get("started_at") or ""))
+        .limit(1)
+        .execute()
+    ).data or []
+    if not attempts:
+        raise HTTPException(409, "Submit the quiz before ending its active session.")
+
     supabase.table("quiz_active_sessions").delete().eq("id", str(session_id)).eq("user_id", str(user.id)).eq("quiz_id", str(quiz_id)).execute()
     return {"success": True}
 
