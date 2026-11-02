@@ -615,7 +615,7 @@ def my_progress(
         supabase
         .table("learnora_enrolments")
         .select(
-            "id,course_id,organisation_id,cohort_id,status,"
+            "id,course_id,organisation_id,cohort_id,status,source_type,"
             "enrolled_at,completed_at"
         )
         .eq("user_id", user.id)
