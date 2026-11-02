@@ -1,7 +1,8 @@
 # Lesson 6: Mathematics Refresher: Statistics and Probability
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the key concepts, identify when they apply, implement the worked example in VS Code, and recognise the method's limitations.
+
+By the end of this lesson, you should be able to Calculate and interpret mean, median, variance, standard deviation and quantiles; describe probability and conditional probability; inspect class proportions; and explain how sampling variation affects model evaluation.
 
 ## 1. Core explanation
 Statistics describes data and helps quantify uncertainty. The mean is the arithmetic average; the median is the middle ordered value; variance and standard deviation describe spread around the mean. Quantiles divide ordered data into proportions. A probability is between zero and one and represents uncertainty about an event under a defined model or process.
