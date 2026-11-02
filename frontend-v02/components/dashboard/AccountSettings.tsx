@@ -61,6 +61,8 @@ export default function AccountSettings({ user }: { user: any }) {
   }
 
   const access = user?.access_state || user?.sub_status || "Not provided";
+  const hasOwnerMembership = (user?.organisation_memberships || []).some((membership: any) => membership.role === "owner" && membership.status === "active");
+  const canDeleteAccount = user?.account_type === "learner" && user?.role === "normal" && !hasOwnerMembership;
   return <div className="mt-7 grid gap-5 xl:grid-cols-[.85fr_1.15fr]">
     <section className="h-fit rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-6">
       <div className="flex items-center gap-3"><div className="rounded-xl bg-[#d7ad35]/10 p-2.5"><UserRound className="gold" size={19}/></div><div><h2 className="font-semibold">Account information</h2><p className="mt-1 text-xs text-slate-500">Your account details.</p></div></div>
@@ -82,7 +84,7 @@ export default function AccountSettings({ user }: { user: any }) {
         <button disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black disabled:opacity-50"><ShieldCheck size={15}/>{busy ? "Updating password…" : "Update password"}</button>
       </form>
     </section>
-    <section className="xl:col-span-2 rounded-2xl border border-red-500/20 bg-[#0e1319] p-5 sm:p-6">
+    {canDeleteAccount ? <section className="xl:col-span-2 rounded-2xl border border-red-500/20 bg-[#0e1319] p-5 sm:p-6">
       <div className="flex items-start gap-3">
         <div className="rounded-xl bg-red-500/10 p-2.5 text-red-300"><AlertTriangle size={19}/></div>
         <div className="min-w-0 flex-1">
@@ -94,7 +96,7 @@ export default function AccountSettings({ user }: { user: any }) {
           <button type="button" onClick={() => {setShowDelete(true);setDeleteError("");setDeleteText("");}} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-400/30 px-4 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-400/10"><Trash2 size={15}/>Request account deletion</button>
         </div>
       </div>
-    </section>
+    </section> : <section className="xl:col-span-2 rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-6"><h2 className="font-semibold">Need to close this account?</h2><p className="mt-2 text-sm leading-6 text-slate-400">Contact <a className="underline underline-offset-4" href="mailto:learnorame@gmail.com">Learnora support</a> so we can help with your account and any organisation or programme responsibilities.</p></section>}
     {showDelete && <div className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-4" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setShowDelete(false);}}>
       <section role="dialog" aria-modal="true" aria-labelledby="delete-account-title" className="w-full max-w-lg rounded-2xl border border-red-400/30 bg-[#11171e] p-6 shadow-2xl">
         <h2 id="delete-account-title" className="text-xl font-semibold">Confirm deletion request</h2>
