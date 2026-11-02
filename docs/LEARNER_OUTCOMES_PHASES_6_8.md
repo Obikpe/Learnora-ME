@@ -96,8 +96,7 @@ The migration ledger currently ends at `20261028171902`. The repository's `20261
 - A combined contract test file was added at `backend-python/tests/test_learning_outcomes.py`.
 - The new code has been committed to `main`.
 - CI, browser-driven learner acceptance and staff acceptance have **not** been established by this implementation record. Do not label the features production-release verified solely because the code is committed.
-- No Supabase migration, live data mutation, environment-variable change, `FREE_ACCESS_MODE` change, Paystack/subscription change or deployment was performed.
-- The free-access flag remains default-off until a separately authorised release/configuration action. Paid implementation remains preserved.
+- At the original implementation checkpoint, no production migration, environment change or deployment had been performed. The newer release-preparation checkpoint below records the later staging builds and the reversible Production free-access setting. Paid implementation remains preserved.
 
 ## Deferred items
 
@@ -115,3 +114,18 @@ The migration ledger currently ends at `20261028171902`. The repository's `20261
 - Learner project history now distinguishes approved, returned, reviewed and awaiting-review states and displays reviewer feedback. Skill evidence remains derived only from an approved submission and a skill mapped to its source project.
 - The combined contract tests cover certificate privacy/revocation, quiz tutor exclusion and the migration inventory. GitHub Actions were triggered by commits to main; the latest candidate is not yet evidenced as passing while its runs remain queued. Browser-driven learner/staff acceptance is still outstanding.
 - Both new migrations remain unapplied to the active Pheonix project. This is deliberate: the existing migration policy requires successful disposable replay and a separate explicit production-migration approval. The free-access flag, Paystack, subscriptions, trials, entitlements and Pro logic were not changed.
+
+## Release preparation checkpoint — 2 November 2026
+
+The implementation checkpoint above is historical. The following release preparation is newer and supersedes the earlier statements about environment changes and deployments.
+
+- Explicit Vercel staging builds from `Obikpe/Learnora-ME` completed successfully for all three active applications: Learnora ME (`frontend-v02`), Learnora Teams (`frontend-team`) and the FastAPI backend (`backend-python`). Learner and Teams Next.js builds completed compilation, type checking and static-page generation. The backend Python 3.12 build completed. The learner build includes the certificate, Practice Lab, skills and portfolio routes.
+- Staging build references: learner `dpl_HWmkfWuybYhABMbXgRZ9DZEFCgm4`; Teams `dpl_7hiqZUWwurpQSaAncjgCyYSzceEv`; backend `dpl_DTamp1i4THKQbvSzP4HghZxtY8Vx`. These are protected staging deployments, not production aliases.
+- Vercel reported no grouped runtime-error clusters for the three existing production projects in the preceding 24 hours. This is an observation of the existing production deployments, not a claim that the new staging endpoints have completed authenticated browser acceptance.
+- The production backend project now has the reversible `FREE_ACCESS_MODE=true` environment variable scoped to Production. It takes effect on the next production backend deployment; it does not change the currently running deployment by itself. The original Paystack, subscription, trial and Pro implementation remains preserved.
+- The live Pheonix Supabase migration ledger was rechecked and still ends at `20261028171902`. The active database does not yet contain `learner_learning_plans`, `quiz_active_sessions`, or the certificate revocation columns. The four additive migrations dated 2 November therefore remain a hard production dependency for the new learning-plan, quiz-session-lock, certificate-revocation and project-integrity behaviours.
+- No production database migration has been applied. Production deployment of the new backend and frontends is intentionally held until the additive migrations have been rehearsed against a disposable PostgreSQL/Supabase branch and separately approved for the active project.
+- The general CI workflows were consolidated to one release-check job covering Python compile/lint/import, selected phase regression tests, additive migration/rollback rehearsal, backend HTTP startup and both active frontend builds. Duplicate backend/frontend workflows were removed; the expensive cohort database workflow now triggers only for cohort-specific changes. The final GitHub Actions run was still queued at this checkpoint, so no green CI result is claimed.
+- The previous production Teams and backend deployments were built from older `Pheonix-Analytics` commits. The release-candidate staging deployments were explicitly built from `Learnora-ME`. Production will be deployed from the current repository and correct monorepo roots; automatic Git push linkage should be checked separately because Vercel project Git connections are not changed by a manual deployment.
+- Production domains currently assigned to the Vercel projects are `learnora-me.vercel.app`, `teamslearnora.vercel.app` and `learnora-backend.vercel.app`. Both frontend Next.js configurations proxy `/api/*` to the backend domain; this same-origin proxy is retained.
+- Production migration, browser-based learner/staff acceptance and the final production deployment remain unverified. Do not mark phases 6–8 as production-release complete until these gates pass.
