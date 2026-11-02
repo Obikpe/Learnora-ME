@@ -1,37 +1,35 @@
-# Lesson 13: Anomaly and Outlier Detection
+# Lesson 13: Association Patterns and Co-Occurrence
 
 ## Learning outcomes
 Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
 
 ## 1. Core explanation
-Anomaly detection identifies observations that differ from the majority under a chosen representation. Statistical methods may flag values far from a centre; Isolation Forest isolates unusual points through random partitions; Local Outlier Factor compares local density with neighbours. One-Class SVM learns a boundary around typical observations.
+Association analysis searches for items that occur together in transactions. Support is the proportion of transactions containing an itemset. Confidence estimates how often B occurs when A occurs. Lift compares that confidence with the baseline frequency of B; lift greater than one indicates co-occurrence above independence under the measure.
 
-An anomaly is not necessarily an error, fraud or threat. It may be a valid rare event, a new operating condition or a data-entry problem. Investigate flagged cases and consider the cost of false alarms. Most anomaly methods do not produce calibrated probabilities of wrongdoing.
+Association rules are descriptive, not causal. A rule bread -> butter does not mean bread causes butter purchases. Rare itemsets can have high confidence but tiny support, so inspect all three measures. Minimum support controls which itemsets are considered; too high misses rare patterns, too low creates a huge number of rules.
 
-Scale and feature choice affect distance-based methods. Set expected contamination cautiously where required. Evaluate with labelled examples if available, but recognise historical labels may be incomplete. For operational use, monitor alert rates and the proportion that lead to useful action.
+The transaction definition matters. A basket might be one checkout, one customer-day or one account-month. Combining transactions incorrectly changes support and confidence. Protect customer privacy and avoid sensitive inferences about individuals.
 
 ## 2. Worked Python example
 Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
 
 ```python
-from sklearn.ensemble import IsolationForest
-import numpy as np
-
-rng = np.random.default_rng(4)
-normal = rng.normal(0, 1, size=(200, 2))
-unusual = np.array([[5, 5], [-5, 4], [6, -4]])
-X = np.vstack([normal, unusual])
-model = IsolationForest(contamination=.02, random_state=4)
-labels = model.fit_predict(X)
-print("Flagged:", (labels == -1).sum())
-print("Last three flags:", labels[-3:])
+transactions = [
+    {"bread", "milk"}, {"bread", "butter"}, {"bread", "milk", "butter"},
+    {"milk"}, {"bread", "milk"}, {"butter", "milk"}
+]
+def support(itemset):
+    return sum(itemset.issubset(t) for t in transactions) / len(transactions)
+s_a, s_b = support({"bread"}), support({"butter"})
+s_ab = support({"bread", "butter"})
+print("Support", s_ab, "Confidence", s_ab/s_a, "Lift", (s_ab/s_a)/s_b)
 ```
 
 ## 3. Interpretation
 Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
 
 ## 4. Guided practice
-Change contamination and compare the number of flagged cases. Explain why flagged rows need investigation rather than automatic deletion or accusation.
+Calculate milk -> bread support, confidence and lift. Explain why high confidence can occur because bread is common and why lift adds context.
 
 ## 5. Independent practice
 Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
