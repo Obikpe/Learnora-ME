@@ -1,38 +1,44 @@
-# Lesson 20: Cross-Validation for Supervised Models
+# Lesson 20: Comparing Models Fairly
 
 ## Learning outcomes
 Explain the technique, implement the example, interpret the output and justify when the method is suitable.
 
 ## 1. Core explanation
-Cross-validation estimates performance by repeatedly dividing available training data into folds. In k-fold cross-validation, each fold acts as validation once while the others train. Scores are summarised across folds. StratifiedKFold preserves class proportions; GroupKFold keeps related groups together; TimeSeriesSplit respects temporal order.
+A fair comparison uses the same target definition, observations, split strategy and metric. If one model is evaluated on an easier subset, its score cannot be compared directly. Compare a simple baseline, a transparent model and more complex candidates. Record training time and inference cost when relevant.
 
-Cross-validation is useful for model and hyperparameter selection, especially when data is limited. It does not create more independent observations and cannot correct a biased dataset. If rows are grouped by customer or patient, ordinary random folds can leak information. Choose a splitter that matches the data-generation process.
+Use cross-validation on training data to compare candidates. Then refit the selected workflow on the full training partition and evaluate once on the held-out test set. Avoid selecting a model because it has the highest score among many test-set experiments; that indirectly overfits the test set.
 
-Preprocessing must be inside a Pipeline so each fold learns imputation, scaling and encoding from its own training partition. Use the final test set only after model selection is complete.
+Report uncertainty and practical significance. A small gain may be noise or may matter at very large scale. Consider subgroup performance, calibration, latency, maintainability and interpretability. The best model meets decision requirements reliably, not necessarily the highest single metric.
 
 ## 2. Worked Python example
 Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. Some dataset loaders may require internet access on first use.
 
 ```python
 from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_validate
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 
 data = load_breast_cancer(as_frame=True)
-pipe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
+models = {
+    "logistic": make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000)),
+    "forest": RandomForestClassifier(n_estimators=200, random_state=42)
+}
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-scores = cross_val_score(pipe, data.data, data.target, cv=cv, scoring="f1")
-print("Fold scores:", scores)
-print("Mean F1:", scores.mean(), "Std:", scores.std())
+for name, model in models.items():
+    scores = cross_validate(model, data.data, data.target, cv=cv,
+                            scoring=["accuracy", "f1", "roc_auc"])
+    print(name, {m: scores["test_"+m].mean()
+                 for m in ["accuracy", "f1", "roc_auc"]})
 ```
 
 ## 3. Interpretation and checks
 Record the target, sample size, split design, metric and model settings. Inspect class-wise results or residuals, not only the headline score. Keep the test set untouched during model selection and report dataset limitations.
 
 ## 4. Guided practice
-Compare stratified folds with a group-aware split for repeated customers. Explain why the correct splitter depends on how future predictions will be made.
+Create a comparison table with mean cross-validation score, variability, training time, interpretability and inference cost. Explain why a small metric advantage may not justify a much more complex model.
 
 ## 5. Independent practice
 Extend the example with another model or evaluation view. Compare candidates using the same training/validation design. Write a short report for a non-technical stakeholder and state what further validation is required.
