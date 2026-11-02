@@ -1,101 +1,49 @@
-# Lesson 17: From Analysis to a Clear Data Story
-
-## Why this lesson matters
-A chart is not automatically a story. A data story connects a decision-maker's question to relevant evidence, explains what the evidence means and makes the next step clear. The goal is not to decorate a report; it is to help an audience understand a finding without overstating what the data proves.
+# Lesson 17: Presenting Insights to Different Audiences
 
 ## Learning outcomes
-You will define an audience and decision, organise evidence into a narrative, select a small sequence of purposeful Python charts, write useful titles and annotations, and distinguish findings from hypotheses and recommendations.
+Adapt analytical communication to an audience; distinguish evidence from interpretation; structure a concise presentation; annotate charts with context; and answer questions about uncertainty and limitations.
 
-## 1. Start with the decision
-Before opening Matplotlib, answer:
+## 1. The audience changes the explanation, not the evidence
+
+A technical audience may want methods, assumptions, data quality and uncertainty. A senior decision-maker may need the decision, expected impact, risk and next action. A general audience may need plain language and a clear explanation of why the finding matters. The underlying numbers must remain consistent. Never change a conclusion to make it more persuasive.
+
+## 2. Start with the decision
+
+Before preparing slides, answer:
 - Who will use this analysis?
-- What decision are they trying to make?
+- What decision or understanding do they need?
 - What do they already know?
-- What evidence would change their decision?
-- What can the available data not tell us?
+- What is the cost of misunderstanding the result?
+- What action is realistically available?
 
-A chart about monthly revenue may be useful to a sales manager deciding where to investigate. It may be irrelevant to a customer-support manager unless the data connects revenue to support activity.
+A presentation should not force the audience to discover the conclusion from a sequence of unexplained charts.
 
-## 2. Build the narrative spine
-A practical structure is:
-1. **Context:** what is being examined and why?
-2. **Question:** what needs to be understood?
-3. **Evidence:** what do the data and comparisons show?
-4. **Interpretation:** what might explain the pattern?
-5. **Action:** what should happen next, and how will it be evaluated?
+## 3. A reliable narrative structure
 
-Do not force every analysis into a dramatic rise-and-fall story. Sometimes the most useful result is that there is no meaningful difference or that the data is insufficient.
+1. Context: what problem are we examining?
+2. Question: what did we need to find out?
+3. Evidence: what data and method were used?
+4. Finding: what does the analysis show?
+5. Meaning: why does it matter?
+6. Action: what should happen next?
+7. Caveats: what cannot be concluded?
 
-## 3. Choose a small chart sequence
-Use each visual to answer a distinct question. For a retail performance story:
-- a line chart establishes the monthly trend;
-- a ranked bar chart compares categories;
-- a scatterplot explores the relationship between discount and order value;
-- a distribution plot shows variation hidden by the average.
+## 4. Annotate responsibly
 
-Avoid repeating the same metric in several chart types merely to make the report look longer.
+A chart title should state the subject and, where useful, the finding. Axis labels need units. State the period, population and source. If a chart shows a percentage, define the denominator. If values are estimates, say so. Avoid truncated axes that exaggerate differences and avoid decorative 3D effects that distort perception.
 
-## 4. Create a question-led chart in Python
-```python
-import matplotlib.pyplot as plt
+## 5. Technical appendix and reproducibility
 
-fig, ax = plt.subplots(figsize=(9, 5))
-ax.plot(monthly["month"], monthly["revenue"], marker="o")
-ax.set_title("Monthly revenue across the reporting period")
-ax.set_xlabel("Month")
-ax.set_ylabel("Revenue")
-ax.grid(axis="y", alpha=0.25)
-fig.tight_layout()
-plt.show()
-```
-The title states what is being measured and the time context should be clear in the accompanying text. Add currency units to the axis label where appropriate. Avoid decorative effects that compete with the data.
-
-## 5. Write a useful chart caption
-A good caption does more than repeat the title. It can state:
-- the key pattern;
-- the comparison or period that makes it meaningful;
-- an important caveat.
-
-For example: “Revenue increased in the final quarter, but the dataset does not include marketing spend or product availability, so the chart cannot identify the cause.”
-
-## 6. Annotate with restraint
-Annotations should direct attention to a meaningful event, threshold or comparison. They should not imply causation. If a date marks a policy change, label it as a policy change; do not label it as the cause of a revenue shift unless the analysis supports that claim.
-
-## 7. Separate evidence from interpretation
-Use explicit language:
-- Evidence: “The median order value was higher in group A than group B.”
-- Interpretation: “This may indicate different purchasing patterns.”
-- Hypothesis: “The difference may relate to customer mix.”
-- Recommendation: “Investigate the product mix before changing pricing.”
-
-The distinction protects the audience from treating an explanation as a proven fact.
-
-## 8. Structure the final communication
-A concise analytical story can use:
-- a headline finding;
-- one paragraph of context and scope;
-- two to five charts in a deliberate order;
-- a short interpretation under each chart;
-- recommendations and limitations.
-
-Keep technical details such as missing-value rules, data definitions and model assumptions in a methods section or appendix, but make them accessible.
-
-## Common mistakes
-- Starting with a chart before clarifying the decision.
-- Showing too many visuals with no narrative connection.
-- Writing causal headlines from descriptive evidence.
-- Hiding uncertainty, sample size or missing data.
-- Using captions that merely repeat axis labels.
-- Ending with a recommendation unsupported by the analysis.
+Keep detailed methods, data definitions, sample sizes and validation checks available for technical review. A concise executive presentation is not a reason to hide methodological weaknesses. Preserve the code and data provenance so another analyst can reproduce the result.
 
 ## Guided practice
-Use the monthly revenue and category summaries from WS05. Write a one-sentence decision question, create a trend chart and a category ranking, then write one evidence statement, one possible explanation and one action for further investigation.
+1. Explain one finding to a technical colleague and to a non-technical manager.
+2. Rewrite a vague chart title as a finding-led title.
+3. Add source, period, units and denominator to a chart.
+4. State one limitation without undermining a valid conclusion.
 
-## Independent assignment
-Prepare a two-page Python-generated data story for a non-technical audience. Include three to five charts, a clear headline, captions, one recommendation, data definitions and limitations. A reviewer should understand the main conclusion without reading the code.
+## Independent practice
+Prepare a five-slide presentation from a small dataset: question, method, three evidence-led findings, recommended action and limitations. Include speaker notes explaining assumptions and likely audience questions.
 
-## Self-check
-What decision is the audience making? What is the difference between evidence and interpretation? Why should a chart title communicate the question? When does an annotation become misleading? How can a story communicate that the data is insufficient?
-
-## Lesson takeaway
-A data story is a structured argument built from evidence. Visuals support the reasoning; they do not replace it.
+## Summary
+Effective communication makes evidence understandable and actionable without overstating it. Adapt vocabulary and detail, not the facts. The final lesson brings the visualisation workflow together in a portfolio artefact.
