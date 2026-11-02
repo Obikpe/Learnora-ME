@@ -97,7 +97,7 @@ export default function TeamWorkspace({ params }: { params: { teamId: string } }
 
               <section className="rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-6">
                 <div className="flex items-center gap-3"><CheckCircle2 className="gold" size={20} /><h2 className="font-semibold">Team work</h2></div>
-                <p className="mt-4 text-sm leading-7 text-slate-400">This team has a scoped workspace and membership record. Task assignment, internal team deliverables and team-specific performance reporting are not yet enabled, so no placeholder tasks or activity counts are shown.</p>
+                <p className="mt-4 text-sm leading-7 text-slate-400">Use the team workspace to coordinate learning and explore courses that support your shared goals.</p>
                 <a href="/courses" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold gold">Browse published courses <ArrowLeft className="rotate-180" size={14} /></a>
               </section>
             </div>
