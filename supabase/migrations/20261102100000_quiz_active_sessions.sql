@@ -10,10 +10,11 @@ CREATE TABLE IF NOT EXISTS public.quiz_active_sessions (
   started_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL,
   CONSTRAINT quiz_active_sessions_expiry_after_start CHECK (expires_at > started_at),
-  CONSTRAINT quiz_active_sessions_user_quiz_unique UNIQUE (user_id, quiz_id)
 );
 CREATE INDEX IF NOT EXISTS quiz_active_sessions_user_expiry_idx
   ON public.quiz_active_sessions (user_id, expires_at);
+CREATE INDEX IF NOT EXISTS quiz_active_sessions_quiz_idx
+  ON public.quiz_active_sessions (quiz_id);
 ALTER TABLE public.quiz_active_sessions ENABLE ROW LEVEL SECURITY;
 REVOKE ALL PRIVILEGES ON TABLE public.quiz_active_sessions FROM PUBLIC, anon, authenticated;
 GRANT ALL PRIVILEGES ON TABLE public.quiz_active_sessions TO service_role;
