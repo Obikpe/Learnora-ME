@@ -1,7 +1,8 @@
 # Lesson 5: Scaling and Transforming Numerical Features
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Compare standard, min-max and robust scaling; inspect the influence of outliers; choose a transformation suited to the model and data; and fit scaling only on training partitions.
 
 ## 1. Core explanation
 Scaling changes the numerical range of features. StandardScaler subtracts the training mean and divides by the training standard deviation. MinMaxScaler maps values to a chosen range. RobustScaler uses the median and interquartile range and can be less sensitive to outliers. Normalisation scales each row to unit norm and is common in text or vector similarity tasks.
