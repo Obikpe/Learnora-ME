@@ -11,7 +11,7 @@ A container does not automatically make software secure or reproducible. Use tru
 For an ML API, the image should include application code and runtime dependencies. Decide how the model is supplied: baked into the image for immutable releases or mounted/downloaded from controlled storage with version checks. Document resource requirements.
 
 ## 2. Worked example
-Run the Python example in VS Code. Install relevant packages with `python -m pip install numpy pandas scipy scikit-learn`. Cloud services and hosted models are not required for the local examples.
+Create a file named `Dockerfile` in the same project folder as `app.py` and `requirements.txt`. This is a Docker configuration file, not Python code. Docker must be installed and running to build and run the image.
 
 ```dockerfile
 # Dockerfile example for a FastAPI service
