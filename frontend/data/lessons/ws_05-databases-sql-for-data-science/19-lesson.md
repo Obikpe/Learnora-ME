@@ -177,15 +177,9 @@ def run(start_date, end_date):
     summary = build_regional_summary(orders)
 
     logging.info("Writing regional summary")
-    from contextlib import closing
     with closing(get_connection()) as connection:
         with connection:
-            summary.to_sql(
-                "regional_summary",
-                connection,
-                if_exists="replace",
-                index=False
-            )
+            save_summary(summary, connection)
 
     logging.info("Pipeline completed")
     return summary
