@@ -8,7 +8,7 @@ ENV_PATH = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=ENV_PATH, override=False)
 
 # 2. NOW import routers
-from routers import auth, grading, progress, billing, webhooks, community, grader, admin, organisations, organisation_members, courses, course_access, course_content, internal_auth, internal_staff, internal_teams, commercial, creator, lifecycle, learning_structure, media, access, organisation_teams, ai, creator_finance, evidence, internal_operations, internal_content, ai_profiles, public_directory, internal_tracks, internal_assessments, learner_onboarding, learning_plans, cohort_learners, cohort_learning, notifications as notifications_router, credentials, internal_projects
+from routers import auth, grading, progress, billing, webhooks, community, grader, admin, organisations, organisation_members, courses, course_access, course_content, internal_auth, internal_staff, internal_teams, commercial, creator, lifecycle, learning_structure, media, access, organisation_teams, ai, creator_finance, evidence, internal_operations, internal_content, ai_profiles, public_directory, internal_tracks, internal_assessments, learner_onboarding, learning_plans, cohort_learners, cohort_learning, notifications as notifications_router, credentials, internal_projects, track_reviews
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -199,6 +199,8 @@ app.include_router(ai_profiles.router)
 app.include_router(creator_finance.router)
 app.include_router(evidence.router)
 app.include_router(credentials.router)
+app.include_router(track_reviews.router)
+app.include_router(track_reviews.internal_router)
 app.include_router(internal_projects.router)
 app.include_router(public_directory.router)
 app.include_router(learner_onboarding.router)
