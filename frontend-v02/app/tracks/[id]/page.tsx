@@ -18,16 +18,6 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState("");
-  const [publicReviews,setPublicReviews] = useState<any>(null);
-  const [myReview,setMyReview] = useState<any>(null);
-  const [reviewOpen,setReviewOpen] = useState(false);
-  const [reviewDismissed,setReviewDismissed] = useState(false);
-  const [reviewRating,setReviewRating] = useState(5);
-  const [reviewComment,setReviewComment] = useState("");
-  const [reviewConsent,setReviewConsent] = useState(false);
-  const [reviewBusy,setReviewBusy] = useState(false);
-  const [reviewError,setReviewError] = useState("");
-  const [reviewNotice,setReviewNotice] = useState("");
 
   const loadProgress = useCallback(async () => {
     try {
@@ -37,28 +27,6 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
       setProgress(null);
     }
   }, [params.id]);
-
-  const loadReviewData = useCallback(async (completed:boolean) => {
-    try {
-      const publicData = await request<any>("/track-reviews/tracks/"+encodeURIComponent(params.id));
-      setPublicReviews(publicData);
-    } catch {
-      setPublicReviews(null);
-    }
-    if (completed) {
-      try {
-        const personal = await request<any>("/track-reviews/tracks/"+encodeURIComponent(params.id)+"/me");
-        setMyReview(personal.review||null);
-        if (personal.review) {
-          setReviewRating(Number(personal.review.rating)||5);
-          setReviewComment(personal.review.comment||"");
-          setReviewConsent(Boolean(personal.review.public_consent));
-        }
-      } catch {
-        setMyReview(null);
-      }
-    }
-  },[params.id]);
 
   useEffect(() => {
     let active = true;
@@ -70,15 +38,9 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
         setTrack(result.track);
         try {
           const saved = await request<any>("/progress/tracks/"+encodeURIComponent(params.id));
-          if (active) {
-            setProgress(saved);
-            await loadReviewData(Boolean(saved.completed));
-          }
+          if (active) setProgress(saved);
         } catch {
-          if (active) {
-            setProgress(null);
-            await loadReviewData(false);
-          }
+          if (active) setProgress(null);
         }
       })
       .catch(async e => {
@@ -94,7 +56,6 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
               course_count: saved.courses?.length || 0,
               required_course_count: saved.required_courses || 0,
             });
-            await loadReviewData(Boolean(saved.completed));
           }
         } catch {
           if (active) setError(e.message || "Track could not be loaded.");
@@ -102,7 +63,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [params.id,loadReviewData]);
+  }, [params.id]);
 
   const nextCourse = useMemo(() => {
     const courses = progress?.courses || [];
@@ -113,27 +74,6 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
       || courses.find((item:any) => item.required)
       || track?.courses?.[0];
   }, [progress, track]);
-
-  async function saveReview(e:any) {
-    e.preventDefault();
-    setReviewBusy(true);setReviewError("");setReviewNotice("");
-    const path="/track-reviews/tracks/"+encodeURIComponent(params.id)+"/me";
-    try {
-      const result=await request<any>(path,{
-        method:myReview?"PATCH":"POST",
-        body:JSON.stringify({rating:reviewRating,comment:reviewComment,public_consent:reviewConsent})
-      });
-      setMyReview(result.review);
-      setReviewOpen(false);
-      setReviewDismissed(false);
-      setReviewNotice(reviewConsent?"Your review was saved and is awaiting staff approval before public display.":"Your review was saved privately.");
-      await loadReviewData(true);
-    } catch(e:any) {
-      setReviewError(e.message||"Your review could not be saved.");
-    } finally {
-      setReviewBusy(false);
-    }
-  }
 
   async function enrol() {
     setError("");
@@ -180,8 +120,6 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
 
       {error && <div role="alert" className="notice error mt-5">{error}</div>}
 
-      {publicReviews&&<section className="mt-10 border-y border-white/[.08] py-7"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="section-kicker">Learner feedback</p><h2 className="mt-2 font-display text-3xl">Track reviews</h2></div>{publicReviews.rating_count>0&&<div className="text-right"><p className="text-2xl font-semibold tabular-nums">{publicReviews.average_rating} / 5</p><p className="text-xs text-slate-500">{publicReviews.rating_count} approved public review(s)</p></div>}</div>{publicReviews.reviews?.length?<div className="mt-5 grid gap-3 md:grid-cols-2">{publicReviews.reviews.map((review:any)=><article key={review.id} className="border border-white/[.08] bg-[#0e1319] p-5"><p className="text-sm gold" aria-label={review.rating+" out of 5 stars"}>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</p>{review.comment&&<p className="mt-3 text-sm leading-7 text-slate-300">{review.comment}</p>}<p className="mt-3 text-[10px] text-slate-600">Learner review · {review.created_at?new Date(review.created_at).toLocaleDateString():""}</p></article>)}</div>:<p className="mt-4 text-sm text-slate-500">No public reviews have been approved for this track yet.</p>}</section>}
-      {isCompleted&&individualLearner&&<section className="mt-8 rounded-2xl border border-white/[.1] bg-[#0e1319] p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="section-kicker">Optional feedback</p><h2 className="mt-2 text-xl font-semibold">How was this learning track?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Your review is optional. It stays private unless you explicitly consent to public display and a staff moderator approves it.</p></div>{myReview&&<span className="text-xs text-slate-500">{myReview.public_consent?(myReview.moderation_status==="approved"?"Approved for public display":myReview.moderation_status==="rejected"?"Not approved for public display":"Awaiting moderation"):"Private review"}</span>}</div>{reviewError&&<p role="alert" className="mt-4 text-sm text-red-200">{reviewError}</p>}{reviewNotice&&<p role="status" className="mt-4 text-sm text-emerald-200">{reviewNotice}</p>}{myReview&&!reviewOpen?<div className="mt-4 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-slate-300">Your rating: {myReview.rating}/5 {myReview.public_consent?"· Public sharing requested":"· Private"}</p><button type="button" className="mini" onClick={()=>{setReviewOpen(true);setReviewNotice("");}}>Edit review / sharing consent</button></div>:!reviewOpen&&!reviewDismissed?<div className="mt-4 flex flex-wrap gap-3"><button type="button" className="action" onClick={()=>setReviewOpen(true)}>Leave an optional review</button><button type="button" className="mini" onClick={()=>setReviewDismissed(true)}>Not now</button></div>:null}{reviewOpen&&<form onSubmit={saveReview} className="mt-5 grid gap-4 border-t border-white/[.08] pt-5"><label className="grid gap-2 text-xs font-semibold text-slate-300">Your rating<select className="field max-w-xs" value={reviewRating} onChange={e=>setReviewRating(Number(e.target.value))}>{[5,4,3,2,1].map(n=><option key={n} value={n}>{n} / 5</option>)}</select></label><label className="grid gap-2 text-xs font-semibold text-slate-300">Comment (optional)<textarea className="field min-h-24" maxLength={2000} value={reviewComment} onChange={e=>setReviewComment(e.target.value)} placeholder="What worked well, and what could be improved?"/></label><label className="flex items-start gap-3 text-xs leading-6 text-slate-400"><input type="checkbox" className="mt-1" checked={reviewConsent} onChange={e=>setReviewConsent(e.target.checked)}/><span>I agree that Learnora may publish this rating and comment after staff approval. My name and email will not be shown. I can withdraw consent later.</span></label><div className="flex flex-wrap gap-2"><button type="submit" className="action" disabled={reviewBusy}>{reviewBusy?"Saving…":myReview?"Save changes":"Submit review"}</button><button type="button" className="mini" disabled={reviewBusy} onClick={()=>setReviewOpen(false)}>Cancel</button></div></form>}{reviewDismissed&&!myReview&&!reviewOpen&&<button type="button" className="mt-4 text-xs gold underline" onClick={()=>setReviewDismissed(false)}>Show review prompt</button>}</section>}
       <section className="mt-10">
         <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="section-kicker">The curriculum</p><h2 className="mt-2 font-display text-3xl">Courses in this track</h2></div><p className="text-xs text-slate-500">{track?.course_count || 0} courses · ordered learning</p></div>
         <div className="mt-6 divide-y divide-white/[.08] border-y border-white/[.08]">
