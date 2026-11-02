@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
-import {Award,ExternalLink,FileDown,FolderKanban,Printer,ShieldCheck,Sparkles} from "lucide-react";
+import {Award,ExternalLink,FolderKanban,Printer,ShieldCheck,Sparkles} from "lucide-react";
 import {request} from "../../../lib/api/client";
 import Shell from "../../../components/dashboard/Shell";
 
