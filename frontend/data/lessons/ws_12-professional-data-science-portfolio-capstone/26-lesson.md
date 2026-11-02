@@ -1,7 +1,8 @@
 # Lesson 26: Professional Conduct and Responsible Data Practice
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Apply professional standards for honesty, confidentiality, competence, accountability and responsible data use; identify privacy and licensing risks; and escalate potential harm.
 
 ## 1. Core explanation
 Professional conduct includes honesty, confidentiality, respect, competence and accountability. Do not claim expertise beyond your ability or present unverified results as facts. Protect credentials and confidential material. Follow organisational policies and relevant laws. Escalate risks that exceed your competence or authority.
