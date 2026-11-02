@@ -432,3 +432,52 @@ A later separately approved stage may introduce paid courses and Pro subscriptio
 ### 13.7 Acceptance and release
 
 The immediate free-launch acceptance criteria and execution order are maintained in docs/ROADMAP.md and docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md. A screen or route alone is not evidence of a complete workflow. Verify Teams content creation through learner consumption, progress and completion, including backend authorization and storage. Production migrations, production data changes and deployments remain separate explicit approval gates.
+
+
+
+---
+
+## 14. Learner journey extension — architecture, plans, assessments and contextual tutoring (2 November 2026)
+
+This addendum records the five-phase learner journey extension. The original sections 1–13 remain intact. See [LEARNER_JOURNEY_PHASES_1_5.md](LEARNER_JOURNEY_PHASES_1_5.md) for implementation details, tests and outstanding acceptance evidence.
+
+### 14.1 Canonical curriculum relationships
+
+The global catalogue uses the existing generic learning-path model:
+
+`learnora_learning_paths` → `learnora_learning_path_courses` (ordered by `order_index`, with `required`) → `learnora_courses` → `course_modules` → `learnora_lessons`.
+
+The cohort-specific `learnora_tracks` / `cohort_track_courses` relationship remains separate. Do not introduce another global track table or encode learner plans as track curriculum.
+
+### 14.2 Optional AI learning plan
+
+An individual learner may optionally generate a plan from their saved onboarding profile and a published global track, or from the published global course catalogue. The schedule references only existing course IDs and follows the track's existing order. The AI may personalise weekly focus, practice and reflection prompts, but it may not create or reorder courses, modules or lessons. A rule-based fallback is clearly identified when structured AI output is unavailable or invalid.
+
+Plan state is stored separately in `learner_learning_plans`; plan completion is not course completion. The table is backend-only, RLS-enabled, and grants only the server role. The migration is not applied to production and must pass disposable/staging verification before release.
+
+### 14.3 Assessment and course completion policy
+
+Teams staff with the relevant internal permissions can configure and publish supported auto-graded multiple-choice and true/false quizzes, and create/publish manually graded assignments. Correct-answer keys are not returned to learner-facing quiz APIs or contextual AI prompts. Assignment grades store the grader and timestamp.
+
+Course completion requires:
+- all learner-visible published lessons completed;
+- a passing attempt for every published quiz, using that quiz's configured threshold; and
+- the latest submission for every published assignment graded at 70% or above of its maximum score.
+
+All published assessments are treated as required. Unpublished drafts do not affect learner completion. A course without published assessments retains lesson-only completion. Track completion remains derived from required course completion.
+
+A separate immutable grade-revision audit and assignment resubmission workflow remain future work; the current grade endpoint records the latest grader, score, feedback and timestamp.
+
+### 14.4 Contextual AI tutor
+
+The learner player may attach course, lesson and optional assessment identifiers to a tutor request. The backend revalidates enrolment, course/lesson membership, publication state and module unlock state, then loads lesson content, saved lesson progress, question/options without answer keys, and recent attempt outcomes. Client-supplied content is not trusted. Contextual handoffs start a fresh conversation; general tutor conversations remain supported.
+
+### 14.5 Learnora Teams responsibilities
+
+Teams continues to manage the canonical global tracks, ordered course relationships, courses, modules, lessons, video/resources and publication. The new assessment workspace adds quiz and assignment authoring, grading and course-level learner performance inspection. Internal staff permissions remain enforced by the backend for every route.
+
+### 14.6 Free-launch compatibility and release gates
+
+No payment, Paystack, subscription, trial, expiry, entitlement or Pro implementation is removed or rewritten by this extension. The existing server-side free-access mode remains default-off until separately configured and deployed. The plan feature does not require payment details or a paid subscription.
+
+The learning-plan migration is additive and has not been applied to the active Supabase project. Do not deploy the plan API before the migration is replayed and verified in a disposable/staging database. CI, both frontend builds, API regression tests, browser/mobile acceptance and migration verification must pass on the exact candidate SHA. No production deployment or migration is authorised by this specification update.
