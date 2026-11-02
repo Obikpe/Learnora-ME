@@ -148,7 +148,7 @@ with sqlite3.connect("data/learning.db") as connection:
         print(column)
 ```
 
-The `PRAGMA table_info` command is SQLite-specific and reports column information. The `with` statement manages the connection context and closes it when the block ends. We will use this safer pattern regularly.
+The `PRAGMA table_info` command is SQLite-specific and reports column information. The `with` statement manages the transaction: it commits on successful exit and rolls back if an exception occurs. Important: the sqlite3 connection context manager does **not** close the connection. For a short script, explicitly call `connection.close()` in a `finally` block, or use a dedicated closing pattern. Lesson 16 explains connection lifecycle management in detail.
 
 ## 9. Common setup problems
 
