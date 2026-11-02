@@ -1,7 +1,8 @@
 # Lesson 3: Building Reproducible Training Pipelines
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Build a reproducible training pipeline with separate numeric and categorical transformations; keep imputation, encoding and model fitting together; and validate that the pipeline handles new input records.
 
 ## 1. Core explanation
 A training pipeline makes preprocessing and fitting repeatable. Use ColumnTransformer for numeric and categorical fields, then chain the transformer with the estimator. The pipeline should be trained from a defined data version and produce the same feature mapping when used for inference.
