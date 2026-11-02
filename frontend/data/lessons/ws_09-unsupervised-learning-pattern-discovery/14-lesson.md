@@ -1,38 +1,38 @@
-# Lesson 14: Association Patterns and Co-Occurrence
+# Lesson 14: Interpreting and Profiling Segments
 
 ## Learning outcomes
 Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
 
 ## 1. Core explanation
-Association analysis searches for items that occur together in transactions. Support is the proportion of transactions containing an itemset. Confidence estimates how often B occurs when A occurs. Lift compares that confidence with the baseline frequency of B; lift greater than one indicates co-occurrence above independence under the measure.
+Cluster profiling describes how groups differ using original feature units. Compare counts, medians, means, distributions and proportions. A profile should answer what distinguishes a segment, how large it is and whether the difference is stable. Use box plots or summary tables to reveal within-cluster variation, not only averages.
 
-Association rules are descriptive, not causal. A rule “bread -> butter” does not mean bread causes butter purchases. Rare itemsets can have high confidence but tiny support, so inspect all three measures. Minimum support controls which itemsets are considered; too high misses rare patterns, too low creates many rules.
+Cluster labels are arbitrary identifiers. Give a descriptive name only after examining evidence and confirming that the label is useful and not misleading. A segment called high-value customers should be based on a defined value measure, not a guess from a cluster number.
 
-The transaction definition matters. A basket might be one checkout, one customer-day or one account-month. Combining transactions incorrectly changes support and confidence. Protect customer privacy and avoid sensitive inferences about individuals.
+Profiles can hide small or internally diverse groups. Report segment sizes and consider privacy when a cluster is tiny. Validate whether segments support a real action and whether that action is fair and appropriate.
 
 ## 2. Worked Python example
 Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
 
 ```python
-transactions = [
-    {"bread", "milk"}, {"bread", "butter"}, {"bread", "milk", "butter"},
-    {"milk"}, {"bread", "milk"}, {"butter", "milk"}
-]
-def support(itemset):
-    return sum(itemset.issubset(t) for t in transactions) / len(transactions)
-s_bread = support({"bread"})
-s_butter = support({"butter"})
-s_pair = support({"bread", "butter"})
-confidence = s_pair / s_bread
-lift = confidence / s_butter
-print("Support:", s_pair, "Confidence:", confidence, "Lift:", lift)
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+
+customers = pd.DataFrame({"recency_days": [5,8,12,60,75,90,3,10],
+                          "orders_90d": [12,10,8,2,1,0,14,9],
+                          "avg_basket": [500,420,380,90,70,30,550,400]})
+labels = KMeans(n_clusters=2, n_init=20, random_state=42).fit_predict(
+    StandardScaler().fit_transform(customers))
+print(customers.assign(segment=labels).groupby("segment").agg(
+    size=("recency_days","size"), median_recency=("recency_days","median"),
+    mean_orders=("orders_90d","mean"), mean_basket=("avg_basket","mean")))
 ```
 
 ## 3. Interpretation
 Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
 
 ## 4. Guided practice
-Calculate milk -> bread support, confidence and lift. Explain why high confidence can occur simply because bread is common, and why lift adds context.
+Name the segments based on their profiles, then challenge your labels. What additional business outcome or longitudinal evidence would show whether segmentation is useful?
 
 ## 5. Independent practice
 Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
