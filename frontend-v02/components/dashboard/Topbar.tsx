@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, Check, X } from "lucide-react";
+import { Bell, Check, X, Sun, Moon, LifeBuoy } from "lucide-react";
 import { request } from "../../lib/api/client";
 
 type NoticePreview = {
@@ -26,6 +26,21 @@ function safeInternalPath(value?: string | null) {
 export default function Topbar({ admin = false }: { admin?: boolean }) {
   const router = useRouter();
   const [unread, setUnread] = useState(0);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("learnora_theme");
+    const initial = saved === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = initial;
+    setTheme(initial);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    window.localStorage.setItem("learnora_theme", next);
+  };
   const [toast, setToast] = useState<ToastNotice | null>(null);
   const lastSeenIds = useRef<Set<string> | null>(null);
   const browserSeenIds = useRef<Set<string> | null>(null);
@@ -170,6 +185,8 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
           {admin ? "Learnora administration" : "Your learning workspace"}
         </div>
         <div className="ml-4 flex shrink-0 items-center gap-2">
+          <button type="button" onClick={toggleTheme} aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className="grid size-10 place-items-center rounded-lg border border-white/[.1] text-slate-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d7ad35]">{theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}</button>
+          {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Contact Learnora support" title="Contact support" className="grid size-10 place-items-center rounded-lg border border-white/[.1] text-slate-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d7ad35]"><LifeBuoy size={17}/></a>}
           <Link
             href="/dashboard/notifications"
             aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
