@@ -1,17 +1,17 @@
 # Lesson 26: Professional Conduct and Responsible Data Practice
 
 ## Learning outcomes
-Apply the professional practice, produce the capstone artefact and communicate evidence and limitations clearly.
+Apply the professional practice, produce a project artefact and communicate decisions with evidence.
 
 ## 1. Core explanation
-Professional conduct includes honesty, confidentiality, respect, competence and accountability. Do not claim expertise beyond your ability or present unverified results as facts. Protect access credentials and confidential material. Follow organisational policies and relevant laws. Escalate risks that exceed your competence or authority.
+Professional conduct includes honesty, confidentiality, respect, competence and accountability. Do not claim expertise beyond your ability or present unverified results as facts. Protect credentials and confidential material. Follow organisational policies and relevant laws. Escalate risks that exceed your competence or authority.
 
-Responsible data practice includes documenting data sources, checking licences, minimising personal information and considering fairness. Avoid publishing screenshots or files that expose names, emails, account IDs or private records. Use synthetic or appropriately anonymised examples for public demonstrations, and understand that simple masking may not guarantee anonymity.
+Responsible data practice includes documenting sources, checking licences, minimising personal information and considering fairness. Avoid publishing screenshots or files that expose names, emails, account IDs or private records. Use synthetic or appropriately anonymised examples for public demonstrations, and understand that simple masking may not guarantee anonymity.
 
 Keep a record of decisions and disclose conflicts of interest. If an analysis could cause harm, seek review and consider whether the project should proceed. Professional responsibility continues after delivery through correction, monitoring and incident response.
 
 ## 2. Worked example or template
-Run the Python example in VS Code where applicable. Adapt paths and fields to your own dataset; do not publish restricted records.
+Use the example as a starting point and adapt it to your own project. Python examples run in VS Code; shell commands should be entered in the VS Code terminal.
 
 ```python
 conduct_checks = [
@@ -25,20 +25,20 @@ for item in conduct_checks:
     print("[ ]", item)
 ```
 
-## 3. Capstone application
-Maintain a decision log and connect every analysis step to the project charter. Preserve provenance and reproducibility. Separate observed results from interpretation and recommendations.
+## 3. Professional application
+Keep claims evidence-based. Document sources, assumptions, licences, decisions and limitations. A portfolio project should be understandable and reproducible without access to private data or undocumented local files.
 
 ## 4. Guided practice
 Review a portfolio repository for privacy and licensing risks. Identify one issue that would require removing a file or rotating a credential and explain the correct response.
 
 ## 5. Independent practice
-Complete the corresponding capstone deliverable. Ask a reviewer to reproduce or challenge one result and record the changes made in response.
+Create or improve the corresponding project artefact in your repository. Ask another person to review it and record what was unclear or incomplete.
 
 ## 6. Knowledge check
-1. What evidence does this deliverable provide?
-2. Which assumptions or limitations affect the conclusion?
-3. How can another person reproduce the work?
-4. What is the next responsible action?
+1. What is the purpose of this professional practice?
+2. What evidence should be preserved?
+3. Which risks or constraints need to be disclosed?
+4. How will another person verify the work?
 
 ## Lesson summary
-A capstone demonstrates an end-to-end professional process: a well-framed question, defensible data, reproducible analysis, validation, clear communication and responsible publication.
+Professional data science combines sound analysis with ethical judgement, reproducible practice and clear communication.
