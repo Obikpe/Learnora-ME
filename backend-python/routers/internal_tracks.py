@@ -200,11 +200,24 @@ def _assert_publishable(track_id: str):
                 .select("id")
                 .eq("module_id", str(previous_module["id"]))
                 .eq("is_published", True)
-                .limit(1)
                 .execute()
             ).data or []
             if not quizzes:
                 raise HTTPException(status_code=409, detail="Every published module before the final module must have a published assessment so learners can unlock the next module.")
+            for quiz in quizzes:
+                questions = (
+                    supabase.table("quiz_questions")
+                    .select("id,question_type,options,correct_answer")
+                    .eq("quiz_id", str(quiz["id"]))
+                    .execute()
+                ).data or []
+                if not questions or any(
+                    question.get("correct_answer") is None
+                    or (str(question.get("question_type")) not in {"true_false", "boolean"} and not question.get("options"))
+                    or str(question.get("question_type")) not in {"multiple_choice", "single_choice", "mcq", "true_false", "boolean"}
+                    for question in questions
+                ):
+                    raise HTTPException(status_code=409, detail="Every published module assessment must contain supported, answerable questions before the track can be published.")
 
 
 @router.get("")
