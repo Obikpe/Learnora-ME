@@ -80,6 +80,8 @@ def _catalogue(track_id: Optional[str], profile: dict):
             .execute()
         ).data or []
     course_ids = [str(row["course_id"]) for row in links if row.get("course_id")]
+    if track and not course_ids:
+        raise HTTPException(409, "The selected published track does not contain any courses.")
     if course_ids:
         courses = (
             supabase.table("learnora_courses")
@@ -263,10 +265,6 @@ async def generate_learning_plan(body: GeneratePlanIn, user: CurrentUser = Depen
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "curriculum_policy": "The published Learnora track/course catalogue is authoritative. This plan only schedules existing content.",
     }
-    supabase.table("learner_learning_plans").update({
-        "status": "archived",
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    }).eq("user_id", str(user.id)).eq("status", "active").execute()
     saved = supabase.table("learner_learning_plans").insert({
         "user_id": str(user.id),
         "source_track_id": str(track["id"]) if track else None,
@@ -278,6 +276,11 @@ async def generate_learning_plan(body: GeneratePlanIn, user: CurrentUser = Depen
     }).execute()
     if not saved.data:
         raise HTTPException(500, "The learning plan could not be saved.")
+    new_plan_id = str(saved.data[0]["id"])
+    supabase.table("learner_learning_plans").update({
+        "status": "archived",
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }).eq("user_id", str(user.id)).eq("status", "active").neq("id", new_plan_id).execute()
     return {"success": True, "plan": saved.data[0]}
 
 
