@@ -1,7 +1,8 @@
 # Lesson 15: Visual Communication and Reporting
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Create a report with a clear visual hierarchy; select charts that answer the question; label units and denominators; and write evidence-led interpretations with caveats.
 
 ## 1. Core explanation
 A report should guide the reader from question to evidence to implication. Use headings that communicate the argument, not generic labels. Visuals need informative titles, units, readable scales and source notes. Avoid unnecessary decoration, 3-D effects and misleading axis ranges.
