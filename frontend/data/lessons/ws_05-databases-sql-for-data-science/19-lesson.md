@@ -29,20 +29,24 @@ sql_data_science/
 ├── data/
 │   └── learning.db
 ├── src/
+│   ├── __init__.py
 │   ├── db.py          # connection creation and configuration
 │   ├── load.py        # load_orders()
 │   ├── validation.py  # validate_orders()
-│   ├── transform.py   # build_regional_summary()
+│   ├── transform.py   # build_regional_summary() and save_summary()
 │   └── pipeline.py    # run() orchestration
 ├── outputs/
 └── run_pipeline.py
 ```
 
 - db.py opens configured connections.
-- queries.py contains SQL statements or query functions.
+- load.py contains parameterised extraction functions.
 - validation.py checks assumptions.
+- transform.py contains analytical transformations and output functions.
 - pipeline.py orchestrates extraction and transformation.
 - run_pipeline.py is the entry point.
+
+Because the modules live in src/, add an empty src/__init__.py and use package-relative imports such as `from .db import get_connection`. The entry-point script at the project root can import the pipeline with `from src.pipeline import run`.
 
 For a small course project, these can initially live in one file. Separation becomes useful as the project grows.
 
@@ -51,6 +55,7 @@ For a small course project, these can initially live in one file. Separation bec
 ```python
 # db.py
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -74,7 +79,7 @@ This uses a path relative to the source file rather than relying on the terminal
 
 ```python
 import pandas as pd
-from db import get_connection
+from .db import get_connection
 
 def load_orders(start_date, end_date):
     sql = """
@@ -84,7 +89,7 @@ def load_orders(start_date, end_date):
           AND order_date < ?
           AND status = ?
     """
-    with get_connection(read_only=True) as connection:
+    with closing(get_connection(read_only=True)) as connection:
         return pd.read_sql_query(
             sql,
             connection,
@@ -150,10 +155,11 @@ This is acceptable for a disposable teaching output table. In a robust workflow,
 
 ```python
 import logging
-from load import load_orders
-from validation import validate_orders
-from transform import build_regional_summary
-from db import get_connection
+from contextlib import closing
+from .load import load_orders
+from .validation import validate_orders
+from .transform import build_regional_summary, save_summary
+from .db import get_connection
 
 logging.basicConfig(
     level=logging.INFO,
@@ -170,19 +176,21 @@ def run(start_date, end_date):
     summary = build_regional_summary(orders)
 
     logging.info("Writing regional summary")
-    with get_connection() as connection:
-        summary.to_sql(
-            "regional_summary",
-            connection,
-            if_exists="replace",
-            index=False
-        )
+    from contextlib import closing
+    with closing(get_connection()) as connection:
+        with connection:
+            summary.to_sql(
+                "regional_summary",
+                connection,
+                if_exists="replace",
+                index=False
+            )
 
     logging.info("Pipeline completed")
     return summary
 ```
 
-The imports assume you have organised the functions into the named modules. If you keep the code in one file, remove those imports and define the functions above run(). Logging records progress without printing every row.
+The imports assume you have organised the functions into the named modules. If you keep the code in one file, remove those imports and define the functions above run(). Logging records progress without printing every row. The connection is explicitly closed with contextlib.closing; the nested connection context commits on success and rolls back on failure. The sqlite3 connection context manager alone does not close the connection.
 
 ## 9. Idempotency and repeatability
 
@@ -220,7 +228,7 @@ Never put passwords or secrets in source code. For a local SQLite exercise, ther
 
 ## Independent practice
 
-Build a complete script that extracts a defined date range, validates the input, calculates monthly and regional metrics, writes results to the database and logs the run. Make the date range configurable. Include a short README with setup instructions, metric definitions, expected tables and known limitations.
+Build a complete package that extracts a defined date range, validates the input, calculates monthly and regional metrics, writes results to the database and logs the run. Add a root-level run_pipeline.py that imports src.pipeline.run and calls it with a configurable date range. Make sure every connection is closed in a finally block or with contextlib.closing. Include a short README with setup instructions, metric definitions, expected tables and known limitations.
 
 ## Summary
 
