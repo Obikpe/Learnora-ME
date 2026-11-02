@@ -1,0 +1,323 @@
+"""Internal assessment authoring and grading for global Learnora content."""
+from typing import Any, Optional, Literal
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+
+from .auth import supabase
+from .internal_auth import InternalStaffContext, require_internal_permission
+
+router = APIRouter(prefix="/api/internal/assessments", tags=["Internal Assessments"])
+AUTO_GRADED_TYPES = {"multiple_choice", "single_choice", "mcq", "true_false", "boolean"}
+
+
+def _course(course_id: str) -> dict:
+    rows = (
+        supabase.table("learnora_courses")
+        .select("id,title,ownership,organisation_id,status")
+        .eq("id", course_id)
+        .eq("ownership", "learnora")
+        .is_("organisation_id", "null")
+        .limit(1)
+        .execute()
+    ).data or []
+    if not rows:
+        raise HTTPException(404, "Global Learnora course not found.")
+    return rows[0]
+
+
+def _quiz(quiz_id: str) -> dict:
+    rows = (
+        supabase.table("quizzes")
+        .select("id,course_id,module_id,lesson_id,title,description,passing_score,max_attempts,is_published")
+        .eq("id", quiz_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    if not rows:
+        raise HTTPException(404, "Quiz not found.")
+    quiz = rows[0]
+    _course(str(quiz["course_id"]))
+    return quiz
+
+
+def _draft_quiz(quiz_id: str) -> dict:
+    quiz = _quiz(quiz_id)
+    if quiz.get("is_published"):
+        raise HTTPException(409, "Unpublish the quiz before editing its questions or settings.")
+    return quiz
+
+
+class QuizCreate(BaseModel):
+    title: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = Field(None, max_length=5000)
+    module_id: Optional[str] = Field(None, max_length=80)
+    lesson_id: Optional[str] = Field(None, max_length=80)
+    passing_score: float = Field(default=70, ge=70, le=100)
+    max_attempts: Optional[int] = Field(default=None, ge=1, le=100)
+
+
+class QuizWrite(BaseModel):
+    title: Optional[str] = Field(None, min_length=2, max_length=200)
+    description: Optional[str] = Field(None, max_length=5000)
+    passing_score: Optional[float] = Field(None, ge=70, le=100)
+    max_attempts: Optional[int] = Field(default=None, ge=1, le=100)
+    is_published: Optional[bool] = None
+
+
+class QuestionIn(BaseModel):
+    question: str = Field(..., min_length=3, max_length=5000)
+    question_type: Literal["multiple_choice", "single_choice", "mcq", "true_false", "boolean"]
+    options: Any = Field(default_factory=list)
+    correct_answer: Any
+    explanation: Optional[str] = Field(None, max_length=5000)
+    points: float = Field(default=1, gt=0, le=1000)
+    order_index: int = Field(default=0, ge=0)
+
+
+class AssignmentCreate(BaseModel):
+    title: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = Field(None, max_length=5000)
+    instructions: Optional[str] = Field(None, max_length=12000)
+    lesson_id: Optional[str] = Field(None, max_length=80)
+    due_date: Optional[str] = None
+    max_score: Optional[float] = Field(default=100, gt=0, le=100000)
+    is_published: bool = False
+
+
+class AssignmentWrite(BaseModel):
+    title: Optional[str] = Field(None, min_length=2, max_length=200)
+    description: Optional[str] = Field(None, max_length=5000)
+    instructions: Optional[str] = Field(None, max_length=12000)
+    due_date: Optional[str] = None
+    max_score: Optional[float] = Field(None, gt=0, le=100000)
+    is_published: Optional[bool] = None
+
+
+class GradeSubmissionIn(BaseModel):
+    score: float = Field(..., ge=0, le=100000)
+    feedback: Optional[str] = Field(None, max_length=10000)
+
+
+def _validate_assessment_location(course_id: str, module_id: Optional[str], lesson_id: Optional[str]):
+    resolved_module = module_id
+    if lesson_id:
+        lesson_rows = (
+            supabase.table("learnora_lessons")
+            .select("id,module_id")
+            .eq("id", lesson_id)
+            .limit(1)
+            .execute()
+        ).data or []
+        if not lesson_rows:
+            raise HTTPException(404, "Lesson not found.")
+        lesson_module = str(lesson_rows[0]["module_id"])
+        if resolved_module and str(resolved_module) != lesson_module:
+            raise HTTPException(422, "The selected lesson does not belong to the selected module.")
+        resolved_module = lesson_module
+    if resolved_module:
+        module_rows = (
+            supabase.table("course_modules")
+            .select("id,course_id")
+            .eq("id", resolved_module)
+            .eq("course_id", course_id)
+            .limit(1)
+            .execute()
+        ).data or []
+        if not module_rows:
+            raise HTTPException(422, "The selected module does not belong to this course.")
+    return resolved_module
+
+
+def _question_rows(quiz_id: str):
+    return (
+        supabase.table("quiz_questions")
+        .select("id,quiz_id,question,question_type,options,correct_answer,explanation,points,order_index")
+        .eq("quiz_id", quiz_id)
+        .order("order_index")
+        .execute()
+    ).data or []
+
+
+def _assert_quiz_publishable(quiz_id: str):
+    questions = _question_rows(quiz_id)
+    if not questions:
+        raise HTTPException(409, "Add at least one question before publishing this quiz.")
+    for question in questions:
+        if question.get("correct_answer") is None:
+            raise HTTPException(409, "Every auto-graded question needs a correct answer.")
+        options = question.get("options")
+        if str(question.get("question_type")) not in {"true_false", "boolean"} and not options:
+            raise HTTPException(409, "Every choice question needs answer options.")
+        if float(question.get("points") or 0) <= 0:
+            raise HTTPException(409, "Every question must have a positive point value.")
+
+
+@router.get("/courses/{course_id}")
+def list_course_assessments(course_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    _course(course_id)
+    modules = (
+        supabase.table("course_modules")
+        .select("id,title,order_index,status")
+        .eq("course_id", course_id)
+        .order("order_index")
+        .execute()
+    ).data or []
+    quizzes = (
+        supabase.table("quizzes")
+        .select("id,course_id,module_id,lesson_id,title,description,passing_score,max_attempts,is_published,created_at")
+        .eq("course_id", course_id)
+        .order("created_at", desc=True)
+        .execute()
+    ).data or []
+    assignments = (
+        supabase.table("assignments")
+        .select("id,course_id,lesson_id,title,description,instructions,due_date,max_score,is_published,created_at")
+        .eq("course_id", course_id)
+        .order("created_at", desc=True)
+        .execute()
+    ).data or []
+    return {"success": True, "modules": modules, "quizzes": quizzes, "assignments": assignments}
+
+
+@router.post("/courses/{course_id}/quizzes", status_code=201)
+def create_quiz(course_id: str, body: QuizCreate, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    _course(course_id)
+    module_id = _validate_assessment_location(course_id, body.module_id, body.lesson_id)
+    payload = body.model_dump()
+    payload.update({"course_id": course_id, "module_id": module_id, "is_published": False})
+    saved = supabase.table("quizzes").insert(payload).execute()
+    if not saved.data:
+        raise HTTPException(500, "Quiz could not be created.")
+    return {"success": True, "quiz": saved.data[0]}
+
+
+@router.patch("/quizzes/{quiz_id}")
+def update_quiz(quiz_id: str, body: QuizWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    quiz = _quiz(quiz_id)
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(400, "No quiz changes supplied.")
+    if updates.get("is_published") is True:
+        _assert_quiz_publishable(quiz_id)
+    if quiz.get("is_published") and any(key != "is_published" for key in updates):
+        raise HTTPException(409, "Unpublish the quiz before changing its settings.")
+    saved = supabase.table("quizzes").update(updates).eq("id", quiz_id).execute()
+    if not saved.data:
+        raise HTTPException(500, "Quiz update could not be confirmed.")
+    return {"success": True, "quiz": saved.data[0]}
+
+
+@router.get("/quizzes/{quiz_id}")
+def get_quiz_for_staff(quiz_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    quiz = _quiz(quiz_id)
+    return {"success": True, "quiz": quiz, "questions": _question_rows(quiz_id)}
+
+
+@router.post("/quizzes/{quiz_id}/questions", status_code=201)
+def add_quiz_question(quiz_id: str, body: QuestionIn, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    _draft_quiz(quiz_id)
+    saved = supabase.table("quiz_questions").insert({"quiz_id": quiz_id, **body.model_dump()}).execute()
+    if not saved.data:
+        raise HTTPException(500, "Question could not be added.")
+    return {"success": True, "question": saved.data[0]}
+
+
+@router.patch("/questions/{question_id}")
+def update_quiz_question(question_id: str, body: QuestionIn, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    rows = supabase.table("quiz_questions").select("id,quiz_id").eq("id", question_id).limit(1).execute().data or []
+    if not rows:
+        raise HTTPException(404, "Question not found.")
+    _draft_quiz(str(rows[0]["quiz_id"]))
+    saved = supabase.table("quiz_questions").update(body.model_dump()).eq("id", question_id).execute()
+    if not saved.data:
+        raise HTTPException(500, "Question update could not be confirmed.")
+    return {"success": True, "question": saved.data[0]}
+
+
+@router.delete("/questions/{question_id}")
+def delete_quiz_question(question_id: str, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    rows = supabase.table("quiz_questions").select("id,quiz_id").eq("id", question_id).limit(1).execute().data or []
+    if not rows:
+        raise HTTPException(404, "Question not found.")
+    _draft_quiz(str(rows[0]["quiz_id"]))
+    supabase.table("quiz_questions").delete().eq("id", question_id).execute()
+    return {"success": True}
+
+
+@router.post("/courses/{course_id}/assignments", status_code=201)
+def create_assignment(course_id: str, body: AssignmentCreate, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    _course(course_id)
+    _validate_assessment_location(course_id, None, body.lesson_id)
+    payload = body.model_dump()
+    payload["course_id"] = course_id
+    if payload.get("is_published") and not (payload.get("instructions") or payload.get("description")):
+        raise HTTPException(409, "Add assignment instructions before publishing.")
+    saved = supabase.table("assignments").insert(payload).execute()
+    if not saved.data:
+        raise HTTPException(500, "Assignment could not be created.")
+    return {"success": True, "assignment": saved.data[0]}
+
+
+@router.patch("/assignments/{assignment_id}")
+def update_assignment(assignment_id: str, body: AssignmentWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    rows = supabase.table("assignments").select("id,course_id,is_published").eq("id", assignment_id).limit(1).execute().data or []
+    if not rows:
+        raise HTTPException(404, "Assignment not found.")
+    _course(str(rows[0]["course_id"]))
+    updates = body.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(400, "No assignment changes supplied.")
+    if updates.get("is_published") is True and not (updates.get("instructions") or updates.get("description")):
+        current = supabase.table("assignments").select("description,instructions").eq("id", assignment_id).limit(1).execute().data or []
+        if not current or not (current[0].get("instructions") or current[0].get("description")):
+            raise HTTPException(409, "Add assignment instructions before publishing.")
+    saved = supabase.table("assignments").update(updates).eq("id", assignment_id).execute()
+    if not saved.data:
+        raise HTTPException(500, "Assignment update could not be confirmed.")
+    return {"success": True, "assignment": saved.data[0]}
+
+
+@router.get("/assignments/{assignment_id}/submissions")
+def assignment_submissions(assignment_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    rows = supabase.table("assignments").select("id,course_id,title,max_score").eq("id", assignment_id).limit(1).execute().data or []
+    if not rows:
+        raise HTTPException(404, "Assignment not found.")
+    _course(str(rows[0]["course_id"]))
+    submissions = (
+        supabase.table("assignment_submissions")
+        .select("id,user_id,submission_text,file_url,status,score,feedback,submitted_at,graded_at,graded_by")
+        .eq("assignment_id", assignment_id)
+        .order("submitted_at", desc=True)
+        .execute()
+    ).data or []
+    user_ids = list({str(row["user_id"]) for row in submissions if row.get("user_id")})
+    users = supabase.table("users").select("id,name,email").in_("id", user_ids).execute().data or [] if user_ids else []
+    user_map = {str(row["id"]): row for row in users}
+    return {"success": True, "assignment": rows[0], "submissions": [{**row, "learner": user_map.get(str(row.get("user_id")))} for row in submissions]}
+
+
+@router.post("/assignments/{assignment_id}/submissions/{submission_id}/grade")
+def grade_assignment_submission(assignment_id: str, submission_id: str, body: GradeSubmissionIn, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
+    assignment_rows = supabase.table("assignments").select("id,course_id,max_score").eq("id", assignment_id).limit(1).execute().data or []
+    if not assignment_rows:
+        raise HTTPException(404, "Assignment not found.")
+    assignment = assignment_rows[0]
+    _course(str(assignment["course_id"]))
+    maximum = assignment.get("max_score")
+    if maximum is not None and body.score > float(maximum):
+        raise HTTPException(422, "The grade cannot exceed the assignment's maximum score.")
+    submission_rows = supabase.table("assignment_submissions").select("id,assignment_id").eq("id", submission_id).eq("assignment_id", assignment_id).limit(1).execute().data or []
+    if not submission_rows:
+        raise HTTPException(404, "Submission not found for this assignment.")
+    from datetime import datetime, timezone
+    saved = supabase.table("assignment_submissions").update({
+        "status": "graded",
+        "score": body.score,
+        "feedback": body.feedback.strip() if body.feedback else None,
+        "graded_at": datetime.now(timezone.utc).isoformat(),
+        "graded_by": staff.user_id,
+    }).eq("id", submission_id).eq("assignment_id", assignment_id).execute()
+    if not saved.data:
+        raise HTTPException(500, "Grade could not be saved.")
+    return {"success": True, "submission": saved.data[0]}
