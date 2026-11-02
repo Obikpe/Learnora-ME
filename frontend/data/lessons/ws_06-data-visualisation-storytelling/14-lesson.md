@@ -1,7 +1,8 @@
 # Lesson 14: Interactive Visualisation Concepts
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to explain filtering, hover, zoom and selection interactions; build a basic Plotly chart; design meaningful defaults and tooltips; and identify how interaction can hide context or distort denominators.
 
 ## 1. Core explanation
 Interactive charts allow users to explore details through filtering, hovering, zooming and selecting. They are useful when an audience needs to inspect many categories or compare different segments. Interaction should answer a real question, not compensate for a confusing static chart.
