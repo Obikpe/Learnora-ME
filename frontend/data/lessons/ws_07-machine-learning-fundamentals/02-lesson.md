@@ -1,7 +1,8 @@
 # Lesson 2: Types of Machine Learning
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the key concepts, identify when they apply, implement the worked example in VS Code, and recognise the method's limitations.
+
+By the end of this lesson, you should be able to Distinguish supervised, unsupervised and reinforcement learning; identify the role of labels, feedback and rewards; classify practical use cases; and explain why the learning setup must match the problem.
 
 ## 1. Core explanation
 Supervised learning uses labelled examples: each training row has input features and a known target. Regression predicts a numeric target such as delivery time; classification predicts a class such as late/on-time. Unsupervised learning has no target label and searches for structure, such as customer segments or unusual records. Reinforcement learning studies an agent that takes actions and receives rewards over time.
