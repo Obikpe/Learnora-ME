@@ -1,50 +1,73 @@
-# Lesson 28: End-to-End Classification Case Study
+# Lesson 28: Supervised Learning Assessment
+
+## Purpose
+This assessment brings together the supervised-learning skills from WS08. You will frame a prediction problem, prepare a dataset, compare appropriate models, evaluate errors and communicate a defensible recommendation. The goal is not to achieve the highest possible score by trying many models. The goal is to demonstrate a reliable process and explain what the evidence supports.
 
 ## Learning outcomes
-Explain the technique, implement the example, interpret the output and justify when the method is suitable.
+By the end of this assessment, you should be able to:
+- distinguish a regression target from a classification target and define the prediction unit and time;
+- create a reproducible train/test split appropriate to the data;
+- build a leakage-safe preprocessing and modelling pipeline;
+- establish a simple baseline and compare it with at least two suitable supervised models;
+- select metrics based on the decision and error costs;
+- interpret model errors, limitations and uncertainty;
+- present reproducible code and a clear recommendation.
 
-## 1. Core explanation
-Build a classification case study around the Wine dataset. Define the target as one of three wine classes, inspect class balance, split with stratification, compare a baseline and candidate, then inspect the confusion matrix and per-class precision and recall. The dataset is educational and small; a high score does not imply performance on commercial wine samples or other populations.
+## Assessment brief
+Choose one of the following routes, or propose a comparable dataset with a documented source and licence.
 
-Compare logistic regression with a tree ensemble. Explain scaling requirements and why the algorithms behave differently. Use cross-validation on training data for selection, then one final test evaluation. Inspect which classes are confused and consider whether those errors have equal practical importance.
+### Route A: Regression
+Use the California housing dataset or another approved numeric-target dataset. Predict a continuous outcome. Compare a DummyRegressor baseline with at least two models. Report MAE and RMSE, inspect residuals and explain what a typical error means in the target's units.
 
-The report should state data source, target encoding, split, metrics and limitations. Avoid treating the label names as objectively meaningful categories beyond the dataset's definitions.
+### Route B: Classification
+Use the Wine or Breast Cancer dataset, or another approved labelled dataset. Predict a class. Compare a DummyClassifier baseline with at least two models. Report a confusion matrix and at least two suitable metrics. If probabilities are used, discuss calibration and threshold choice.
 
-## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. Some dataset loaders may require internet access on first use.
+## Required workflow
+1. **Frame the task.** State the stakeholder decision, prediction unit, target definition, prediction time, population and intended action. Explain why the target is available and meaningful.
+2. **Audit the data.** Record rows, columns, types, missingness, duplicates, class balance or target range, and any suspicious identifiers. Create a short data dictionary.
+3. **Split before learning from data.** Hold out a final test set. Use stratification for classification when appropriate. For time-dependent or grouped observations, explain why a random split may be invalid and choose a time- or group-aware split.
+4. **Build a baseline.** A baseline establishes the performance that a simple rule can achieve. Do not treat a high accuracy score as meaningful without comparing it to a suitable baseline.
+5. **Build model pipelines.** Put imputers, encoders, scalers and feature selection inside the pipeline so they are fitted only on training folds. Use cross-validation on the training data for model comparison and tuning.
+6. **Evaluate once on the final test set.** Do not select models, features or thresholds using the test set. Report the metric, test population and uncertainty or limitations.
+7. **Analyse errors.** Inspect representative errors, identify patterns and discuss the consequences of false positives, false negatives or large residuals.
+8. **Communicate.** Write a short report that separates observed results, interpretation and recommendation. State limitations and what further evidence is required.
 
-```python
-from sklearn.datasets import load_wine
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix, classification_report
-
-data = load_wine(as_frame=True)
-Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
-    test_size=.25, random_state=11, stratify=data.target)
-model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=3000))
-model.fit(Xtr, ytr)
-pred = model.predict(Xte)
-print(confusion_matrix(yte, pred))
-print(classification_report(yte, pred, target_names=data.target_names))
+## Submission structure
+```text
+supervised-assessment/
+├── README.md
+├── data/README.md
+├── notebooks/analysis.ipynb
+├── src/
+│   ├── prepare.py
+│   └── train.py
+├── reports/
+│   ├── evaluation.md
+│   └── figures/
+└── requirements.txt
 ```
 
-## 3. Interpretation and checks
-Record the target, sample size, split design, metric and model settings. Inspect class-wise results or residuals, not only the headline score. Keep the test set untouched during model selection and report dataset limitations.
+Do not commit private, licensed or restricted data unless redistribution is explicitly permitted. Include data download instructions or a safe sample instead.
 
-## 4. Guided practice
-Compare class-wise recall and confusion matrix. Write a stakeholder summary with one strength, one weakness, one dataset limitation and the next validation step.
+## Marking rubric
+| Criterion | Weight |
+|---|---:|
+| Problem framing and target definition | 10% |
+| Data audit and preparation | 15% |
+| Leakage prevention and reproducibility | 20% |
+| Baseline and model comparison | 15% |
+| Metrics and validation design | 20% |
+| Error analysis and interpretation | 10% |
+| Communication, ethics and limitations | 10% |
 
-## 5. Independent practice
-Extend the example with another model or evaluation view. Compare candidates using the same training/validation design. Write a short report for a non-technical stakeholder and state what further validation is required.
+## Self-review checklist
+- Can another learner reproduce the result from the README?
+- Is the target defined without ambiguity or future-information leakage?
+- Were transformations fitted only on training data?
+- Does the metric match the real decision?
+- Is the final test set kept separate from model selection?
+- Are errors and limitations explained honestly?
+- Does the recommendation follow from the evidence?
 
-## 6. Knowledge check
-1. What does the method estimate or optimise?
-2. Which assumptions and settings affect its behaviour?
-3. How could leakage or an inappropriate split inflate performance?
-4. What evidence is needed before use?
-
-## Lesson summary
-Supervised learning is an evidence-based process: define the target, preserve the prediction timeline, validate fairly, inspect errors and communicate uncertainty.
+## Reflection
+In 300–500 words, explain the most consequential modelling decision you made, one approach you rejected and why, what the evaluation does not prove, and what you would do before using the model in a real organisation.
