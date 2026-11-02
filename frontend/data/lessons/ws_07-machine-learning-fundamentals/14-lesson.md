@@ -1,7 +1,8 @@
 # Lesson 14: Baseline Models and Evaluation
 
 ## Learning outcomes
-Explain the method, implement the example in Python, interpret its result, and identify risks that could invalidate the conclusion.
+
+By the end of this lesson, you should be able to Establish a DummyClassifier or DummyRegressor baseline; choose metrics appropriate to regression or classification; compare a candidate against the baseline; and explain why a single headline score can mislead.
 
 ## 1. Concepts and reasoning
 A baseline is a simple reference model that establishes what “good” means. For regression, predicting the training-set mean or median is a useful starting point. For classification, predicting the most frequent class is a simple baseline. A useful operational baseline might instead be the existing business rule or current human process.
