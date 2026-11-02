@@ -1,4 +1,4 @@
--- Isolated tests for assessment-based course completion.
+"""Isolated tests for assessment-based course completion."""
 import os
 import unittest
 from types import SimpleNamespace
