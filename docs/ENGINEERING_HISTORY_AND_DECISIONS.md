@@ -438,3 +438,6 @@ Append entries using:
 
 
 **Account-deletion migration review:** The production schema was checked before finalising the migration. Organisation-owner accounts are blocked from self-service deletion until ownership is transferred; active organisation memberships are suspended (the valid status in the live schema), team memberships are deactivated, and manager assignments are cleared. The retained user tombstone has its password, verification/reset tokens, email, display name, trial dates and access dates cleared or anonymised. The original email/name and a limited account snapshot remain in the service-role-only history table. The migration has not been applied to production.
+
+
+**Migration ledger reconciliation note:** A read-only check of the live `supabase_migrations.schema_migrations` table found two additional applied versions, `20261102210054` (`shared_auth_rate_limits`) and `20261102210056` (`shared_api_rate_limit`), which do not currently have matching timestamped files in `supabase/migrations`. The repository also contains earlier files with related names. These entries must be reconciled against their recorded SQL before using a bulk migration push; they have not been replayed or modified during this work.
