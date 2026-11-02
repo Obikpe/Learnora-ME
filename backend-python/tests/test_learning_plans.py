@@ -48,6 +48,12 @@ class LearningPlanTests(unittest.TestCase):
         self.assertEqual(len(weeks), 3)
         self.assertEqual([week["minutes"] for week in weeks], [120, 120, 60])
 
+    def test_schedule_keeps_a_safe_minimum_weekly_capacity(self):
+        courses = [{"id": "course-a", "title": "Course A", "estimated_hours": 1, "required": True}]
+        weeks = learning_plans._schedule(courses, 0)
+        self.assertEqual([week["minutes"] for week in weeks], [15, 15, 15, 15])
+        self.assertTrue(all(week["tasks"] for week in weeks))
+
     def test_schedule_never_returns_an_empty_week(self):
         courses = [{"id": "course-a", "title": "Course A", "estimated_hours": 1, "required": True}]
         weeks = learning_plans._schedule(courses, 180)
