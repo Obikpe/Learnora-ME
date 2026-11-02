@@ -1,7 +1,8 @@
 # Lesson 11: Categorical Comparisons and Composition
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to compare categories with sorted, grouped and stacked charts; distinguish counts from rates and proportions; choose an appropriate category order; and explain denominator and category-overlap issues.
 
 ## 1. Core explanation
 Categorical comparisons ask how groups differ. A sorted horizontal bar chart works well with long category labels. Grouped bars compare a small number of series across categories. Stacked bars show totals and composition, but internal segments are difficult to compare unless they share a baseline. A 100% stacked bar compares proportions rather than totals.
