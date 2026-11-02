@@ -40,6 +40,8 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn("_assert_no_active_quiz_session(str(user.id))", ai_api)
         self.assertIn('sessionStorage.getItem("learnora_quiz_active")==="1"', ai_page)
         self.assertIn("Tutor unavailable during quizzes", ai_page)
+        self.assertIn('request<any>("/progress/quiz-sessions/me")', ai_page)
+        self.assertIn("if(!quizGuardChecked)", ai_page)
 
     def test_frontend_api_proxies_are_configured_for_same_origin_cookies(self):
         for relative in ("frontend-v02/next.config.mjs", "frontend-team/next.config.mjs"):
