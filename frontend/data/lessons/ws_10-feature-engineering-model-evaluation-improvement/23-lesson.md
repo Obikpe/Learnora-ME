@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Compare model scores on identical folds; inspect paired differences and variability; distinguish statistical from practical significance; and consider operational cost, fairness and maintainability.
+By the end of this lesson, you should be able to Maintain a reproducible experiment log with hypothesis, data version, code version, split seed, parameters and metrics; change one factor at a time; and document rejected as well as successful experiments.
 
 ## 1. Core explanation
 An improvement workflow is a controlled experiment. Start with a baseline and a written hypothesis, change one meaningful factor, evaluate using the same split and metric, and record the result. Examples include adding a feature, changing regularisation, adjusting class weights or using a different model family.
