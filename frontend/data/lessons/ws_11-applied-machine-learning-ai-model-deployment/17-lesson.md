@@ -1,7 +1,8 @@
 # Lesson 17: Experiment Tracking and Model Registry Concepts
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Record experiment IDs, code commits, data versions, parameters and metrics; explain model registry states; and describe what must be reproducible before promoting a candidate.
 
 ## 1. Core explanation
 Experiment tracking records what was tried, on which data, with which code and settings, and what result followed. Without tracking, teams cannot reliably reproduce or compare experiments. Record parameters, metrics, artefact locations, dataset identifiers and source-code commits.
