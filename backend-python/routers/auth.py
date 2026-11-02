@@ -617,7 +617,6 @@ def _iso(
 
 GMAIL_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GMAIL_API_SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
-GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send"
 
 GMAIL_OAUTH_CLIENT_ID = os.getenv("GMAIL_OAUTH_CLIENT_ID", "").strip()
 GMAIL_OAUTH_CLIENT_SECRET = os.getenv("GMAIL_OAUTH_CLIENT_SECRET", "").strip()
@@ -688,7 +687,11 @@ def _send_email(
                 raise RuntimeError("Unable to authorise Gmail API email delivery.")
 
             token_data = token_response.json()
-            access_token = token_data.get("access_token")
+            access_token = (
+                token_data.get("access_token")
+                if isinstance(token_data, dict)
+                else None
+            )
             if not isinstance(access_token, str) or not access_token:
                 print("Gmail OAuth token refresh returned no access token.")
                 raise RuntimeError("Unable to authorise Gmail API email delivery.")
