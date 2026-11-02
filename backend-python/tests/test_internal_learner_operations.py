@@ -106,7 +106,7 @@ class InternalLearnerOperationsTests(unittest.TestCase):
                 {"id": "e2", "user_id": "u1", "course_id": "c2", "status": "active", "enrolled_at": recent, "completed_at": None},
             ],
             "learnora_lesson_progress": [
-                {"user_id": "u1", "lesson_id": "l1", "completed": True, "progress_percent": 100, "last_accessed_at": recent},
+                {"user_id": "u1", "lesson_id": "l1", "completed": True, "progress_percent": 100, "last_accessed_at": recent, "completed_at": recent},
                 {"user_id": "u1", "lesson_id": "l2", "completed": False, "progress_percent": 40, "last_accessed_at": recent},
             ],
             "learnora_courses": [
