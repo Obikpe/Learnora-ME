@@ -116,6 +116,9 @@ html[data-theme="light"] .glass { background: #fff; border-color: var(--line); }
 html[data-theme="light"] .field { background: #fff; color: #172033; border-color: var(--line-strong); }
 html[data-theme="light"] ::selection { background: rgba(155,116,35,.2); color: #172033; }
 
+html[data-theme="light"] [class*="bg-[#080a0d]"],
+html[data-theme="light"] [class*="bg-[#0b0f14]"],
+html[data-theme="light"] [class*="bg-[#10151b]"],
 html[data-theme="light"] [class*="bg-[#090b0e]"],
 html[data-theme="light"] [class*="bg-[#090c10]"],
 html[data-theme="light"] [class*="bg-[#0b0f13]"],
@@ -123,7 +126,9 @@ html[data-theme="light"] [class*="bg-[#0c1015]"],
 html[data-theme="light"] [class*="bg-[#0e1319]"],
 html[data-theme="light"] [class*="bg-[#11161d]"],
 html[data-theme="light"] [class*="bg-[#11171e]"],
-html[data-theme="light"] [class*="bg-[#171f28]"] {
+html[data-theme="light"] [class*="bg-[#171f28]"],
+html[data-theme="light"] [class*="bg-[#151c24]"],
+html[data-theme="light"] [class*="bg-[#171e27]"] {
   background-color: #fff !important;
 }
 html[data-theme="light"] [class*="bg-black/15"],
@@ -143,6 +148,11 @@ html[data-theme="light"] [class*="hover:bg-white"]:hover { background-color: rgb
 html[data-theme="light"] [class*="bg-[#d7ad35]"],
 html[data-theme="light"] [class*="bg-[#d5b15b]"] { background-color: #d5b15b !important; }
 html[data-theme="light"] [class*="text-black"] { color: #171717 !important; }
+html[data-theme="light"] [class*="text-[#f2d477]"] { color: #916b1c !important; }
+html[data-theme="light"] [class*="bg-red-600"][class*="text-white"] { color: #fff !important; }
+html[data-theme="light"] .text-emerald-200 { color: #047857 !important; }
+html[data-theme="light"] .text-amber-100,
+html[data-theme="light"] .text-amber-200 { color: #92400e !important; }
 html[data-theme="light"] [class*="bg-red-600"] { background-color: #dc2626 !important; }
 html[data-theme="light"] [class*="text-red-200"] { color: #b91c1c !important; }
 html[data-theme="light"] [class*="text-red-300"] { color: #b91c1c !important; }
