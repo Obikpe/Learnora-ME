@@ -1,7 +1,8 @@
 # Lesson 6: Serving Predictions Through an API
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Define an API request and response contract; validate request fields; expose a prediction endpoint; and explain why a demonstration formula must be replaced by a loaded, validated model before real use.
 
 ## 1. Core explanation
 An API exposes model inference to other software through a defined request and response contract. A client sends structured input, the service validates it, loads a model, performs inference and returns a structured response. Keep the contract stable and version it when fields or meanings change.
