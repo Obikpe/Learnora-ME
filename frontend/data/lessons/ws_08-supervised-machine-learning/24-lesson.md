@@ -1,7 +1,8 @@
 # Lesson 24: Model Calibration
 
 ## Learning outcomes
-Explain the technique, implement the example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Explain calibration as agreement between predicted probabilities and observed frequencies; plot a calibration curve; compare calibrated and uncalibrated probabilities; and distinguish calibration from discrimination.
 
 ## 1. Core explanation
 Calibration measures whether predicted probabilities match observed frequencies. Among cases assigned probability around 0.7, a well-calibrated model should be correct about 70% of the time over many comparable cases. Calibration differs from discrimination: a model can rank cases well but produce probabilities that are too extreme or too cautious.
