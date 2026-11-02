@@ -8,6 +8,12 @@ export function getQuizTabId(): string {
   return id;
 }
 
+export function setQuizTabId(id: string): void {
+  if (typeof window === "undefined" || !id) return;
+  window.name = PREFIX + id;
+  sessionStorage.setItem("learnora_quiz_tab_id", id);
+}
+
 export function clearQuizTabSession(): void {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem("learnora_quiz_active");
