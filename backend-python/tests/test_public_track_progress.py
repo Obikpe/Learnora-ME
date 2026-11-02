@@ -183,6 +183,18 @@ class PublicTrackProgressTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
 
+    def test_module_without_published_quiz_does_not_deadlock_the_track(self):
+        fixtures = {
+            "course_modules": [
+                {"id": "module-1", "course_id": "course-1", "order_index": 1, "status": "published"},
+                {"id": "module-2", "course_id": "course-1", "order_index": 2, "status": "published"},
+            ],
+            "quizzes": [],
+            "quiz_attempts": [],
+        }
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
+            progress._assert_module_unlocked("learner-1", "module-2")
+
     def test_module_unlock_respects_quiz_configured_threshold(self):
         fixtures = {
             "course_modules": [
