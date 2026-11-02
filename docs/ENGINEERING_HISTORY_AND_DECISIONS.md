@@ -452,3 +452,15 @@ Append entries using:
 - Replaced the old global-lock regression tests with a contract asserting that active sessions do not globally block tutor requests while explicit assessment context remains prohibited.
 - No tests, builds, browser checks, CI, migrations, or production deployment were run.
 - Quiz-session recovery in the course player now matches the current browser tab's client session ID only. An active quiz in another tab no longer creates a false 'unfinished quiz in this tab' state.
+
+## Live catalogue seed: Introduction to Data Analytics — 3 November 2026
+
+Seeded and verified the first published global Learnora learning track and course in the production Supabase project. This is data-only; no schema or application code was changed.
+
+- Track: **Data Analytics** (`data-analytics`), ID `63715469-8b41-4972-b686-830fe55327e8`, published, global (no owner or organisation).
+- Course: **Introduction to Data Analytics** (`introduction-to-data-analytics`), ID `e89cdf59-f4ad-4453-ab14-73e372fbce7e`, published, global Learnora-owned, beginner level, free for individual learners, linked as the required first course in the track.
+- Module: **Foundations of Data Analytics**, ID `546aa84c-70d4-47aa-8371-6a3464599e32`, published.
+- Lesson: **What Is Data Analytics?**, ID `9f051008-29e4-48b5-b1c2-c0b45954b812`, published, article, preview enabled, 35 minutes, approximately 10.6k characters of lesson content.
+- The lesson covers data vs information vs insight, organisational uses, descriptive/diagnostic/predictive/prescriptive analytics, the analytics workflow, analyst responsibilities, an applied example, key points and reflection questions.
+
+Read-only verification confirmed the track-course relationship, published statuses, exactly one module and one lesson for this new course, and one published global course/track in the catalogue. The existing 201 draft courses and the pre-existing Data Analytics Foundations course/module/lesson were left untouched. The public discovery API source exposes `GET /api/public/courses`, `GET /api/public/courses/{course_id}`, `GET /api/public/courses/{course_id}/structure`, `GET /api/public/tracks` and `GET /api/public/tracks/{track_id}`; these routes are registered in `backend-python/main.py`. A live HTTP request to the deployed Vercel API could not be completed from this environment, so production browser/API availability is not claimed as independently tested.
