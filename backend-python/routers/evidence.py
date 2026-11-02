@@ -95,6 +95,7 @@ def my_evidence(
         if row.get("evidence_type") == "project" and row.get("source_id")
     })
     verified_project_map = {}
+    verified_project_skill_pairs = set()
     if project_source_ids:
         verified_projects = (
             supabase.table("project_submissions")
@@ -105,14 +106,34 @@ def my_evidence(
             .execute()
         ).data or []
         verified_project_map = {str(row["id"]): row for row in verified_projects}
+        project_ids = list({str(row["project_id"]) for row in verified_projects if row.get("project_id")})
+        if project_ids:
+            project_rows = (
+                supabase.table("projects")
+                .select("id,skills")
+                .in_("id", project_ids)
+                .execute()
+            ).data or []
+            project_skill_map = {
+                str(project["id"]): {str(value) for value in (project.get("skills") or [])}
+                for project in project_rows
+            }
+            for submission in verified_projects:
+                allowed_skills = project_skill_map.get(str(submission.get("project_id")), set())
+                for skill_id in allowed_skills:
+                    verified_project_skill_pairs.add((str(submission["id"]), skill_id))
     mastery_scores = {}
     for row in evidence_rows:
         source_id = str(row.get("source_id") or "")
-        if row.get("evidence_type") != "project" or source_id not in verified_project_map:
-            continue
         skill_id = str(row.get("skill_id") or "")
+        if (
+            row.get("evidence_type") != "project"
+            or source_id not in verified_project_map
+            or (source_id, skill_id) not in verified_project_skill_pairs
+        ):
+            continue
         score = verified_project_map[source_id].get("score", row.get("score"))
-        if skill_id and score is not None:
+        if score is not None:
             mastery_scores.setdefault(skill_id, []).append(float(score))
     enriched_skill_rows = []
     for definition in definitions:
@@ -151,6 +172,7 @@ def my_evidence(
                 "verified"
                 if row.get("evidence_type") == "project"
                 and str(row.get("source_id") or "") in verified_project_map
+                and (str(row.get("source_id") or ""), str(row.get("skill_id") or "")) in verified_project_skill_pairs
                 else "not_verified"
             ),
         }
