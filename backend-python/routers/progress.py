@@ -127,10 +127,7 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
             .execute()
         ).data or []
         if not quizzes:
-            raise HTTPException(
-                409,
-                f'Module "{previous.get("title") or "previous module"}" has no published assessment yet. Contact your instructor or organisation administrator.',
-            )
+            continue
         for quiz in quizzes:
             threshold = effective_passing_score(quiz)
             attempts = (
