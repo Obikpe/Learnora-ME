@@ -1,7 +1,8 @@
 # Lesson 20: Learning Curves and Error Diagnosis
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Use RandomizedSearchCV and probability distributions to explore hyperparameters; compare search budgets and reproducibility; explain the concept of Bayesian optimisation; and avoid claiming it was run when only random search is shown.
 
 ## 1. Core explanation
 A learning curve shows training and validation performance as the amount of training data increases. If both scores are poor and close, the model may have high bias. If training is strong and validation is weak, the model may have high variance. If validation continues improving with more data, collecting more representative examples may help.
