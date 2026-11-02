@@ -11,7 +11,7 @@ A requirements file or modern project metadata describes dependencies. The appli
 
 Packaging also includes source code, model artefacts, data schema, documentation and startup configuration. Test installation and startup from a clean environment before deployment.
 
-## 2. Worked Python example
+## 2. Worked environment example
 Use VS Code and a project virtual environment. Install the relevant packages with `python -m pip install pandas scikit-learn fastapi uvicorn joblib httpx` as required.
 
 ```text
