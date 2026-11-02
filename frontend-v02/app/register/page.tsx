@@ -35,7 +35,6 @@ export default function Register() {
       <div className="mx-auto w-full max-w-lg">
         <a href="/" className="inline-flex items-center gap-2 text-xs text-slate-500 transition-colors hover:text-slate-200 lg:hidden"><ArrowLeft size={14}/> Back to Learnora</a>
         <div className="mt-8 lg:mt-0"><a href="/" className="hidden lg:inline-flex"><Logo/></a></div>
-        <>
           <p className="mt-10 text-[10px] font-bold uppercase tracking-[.2em] text-[var(--gold-light)]">Create your account</p>
           <h2 className="mt-3 font-display text-5xl leading-tight tracking-[-.04em] sm:text-6xl">Start with one step.</h2>
           <p className="mt-4 max-w-md text-sm leading-7 text-slate-400">Create your Learnora account. You can explore the learning experiences and access available to your account.</p>
@@ -48,6 +47,6 @@ export default function Register() {
           </form>
           <p className="mt-5 text-[10px] leading-5 text-slate-600">Learnora uses essential browser storage to operate securely. Read the <a className="gold underline underline-offset-2" href="/cookies">Cookies & Storage Notice</a>.</p>
           <div className="mt-7 border-t border-white/[.1] pt-5 text-sm text-slate-500">Already have an account? <a className="ml-1 font-semibold gold hover:underline" href="/login">Sign in</a></div>
-        </>{error&&<Toast title="Could not create account" message={error} type="error" onClose={()=>setError("")}/>}
+        {error&&<Toast title="Could not create account" message={error} type="error" onClose={()=>setError("")}/>}
   </main>;
 }
