@@ -1,7 +1,8 @@
 # Lesson 10: Time-Series Visualisation
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to parse and sort timestamps; choose an appropriate time granularity; distinguish trend, seasonality and noise; calculate and interpret rolling summaries; and avoid hiding missing periods or changing denominators.
 
 ## 1. Core explanation
 Time-series data records observations in time order. Parse timestamps, sort rows, identify the time zone and decide the time granularity. A line chart is appropriate for a continuous sequence. Bars can be useful for discrete periods such as monthly totals. Missing periods must remain visible; do not connect across gaps as if observations were collected.
