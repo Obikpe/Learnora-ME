@@ -1,7 +1,8 @@
 # Lesson 11: Train/Validation/Test Strategy
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Build a preprocessing workflow with Pipeline and ColumnTransformer; keep numeric and categorical steps separate; fit transformations within cross-validation; and inspect the transformed feature space.
 
 ## 1. Core explanation
 The training set fits model parameters. Validation data or cross-validation supports model and hyperparameter selection. The test set estimates final performance on unseen data and must remain untouched until the choices are fixed. Repeatedly checking test performance turns the test set into another validation set and creates optimism.
