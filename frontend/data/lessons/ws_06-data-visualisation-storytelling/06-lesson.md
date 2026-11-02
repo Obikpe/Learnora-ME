@@ -1,7 +1,8 @@
 # Lesson 6: Exploratory Visualisation with Seaborn
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the central ideas, select an appropriate method, implement it in Python, interpret the output and identify limitations.
+
+By the end of this lesson, you should be able to use Seaborn's axes-level and figure-level functions; create scatter, distribution and categorical plots; map variables to hue and facets; and interpret exploratory patterns without treating them as causal evidence.
 
 ## 1. Concepts and reasoning
 Seaborn builds statistical graphics on Matplotlib and works naturally with tidy DataFrames: one observation per row and one variable per column. Common functions include histplot for distributions, boxplot for group distributions, scatterplot for relationships and pairplot for several numeric pairs.
