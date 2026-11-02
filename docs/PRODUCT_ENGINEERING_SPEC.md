@@ -481,3 +481,12 @@ Teams continues to manage the canonical global tracks, ordered course relationsh
 No payment, Paystack, subscription, trial, expiry, entitlement or Pro implementation is removed or rewritten by this extension. The existing server-side free-access mode remains default-off until separately configured and deployed. The plan feature does not require payment details or a paid subscription.
 
 The learning-plan migration is additive; its disposable PostgreSQL CI replay, RLS/grant assertions and transactional rollback passed on checkpoint `8e21f264744a1a49d26d0f81b3272f1c5d72f24a`. It has not been applied to the active Supabase project. All five CI workflows (backend tests, backend verification, three frontend builds, quality checks, and cohort/disposable migration tests) passed on that exact checkpoint. Live Pheonix SQL revalidation remains blocked by read-only DB authentication; browser/mobile acceptance, provider/fallback acceptance, and separately approved live migration/deployment remain release gates. No production deployment or migration was authorised.
+
+
+### 14.7 Quiz integrity — AI tutor availability
+
+The AI tutor is not available inside any active quiz. The tutor launcher, chat interface, contextual tutor action and any equivalent keyboard/accessibility entry point must be absent or disabled for the full quiz lifecycle: answering, moving between questions, reviewing and submitting. A learner must not be able to open the tutor overlay or send a tutor request while an attempt is active. This is an application access-control rule, not a prompt-only instruction. Backend tutor endpoints must reject quiz-context requests during an active attempt, even if called outside the normal UI. The tutor remains available on ordinary lesson/course learning surfaces outside an active quiz. Browser tests must verify both visible UI absence and request-level denial.
+
+### 14.8 Immediate acceptance milestone and Phase 6
+
+The next milestone is limited to live Pheonix Supabase schema/migration/RLS/grant verification and browser-based acceptance of the phase 1–5 learner/Teams workflows, including the quiz tutor-visibility restriction above. Once both are accepted and any live migration has separate approval, proceed directly to Phase 6: track completion feedback, optional rating/comment, explicit public consent, moderation, duplicate prevention and privacy-safe display. No unrelated feature phase is to be inserted.
