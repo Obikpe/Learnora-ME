@@ -1,7 +1,8 @@
 # Lesson 13: Regression Evaluation Metrics
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Compare K-fold, StratifiedKFold, GroupKFold and TimeSeriesSplit; select a splitter that matches the data structure; and explain what each validation score estimates.
 
 ## 1. Core explanation
 MAE is the average absolute error and is easy to interpret in target units. MSE squares residuals and penalises large errors; RMSE returns to target units. R-squared compares model squared error with a mean-prediction reference and can be negative on test data. MAPE expresses percentage error but behaves badly when actual values are zero or near zero.
