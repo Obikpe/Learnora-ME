@@ -18,7 +18,7 @@ export default function Hero() {
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <a href="/courses" className="inline-flex min-h-12 items-center gap-3 rounded-lg bg-[var(--gold)] px-5 text-sm font-bold text-[#17140d] transition-colors hover:bg-[var(--gold-light)]">
-              Explore learning <ArrowRight size={16}/>
+              Explore courses <ArrowRight size={16}/>
             </a>
             <a href="/how-it-works" className="inline-flex min-h-12 items-center gap-2 rounded-lg border border-white/[.16] px-5 text-sm font-semibold text-slate-200 transition-colors hover:border-white/[.35] hover:bg-white/[.035]">
               How it works <ArrowUpRight size={16}/>
