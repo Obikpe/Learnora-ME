@@ -105,7 +105,7 @@ BEGIN
   END IF;
 
   UPDATE public.organisation_members
-     SET status = 'inactive'
+     SET status = 'suspended'
    WHERE user_id = v_user.id
      AND status = 'active';
 
