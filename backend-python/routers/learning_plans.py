@@ -4,7 +4,6 @@ The track remains the authoritative curriculum. A learner plan only schedules
 and contextualises real published courses; it cannot create, remove or reorder
 track curriculum.
 """
-import math
 from datetime import datetime, timezone
 from typing import Optional
 
