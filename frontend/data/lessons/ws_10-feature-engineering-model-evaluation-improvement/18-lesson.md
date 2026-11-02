@@ -1,42 +1,39 @@
-# Lesson 18: Hyperparameter Search
+# Lesson 18: Bias-Variance Trade-Off
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Explain the bias-variance trade-off; compare training and held-out scores across model complexity; diagnose underfitting and overfitting; and propose a controlled improvement.
+By the end of this lesson, you should be able to Choose a classification threshold using false-positive and false-negative costs; calculate total decision cost; compare thresholds; and state why threshold selection must use validation data rather than the final test set.
 
 ## 1. Core explanation
-Hyperparameters are settings chosen before or around model fitting, such as tree depth, regularisation strength or number of neighbours. Grid search evaluates a specified set of combinations; random search samples combinations and can explore broad spaces more efficiently when only a few settings strongly affect performance.
+Bias describes systematic error from assumptions that are too restrictive; variance describes sensitivity to the particular training sample. A simple model may underfit with high bias. A very flexible model may overfit with high variance. The goal is to balance the two so performance generalises.
 
-Use cross-validation on training data to select hyperparameters. Put preprocessing in a Pipeline and address parameter names through pipeline steps. Choose a scoring metric linked to the decision. Record search space, folds, random seed and compute time.
+Training and validation curves help diagnose the problem. If both errors are high, the model may underfit. If training error is low but validation error is much higher, the model may overfit. More representative training data, regularisation, simpler models and better features can help depending on the cause.
 
-Large searches increase selection bias and compute cost. A search may overfit its validation folds if too many choices are tested. Use a final untouched test set once after selection, and consider nested CV when a robust estimate of the entire selection procedure is required.
+The bias-variance framework is a conceptual guide, not a complete diagnosis. Label noise, distribution shift, leakage and data quality can also explain poor performance. Change one factor at a time and validate the effect.
 
 ## 2. Worked Python example
 Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
 
 ```python
-from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
+from sklearn.datasets import make_moons
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
 
-data = load_breast_cancer(as_frame=True)
-Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
-    test_size=.2, random_state=42, stratify=data.target)
-pipe = make_pipeline(StandardScaler(), SVC())
-search = GridSearchCV(pipe, {"svc__C": [.1, 1, 10],
-    "svc__kernel": ["linear", "rbf"]}, cv=StratifiedKFold(5, shuffle=True, random_state=42),
-    scoring="f1", n_jobs=-1)
-search.fit(Xtr, ytr)
-print(search.best_params_, search.best_score_, search.score(Xte, yte))
+X, y = make_moons(n_samples=500, noise=.25, random_state=3)
+Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=.3,
+                                      random_state=3, stratify=y)
+for depth in [1, 2, 4, 10, None]:
+    m = DecisionTreeClassifier(max_depth=depth, random_state=3).fit(Xtr, ytr)
+    print(depth, accuracy_score(ytr, m.predict(Xtr)),
+          accuracy_score(yte, m.predict(Xte)))
 ```
 
 ## 3. Interpretation and safeguards
 State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune a threshold, select features or choose hyperparameters.
 
 ## 4. Guided practice
-Expand the grid with gamma for the RBF kernel. Explain why gamma should not be tuned for a linear kernel and why best_params_ is not itself evidence of test performance.
+Record training and test scores. Identify underfit and overfit candidates. Suggest one change for each and explain why a perfect training score is not the objective.
 
 ## 5. Independent practice
 Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
