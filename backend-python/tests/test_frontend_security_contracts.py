@@ -45,6 +45,9 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('client_session_id=', player)
         self.assertIn('"/heartbeat"', player)
         self.assertIn("getQuizTabId", ai_page)
+        self.assertIn('request<any>("/progress/quiz-sessions/me")', sidebar)
+        progress = (ROOT / "backend-python" / "routers" / "progress.py").read_text(encoding="utf-8")
+        self.assertIn("Submit the quiz before ending its active session.", progress)
 
     def test_certificate_verification_has_one_route_and_displays_revocation(self):
         route = ROOT / "frontend-v02" / "app" / "verify-certificate"
