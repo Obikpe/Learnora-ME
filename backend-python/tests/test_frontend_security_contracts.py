@@ -43,6 +43,14 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('request<any>("/progress/quiz-sessions/me")', ai_page)
         self.assertIn("if(!quizGuardChecked)", ai_page)
 
+    def test_certificate_verification_has_one_route_and_displays_revocation(self):
+        route = ROOT / "frontend-v02" / "app" / "verify-certificate"
+        self.assertTrue((route / "[certificateNumber]" / "page.tsx").is_file())
+        self.assertFalse((route / "[number]").exists(), "Next.js cannot define duplicate dynamic route folders.")
+        page = (route / "[certificateNumber]" / "page.tsx").read_text(encoding="utf-8")
+        self.assertIn('data.status==="revoked"', page)
+        self.assertIn("Revoked record", page)
+
     def test_frontend_api_proxies_are_configured_for_same_origin_cookies(self):
         for relative in ("frontend-v02/next.config.mjs", "frontend-team/next.config.mjs"):
             source = (ROOT / relative).read_text(encoding="utf-8")
