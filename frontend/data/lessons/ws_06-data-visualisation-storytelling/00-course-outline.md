@@ -59,7 +59,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 python -m pip install --upgrade pip
-python -m pip install numpy pandas matplotlib seaborn scipy
+python -m pip install numpy pandas "matplotlib>=3.9" "seaborn>=0.13" scipy
 ```
 
 If PowerShell blocks activation, learners may run the environment's Python directly: `.venv\Scripts\python.exe -m pip install numpy pandas matplotlib seaborn scipy`. No database server or paid software is required.
