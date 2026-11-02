@@ -1,7 +1,8 @@
 # Lesson 14: Monitoring Model and Data Quality
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Monitor service health, input quality, missingness and prediction outcomes; define operational indicators and alert thresholds; and distinguish service failures from model-quality failures.
 
 ## 1. Core explanation
 Monitoring checks whether the service and model continue to behave as expected. System metrics include availability, latency, error rate and resource use. Data quality metrics include missingness, schema changes, value ranges and category frequencies. Model metrics include prediction distribution, confidence, delayed ground-truth performance and subgroup error rates.
