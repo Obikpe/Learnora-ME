@@ -1,47 +1,185 @@
-# Lesson 10: Time-Series Visualisation
+# Lesson 10: Seaborn Distribution Visualisation
 
 ## Learning outcomes
+You should be able to use Seaborn's `histplot()`, `kdeplot()`, `ecdfplot()` and `displot()`; choose bins and normalisation; compare distributions using hue; explain KDE bandwidth and cumulative distributions; and select a distribution view appropriate to sample size and analytical question.
 
-By the end of this lesson, you should be able to parse and sort timestamps; choose an appropriate time granularity; distinguish trend, seasonality and noise; calculate and interpret rolling summaries; and avoid hiding missing periods or changing denominators.
+## 1. What does distribution analysis tell us?
 
-## 1. Core explanation
-Time-series data records observations in time order. Parse timestamps, sort rows, identify the time zone and decide the time granularity. A line chart is appropriate for a continuous sequence. Bars can be useful for discrete periods such as monthly totals. Missing periods must remain visible; do not connect across gaps as if observations were collected.
+A distribution describes how values are spread. It includes the centre, spread, shape, skewness, peaks, gaps and tails. Distribution charts help an analyst understand data before calculating averages or fitting models.
 
-Trend is long-term direction; seasonality is a repeating pattern at a known frequency; noise is irregular variation. Rolling averages make a trend easier to see but smooth peaks and troughs and should not replace the original series. Year-over-year comparison can help separate seasonality from growth.
+For example, the mean salary can be strongly affected by a few very high salaries. A histogram, box plot or ECDF may show that the majority of salaries are much lower than the mean. Always inspect the distribution before deciding which summary statistics are useful.
 
-Do not aggregate before deciding what the question requires. Daily totals, weekly averages and monthly sums answer different questions. Rates need denominators: incidents per 1,000 active users may be more meaningful than raw incident counts when the user base changes.
-
-## 2. Worked Python example
-Run in VS Code. Install required packages with `python -m pip install pandas numpy matplotlib seaborn plotly`.
+## 2. Prepare example data
 
 ```python
+import numpy as np
 import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 
-df = pd.DataFrame({"date": pd.date_range("2026-01-01", periods=12, freq="D"),
-                   "visits": [90,94,110,105,130,125,118,140,145,150,142,160]})
-df["rolling_3"] = df["visits"].rolling(3, min_periods=1).mean()
-fig, ax = plt.subplots(figsize=(8,4))
-ax.plot(df.date, df.visits, label="Daily visits", alpha=.55)
-ax.plot(df.date, df.rolling_3, label="3-day rolling mean")
-ax.legend(); ax.set(title="Daily website visits", xlabel="Date", ylabel="Visits")
+rng = np.random.default_rng(12)
+df = pd.DataFrame({
+    "score": np.concatenate([
+        rng.normal(65, 8, 120),
+        rng.normal(78, 5, 80)
+    ]),
+    "cohort": ["A"] * 120 + ["B"] * 80
+})
+df["score"] = df["score"].clip(0, 100)
+sns.set_theme(style="whitegrid")
+```
+
+The example creates two groups with different centres and spreads. Random data changes if the seed changes. The seed is fixed here so the example is reproducible.
+
+## 3. histplot(): histogram and optional KDE
+
+`histplot()` is an axes-level function for histograms:
+
+```python
+fig, ax = plt.subplots(figsize=(8, 4))
+sns.histplot(data=df, x="score", bins=15, ax=ax)
+ax.set_title("Learner score distribution")
+ax.set_xlabel("Score")
+ax.set_ylabel("Number of learners")
 plt.show()
 ```
 
-## 3. Interpretation and design checks
-State the analytical question, population, variables, units and denominator. Check missingness and sample size. Distinguish observations from explanations and recommendations. Design for the actual audience and the size at which the visual will be viewed.
+Important arguments:
+- `data`: DataFrame containing the variable.
+- `x` or `y`: variable to distribute.
+- `bins`: number of bins, binning rule or explicit bin edges.
+- `binwidth`: width of each bin.
+- `binrange`: lower and upper limits for binning.
+- `stat`: `"count"`, `"frequency"`, `"probability"`, `"percent"` or `"density"`.
+- `hue`: group variable.
+- `multiple`: how hue groups are displayed; common options include `"layer"`, `"stack"`, `"dodge"` and `"fill"`.
+- `kde=True`: add a smoothed density estimate.
+- `element`: visual form such as `"bars"`, `"step"` or `"poly"`.
 
-## 4. Guided practice
-Create a 7-day rolling average. Explain why the first six values use fewer than seven observations when min_periods=1. Name one question that needs daily values and one better answered monthly.
+The default y-axis is count. If you use `stat="percent"`, the axis is percentage rather than number of records. Change the label to match.
 
-## 5. Independent practice
-Apply the lesson to a dataset. Create a chart or artefact, write a caption that states the main message and caveat, and ask another person to interpret it without your explanation.
+## 4. Compare groups using hue
 
-## 6. Knowledge check
-1. What question does this visual answer?
-2. Which encoding or design choice supports the comparison?
-3. What could mislead the audience?
-4. What uncertainty or limitation must be disclosed?
+```python
+fig, ax = plt.subplots(figsize=(8, 4))
+sns.histplot(data=df, x="score", hue="cohort",
+             bins=15, element="step", stat="density",
+             common_norm=False, ax=ax)
+ax.set_title("Score distributions by cohort")
+ax.set_ylabel("Density")
+plt.show()
+```
+
+- `hue="cohort"` draws separate group distributions.
+- `element="step"` uses outlines instead of filled bars.
+- `stat="density"` expresses density rather than raw count.
+- `common_norm=False` normalises each group independently so each group's density integrates to one.
+
+This makes shapes easier to compare, but it hides differences in group size. If group size matters, show sample sizes or use a count-based chart too.
+
+The `multiple` argument changes how group histograms combine:
+- `"layer"`: draw distributions over one another.
+- `"stack"`: stack counts or densities.
+- `"dodge"`: place bars beside one another.
+- `"fill"`: scale each bin to show proportions across groups.
+
+Choose the option that matches the question, and check the denominator represented by the y-axis.
+
+## 5. kdeplot(): smoothed density
+
+A KDE (kernel density estimate) estimates a smooth distribution from observations. Each data point contributes a small smooth curve; the curves are combined into an overall estimate.
+
+```python
+fig, ax = plt.subplots(figsize=(8, 4))
+sns.kdeplot(data=df, x="score", hue="cohort",
+            fill=True, alpha=0.25, common_norm=False,
+            bw_adjust=1, ax=ax)
+ax.set_title("Smoothed score distributions")
+ax.set_ylabel("Density")
+plt.show()
+```
+
+Important arguments:
+- `fill`: fill the area under the curve.
+- `bw_adjust`: multiply the default bandwidth. Larger values smooth more; smaller values preserve more local variation but can become noisy.
+- `cut`: how far the curve may extend beyond observed extremes; `cut=0` stops at the data boundaries.
+- `clip`: restrict the estimate to a specified range.
+- `common_norm`: whether group densities share a common normalisation.
+
+KDE is not a histogram and does not show actual counts per bin. It is an estimated smooth density. With small samples or discrete variables, a KDE may suggest a shape that the data does not support.
+
+## 6. ecdfplot(): empirical cumulative distribution
+
+An empirical cumulative distribution function (ECDF) answers: what proportion of observations are less than or equal to a given value?
+
+```python
+fig, ax = plt.subplots(figsize=(8, 4))
+sns.ecdfplot(data=df, x="score", hue="cohort", ax=ax)
+ax.set(title="Cumulative proportion of scores",
+       xlabel="Score", ylabel="Proportion at or below score")
+plt.show()
+```
+
+The curve rises from 0 toward 1. If the curve for one group is consistently further to the right, that group tends to have higher values. ECDFs avoid bin-width choices and KDE smoothing. They are especially useful for comparing percentiles and thresholds.
+
+## 7. displot(): figure-level distribution chart
+
+`displot()` is figure-level. It creates its own Figure and can create facets:
+
+```python
+grid = sns.displot(data=df, x="score", col="cohort",
+                   kind="hist", bins=12, height=4, aspect=1.1)
+grid.set_axis_labels("Score", "Learners")
+grid.set_titles("Cohort {col_name}")
+plt.show()
+```
+
+- `col="cohort"` creates one panel per cohort.
+- `kind="hist"` selects a histogram.
+- `height` controls panel height in inches.
+- `aspect` controls width relative to height.
+
+You do not pass `ax=` because `displot()` manages the Figure and its axes. Its return value is a FacetGrid-like object; use grid methods such as `set_axis_labels()` to customise the panels.
+
+## 8. Which distribution chart should you choose?
+
+- Histogram: counts and shape, with a bin-width decision.
+- KDE: smooth density shape, with bandwidth sensitivity.
+- ECDF: exact cumulative proportion without bins.
+- Box plot: compact median, quartiles and outlier summary.
+- Violin plot: group density shape, with smoothing caveats.
+
+For a small sample, show individual points. For a skewed distribution, include a median and percentiles rather than relying only on the mean.
+
+## 9. Common mistakes
+
+- Calling a KDE curve the actual observed distribution.
+- Using too much smoothing and hiding multiple peaks.
+- Comparing group densities without explaining whether they are normalised separately.
+- Forgetting that `stat="percent"` changes the y-axis meaning.
+- Using a histogram with different bin widths for group comparisons.
+- Using a KDE for a tiny sample or a discrete variable without caution.
+
+## Guided practice
+
+1. Make a histogram with 8, 15 and 30 bins.
+2. Overlay cohort distributions with `hue`.
+3. Change `multiple` from `layer` to `stack` and `fill`.
+4. Add a KDE and change `bw_adjust`.
+5. Plot an ECDF and estimate the proportion scoring 70 or below.
+
+## Independent practice
+
+Use a dataset with a numerical measure and a meaningful group. Produce a histogram, KDE and ECDF. State what each reveals, which choices affect the appearance and which visual is most suitable for comparing thresholds. Include group sizes.
+
+## Knowledge check
+
+1. What is a bin?
+2. What does `stat="density"` mean?
+3. What does KDE bandwidth control?
+4. How does an ECDF differ from a histogram?
+5. What is the difference between `histplot()` and `displot()`?
 
 ## Lesson summary
-Effective visual communication combines accurate encoding, clear context, audience-aware design and honest interpretation.
+
+Seaborn's distribution functions answer related but different questions. `histplot()` shows binned counts or density; `kdeplot()` estimates a smooth density; `ecdfplot()` shows cumulative proportions; and `displot()` manages figure-level distribution views and facets. Choose the representation according to the question, sample size and assumptions.
