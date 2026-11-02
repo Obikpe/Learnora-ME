@@ -61,6 +61,8 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("FROM PUBLIC, anon, authenticated", sql)
         self.assertIn("TO service_role", sql)
         self.assertIn("expires_at timestamptz NOT NULL", sql)
+        self.assertIn("client_session_id uuid NOT NULL", sql)
+        self.assertIn("UNIQUE (user_id, quiz_id, client_session_id)", sql)
         self.assertIn("DROP TABLE IF EXISTS public.quiz_active_sessions", rollback.read_text(encoding="utf-8"))
 
     def test_certificate_revocation_migration_is_additive_and_reversible(self):
