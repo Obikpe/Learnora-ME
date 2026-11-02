@@ -26,9 +26,11 @@ export default function Sidebar({admin=false,role="",active,hideTutor=false}:{ad
   const [canTeach,setCanTeach]=useState(false);
   const [isCohortAccount,setIsCohortAccount]=useState(false);
   const [isFreeAccess,setIsFreeAccess]=useState(false);
+  const [quizSessionActive,setQuizSessionActive]=useState(false);
+  useEffect(()=>{setQuizSessionActive(sessionStorage.getItem("learnora_quiz_active")==="1");},[]);
   useEffect(()=>{let cancelled=false;currentUser().then((me:any)=>{if(!cancelled){setCanTeach((me.organisation_memberships||[]).some((membership:any)=>membership.role==="instructor"&&membership.status==="active"));setIsCohortAccount(me.account_type==="cohort");setIsFreeAccess(me.access_state==="free"&&me.course_access===true);}}).catch(()=>{});return()=>{cancelled=true};},[]);
   const learnerItems=canTeach?[...learner,["instructor","Teaching",Users]]:learner;
-  const items=admin?(role==="super_admin"?superAdmin:orgAdmin):learnerItems.filter(([key])=>!((isCohortAccount||isFreeAccess)&&key==="subscription")&&!(hideTutor&&key==="ai"));
+  const items=admin?(role==="super_admin"?superAdmin:orgAdmin):learnerItems.filter(([key])=>!((isCohortAccount||isFreeAccess)&&key==="subscription")&&!((hideTutor||quizSessionActive)&&key==="ai"));
   const logout=()=>{clearToken();location.href="/login"};
   const brand=<Link href={admin?"/dashboard/admin/overview":"/dashboard"} className="flex h-20 shrink-0 items-center px-6 font-display text-2xl">Learnora <span className="ml-1 text-[var(--gold-light)]">ME</span></Link>;
   return <>
