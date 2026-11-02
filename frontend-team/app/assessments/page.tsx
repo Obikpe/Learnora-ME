@@ -4,11 +4,11 @@ import {useCallback,useEffect,useState, type FormEvent} from "react";
 import {ClipboardCheck,Plus,Save,CheckCircle2,FileText} from "lucide-react";
 import Shell from "../../components/Shell";
 import {request,teamMe} from "../../lib/api";
-import {contentCourses} from "../../lib/content";
+import {contentCourses,contentLessons} from "../../lib/content";
 
 export default function AssessmentsWorkspace(){
  const [me,setMe]=useState<any>(null),[courses,setCourses]=useState<any[]>([]),[courseId,setCourseId]=useState("");
- const [data,setData]=useState<any>({modules:[],quizzes:[],assignments:[]}),[quiz,setQuiz]=useState<any>(null),[quizDetail,setQuizDetail]=useState<any>(null),[assignment,setAssignment]=useState<any>(null),[submissions,setSubmissions]=useState<any[]>([]);
+ const [data,setData]=useState<any>({modules:[],quizzes:[],assignments:[]}),[lessonOptions,setLessonOptions]=useState<any[]>([]),[quiz,setQuiz]=useState<any>(null),[quizDetail,setQuizDetail]=useState<any>(null),[assignment,setAssignment]=useState<any>(null),[submissions,setSubmissions]=useState<any[]>([]);
  const [quizTitle,setQuizTitle]=useState(""),[quizDescription,setQuizDescription]=useState(""),[moduleId,setModuleId]=useState(""),[passingScore,setPassingScore]=useState("70"),[maxAttempts,setMaxAttempts]=useState("");
  const [question,setQuestion]=useState(""),[options,setOptions]=useState(""),[answer,setAnswer]=useState(""),[explanation,setExplanation]=useState("");
  const [assignmentTitle,setAssignmentTitle]=useState(""),[assignmentInstructions,setAssignmentInstructions]=useState(""),[assignmentLesson,setAssignmentLesson]=useState(""),[assignmentMax,setAssignmentMax]=useState("100");
@@ -19,6 +19,8 @@ export default function AssessmentsWorkspace(){
   if(!id){setData({modules:[],quizzes:[],assignments:[]});return;}
   const result=await request<any>("/assessments/courses/"+encodeURIComponent(id));
   setData(result);
+  const lessonGroups=await Promise.all((result.modules||[]).map(async(m:any)=>({module:m,lessons:(await contentLessons(String(m.id))).lessons||[]})));
+  setLessonOptions(lessonGroups.flatMap((group:any)=>group.lessons.map((lesson:any)=>({...lesson,module_title:group.module.title}))));
  },[]);
  useEffect(()=>{Promise.all([teamMe(),contentCourses()]).then(([user,result])=>{setMe(user);const rows=result.courses||[];setCourses(rows);if(rows.length)setCourseId(String(rows[0].id));}).catch(e=>setError(e.message||"Assessment workspace could not be loaded.")).finally(()=>setLoading(false));},[]);
  useEffect(()=>{if(courseId)load(courseId).catch(e=>setError(e.message||"Course assessments could not be loaded."));setQuiz(null);setQuizDetail(null);setAssignment(null);setSubmissions([]);},[courseId,load]);
@@ -59,7 +61,7 @@ export default function AssessmentsWorkspace(){
      <p className="text-xs text-slate-500">Assignments are manually graded by authorised staff. Learners see feedback and scores after grading.</p>
      <input required minLength={2} className="field" placeholder="Assignment title" value={assignmentTitle} onChange={e=>setAssignmentTitle(e.target.value)}/>
      <textarea required className="field min-h-24" placeholder="Instructions for learners" value={assignmentInstructions} onChange={e=>setAssignmentInstructions(e.target.value)}/>
-     <select className="field" value={assignmentLesson} onChange={e=>setAssignmentLesson(e.target.value)}><option value="">Course-level assignment</option>{data.modules.flatMap((m:any)=>[]).map((x:any)=><option key={x.id}>{x.title}</option>)}</select>
+     <select className="field" value={assignmentLesson} onChange={e=>setAssignmentLesson(e.target.value)}><option value="">Course-level assignment</option>{lessonOptions.map((lesson:any)=><option key={lesson.id} value={lesson.id}>{lesson.module_title} · {lesson.title}</option>)}</select>
      <label className="block text-xs text-slate-500">Maximum score<input type="number" min="1" value={assignmentMax} onChange={e=>setAssignmentMax(e.target.value)} className="field mt-2"/></label>
      <button disabled={busy||!assignmentTitle.trim()||!assignmentInstructions.trim()} className="action inline-flex items-center gap-2"><Plus size={14}/>Create assignment</button>
     </form>
