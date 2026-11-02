@@ -1,7 +1,8 @@
 # Lesson 13: Association Patterns and Co-Occurrence
 
 ## Learning outcomes
-Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Calculate support, confidence and lift for item associations; explain the transaction unit and minimum support; and distinguish co-occurrence from causation.
 
 ## 1. Core explanation
 Association analysis searches for items that occur together in transactions. Support is the proportion of transactions containing an itemset. Confidence estimates how often B occurs when A occurs. Lift compares that confidence with the baseline frequency of B; lift greater than one indicates co-occurrence above independence under the measure.
