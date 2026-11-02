@@ -20,5 +20,5 @@ export default function AdminSection({params}:{params:{section:string}}){
  else if(s==="creators")columns=[{key:"status",label:"Status"},{key:"created_at",label:"Submitted"},{key:"user_id",label:"Applicant"}];
  else if(s==="ai")columns=[{key:"display_name",label:"Provider"},{key:"default_model",label:"Model"},{key:"enabled",label:"Enabled"}];
  return <Shell admin role={u.role} active={s}><SectionHeader eyebrow="Learnora administration" title={s==="ai"?"AI operations":s.replaceAll("-"," ")} description="Live operational records from the Learnora backend."/>
- {err?<div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5 text-red-300">{err}</div>:data===null?<EmptyState title="No live endpoint for this area yet" message="This surface stays empty until the backend exposes a corresponding operation."/>:<DataTable rows={rows} columns={columns}/>}</Shell>
+ {err?<div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5 text-red-300">{err}</div>:data===null?<EmptyState title="No records to display" message="There are no records available in this section."/>:<DataTable rows={rows} columns={columns}/>}</Shell>
 }
