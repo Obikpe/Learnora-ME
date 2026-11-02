@@ -211,13 +211,14 @@ def _assert_publishable(track_id: str):
                     .eq("quiz_id", str(quiz["id"]))
                     .execute()
                 ).data or []
-                if not questions or any(
-                    question.get("correct_answer") is None
-                    or (str(question.get("question_type")) not in {"true_false", "boolean"} and not question.get("options"))
-                    or str(question.get("question_type")) not in {"multiple_choice", "single_choice", "mcq", "true_false", "boolean"}
-                    for question in questions
-                ):
-                    raise HTTPException(status_code=409, detail="Every published module assessment must contain supported, answerable questions before the track can be published.")
+                if not questions:
+                    raise HTTPException(409, "Every published module assessment needs at least one question before the track can be published.")
+                from .internal_assessments import _validate_question_payload
+                for question in questions:
+                    try:
+                        _validate_question_payload(question)
+                    except HTTPException:
+                        raise HTTPException(409, "Every published module assessment must contain supported, answerable questions before the track can be published.") from None
 
 
 @router.get("")
