@@ -8,7 +8,7 @@ import { isQuizActiveInThisTab } from "../../lib/quiz-session";
 import { request } from "../../lib/api/client";
 
 const learner:any[]=[
-  ["overview","Overview",LayoutDashboard],["learning","My learning",BookOpen],["tracks","Learning tracks",Route],["discover","Discover",Compass],["practice","Practise",Target],["projects","Projects",FolderKanban],["skills","Skills",Sparkles],["portfolio","Portfolio",FolderKanban],["evidence","Evidence",FileCheck2],["certificates","Certificates",Award],["community","Community",MessageCircle],["ai","AI tutor",BrainCircuit],["creator","Creator studio",Users],["notifications","Notifications",Bell],["subscription","Subscription",CreditCard],["settings","Settings",Settings]
+  ["overview","Overview",LayoutDashboard],["learning","My learning",BookOpen],["tracks","My learning tracks",Route],["discover","Discover",Compass],["practice","Practise",Target],["projects","Projects",FolderKanban],["skills","Skills",Sparkles],["portfolio","Portfolio",FolderKanban],["evidence","Evidence",FileCheck2],["certificates","Certificates",Award],["community","Community",MessageCircle],["ai","AI tutor",BrainCircuit],["creator","Creator studio",Users],["notifications","Notifications",Bell],["subscription","Subscription",CreditCard],["settings","Settings",Settings]
 ];
 const superAdmin:any[]=[
   ["overview","Overview",LayoutDashboard],["users","Users",Users],["organisations","Organisations",Building2],["courses","Courses",BookOpen],["content","Content",Layers3],["commercial","Commerce",CircleDollarSign],["creators","Creators",Users],["analytics","Analytics",LineChart],["ai","AI operations",BrainCircuit],["activity","Activity",Activity],["security","Security",LockKeyhole],["admins","Admins",ShieldCheck],["settings","Settings",Settings]
@@ -19,7 +19,7 @@ const orgAdmin:any[]=[
 
 function NavItems({items,active,admin,onNavigate}:{items:any[];active:string;admin:boolean;onNavigate?:()=>void}) {
   return <nav aria-label="Dashboard navigation" className="grid gap-1">
-    {items.map(([key,title,Icon]:any)=><Link key={key} href={admin?"/dashboard/admin/"+key:(key==="tracks"?"/tracks":key==="overview"?"/dashboard":"/dashboard/"+key)} onClick={onNavigate} aria-current={active===key?"page":undefined} className={"flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors "+(active===key?"bg-[rgba(213,177,91,.12)] text-[var(--gold-light)]":"text-slate-400 hover:bg-white/[.045] hover:text-slate-100")}><Icon size={17} strokeWidth={1.8}/><span className="flex-1">{title}</span>{active===key&&<ChevronRight size={14} className="opacity-70"/>}</Link>)}
+    {items.map(([key,title,Icon]:any)=><Link key={key} href={admin?"/dashboard/admin/"+key:(key==="tracks"?"/dashboard/tracks":key==="overview"?"/dashboard":"/dashboard/"+key)} onClick={onNavigate} aria-current={active===key?"page":undefined} className={"flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors "+(active===key?"bg-[rgba(213,177,91,.12)] text-[var(--gold-light)]":"text-slate-400 hover:bg-white/[.045] hover:text-slate-100")}><Icon size={17} strokeWidth={1.8}/><span className="flex-1">{title}</span>{active===key&&<ChevronRight size={14} className="opacity-70"/>}</Link>)}
   </nav>;
 }
 
