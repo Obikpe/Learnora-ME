@@ -99,7 +99,7 @@ ax.set(title="Mean score with 95% confidence intervals",
 plt.show()
 ```
 
-`estimator` specifies the summary; `errorbar=("ci", 95)` requests a 95% confidence interval; `n_boot` controls bootstrap resamples. The exact procedure depends on Seaborn version and settings. Describe the method used.
+The default estimator is the mean; `errorbar=("ci", 95)` requests a 95% confidence interval; `n_boot` controls bootstrap resamples. The exact procedure depends on Seaborn version and settings. Describe the method used.
 
 ## 8. Compare uncertainty measures
 
