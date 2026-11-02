@@ -1,7 +1,8 @@
 # Lesson 3: The End-to-End Machine Learning Workflow
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the key concepts, identify when they apply, implement the worked example in VS Code, and recognise the method's limitations.
+
+By the end of this lesson, you should be able to Describe the stages of an end-to-end ML workflow; frame the decision and target; separate training and evaluation data; establish a baseline; evaluate errors; and document limitations before recommending use.
 
 ## 1. Core explanation
 A defensible ML workflow begins before fitting an algorithm. First translate the request into a measurable problem and define the prediction moment. Next identify the unit of observation, target, features, population and time window. Acquire and inspect data, split it correctly, establish a baseline, train candidate models, evaluate on held-out data, analyse errors and document limitations.
