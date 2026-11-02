@@ -1,7 +1,8 @@
 # Lesson 10: Packaging and Environment Management
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Create a reproducible virtual environment and dependency manifest; install from requirements; generate a lock snapshot; and explain why clean-environment testing and dependency updates matter.
 
 ## 1. Core explanation
 A deployable service needs a reproducible Python environment. Use a virtual environment and record dependencies. Pin versions for important libraries, but update them through a tested process rather than freezing an insecure environment indefinitely. Keep development dependencies separate from runtime dependencies where practical.
