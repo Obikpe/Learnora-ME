@@ -20,7 +20,8 @@ const descriptions:any={
  projects:"Review the practical work you have submitted through Learnora.",
  skills:"See the skills recorded in your learning profile and the evidence connected to them.",
  evidence:"Review the work and records attached to your learning journey.",
- certificates:"Claim certificates for completed courses and verify issued credentials.",\n portfolio:"Bring together your credentials, reviewed work and verified skills in one private portfolio.",
+ certificates:"Claim certificates for completed courses and verify issued credentials.",
+ portfolio:"Bring together your credentials, reviewed work and verified skills in one private portfolio.",
  community:"Ask questions and connect learning to the people who can support you.",
  settings:"Manage the profile and preferences currently available to your account."
 };
@@ -54,14 +55,16 @@ export default function Page({params}:{params:{section:string}}){
  const evidenceRows=data?.evidence||[];
  const skills=data?.skills||[];
  const certs=data?.certificates||[];
- const submissions=data?.submissions||[];\n const eligibleCourses=data?.eligible_courses||[];
+ const submissions=data?.submissions||[];
+ const eligibleCourses=data?.eligible_courses||[];
  return <Shell active={section}>
   <SectionHeader eyebrow="Your Learnora" title={labels[section]||"Learnora"} description={descriptions[section]||"Your learning workspace."}/>
   {loading?<div className="mt-8"><Skeleton variant="compact" label={"Loading "+(labels[section]||"your Learnora section")} /></div>:err?<div role="alert" className="mt-8 rounded-2xl border border-red-400/20 bg-red-400/[.05] p-5 text-sm text-red-200">{err}</div>:<>
    {section==="discover"&&<div className="mt-7"><DataTable rows={courseRows} emptyTitle="No published courses returned" emptyMessage="The course catalogue only shows courses that the backend has published and made available." columns={[{key:"title",label:"Course",render:r=><a className="font-medium text-white hover:gold" href={"/courses/"+r.id}>{r.title||"Untitled course"}</a>},{key:"level",label:"Level"},{key:"status",label:"Status"},{key:"estimated_hours",label:"Hours"}]}/></div>}
    {section==="learning"&&<div className="mt-7"><DataTable rows={courseRows} emptyTitle="Your learning starts here" emptyMessage="When you enrol in a course, it will appear here with its current progress." columns={[{key:"title",label:"Course",render:r=><a className="font-medium text-white" href={"/dashboard/learning/"+r.id}>{r.title||"Course"}</a>},{key:"status",label:"Enrolment"},{key:"completed_lessons",label:"Completed lessons"},{key:"tracked_lessons",label:"Lessons tracked"}]}/></div>}
    {section==="evidence"&&<div className="mt-7"><DataTable rows={evidenceRows} emptyTitle="No evidence records yet" emptyMessage="Evidence will appear after a supported project, assessment or other learning activity is recorded." columns={[{key:"skill_name",label:"Skill"},{key:"verification_state",label:"Verification"},{key:"evidence_type",label:"Evidence type"},{key:"score",label:"Score"},{key:"created_at",label:"Added",render:r=>r.created_at?new Date(r.created_at).toLocaleDateString():"—"},{key:"notes",label:"Notes"}]}/><p className="mt-4 text-xs leading-6 text-slate-600">A saved evidence record is not automatically a verified skill. Review status is shown only when the backend has a corresponding review record.</p></div>}
-   {section==="skills"&&<SkillMastery skills={skills}/>}\n   {section==="portfolio"&&<PortfolioOverview data={data}/>}
+   {section==="skills"&&<SkillMastery skills={skills}/>}
+   {section==="portfolio"&&<PortfolioOverview data={data}/>}
    {section==="certificates"&&<CertificateCenter certificates={certs} eligibleCourses={eligibleCourses}/> }
    {section==="projects"&&<div className="mt-7"><DataTable rows={submissions} emptyTitle="Your project record starts with a first submission" emptyMessage="Submitted projects will appear here with their review state and feedback. You can explore courses to find available practical work." columns={[{key:"title",label:"Submission",render:r=><div><p className="font-medium text-white">{r.title||(r as any).project?.title||"Project submission"}</p><p className="mt-1 text-xs text-slate-500">{(r as any).project?.title||"Project"}</p></div>},{key:"review_state",label:"Review",render:r=><span className={r.review_state==="reviewed"?"text-emerald-300":"text-amber-200"}>{r.review_state==="reviewed"?"Reviewed":"Awaiting review"}</span>},{key:"score",label:"Score"},{key:"submitted_at",label:"Submitted",render:r=>r.submitted_at?new Date(r.submitted_at).toLocaleDateString():"—"}]}/><p className="mt-4 text-xs leading-6 text-slate-600">Feedback and scores are displayed only when they have been saved by the backend. Awaiting review is not a competence verification.</p></div>}
    {section==="practice"&&<PracticeLab projects={data?.projects||[]}/>}
