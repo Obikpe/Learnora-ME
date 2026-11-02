@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Award, RefreshCw, ShieldAlert } from "lucide-react";
 import Shell from "../../components/Shell";
-import { request, teamMe } from "../../lib/api";
+import { teamMe } from "../../lib/api";
 
 async function credentialRequest<T>(path:string,init:RequestInit={}):Promise<T>{
   const headers=new Headers(init.headers);
@@ -27,7 +27,7 @@ export default function CertificatesWorkspace() {
     catch(e:any){setError(e.message||"Certificate register could not be loaded.");}
     finally{setLoading(false);}
   },[]);
-  useEffect(()=>{teamMe().then(x=>setRoles(x.roles||[])).catch(e=>setError(e.message||"Staff session unavailable."));void load();},[load]);
+  useEffect(()=>{teamMe().then(x=>setRoles(x.staff?.roles||x.roles||[])).catch(e=>setError(e.message||"Staff session unavailable."));void load();},[load]);
   async function revoke(id:string){
     const explanation=(reason[id]||"").trim();
     if(explanation.length<5){setError("Enter a clear reason of at least five characters before revoking.");return;}
