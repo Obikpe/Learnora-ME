@@ -11,7 +11,7 @@ Compare logistic regression with a tree ensemble. Explain scaling requirements a
 The report should state data source, target encoding, split, metrics and limitations. Avoid treating the label names as objectively meaningful categories beyond the dataset's definitions.
 
 ## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. Some dataset loaders may require internet access on first use.
+Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. The Wine dataset is bundled with scikit-learn, so this example does not need a separate download.
 
 ```python
 from sklearn.datasets import load_wine
