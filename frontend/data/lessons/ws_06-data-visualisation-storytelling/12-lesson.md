@@ -64,7 +64,7 @@ df = pd.DataFrame({
 
 fig, ax = plt.subplots(figsize=(8, 5))
 sns.lineplot(data=df, x="week", y="score",
-             hue="class", marker="o", estimator="mean",
+             hue="class", marker="o",
              errorbar=("ci", 95), ax=ax)
 ax.set(title="Average score by week and class",
        xlabel="Week", ylabel="Mean score")
