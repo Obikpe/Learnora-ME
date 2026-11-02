@@ -1,7 +1,8 @@
 # Lesson 5: Customising and Annotating Charts
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the central ideas, select an appropriate method, implement it in Python, interpret the output and identify limitations.
+
+By the end of this lesson, you should be able to customise chart size, labels, ticks, grids and legends; add reference lines and annotations; use colour consistently; and make a chart readable without distorting its scale.
 
 ## 1. Concepts and reasoning
 Customisation should improve interpretation, not merely make a chart elaborate. A useful title states the subject and measure. Axis labels identify variables and units. Tick formatting should match the scale: currency should look like currency, percentages should be labelled as percentages, and dates should be legible.
