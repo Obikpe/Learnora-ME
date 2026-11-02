@@ -48,5 +48,7 @@ export default function Register() {
           <p className="mt-5 text-[10px] leading-5 text-slate-600">Learnora uses essential browser storage to operate securely. Read the <a className="gold underline underline-offset-2" href="/cookies">Cookies & Storage Notice</a>.</p>
           <div className="mt-7 border-t border-white/[.1] pt-5 text-sm text-slate-500">Already have an account? <a className="ml-1 font-semibold gold hover:underline" href="/login">Sign in</a></div>
         {error&&<Toast title="Could not create account" message={error} type="error" onClose={()=>setError("")}/>}
+      </div>
+    </section>
   </main>;
 }
