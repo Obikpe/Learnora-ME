@@ -39,8 +39,8 @@ class InternalAssessmentTests(unittest.TestCase):
     def setUp(self):
         self.fixtures = {
             "learnora_courses": [{"id": "course-1", "ownership": "learnora", "organisation_id": None, "status": "draft"}],
-            "course_modules": [{"id": "module-1", "course_id": "course-1"}],
-            "learnora_lessons": [{"id": "lesson-1", "module_id": "module-1"}],
+            "course_modules": [{"id": "module-1", "course_id": "course-1", "status": "published"}],
+            "learnora_lessons": [{"id": "lesson-1", "module_id": "module-1", "status": "published"}],
             "quizzes": [{"id": "quiz-1", "course_id": "course-1", "module_id": "module-1", "is_published": False}],
             "quiz_questions": [],
         }
@@ -57,6 +57,22 @@ class InternalAssessmentTests(unittest.TestCase):
         with patch.object(internal_assessments, "supabase", FakeSupabase(self.fixtures)):
             with self.assertRaises(HTTPException) as raised:
                 internal_assessments._validate_assessment_location("course-1", None, "lesson-1")
+        self.assertEqual(raised.exception.status_code, 422)
+
+    def test_assessment_cannot_be_published_on_a_draft_module(self):
+        self.fixtures["course_modules"][0]["status"] = "draft"
+        with patch.object(internal_assessments, "supabase", FakeSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                internal_assessments._validate_assessment_location("course-1", "module-1", None, require_published=True)
+        self.assertEqual(raised.exception.status_code, 409)
+
+    def test_correct_answer_must_match_a_configured_option(self):
+        with self.assertRaises(HTTPException) as raised:
+            internal_assessments._validate_question_payload({
+                "question_type": "multiple_choice",
+                "options": ["A", "B"],
+                "correct_answer": "C",
+            })
         self.assertEqual(raised.exception.status_code, 422)
 
     def test_quiz_cannot_be_published_without_questions(self):
