@@ -113,5 +113,13 @@ class CoursePublicationTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 409)
 
 
+    def test_published_assessment_requires_at_least_one_answerable_question(self):
+        self.fixtures["quiz_questions"] = []
+        with patch.object(internal_content, "supabase", PublishSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                internal_content._assert_course_publishable("course-1")
+        self.assertEqual(raised.exception.status_code, 409)
+
+
 if __name__ == "__main__":
     unittest.main()
