@@ -15,10 +15,6 @@ CREATE TABLE IF NOT EXISTS public.learnora_track_reviews (
   CONSTRAINT learnora_track_reviews_rating_check CHECK (rating BETWEEN 1 AND 5),
   CONSTRAINT learnora_track_reviews_comment_length_check CHECK (comment IS NULL OR char_length(comment) <= 2000),
   CONSTRAINT learnora_track_reviews_moderation_status_check CHECK (moderation_status IN ('pending','approved','rejected')),
-  CONSTRAINT learnora_track_reviews_moderation_actor_check CHECK (
-    (moderation_status = 'pending' AND moderated_by IS NULL AND moderated_at IS NULL)
-    OR (moderation_status IN ('approved','rejected') AND moderated_by IS NOT NULL AND moderated_at IS NOT NULL)
-  ),
   CONSTRAINT learnora_track_reviews_track_user_unique UNIQUE (track_id, user_id)
 );
 
