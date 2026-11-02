@@ -1,7 +1,8 @@
 # Lesson 11: Training, Validation and Test Sets
 
 ## Learning outcomes
-Explain the method, implement the example in Python, interpret its result, and identify risks that could invalidate the conclusion.
+
+By the end of this lesson, you should be able to Create training, validation and test partitions; explain the purpose of each; stratify classification splits when appropriate; and recognise when grouped or time-ordered data requires a non-random split.
 
 ## 1. Concepts and reasoning
 A model's performance on training data is usually optimistic because the model has already used those examples to learn. A test set estimates performance on unseen observations. A validation set or cross-validation is used to compare models and tune choices. The test set should be consulted once at the end, after the modelling decisions are fixed.
