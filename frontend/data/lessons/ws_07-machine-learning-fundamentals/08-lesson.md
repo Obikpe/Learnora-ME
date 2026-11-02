@@ -1,7 +1,8 @@
 # Lesson 8: Python Tools for Machine Learning
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the key concepts, identify when they apply, implement the worked example in VS Code, and recognise the method's limitations.
+
+By the end of this lesson, you should be able to Create a Python virtual environment in VS Code; install and import NumPy, Pandas and scikit-learn; inspect package versions; and run a basic preprocessing or estimator workflow.
 
 ## 1. Core explanation
 The core Python stack for introductory ML includes NumPy for arrays and numerical operations, pandas for tabular data, Matplotlib and Seaborn for visualisation, and scikit-learn for preprocessing, model training and evaluation. VS Code can run ordinary Python files or notebooks. Use a project-specific virtual environment so dependencies for one project do not interfere with another.
