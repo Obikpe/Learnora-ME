@@ -30,7 +30,7 @@ The active schema already has `certificates` with a unique `certificate_number`,
 ### Boundaries
 
 - The current credential is a **course-completion certificate**. Track-level credentials are not yet issued.
-- Verification confirms that an issued record exists. A revocation/suspension workflow is not present in the existing schema and has not been invented.
+- Verification now distinguishes valid and revoked credentials. A new additive migration adds revoked_at, revoked_by and revocation_reason; an authorised Teams endpoint records revocation in the audit log, and the Teams certificate register exposes the action. The migration is in the repository and disposable-database CI path, but is not applied to the live Pheonix database.
 - No payment or subscription condition is part of certificate eligibility.
 
 ## Phase 7 — Practice Lab and project submissions
@@ -46,7 +46,7 @@ The active schema already has `projects` and `project_submissions`. The backend 
 - Added learner discovery of published challenges. Course-linked challenges are visible only to learners with an active/completed enrolment in that published global Learnora course; standalone challenges remain open.
 - Added the learner Practice Lab with a written project brief, submission explanation and HTTP/HTTPS repository, live-demo or supporting links.
 - Added learner submission history and reviewer feedback.
-- A staff approval requires at least 70%. Approval creates or updates platform-generated project evidence for the skills mapped to that project. Returned work remains visible but does not count as verified mastery.
+- A staff approval requires at least 70%. The review flow prepares platform-generated evidence for the skills mapped to the project before changing the submission to approved; the mastery query counts it only after the approved state is saved. Returned work remains visible but does not count as verified mastery. If an approval is reversed, the status stops contributing immediately and derived evidence is cleaned up.
 - Corrected the submission status filter to use the database's allowed values (`draft`, `submitted`, `reviewed`, `approved`, `returned`); the previous `under_review` value was not valid under the live constraint.
 - Learners can add manual notes, but cannot self-assign a score or create platform-verified project/assessment evidence.
 
@@ -68,7 +68,7 @@ The active schema already has `projects` and `project_submissions`. The backend 
 
 ### Boundaries
 
-- The portfolio is private to the learner's authenticated workspace and can be exported as a PDF. A public hosted portfolio URL, public visibility controls and revocation require an explicit consent/settings data model; those have not been added to the existing schema or made public by default.
+- The portfolio is private to the learner's authenticated workspace and can be exported as a PDF. A public hosted portfolio URL and public visibility controls require an explicit consent/settings data model; those have not been added to the existing schema or made public by default.
 - The skill map currently uses reviewed project evidence. Automatic skill mapping from every quiz and assignment is not claimed; those assessment types need explicit skill-to-assessment relationships before their scores can contribute.
 
 ## Learnora Teams management
@@ -103,6 +103,15 @@ The migration ledger currently ends at `20261028171902`. The repository's `20261
 
 - Phase 9 — learning companion and community.
 - The earlier track-completion feedback/review proposal, including public-display consent and moderation.
-- Track-level certificates and credential revocation.
+- Track-level certificates.
 - Hosted code execution, raw file uploads and public learner portfolio pages.
 - Automatic mapping of quizzes/assignments to skills.
+
+## Follow-up hardening — 2 November 2026
+
+- The AI tutor is hidden on the learner course player while a quiz is opening or active, the quiz-specific tutor action is removed, and the AI page checks the backend active-session endpoint. The backend denies tutor requests for any learner with an unexpired quiz session and fails closed if the session lookup cannot be verified.
+- Active quiz sessions are tab-scoped, expire after two hours if a browser is abandoned, and are released when the learner closes the quiz/results view. The session table is service-role-only with RLS enabled; its migration and rollback are included in the disposable database workflow.
+- Certificate revocation now has an additive schema migration, a staff-only API requiring the existing content.manage permission, audit logging, a Teams register, and public verification that reports revoked credentials as invalid. Public verification does not disclose the internal revocation note.
+- Learner project history now distinguishes approved, returned, reviewed and awaiting-review states and displays reviewer feedback. Skill evidence remains derived only from an approved submission and a skill mapped to its source project.
+- The combined contract tests cover certificate privacy/revocation, quiz tutor exclusion and the migration inventory. GitHub Actions were triggered by commits to main; the latest candidate is not yet evidenced as passing while its runs remain queued. Browser-driven learner/staff acceptance is still outstanding.
+- Both new migrations remain unapplied to the active Pheonix project. This is deliberate: the existing migration policy requires successful disposable replay and a separate explicit production-migration approval. The free-access flag, Paystack, subscriptions, trials, entitlements and Pro logic were not changed.
