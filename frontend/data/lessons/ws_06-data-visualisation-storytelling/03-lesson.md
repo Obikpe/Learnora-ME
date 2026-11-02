@@ -1,7 +1,8 @@
 # Lesson 3: Choosing the Right Chart
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the central ideas, select an appropriate method, implement it in Python, interpret the output and identify limitations.
+
+By the end of this lesson, you should be able to classify a visual question as comparison, trend, distribution, relationship or composition; select a chart type that answers it; justify the choice; and reject chart forms that obscure the comparison.
 
 ## 1. Concepts and reasoning
 Select a chart by matching the analytical question to the data structure. A bar chart compares categories; a line chart shows an ordered time sequence; a histogram shows a numerical distribution; a scatter plot examines two numerical variables; a box plot compares distributions across groups; and a heatmap displays a matrix such as correlations or a pivot table.
