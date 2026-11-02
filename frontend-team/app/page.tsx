@@ -9,6 +9,7 @@ import LivePanel from "../components/LivePanel";
 const shortcuts=[
   {href:"/organisations",title:"Organisation workspace",detail:"Review organisation requests, contracts and capacity.",icon:Building2},
   {href:"/content",title:"Learning content",detail:"Manage courses, modules, lessons and media.",icon:Layers3},
+  {href:"/projects",title:"Practice Lab",detail:"Create practical projects, map skills and review learner submissions.",icon:Route},
   {href:"/tracks",title:"Learning tracks",detail:"Create ordered learning journeys from published courses.",icon:Route},
   {href:"/learners",title:"Individual learners",detail:"Review learner accounts, enrolments and saved progress.",icon:GraduationCap},
   {href:"/analytics",title:"Platform analytics",detail:"Review learner activity, course enrolments and completions.",icon:LineChart},
