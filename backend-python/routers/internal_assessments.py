@@ -8,9 +8,6 @@ from .auth import supabase
 from .internal_auth import InternalStaffContext, require_internal_permission
 
 router = APIRouter(prefix="/api/internal/assessments", tags=["Internal Assessments"])
-AUTO_GRADED_TYPES = {"multiple_choice", "single_choice", "mcq", "true_false", "boolean"}
-
-
 def _course(course_id: str) -> dict:
     rows = (
         supabase.table("learnora_courses")
