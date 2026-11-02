@@ -209,9 +209,10 @@ def create_project(body: ProjectCreate, staff: InternalStaffContext = Depends(re
 @router.patch("/{project_id}")
 def update_project(project_id: str, body: ProjectWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
     project = _project(project_id)
-    if project.get("is_published"):
-        raise HTTPException(409, "Unpublish this project before editing it.")
     payload = body.model_dump(exclude_unset=True)
+    if project.get("is_published"):
+        if payload.get("is_published") is not False or len(payload) != 1:
+            raise HTTPException(409, "Unpublish this project before editing its content.")
     if "course_id" in payload:
         course_id = str(payload["course_id"]) if payload["course_id"] else None
         if course_id:
