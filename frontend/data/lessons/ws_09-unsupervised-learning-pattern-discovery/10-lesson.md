@@ -1,7 +1,8 @@
 # Lesson 10: Interpreting PCA and Explained Variance
 
 ## Learning outcomes
-Explain the unsupervised-learning concept, implement the worked example, interpret the output and assess whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Calculate explained-variance ratios and cumulative variance; read a scree plot; inspect component loadings; and explain why retained variance is not the same as target relevance.
 
 ## 1. Core explanation
 Explained variance ratio is the fraction of total variance captured by each component. The cumulative sum indicates how much total variance is retained by the first k components. A scree plot shows the variance explained by each component and can reveal diminishing returns.
