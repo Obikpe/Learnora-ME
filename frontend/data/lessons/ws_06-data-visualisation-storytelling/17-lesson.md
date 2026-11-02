@@ -1,7 +1,8 @@
 # Lesson 17: Presenting Insights to Different Audiences
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to adapt one analytical finding for executive, technical and operational audiences; preserve the same evidence and caveats; choose an appropriate level of detail; and respond clearly to questions about uncertainty.
 
 ## 1. Core explanation
 The same analysis needs different explanations for different audiences. A decision-maker needs the question, finding, implication, risk and recommended action. A technical reviewer needs data definitions, sampling, methods, assumptions, diagnostics and reproducibility. An operational user needs to know what to do, when to do it and when not to trust the output.
