@@ -1,7 +1,8 @@
 # Lesson 1: From Notebook to Applied ML Product
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Explain the gap between a notebook experiment and an applied ML product; identify the data, preprocessing, model, interface and operational components; and define the handover requirements for a reproducible application.
 
 ## 1. Core explanation
 A notebook is useful for exploration because it combines code, output and narrative. A product needs a repeatable process that accepts new input, applies the same transformations, produces an output and handles failure. Moving from notebook to product requires separating experimentation from production logic.
