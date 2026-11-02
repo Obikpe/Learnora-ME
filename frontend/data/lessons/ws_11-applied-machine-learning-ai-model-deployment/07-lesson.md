@@ -1,7 +1,8 @@
 # Lesson 7: FastAPI Model Service Fundamentals
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Create a FastAPI service with health and prediction routes; define Pydantic input schemas; return structured JSON; and explain service startup and interactive API documentation.
 
 ## 1. Core explanation
 FastAPI uses Python type hints and Pydantic models to validate request data and generate API documentation. A route function defines the HTTP method and path. The service can load a fitted model at application startup and reuse it for requests rather than loading the file on every call.
