@@ -20,11 +20,29 @@ FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY app.py .
+RUN useradd --create-home appuser
+COPY --chown=appuser:appuser app.py .
+USER appuser
 EXPOSE 8000
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
-# Build: docker build -t ml-service .
-# Run: docker run --rm -p 8000:8000 ml-service
+```
+
+Build and run it from the folder containing the Dockerfile:
+
+```bash
+docker build -t ml-service .
+docker run --rm -p 8000:8000 ml-service
+```
+
+Add a `.dockerignore` file so local environments, credentials and data are not copied into the image:
+
+```text
+.venv/
+__pycache__/
+.git/
+.env
+*.db
+data/
 ```
 
 ## 3. Operational interpretation
