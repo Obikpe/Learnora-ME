@@ -15,6 +15,27 @@ Examples:
 
 Use a bar chart when categories are distinct and the reader needs to compare their values. Do not use it to show a continuous distribution; a histogram is designed for that purpose. A bar chart has gaps between categories because each category is separate. Histogram bars usually touch because the numerical intervals are adjacent.
 
+## 2. A visual chart-selection decision tree
+
+Use the question to narrow the chart choice before writing code:
+
+```mermaid
+flowchart TD
+    A["What question are you asking?"] --> B{"Is x time or naturally ordered?"}
+    B -->|Yes| C["Show change across order or time"]
+    C --> D["Line chart"]
+    B -->|No| E{"Are you comparing categories?"}
+    E -->|Yes| F{"Counts, estimates or composition?"}
+    F -->|Counts or values| G["Bar chart"]
+    F -->|Parts of one whole| H["Stacked bar; pie only for a few parts"]
+    E -->|No| I{"What numerical question?"}
+    I -->|One variable distribution| J["Histogram, ECDF, box or violin"]
+    I -->|Two numerical variables| K["Scatter plot"]
+    I -->|Matrix of values| L["Heatmap"]
+```
+
+This tree is a starting point, not an automatic rule. A time series with many groups may need facets rather than dozens of lines. A composition with many categories is usually clearer as a sorted bar chart. Always check the data structure and the audience's task.
+
 ## 2. Vertical bars: ax.bar()
 
 The function has the general form:
