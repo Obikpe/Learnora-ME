@@ -1,38 +1,39 @@
-# Lesson 24: Multi-Class Classification
+# Lesson 24: Model Calibration
 
 ## Learning outcomes
 Explain the technique, implement the example, interpret the output and justify when the method is suitable.
 
 ## 1. Core explanation
-Multiclass classification predicts one of more than two mutually exclusive classes. One-vs-rest trains a binary classifier for each class; one-vs-one trains classifiers for pairs. Some algorithms handle multiclass natively. Class probabilities should sum to one when the model provides a normalised multiclass probability distribution.
+Calibration measures whether predicted probabilities match observed frequencies. Among cases assigned probability around 0.7, a well-calibrated model should be correct about 70% of the time over many comparable cases. Calibration differs from discrimination: a model can rank cases well but produce probabilities that are too extreme or too cautious.
 
-A confusion matrix reveals which classes are confused. Accuracy alone can hide poor recall for a rare class. Macro averaging gives each class equal weight; weighted averaging weights by support. Choose the average based on the application and report per-class results.
+Use a reliability diagram to compare average predicted probability with observed positive frequency in bins. Brier score and log loss assess probability quality, though they also reflect discrimination. Calibration methods include sigmoid scaling and isotonic regression. Fit calibration using validation data or cross-validation, never final test outcomes.
 
-Class labels may have a natural hierarchy or order. If errors have different severity, a standard multiclass metric may not reflect the cost. Consider ordinal methods or a cost matrix where justified.
+Calibration matters when decisions use risk probabilities or when probabilities are communicated. A calibrated estimate is still uncertain and may become miscalibrated as prevalence or data patterns change.
 
 ## 2. Worked Python example
 Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. Some dataset loaders may require internet access on first use.
 
 ```python
-from sklearn.datasets import load_wine
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
+from sklearn.calibration import CalibratedClassifierCV, CalibrationDisplay
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix, classification_report
+import matplotlib.pyplot as plt
 
-data = load_wine(as_frame=True)
+data = load_breast_cancer(as_frame=True)
 Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
-    test_size=.25, random_state=42, stratify=data.target)
-model = RandomForestClassifier(n_estimators=200, random_state=42).fit(Xtr, ytr)
-pred = model.predict(Xte)
-print(confusion_matrix(yte, pred))
-print(classification_report(yte, pred, target_names=data.target_names))
+    test_size=.2, random_state=42, stratify=data.target)
+base = RandomForestClassifier(n_estimators=150, random_state=42)
+calibrated = CalibratedClassifierCV(base, method="sigmoid", cv=5).fit(Xtr, ytr)
+CalibrationDisplay.from_estimator(calibrated, Xte, yte, n_bins=8)
+plt.show()
 ```
 
 ## 3. Interpretation and checks
 Record the target, sample size, split design, metric and model settings. Inspect class-wise results or residuals, not only the headline score. Keep the test set untouched during model selection and report dataset limitations.
 
 ## 4. Guided practice
-Identify the class with the lowest recall. Explain why macro F1 and weighted F1 may differ and choose which should be highlighted when class frequencies are unequal.
+Read the reliability diagram. Identify overconfidence or underconfidence. Explain why calibration should be checked again after deployment.
 
 ## 5. Independent practice
 Extend the example with another model or evaluation view. Compare candidates using the same training/validation design. Write a short report for a non-technical stakeholder and state what further validation is required.
