@@ -1,8 +1,13 @@
 """Contract tests for Gmail API email delivery without SMTP or Resend."""
 import base64
+import os
 import unittest
 from email import message_from_bytes
 from unittest.mock import MagicMock, patch
+
+os.environ.setdefault("APP_ENV", "development")
+os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
+os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
 import routers.auth as auth
 
