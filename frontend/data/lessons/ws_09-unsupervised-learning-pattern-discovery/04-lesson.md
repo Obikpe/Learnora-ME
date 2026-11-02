@@ -1,7 +1,8 @@
 # Lesson 4: K-Means Clustering
 
 ## Learning outcomes
-Explain the unsupervised-learning concept, implement the worked example, interpret the output and assess whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Explain the K-means objective; scale features where appropriate; fit and interpret centroids and cluster assignments; and identify sensitivity to initialisation, outliers and the chosen k.
 
 ## 1. Core explanation
 K-means partitions observations into k clusters by assigning each point to its nearest centroid and updating each centroid to the mean of its assigned points. It repeats assignment and update until assignments or centroid positions stabilise. The objective is within-cluster sum of squared distances.
