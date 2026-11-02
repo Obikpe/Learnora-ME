@@ -1,7 +1,8 @@
 # Lesson 32: Capstone: Portfolio Publication and Reflection
 
 ## Learning outcomes
-Apply the professional practice, produce the capstone artefact and communicate evidence and limitations clearly.
+
+By the end of this lesson, you should be able to Publish a safe and reproducible portfolio artefact; check data licence, privacy, credentials, setup instructions and links; reflect on learning; and identify realistic next steps.
 
 ## 1. Core explanation
 Publishing a capstone makes the work discoverable and reproducible. Review the repository for secrets, private data, broken links, machine-specific paths and undocumented dependencies. Include a README, data source and licence, setup instructions, code, figures and final report. If raw data cannot be redistributed, explain how to obtain it or provide a safe sample.
