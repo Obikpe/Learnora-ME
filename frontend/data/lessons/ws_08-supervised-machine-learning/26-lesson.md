@@ -9,7 +9,7 @@ This case study predicts a continuous target using the diabetes progression data
 
 Define the target, split the data, build a baseline, train a pipeline, evaluate with MAE and RMSE, and inspect residuals. If a dataset has geographic or temporal structure, a random split may overstate performance on genuinely new locations or future periods. Discuss the intended generalisation setting.
 
-A good report explains target units, test sample, baseline, candidate model and error profile. Avoid presenting one metric as a guarantee for every neighbourhood or property type.
+A good report explains target units, test sample, baseline, candidate model and error profile. Avoid presenting one metric as a guarantee for every subgroup or a different population.
 
 ## 2. Worked Python example
 Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. The diabetes dataset is bundled with scikit-learn and does not require a separate download.
@@ -37,7 +37,7 @@ for model in models:
 Record the target, sample size, split design, metric and model settings. Inspect class-wise results or residuals, not only the headline score. Keep the test set untouched during model selection and report dataset limitations.
 
 ## 4. Guided practice
-Write the regression case-study report. Include target units, split rationale, baseline comparison, MAE and RMSE, residual limitations and a statement that the demonstration is not a deployable valuation system.
+Write the regression case-study report. Include target units, split rationale, baseline comparison, MAE and RMSE, residual limitations and a statement that the demonstration is not a clinical prediction system.
 
 ## 5. Independent practice
 Extend the example with another model or evaluation view. Compare candidates using the same training/validation design. Write a short report for a non-technical stakeholder and state what further validation is required.
