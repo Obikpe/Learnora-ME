@@ -1,43 +1,35 @@
-# Lesson 15: Interpreting and Profiling Segments
+# Lesson 15: Unsupervised Learning in Practice
 
 ## Learning outcomes
 Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
 
 ## 1. Core explanation
-Cluster profiling describes how groups differ using original feature units. Compare counts, medians, means, distributions and proportions. A profile should answer what distinguishes a segment, how large it is and whether the difference is stable. Use box plots or summary tables to reveal within-cluster variation, not only cluster averages.
+An unsupervised project needs a clear objective even though it has no labelled target. Define the unit of observation, feature representation, purpose and intended use. Decide whether the output is for exploration, segmentation, anomaly triage or dimensionality reduction. Establish how usefulness will be judged before running algorithms.
 
-Cluster labels are arbitrary identifiers. Give a descriptive name only after examining evidence and confirming that the label is useful and not misleading. A segment called “high-value customers” should be based on a defined value measure, not a guess from a cluster number.
+Compare a simple baseline or alternative algorithm. Test stability across seeds, samples and reasonable parameter changes. Inspect original records and profiles. Document how preprocessing and distance choices influence the result. If clusters are weak or unstable, report that rather than forcing a narrative.
 
-Profiles can hide small or internally diverse groups. Report segment sizes and consider privacy when a cluster is tiny. Validate whether the segments support a real action and whether that action is fair and appropriate.
+Communicate what the algorithm discovered under its assumptions and what it did not prove. An unsupervised result does not establish causal drivers, future outcomes or objectively correct categories.
 
 ## 2. Worked Python example
 Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
 
 ```python
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-
-customers = pd.DataFrame({
-    "recency_days": [5, 8, 12, 60, 75, 90, 3, 10],
-    "orders_90d": [12, 10, 8, 2, 1, 0, 14, 9],
-    "avg_basket": [500, 420, 380, 90, 70, 30, 550, 400]
-})
-labels = KMeans(n_clusters=2, n_init=20, random_state=42).fit_predict(
-    StandardScaler().fit_transform(customers))
-profile = customers.assign(segment=labels).groupby("segment").agg(
-    size=("recency_days", "size"),
-    median_recency=("recency_days", "median"),
-    mean_orders=("orders_90d", "mean"),
-    mean_basket=("avg_basket", "mean"))
-print(profile)
+project = {
+    "purpose": "Explore customer purchasing patterns",
+    "unit": "Customer-quarter",
+    "features": ["recency", "frequency", "monetary_value"],
+    "preprocessing": "Median imputation and standardisation",
+    "methods": ["KMeans", "Agglomerative clustering"],
+    "validation": ["Silhouette", "Seed stability", "Profile review"]
+}
+print(project)
 ```
 
 ## 3. Interpretation
 Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
 
 ## 4. Guided practice
-Name the segments based on the profile, then challenge your own labels. What additional business outcome or longitudinal evidence would show whether the segmentation is useful?
+Write a project plan comparing K-means and hierarchical clustering. Include validation and a rule for deciding that no useful clusters have been found.
 
 ## 5. Independent practice
 Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
