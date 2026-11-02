@@ -1,6 +1,6 @@
 "use client";
 import { useEffect,useMemo,useState } from "react";
-import { Archive, BrainCircuit, BookOpen, CheckCircle2, ClipboardList, FileText, Lightbulb, Send, Sparkles } from "lucide-react";
+import { Archive, BrainCircuit, BookOpen, ClipboardList, FileText, Lightbulb, Send, Sparkles } from "lucide-react";
 import Shell from "../../../components/dashboard/Shell";
 import { request } from "../../../lib/api/client";
 import { getQuizTabId, clearQuizTabSession, isQuizActiveInThisTab } from "../../../lib/quiz-session";
