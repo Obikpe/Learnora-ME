@@ -1,7 +1,8 @@
 # Lesson 12: Anomaly and Outlier Detection
 
 ## Learning outcomes
-Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Fit Isolation Forest to identify unusual observations; explain contamination and anomaly scores; distinguish anomalies from errors or fraud; and design a human investigation process.
 
 ## 1. Core explanation
 Anomaly detection identifies observations that differ from the majority under a chosen representation. Statistical methods flag values far from a centre; Isolation Forest isolates unusual points through random partitions; Local Outlier Factor compares local density with neighbours. One-Class SVM learns a boundary around typical observations.
