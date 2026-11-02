@@ -18,7 +18,7 @@ export default function Home() {
         </div>
         <div className="max-w-2xl lg:justify-self-end">
           <p className="text-lg leading-8 text-slate-300">People learn for many reasons: to change careers, deepen their craft, support a team, teach others or solve a problem they care about. But learning often gets scattered across videos, notes, practice files and certificates.</p>
-          <p className="mt-5 leading-7 text-slate-500">Learnora ME is being built to connect those pieces. It brings learning, practice, projects, assessment, evidence and the people who support growth into one connected experience.</p>
+          <p className="mt-5 leading-7 text-slate-500">Learnora connects learning, practice, projects, assessment, evidence and the people who support growth in one experience.</p>
           <a href="/about" className="mt-7 inline-flex items-center gap-2 text-sm font-semibold gold">Read our story <ArrowRight size={16}/></a>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function Home() {
     <section className="px-5 pb-24 lg:px-8">
       <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-[#d7ad35]/20 bg-[#10151b]">
         <div className="grid lg:grid-cols-[1fr_.8fr]">
-          <div className="p-8 sm:p-12 lg:p-16"><p className="text-xs font-bold uppercase tracking-[.22em] gold">Start where you are</p><h2 className="mt-5 max-w-2xl font-display text-4xl leading-tight sm:text-5xl">Your next step does not have to be your whole future.</h2><p className="mt-5 max-w-xl leading-7 text-slate-400">Explore a course, bring your teaching experience, or tell us what your organisation is trying to build. Learnora is a work in progress, and we will be clear about what is available as it grows.</p><a href="/get-started" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-5 py-3.5 font-bold text-black">Find your starting point <ArrowRight size={16}/></a></div>
+          <div className="p-8 sm:p-12 lg:p-16"><p className="text-xs font-bold uppercase tracking-[.22em] gold">Start where you are</p><h2 className="mt-5 max-w-2xl font-display text-4xl leading-tight sm:text-5xl">Your next step does not have to be your whole future.</h2><p className="mt-5 max-w-xl leading-7 text-slate-400">Explore a course, bring your teaching experience, or tell us what your organisation is trying to build.</p><a href="/get-started" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-5 py-3.5 font-bold text-black">Find your starting point <ArrowRight size={16}/></a></div>
           <div className="relative min-h-[280px] lg:min-h-full"><div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage:"url("+IMAGES.studio+")"}}/><div className="absolute bottom-6 left-6 flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-4 py-2 text-xs text-slate-200 backdrop-blur"><Sparkles size={14} className="gold"/> A place to keep growing <ArrowDownRight size={14}/></div></div>
         </div>
       </div>
