@@ -1,7 +1,8 @@
 # Lesson 17: Designing a Portfolio Website
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Plan a portfolio website structure that makes target role, projects, demonstrated skills, professional background, CV and contact information easy to find; and protect private data.
 
 ## 1. Core explanation
 A portfolio website is a navigation layer for selected evidence, not a replacement for the projects themselves. It should make the audience, skills, project outcomes and contact route clear. Prioritise readability, mobile responsiveness, accessibility, fast loading and working links. Avoid excessive animation or vague claims.
