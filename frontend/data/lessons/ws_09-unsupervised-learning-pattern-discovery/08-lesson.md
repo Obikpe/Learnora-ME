@@ -1,7 +1,8 @@
 # Lesson 8: Comparing and Validating Clusters
 
 ## Learning outcomes
-Explain the unsupervised-learning concept, implement the worked example, interpret the output and assess whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Compare clustering solutions with silhouette and Davies–Bouldin scores; test stability across random seeds; profile results; and explain why no single metric proves a natural cluster structure.
 
 ## 1. Core explanation
 There is no ground-truth label in unsupervised clustering, so validation is more difficult than supervised evaluation. Internal metrics such as silhouette score assess geometric cohesion and separation. Davies-Bouldin and Calinski-Harabasz scores provide other views, each with assumptions and biases.
