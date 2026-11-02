@@ -1,7 +1,8 @@
 # Lesson 28: Capstone: Data Acquisition and Preparation
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Acquire and audit capstone data; document source, licence, retrieval date and coverage; profile quality; create a data dictionary; and build repeatable preparation steps.
 
 ## 1. Core explanation
 Acquire data according to the charter. Preserve the source version, retrieval date, licence and metadata. Create a data dictionary and verify that the data covers the required population and time window. Do not assume a downloaded file is complete or accurate.
