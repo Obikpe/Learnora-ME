@@ -112,7 +112,7 @@ The result is a tuple, `(5,)`, because a query result row can contain one or mor
 
 ## 7. Create your first table
 
-A table is created with SQL's `CREATE TABLE` statement. We will study table design later; for now, observe the relationship between the Python string and SQL statement.
+A table is created with SQL's `CREATE TABLE` statement. We include an optional `age` column now because the reusable student dataset in Lesson 03 will populate it. We will study table design later; for now, observe the relationship between the Python string and SQL statement.
 
 ```python
 import sqlite3
@@ -124,7 +124,8 @@ cursor.execute("""
     CREATE TABLE IF NOT EXISTS students (
         student_id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
-        programme TEXT
+        programme TEXT,
+        age INTEGER
     );
 """)
 
