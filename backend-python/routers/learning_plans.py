@@ -5,6 +5,7 @@ and contextualises real published courses; it cannot create, remove or reorder
 track curriculum.
 """
 from datetime import datetime, timezone
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -181,26 +182,70 @@ async def generate_learning_plan(body: GeneratePlanIn, user: CurrentUser = Depen
         }
         for course in courses
     ]
+    weekly_outline = [
+        {
+            "week": week["week"],
+            "minutes": week["minutes"],
+            "courses": [
+                {"course_id": task["course_id"], "course_title": task["course_title"], "minutes": task["minutes"]}
+                for task in week["tasks"]
+            ],
+        }
+        for week in weeks
+    ]
     prompt = (
-        "Create a concise, practical coaching guide for this learner. "
-        "Do not change the course sequence or invent courses. The schedule "
-        "is calculated separately from the real catalogue. Return a short "
-        "overview, 3-5 study habits, and one reflection question.\n"
-        f"Goal: {profile.get('goal')}\n"
-        f"Experience: {profile.get('experience_level')}\n"
-        f"Interests: {', '.join(profile.get('interests') or [])}\n"
-        f"Weekly study time: {weekly_minutes} minutes\n"
-        f"Track: {track.get('name') if track else 'Flexible course plan'}\n"
-        f"Published course sequence: {course_summary}"
+        "Create a personalised weekly learning plan as strict JSON only. "
+        "Use this exact shape: {\"overview\": string, \"weekly_guidance\": "
+        "[{\"week\": integer, \"focus\": string, \"practice\": string, "
+        "\"reflection\": string}]}. Return exactly one guidance item for "
+        "each supplied week, in order. Only refer to the supplied real courses "
+        "and their titles. Do not add, remove, rename or reorder courses, invent "
+        "lessons, claim the learner completed anything, or alter the supplied "
+        "time allocations. Keep each field concise and actionable.\\n"
+        f"Learner goal: {profile.get('goal')}\\n"
+        f"Experience level: {profile.get('experience_level')}\\n"
+        f"Interests: {', '.join(profile.get('interests') or [])}\\n"
+        f"Weekly time: {weekly_minutes} minutes\\n"
+        f"Published track: {track.get('name') if track else 'Flexible course plan'}\\n"
+        f"Fixed catalogue schedule: {json.dumps(weekly_outline, ensure_ascii=False)}"
     )
+    guidance = "Work through the scheduled courses in order, practise each concept, and record one practical outcome from every study session."
+    generation_mode = "rule_based_fallback"
     try:
         ai_result = await generate(str(user.id), "coach", prompt, None, None)
-        guidance = str(ai_result.get("content") or "").strip()
-        generation_mode = "ai_assisted" if ai_result.get("provider") not in (None, "rules") else "rule_based_fallback"
+        raw = str(ai_result.get("content") or "").strip()
+        if ai_result.get("provider") not in (None, "rules") and ai_result.get("status") == "success":
+            json_start, json_end = raw.find("{"), raw.rfind("}")
+            if json_start >= 0 and json_end > json_start:
+                parsed = json.loads(raw[json_start:json_end + 1])
+                weekly_guidance = parsed.get("weekly_guidance")
+                if isinstance(weekly_guidance, list) and len(weekly_guidance) == len(weeks):
+                    validated = {}
+                    for expected_week, item in zip(weeks, weekly_guidance):
+                        if not isinstance(item, dict) or int(item.get("week", -1)) != int(expected_week["week"]):
+                            raise ValueError("AI plan week sequence did not match the saved schedule.")
+                        fields = {}
+                        for key in ("focus", "practice", "reflection"):
+                            value = str(item.get(key) or "").strip()
+                            if not value:
+                                raise ValueError("AI plan guidance was incomplete.")
+                            fields[key] = value[:1200]
+                        validated[int(expected_week["week"])] = fields
+                    for week in weeks:
+                        week["guidance"] = validated[int(week["week"])]
+                    overview = str(parsed.get("overview") or "").strip()
+                    if overview:
+                        guidance = overview[:5000]
+                    generation_mode = "ai_assisted"
     except Exception as exc:
         print(f"Learning plan guidance generation failed: {type(exc).__name__}")
-        guidance = "Work through the scheduled courses in order, practise each concept, and record one practical outcome from every study session."
-        generation_mode = "rule_based_fallback"
+    if generation_mode != "ai_assisted":
+        for week in weeks:
+            week["guidance"] = {
+                "focus": "Work through the published lessons for the scheduled course or courses.",
+                "practice": "Attempt the available practice and assessment activities, then review any feedback.",
+                "reflection": "Write down one concept you can now explain or apply and one question to revisit.",
+            }
 
     plan_data = {
         "track": ({"id": str(track["id"]), "name": track.get("name"), "slug": track.get("slug")} if track else None),
