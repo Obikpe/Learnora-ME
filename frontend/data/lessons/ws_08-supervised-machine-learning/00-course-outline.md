@@ -1,50 +1,47 @@
 # Supervised Machine Learning
-Course: ws_08
-Level: Beginner to advanced
-Duration: 22h • 28 lessons
-Prerequisite: WS01–WS07; Python, statistics, Pandas, visualisation and ML fundamentals
+
+**Course:** ws_08  
+**Duration:** 22h  
+**Lessons:** 28  
+**Environment:** Python 3 in VS Code; course-appropriate libraries and tools.
 
 ## Course purpose
-Develop practical competence in supervised learning with Python and scikit-learn. The course progresses from regression and classification foundations to model families, pipelines, validation and responsible model selection. Advanced model improvement and feature engineering are developed further in WS10.
 
-## Learning outcomes
-Prepare labelled datasets; build regression and classification models; understand linear and tree-based methods; use regularisation; evaluate predictions with appropriate metrics; handle class imbalance; validate models; tune hyperparameters without leakage; interpret model behaviour; and communicate model limitations.
+This course is a structured self-study programme for data science learners. It moves from foundational ideas to practical implementation, interpretation, evaluation and a final applied task. Learners should be able to follow the notes without relying on a tutor to supply missing explanations. Every lesson should define new terminology, explain why a technique is used, demonstrate it with a small example before increasing complexity, discuss assumptions and common errors, and provide guided and independent practice.
 
-## Lesson sequence
-01. Supervised Learning: Targets, Features and Labels — labelled examples, prediction tasks and target design.
-02. Preparing a Supervised Dataset — grain, target column, feature matrix, data types, missingness and leakage audit.
-03. Train/Validation/Test Strategy — holdout logic, stratification, random state, temporal split and reproducibility.
-04. Regression as Prediction of Numeric Values — continuous targets, residuals and baseline regressors.
-05. Simple Linear Regression — line, slope, intercept, fitting and interpretation.
-06. Multiple Linear Regression — multiple predictors, coefficients, assumptions and multicollinearity awareness.
-07. Regression Diagnostics — residual plots, heteroscedasticity, influential observations and limitations.
-08. Regression Metrics — MAE, MSE, RMSE, R², scale and business interpretation.
-09. Polynomial Features and Nonlinear Patterns — transformations, complexity and overfitting risks.
-10. Regularised Regression — Ridge, Lasso and Elastic Net intuition and practical comparison.
-11. Classification Fundamentals — classes, decision boundaries, scores, probabilities and thresholds.
-12. Logistic Regression — sigmoid, coefficients, odds intuition and classification probabilities.
-13. k-Nearest Neighbours — distance, scaling, choice of k and decision boundaries.
-14. Decision Trees — splits, impurity, depth, interpretability and instability.
-15. Random Forests — bagging, feature randomness, ensemble logic and practical use.
-16. Support Vector Machines — margins, kernels, scaling and parameter intuition.
-17. Naive Bayes — conditional independence assumption and text-oriented use cases.
-18. Gradient Boosting Fundamentals — sequential error correction and boosting intuition.
-19. Classification Metrics — confusion matrix, precision, recall, specificity, F1 and support.
-20. ROC, AUC and Precision-Recall — threshold trade-offs, ranking quality and imbalanced data.
-21. Class Imbalance and Decision Thresholds — class weights, resampling concepts, threshold choice and costs.
-22. Preprocessing Pipelines — imputation, scaling, one-hot encoding, ColumnTransformer and Pipeline.
-23. Cross-Validation — folds, stratification, grouped and time-aware validation.
-24. Hyperparameter Tuning — GridSearchCV, RandomizedSearchCV, nested selection caution and compute budgets.
-25. Model Comparison and Selection — comparable splits, metrics, baselines, stability and practical constraints.
-26. Model Interpretation — coefficients, permutation importance, partial dependence concepts and caveats.
-27. Error Analysis and Responsible Use — subgroup errors, fairness questions, calibration awareness and limitations.
-28. Supervised Learning Project — end-to-end regression or classification, reproducibility, report and handoff.
+## Learning journey
 
-## Tools
-Python, NumPy, Pandas, Matplotlib, Seaborn and scikit-learn. Use pipelines to prevent preprocessing leakage. Use modest datasets and computationally sensible defaults.
+1. **Supervised Learning: Problem Framing**
+2. **Regression and Classification Targets**
+3. **Building a Reproducible Supervised Workflow**
+4. **Simple Linear Regression**
+5. **Multiple Linear Regression**
+6. **Polynomial Regression and Non-Linearity**
+7. **Regularisation: Ridge and Lasso**
+8. **Regression Metrics and Residual Analysis**
+9. **Logistic Regression**
+10. **Classification Thresholds and Probabilities**
+11. **Confusion Matrix and Classification Metrics**
+12. **K-Nearest Neighbours**
+13. **Decision Trees**
+14. **Random Forests**
+15. **Gradient Boosting Concepts**
+16. **Support Vector Machines**
+17. **Naive Bayes**
+18. **Handling Imbalanced Classes**
+19. **Cross-Validation for Supervised Models**
+20. **Comparing Models Fairly**
+21. **Feature Importance and Interpretation**
+22. **Error Analysis and Diagnostics**
+23. **Multi-Class Classification**
+24. **Model Calibration**
+25. **Saving and Loading Trained Models**
+26. **End-to-End Regression Case Study**
+27. **End-to-End Classification Case Study**
+28. **Supervised Learning Assessment**
 
-## Assessment
-Exercises after each model family; metric-selection case studies; a pipeline assessment; and a capstone comparing at least three appropriate models against a baseline.
+## Teaching and assessment standard
 
-## Completion standard
-Learners can select, train, validate, compare and explain supervised models in Python, with defensible metrics and transparent limitations.
+Lessons build on earlier concepts and use consistent datasets and terminology where practical. Python examples should be runnable in VS Code, with imports, expected input structure and package requirements stated. Mathematical ideas should be explained intuitively before notation is introduced. Examples must explain both the code and the meaning of its output. Learners should practise checking assumptions, validating results, identifying limitations and communicating conclusions. Visuals should clarify concepts, processes, model behaviour or analytical findings rather than decorate the notes.
+
+Assessment should include frequent short exercises, independent practice and a final applied project or portfolio artefact. Learners must document their data sources, preprocessing decisions, assumptions, evaluation choices and limitations. No result should be presented as causal or generalisable without appropriate evidence.
