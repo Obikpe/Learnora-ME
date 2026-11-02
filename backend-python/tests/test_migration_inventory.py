@@ -90,6 +90,18 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("DROP INDEX IF EXISTS public.project_submissions_one_active_per_learner_idx", rollback_sql)
         self.assertIn("DROP INDEX IF EXISTS public.skill_evidence_project_submission_skill_unique_idx", rollback_sql)
 
+    def test_account_deletion_migration_preserves_a_restricted_history_record(self):
+        migration = ACTIVE_DIR / "20261102130000_learner_account_deletion.sql"
+        self.assertTrue(migration.is_file())
+        sql = migration.read_text(encoding="utf-8")
+        self.assertIn("CREATE TABLE IF NOT EXISTS public.deleted_account_history", sql)
+        self.assertIn("ENABLE ROW LEVEL SECURITY", sql)
+        self.assertIn("REVOKE ALL ON public.deleted_account_history FROM PUBLIC, anon, authenticated", sql)
+        self.assertIn("complete_learner_account_deletion", sql)
+        self.assertIn("password_hash = NULL", sql)
+        self.assertIn("account_status = 'deleted'", sql)
+        self.assertNotIn("DELETE FROM PUBLIC.USERS", sql.upper())
+
     def test_quota_fix_preserves_unlimited_monthly_limit_contract(self):
         sql = (ACTIVE_DIR / "20261020232148_allow_unlimited_monthly_ai_quota.sql").read_text(
             encoding="utf-8"
