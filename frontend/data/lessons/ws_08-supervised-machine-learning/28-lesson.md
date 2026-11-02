@@ -4,14 +4,8 @@
 This assessment brings together the supervised-learning skills from WS08. You will frame a prediction problem, prepare a dataset, compare appropriate models, evaluate errors and communicate a defensible recommendation. The goal is not to achieve the highest possible score by trying many models. The goal is to demonstrate a reliable process and explain what the evidence supports.
 
 ## Learning outcomes
-By the end of this assessment, you should be able to:
-- distinguish a regression target from a classification target and define the prediction unit and time;
-- create a reproducible train/test split appropriate to the data;
-- build a leakage-safe preprocessing and modelling pipeline;
-- establish a simple baseline and compare it with at least two suitable supervised models;
-- select metrics based on the decision and error costs;
-- interpret model errors, limitations and uncertainty;
-- present reproducible code and a clear recommendation.
+
+By the end of this lesson, you should be able to Demonstrate the full supervised-learning workflow in an assessed project; frame a defensible target; prevent leakage; compare models; evaluate errors; and submit reproducible code, a report and limitations.
 
 ## Assessment brief
 Choose one of the following routes, or propose a comparable dataset with a documented source and licence.
