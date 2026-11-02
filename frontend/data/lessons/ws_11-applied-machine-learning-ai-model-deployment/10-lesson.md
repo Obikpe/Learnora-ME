@@ -15,11 +15,12 @@ Use VS Code and a project virtual environment. Install the relevant packages wit
 
 ```python
 # requirements.txt example
-# fastapi==<tested-version>
-# uvicorn[standard]==<tested-version>
-# scikit-learn==<tested-version>
-# pandas==<tested-version>
-# joblib==<tested-version>
+fastapi>=0.110,<1
+uvicorn[standard]>=0.27,<1
+pydantic>=2.6,<3
+scikit-learn>=1.4,<2
+pandas>=2.1,<4
+joblib>=1.3,<2
 #
 # In terminal:
 # python -m venv .venv
