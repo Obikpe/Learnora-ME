@@ -442,3 +442,24 @@ The learner, Teams and backend applications have successful Vercel staging build
 The production backend's reversible `FREE_ACCESS_MODE=true` setting is prepared and will take effect on the next production deployment. The live Supabase database still lacks the four additive 2 November migrations required by the current learner-outcomes code. Those migrations must be replayed in a disposable database, reviewed and explicitly approved before applying them to the active Pheonix project.
 
 General CI has been consolidated to one release workflow; the final run remains queued and is not yet evidence of success. Production deployment and browser acceptance are not yet complete. The older Teams/backend production deployments reference the former `Pheonix-Analytics` repository; release deployments must use `Obikpe/Learnora-ME` with the correct monorepo root directories. Preserve the existing production domains and same-origin API proxy.
+
+
+## Learner experience repair and account lifecycle — 2 November 2026
+
+The following source changes have been committed to `main` in `Learnora-ME`; they are implementation work, not production release evidence.
+
+- Learner track navigation now has a dedicated `/dashboard/tracks` workspace for a learner's enrolled global tracks. The existing `/tracks` and `/courses` routes remain public discovery/catalogue pages. The progress API includes enrolment source markers so the workspace can resolve the exact track and display course-level progress.
+- Removed the profile-editing implementation explanation and identified internal notes from the learner dashboard, evidence and course catalogue surfaces.
+- Shared frontend API errors no longer expose internal request URLs or raw server error details for 5xx responses.
+- Added light as the default interface theme, a persisted light/dark switch to public and dashboard navigation, improved light-theme contrast, and styled scrollbars.
+- Added Support links to `learnorame@gmail.com` in public and authenticated navigation.
+- Added email-confirmed individual learner account deletion. The confirmation link is single-use and expires after 60 minutes. Active recurring Paystack subscriptions must be confirmed cancelled before account deletion can finish. Organisation ownership must be transferred first.
+- Account deletion stores a restricted snapshot in `deleted_account_history`, then anonymises authentication fields and marks the original user row as a deleted tombstone. This preserves foreign-key-linked learning and financial history rather than cascading away learner records. Password and verification/reset tokens are cleared. The history table is not browser-readable.
+- Added regression-contract tests and updated the migration inventory for the pending 2 November migrations.
+
+**Release dependencies and limitations**
+
+- The live Pheonix database has not received the 2 November migrations. The certificate-revocation migration is required for `/api/credentials/me`; the quiz-session migration is required for the learner shell to safely establish whether the AI tutor should be hidden during an active quiz; the learning-plan and project-integrity migrations are also pending. The new account-deletion migration must be applied before its API can be deployed.
+- No production SQL migration, production data mutation, environment change, or deployment was performed as part of this work.
+- Vercel team access for `obikpes-projects` remains blocked by a 403 at the time of this entry. The production learner project source/root/deployment could not yet be revalidated. The current repository already contains `/courses`, public `/tracks`, and the new personal `/dashboard/tracks` route; production must be deployed from the intended `Learnora-ME` source with root `frontend-v02`.
+- CI was not triggered to conserve the monthly Actions allowance. The added/updated tests have not been executed; browser acceptance and build verification remain required before release.
