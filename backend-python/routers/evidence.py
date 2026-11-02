@@ -135,9 +135,6 @@ def my_evidence(
             "status": status,
             "verified_evidence_count": len(values),
         })
-    known_skill_ids = {str(row["id"]) for row in definitions}
-    stored_skill_rows = [row for row in stored_skill_rows if str(row.get("skill_id")) in known_skill_ids]
-
     course_ids = list({
         str(row["course_id"])
         for row in certificate_rows
@@ -153,14 +150,6 @@ def my_evidence(
         ).data or []
         course_map = {str(row["id"]): row for row in course_rows}
 
-    enriched_skills = [
-        {
-            **row,
-            "skill": skill_map.get(str(row.get("skill_id"))),
-            "skill_name": (skill_map.get(str(row.get("skill_id"))) or {}).get("name"),
-        }
-        for row in skill_rows
-    ]
     enriched_evidence = [
         {
             **row,
