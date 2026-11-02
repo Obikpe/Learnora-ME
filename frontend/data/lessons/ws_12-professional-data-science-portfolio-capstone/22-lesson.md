@@ -1,7 +1,8 @@
 # Lesson 22: Technical Interview Preparation
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Prepare for technical interviews by explaining statistics, SQL, Python, data preparation and model evaluation; describe project decisions; and respond honestly when evidence or knowledge is incomplete.
 
 ## 1. Core explanation
 Technical interviews assess problem-solving, communication and practical judgement. Prepare to explain statistics, SQL, Python, data cleaning, visualisation, model evaluation and project decisions. Practise writing code clearly and explaining time and space complexity where relevant.
