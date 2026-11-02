@@ -1,7 +1,8 @@
 # Lesson 18: Hyperparameter Search
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Explain the bias-variance trade-off; compare training and held-out scores across model complexity; diagnose underfitting and overfitting; and propose a controlled improvement.
 
 ## 1. Core explanation
 Hyperparameters are settings chosen before or around model fitting, such as tree depth, regularisation strength or number of neighbours. Grid search evaluates a specified set of combinations; random search samples combinations and can explore broad spaces more efficiently when only a few settings strongly affect performance.
