@@ -176,7 +176,10 @@ def _assert_quiz_publishable(quiz_id: str):
     if not questions:
         raise HTTPException(409, "Add at least one question before publishing this quiz.")
     for question in questions:
-        _validate_question_payload(question)
+        try:
+            _validate_question_payload(question)
+        except HTTPException as exc:
+            raise HTTPException(409, exc.detail) from None
         if float(question.get("points") or 0) <= 0:
             raise HTTPException(409, "Every question must have a positive point value.")
 
