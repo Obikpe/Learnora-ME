@@ -1,7 +1,8 @@
 # Lesson 17: Bias-Variance Trade-Off
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+
+By the end of this lesson, you should be able to Choose a classification threshold using false-positive and false-negative costs; calculate total decision cost; compare thresholds; and state why threshold selection must use validation data rather than the final test set.
 
 ## 1. Core explanation
 Bias describes systematic error from assumptions that are too restrictive; variance describes sensitivity to the particular training sample. A simple model may underfit with high bias. A very flexible model may overfit with high variance. The goal is to balance the two so performance generalises.
