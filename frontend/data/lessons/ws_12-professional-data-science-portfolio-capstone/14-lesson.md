@@ -1,7 +1,8 @@
 # Lesson 14: Evaluation and Error Analysis
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Evaluate model errors using suitable metrics and representative examples; inspect confusion matrices or residuals; compare relevant groups; and propose proportionate next steps.
 
 ## 1. Core explanation
 Evaluation should answer whether a model works for its intended use on data it did not train on. Report test-set size, split strategy, baseline and metrics. Then inspect errors: which cases were misclassified, what patterns exist and whether errors are concentrated in a subgroup, time period or feature range.
