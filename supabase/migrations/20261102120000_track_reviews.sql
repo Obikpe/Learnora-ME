@@ -30,6 +30,16 @@ ALTER TABLE public.learnora_track_reviews ENABLE ROW LEVEL SECURITY;
 REVOKE ALL PRIVILEGES ON TABLE public.learnora_track_reviews FROM PUBLIC, anon, authenticated;
 GRANT ALL PRIVILEGES ON TABLE public.learnora_track_reviews TO service_role;
 
+-- The catalog-only CI baseline intentionally omits production role rows.
+-- Ensure only the two system roles required by this dedicated permission exist.
+INSERT INTO public.learnora_staff_roles (name, slug, description, is_system_role, status)
+SELECT 'Super Admin', 'super_admin', 'Platform-wide administration.', true, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM public.learnora_staff_roles WHERE slug = 'super_admin');
+
+INSERT INTO public.learnora_staff_roles (name, slug, description, is_system_role, status)
+SELECT 'Learning & Curriculum', 'learning_curriculum', 'Manage learning design and curriculum.', false, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM public.learnora_staff_roles WHERE slug = 'learning_curriculum');
+
 INSERT INTO public.learnora_permissions (permission_key, name, description, category)
 VALUES (
   'track_reviews.moderate',
