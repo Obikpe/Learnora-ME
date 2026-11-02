@@ -1,7 +1,8 @@
 # Lesson 23: SQL and Python Assessment Practice
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Answer a monthly-active-user assessment with SQL and pandas; define activity and time grain; count distinct users; and explain how duplicate events and date boundaries affect results.
 
 ## 1. Core explanation
 Data roles often combine SQL reasoning with Python data manipulation. SQL questions test filtering, grouping, joins, null handling, window functions and aggregation. Python questions test data structures, functions, pandas operations, debugging and clear reasoning.
