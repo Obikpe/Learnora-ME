@@ -1,7 +1,8 @@
 # Lesson 29: Capstone: Analysis and Modelling
 
 ## Learning outcomes
-Apply the professional practice, produce the capstone artefact and communicate evidence and limitations clearly.
+
+By the end of this lesson, you should be able to Conduct capstone analysis or modelling that answers the research question; use appropriate baselines and validation; and map findings to evidence without unsupported causal claims.
 
 ## 1. Core explanation
 Complete the analysis that answers the approved capstone question. Start with descriptive summaries and visualisations. Check distributions, missingness, relationships and subgroup differences. If prediction is justified, define the target and prediction timestamp, establish a baseline and use a split that reflects intended future use.
