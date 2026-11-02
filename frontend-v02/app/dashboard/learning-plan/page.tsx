@@ -5,7 +5,6 @@ import Link from "next/link";
 import {ArrowLeft,ArrowRight,CalendarDays,Clock3,RefreshCw,Sparkles} from "lucide-react";
 import Shell from "../../../components/dashboard/Shell";
 import Skeleton from "../../../components/feedback/Skeleton";
-import EmptyState from "../../../components/feedback/EmptyState";
 import {request} from "../../../lib/api/client";
 
 export default function LearningPlanPage(){
@@ -25,10 +24,10 @@ export default function LearningPlanPage(){
     request<any>("/public/tracks")
    ]);
    setPlan(saved.plan||null);setTracks(catalogue.tracks||[]);
-   if(!trackId&&catalogue.tracks?.length)setTrackId(String(catalogue.tracks[0].id));
+   if(catalogue.tracks?.length)setTrackId(current=>current||String(catalogue.tracks[0].id));
   }catch(e:any){setError(e.message||"Your learning plan could not be loaded.");}
   finally{setLoading(false);}
- },[trackId]);
+ },[]);
  useEffect(()=>{void load()},[load]);
 
  async function generatePlan(){
