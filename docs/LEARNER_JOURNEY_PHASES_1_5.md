@@ -137,3 +137,5 @@ The optional AI plan uses the existing AI provider/quota service; it does not gr
 - Each staff grading action is recorded in `audit_logs`; a separate immutable grade-revision history and learner resubmission workflow remain future work.
 
 The five phases are implementation-complete and automated-CI-verified on the checkpoint above. Do not treat that as production-release approval: live schema verification, browser/mobile acceptance, and the separately approved live migration/deployment remain release gates.
+
+**Subsequent feature-order update (2 November 2026):** the product owner has revised the next learner-outcome priorities to Phase 6 certificates and verification, Phase 7 Practice Lab and project submissions, Phase 8 skill mastery and learner portfolio, and Phase 9 learning companion/community later. See [Learner Outcomes Phases 6–8](LEARNER_OUTCOMES_PHASES_6_8.md). The earlier track-feedback proposal remains deferred backlog work.
