@@ -1,7 +1,8 @@
 # Lesson 1: Supervised Learning: Problem Framing
 
 ## Learning outcomes
-Explain the supervised-learning concept, implement the method in Python, interpret its output and identify assumptions and common failure modes.
+
+By the end of this lesson, you should be able to Define a supervised prediction problem with a clear observation unit, target, prediction time and intended decision; distinguish known labels from features; and identify the risks of an ambiguous or unavailable target.
 
 ## 1. Core explanation
 Supervised learning uses examples with known outcomes to learn a mapping from features X to target y. The first task is not choosing an algorithm; it is defining the decision. Specify who will use the prediction, what action follows, when the prediction is made and what errors cost. A target such as “customer churn” must have an operational definition: for example, no qualifying purchase within the next 60 days.
