@@ -1,7 +1,8 @@
 # Lesson 8: Input Validation and Error Handling
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Validate numeric ranges and cross-field rules with Pydantic; return useful client errors; avoid leaking internal exceptions; and distinguish input validation from model-quality checks.
 
 ## 1. Core explanation
 Input validation protects the model from malformed or nonsensical data. Validate types, required fields, allowed categories, ranges, units and cross-field constraints. A numeric value can be syntactically valid but semantically impossible, such as a negative age or a percentage above 100.
