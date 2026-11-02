@@ -1,43 +1,61 @@
-# Lesson 24: Feature Engineering and Evaluation Project
+# Lesson 24: Feature Engineering and Model Evaluation Project
+
+## Purpose
+This final project tests whether you can improve a predictive workflow without leaking information or overfitting the validation process. You will start with a baseline, design features that would genuinely be available at prediction time, compare leakage-safe pipelines and justify whether the improvement is useful.
 
 ## Learning outcomes
-Explain the technique, implement it in Python and justify the validation choices.
+- define the prediction unit, target, prediction timestamp and decision;
+- create a feature data dictionary including source and availability time;
+- identify and prevent target leakage, temporal leakage and preprocessing leakage;
+- build a ColumnTransformer and model inside a scikit-learn Pipeline;
+- compare a baseline and at least two feature/model configurations with suitable cross-validation;
+- choose metrics and thresholds based on error costs;
+- inspect errors, uncertainty and subgroup performance;
+- document a reproducible experiment and a defensible recommendation.
 
-## 1. Core explanation
-The project applies feature engineering and evaluation controls to a real analytical question. Define prediction timestamp, unit of observation, target horizon and action. Audit candidate features for availability, missingness, leakage, redundancy and ethical risk. Build transformations in a Pipeline or ColumnTransformer.
+## Project brief
+Choose a classification or regression problem with a documented data source and licence. Your dataset must have a clear target and enough observations to support a train/validation design. State the decision that the prediction would support. A descriptive feature-engineering investigation is acceptable only if you explain why a predictive target is unavailable and adjust the evaluation plan.
 
-Establish a baseline, then compare at least two feature sets or model workflows using the same cross-validation design. Use metrics suited to the target and inspect errors across relevant groups. Tune only on training data and reserve a final test set. Document transformation decisions and rejected features.
+## Required work
+1. Write a problem statement with the target, unit, prediction time and intended action.
+2. Audit the raw data: shape, types, missingness, duplicates, target distribution, suspicious IDs and date coverage.
+3. Create a feature dictionary with each feature's meaning, source, type, missingness and earliest availability time.
+4. Propose candidate engineered features. For every feature, explain why it could help and prove it would be known at prediction time.
+5. Split the data before fitting any imputer, encoder, scaler or selector. Use group-aware or time-aware splitting if the data structure requires it.
+6. Build a baseline pipeline and at least two candidate pipelines. Keep all learned preprocessing inside the pipeline.
+7. Compare candidates on identical cross-validation folds. Record metrics for each fold, not only the mean.
+8. Tune only on training data. Keep the final test set untouched until the design is selected.
+9. Evaluate the final model once on the test set. Inspect representative errors and relevant subgroup results.
+10. Write a decision note: retain the change, reject it or conclude that evidence is insufficient.
 
-The deliverable is a reproducible report and codebase. Explain whether engineered features improve validation in a stable and practically meaningful way. State limitations, deployment assumptions and monitoring requirements.
-
-## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
-
-```python
-# Project deliverables
-# problem_statement.md: decision, target, prediction timestamp, error costs
-# data_dictionary.csv: feature, meaning, type, source, availability time
-# src/preprocess.py: leakage-safe transformations
-# src/train.py: baseline and candidate pipelines
-# reports/evaluation.md: CV results, test result, error analysis
-# README.md: environment, run instructions, limitations
-# Keep preprocessing and model fitting in one sklearn Pipeline.
+## Suggested repository
+```text
+feature-evaluation-project/
+├── README.md
+├── requirements.txt
+├── data/README.md
+├── notebooks/exploration.ipynb
+├── src/
+│   ├── features.py
+│   ├── pipeline.py
+│   └── evaluate.py
+└── reports/
+    ├── feature_dictionary.csv
+    ├── experiment_log.csv
+    └── evaluation.md
 ```
 
-## 3. Interpretation and safeguards
-State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune thresholds, select features or choose hyperparameters.
+Do not publish private data or credentials. The repository should explain how to obtain or reproduce the dataset without committing restricted records.
 
-## 4. Guided practice
-Submit a feature-engineering project. Rubric: problem framing 15%, leakage prevention 20%, transformation rationale 20%, validation and metrics 20%, error analysis 15%, reproducibility and communication 10%. Include one rejected feature and explain why it was excluded.
+## Assessment rubric
+| Criterion | Weight |
+|---|---:|
+| Problem framing and prediction-time definition | 15% |
+| Data audit and feature dictionary | 15% |
+| Leakage prevention and pipeline design | 20% |
+| Feature rationale and implementation | 15% |
+| Validation, metrics and model comparison | 20% |
+| Error analysis, limitations and communication | 15% |
 
-## 5. Independent practice
-Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
-
-## 6. Knowledge check
-1. What question does this method answer?
-2. What data leakage risk must be controlled?
-3. How does the metric relate to the decision?
-4. What evidence would make you trust the improvement?
-
-## Lesson summary
-Reliable model improvement requires controlled experiments, leakage-safe preprocessing, a validation design that matches the data and honest reporting of uncertainty.
+## Final reflection
+Explain which feature change made the greatest difference, whether the improvement was stable across folds, what might still cause leakage or distribution shift, and what evidence would be required before deployment.
