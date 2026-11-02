@@ -4,6 +4,15 @@ import { Award, RefreshCw, ShieldAlert } from "lucide-react";
 import Shell from "../../components/Shell";
 import { request, teamMe } from "../../lib/api";
 
+async function credentialRequest<T>(path:string,init:RequestInit={}):Promise<T>{
+  const headers=new Headers(init.headers);
+  if(init.body&&!headers.has("Content-Type"))headers.set("Content-Type","application/json");
+  const response=await fetch("/api/credentials"+path,{...init,headers,credentials:"same-origin",cache:"no-store"});
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(typeof body.detail==="string"?body.detail:"Credential request failed ("+response.status+").");
+  return body as T;
+}
+
 export default function CertificatesWorkspace() {
   const [roles,setRoles]=useState<string[]>([]);
   const [items,setItems]=useState<any[]>([]);
@@ -14,7 +23,7 @@ export default function CertificatesWorkspace() {
   const [notice,setNotice]=useState("");
   const load=useCallback(async()=>{
     setLoading(true);setError("");
-    try{const result=await request<any>("/credentials/internal");setItems(result.certificates||[]);}
+    try{const result=await credentialRequest<any>("/internal");setItems(result.certificates||[]);}
     catch(e:any){setError(e.message||"Certificate register could not be loaded.");}
     finally{setLoading(false);}
   },[]);
@@ -24,7 +33,7 @@ export default function CertificatesWorkspace() {
     if(explanation.length<5){setError("Enter a clear reason of at least five characters before revoking.");return;}
     if(!window.confirm("Revoke this certificate? Its public verification result will immediately become invalid."))return;
     setBusy(id);setError("");setNotice("");
-    try{await request("/credentials/internal/"+encodeURIComponent(id)+"/revoke",{method:"POST",body:JSON.stringify({reason:explanation})});setNotice("Certificate revoked. Public verification now reports the credential as invalid.");setReason(old=>({...old,[id]:""}));await load();}
+    try{await credentialRequest("/internal/"+encodeURIComponent(id)+"/revoke",{method:"POST",body:JSON.stringify({reason:explanation})});setNotice("Certificate revoked. Public verification now reports the credential as invalid.");setReason(old=>({...old,[id]:""}));await load();}
     catch(e:any){setError(e.message||"Certificate could not be revoked.");}
     finally{setBusy("");}
   }
