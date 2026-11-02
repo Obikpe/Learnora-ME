@@ -13,6 +13,45 @@ from routers import credentials, evidence, internal_projects
 
 
 class LearningOutcomeContractTests(unittest.TestCase):
+    def test_learner_credentials_fall_back_until_revocation_columns_are_migrated(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from routers import auth
+
+        class Query:
+            def __init__(self, table):
+                self.table = table
+                self.fields = ""
+            def select(self, fields):
+                self.fields = fields
+                return self
+            def eq(self, *_args, **_kwargs):
+                return self
+            def order(self, *_args, **_kwargs):
+                return self
+            def in_(self, *_args, **_kwargs):
+                return self
+            def execute(self):
+                if self.table == "certificates" and "revoked_at" in self.fields:
+                    raise RuntimeError("column revoked_at does not exist")
+                return SimpleNamespace(data=[])
+
+        class FakeSupabase:
+            def table(self, name):
+                return Query(name)
+
+        user = auth.CurrentUser(
+            id="learner-1",
+            email="learner@example.com",
+            role="normal",
+            sub_status="active",
+            account_type="learner",
+        )
+        with patch.object(credentials, "supabase", FakeSupabase()):
+            result = credentials.my_credentials(user)
+        self.assertEqual(result["certificates"], [])
+        self.assertEqual(result["eligible_courses"], [])
+
     def test_course_certificate_number_is_stable_and_identity_scoped(self):
         first = credentials._certificate_number("learner-a", "course-a")
         repeated = credentials._certificate_number("learner-a", "course-a")
