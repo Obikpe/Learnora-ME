@@ -69,30 +69,6 @@ AI_ENTITLEMENT_KEYS = {
 }
 
 
-def _assert_no_active_quiz_session(user_id: str):
-    """Fail closed while the learner has an active quiz session."""
-    try:
-        active_quiz = (
-            supabase.table("quiz_active_sessions")
-            .select("id")
-            .eq("user_id", str(user_id))
-            .gt("expires_at", datetime.now(timezone.utc).isoformat())
-            .limit(1)
-            .execute()
-        ).data or []
-    except Exception as exc:
-        print(f"Active quiz tutor guard failed: {type(exc).__name__}")
-        raise HTTPException(
-            503,
-            "Tutor access cannot be verified during this learning activity. Please retry.",
-        ) from None
-    if active_quiz:
-        raise HTTPException(
-            403,
-            "The AI tutor is unavailable while you are taking a quiz. Close or submit the quiz before using the tutor.",
-        )
-
-
 def _authorise_feature(
     feature: str,
     context: PermissionContext,
@@ -187,7 +163,6 @@ async def ask(
     if body.feature == "tutor":
         if body.assessment_id:
             raise HTTPException(403, "The AI tutor is unavailable for quiz and assessment content.")
-        _assert_no_active_quiz_session(str(user.id))
 
     if (
         body.organisation_id
