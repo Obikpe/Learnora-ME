@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Route, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Route, CheckCircle2 } from "lucide-react";
 import Shell from "../../../components/dashboard/Shell";
 import Skeleton from "../../../components/feedback/Skeleton";
 import EmptyState from "../../../components/feedback/EmptyState";
