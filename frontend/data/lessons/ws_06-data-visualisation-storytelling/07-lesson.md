@@ -1,85 +1,47 @@
-# Lesson 07: Distributions and Univariate Analysis
-
-## Why this lesson matters
-
-This lesson is part of **ws_06 data visualisation storytelling**. It builds on earlier work and prepares you for the next stage. The goal is not to memorise commands: it is to understand the problem, choose an appropriate method, implement it in Python, inspect the result and explain what the result does and does not establish.
+# Lesson 7: Distributions and Univariate Analysis
 
 ## Learning outcomes
+Explain a numerical distribution, compare centre and spread, choose a useful plot, and recognise how outliers and bin width affect interpretation.
 
-By the end, you should be able to:
-- Explain the central idea and the problem this method addresses.
-- Identify the data, assumptions and conditions needed to use it.
-- Implement a basic version in Python and explain the important lines.
-- Interpret the output, recognise common failure modes and communicate limitations.
-- Apply the method to a small realistic data-science question.
+## 1. Understand one variable
+Univariate analysis studies one variable at a time. Describe its centre, spread, shape and unusual values. The mean is the arithmetic average and is sensitive to extreme observations. The median is the middle ordered value and is more resistant. The range uses only the minimum and maximum; the interquartile range (IQR) covers the middle half of the observations.
 
-## 1. Start with the problem
+A histogram groups numeric values into bins. Wide bins can hide structure; narrow bins can create noisy detail. A density curve smooths the distribution and depends on a bandwidth choice. A box plot summarises the median, quartiles and potential outliers, but hides multimodality and detailed shape. Use complementary views when distribution shape matters.
 
-Before choosing a technique, state the question in plain language. Identify the unit being analysed (a person, transaction, product, day or observation), the outcome or quantity of interest, the available variables and the decision the analysis should support. This prevents a common mistake: selecting a familiar algorithm or chart first and then trying to invent a question for it.
+For categories, show counts or proportions. Include the denominator when comparing proportions: 20 cases out of 25 is not equivalent to 20 out of 2,000. Inspect missing values separately because dropping missing records can change the apparent distribution.
 
-Write down what one row represents. Check whether rows are independent, whether identifiers are duplicated, whether values are missing and whether the time period is appropriate. A method cannot repair a poorly defined question or an unsuitable dataset.
-
-## 2. Understand the concept
-
-**Distributions and Univariate Analysis** should be understood as a tool within a wider analytical workflow. Learn its purpose, the assumptions behind it, the kind of input it expects and the form of output it produces. Distinguish what the method calculates from the interpretation an analyst makes. A numerical result is evidence to investigate, not automatically a conclusion.
-
-For a first attempt, use a small dataset that can be inspected manually. Predict what you expect to happen before running the code. Then compare the actual output with that expectation. This habit makes debugging and interpretation much easier.
-
-## 3. A Python starting point
-
-The following is a teaching pattern. It assumes that a DataFrame named `data` has already been loaded and that the named columns exist. Adapt the columns to your dataset rather than copying names blindly.
+## 2. Worked example
+Install packages in the VS Code terminal with `python -m pip install seaborn matplotlib`.
 
 ```python
+import seaborn as sns
 import matplotlib.pyplot as plt
 
-months = ["Jan", "Feb", "Mar", "Apr"]
-revenue = [12, 15, 13, 19]
-fig, ax = plt.subplots(figsize=(8, 4))
-ax.plot(months, revenue, marker="o")
-ax.set(title="Monthly revenue", xlabel="Month", ylabel="Revenue (₦m)")
-ax.grid(alpha=0.25)
+scores = [42, 55, 58, 61, 63, 65, 67, 68, 70, 72, 75, 91]
+fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+sns.histplot(scores, bins=6, ax=axes[0])
+axes[0].set_title("Score distribution")
+sns.boxplot(x=scores, ax=axes[1])
+axes[1].set_title("Score summary")
 plt.tight_layout()
 plt.show()
 ```
 
-Read the code from top to bottom. Identify the input variables, the operation being performed and the output. Check dimensions and data types before fitting a model or producing a chart. Fix warnings and errors at their source rather than suppressing them.
+The histogram shows the shape and possible gaps. The box plot gives a compact summary. Neither plot alone explains why a learner scored unusually high or low.
 
-## 4. Work through the result
+## 3. Guided investigation
+Calculate the mean and median. Add one extreme value such as 200 and recalculate them. The mean changes substantially because it uses every value and its distance from the centre. The median is less affected because it depends on the ordered middle position.
 
-Ask four questions:
-1. What exactly did the code calculate or produce?
-2. Which rows and columns contributed to the result?
-3. Which assumptions would make the result misleading?
-4. What independent check could confirm that the result is plausible?
+Change the histogram bin count. Notice that the same observations can look smooth, clustered or irregular depending on the binning. A charting choice should not be selected merely because it produces the most attractive shape.
 
-Compare a small sample with a manual calculation or a simple baseline. If the output is unexpected, inspect the data first, then the parameters and finally the method. Do not keep changing settings until a preferred result appears.
+## 4. Independent practice
+Use a real numeric field such as transaction amount, learner score or delivery time. Report mean, median, standard deviation and IQR. Create a histogram and box plot. Explain skew, unusual values and missingness. Do not delete outliers without investigating whether they are data errors or valid rare observations.
 
-## 5. Common mistakes
+## 5. Knowledge check
+1. Why is the median often preferable for a strongly skewed variable?
+2. What information does a histogram show that a box plot hides?
+3. How can bin width change the visual impression?
+4. Why should missingness be inspected before interpreting a distribution?
 
-- Applying a technique before defining the analytical question.
-- Ignoring missing values, unusual observations or duplicate records.
-- Using variables that would not be available at the time a real prediction or decision is made.
-- Treating a metric, chart or model output as proof of causation.
-- Failing to record the dataset, parameters, random seed and software versions.
-- Reporting a result without explaining its uncertainty and limitations.
-
-## Guided practice
-
-1. Explain the lesson's central concept in your own words.
-2. Identify a suitable small dataset and describe its row-level unit.
-3. Run the example after checking that the required columns exist.
-4. Change one input or setting and describe how the output changes.
-5. Inspect at least five observations and verify that the output is plausible.
-6. Write down one limitation and one additional check you would perform.
-
-## Independent practice
-
-Choose a small, relevant dataset and formulate one clear question that this lesson's method can help answer. Create a reproducible Python script, document the input columns and preprocessing, run the method, inspect the output and write a short interpretation. Include the assumptions, one alternative explanation and a limitation. Your work should be understandable to another learner who has not watched you run it.
-
-## Summary
-
-The key skill is to connect the analytical question, the data, the method and the interpretation. Understand the assumptions, make the workflow reproducible, inspect outputs and communicate limitations. The next lesson extends this idea to a more demanding problem.
-
-## Further reflection
-
-What would change if the dataset were ten times larger, contained more missing values or came from a different population? Which parts of your workflow would remain valid, and which would need to be reconsidered?
+## Lesson summary
+A distribution is more than an average. Examine centre, spread, shape, outliers and missingness together, and explain how plotting choices affect what a reader sees.
