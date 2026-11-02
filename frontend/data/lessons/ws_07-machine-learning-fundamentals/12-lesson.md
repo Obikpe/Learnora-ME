@@ -1,7 +1,8 @@
 # Lesson 12: Loss Functions and Learning
 
 ## Learning outcomes
-Explain the method, implement the example in Python, interpret its result, and identify risks that could invalidate the conclusion.
+
+By the end of this lesson, you should be able to Explain a loss function as a measure of prediction error; calculate MAE and MSE for regression; interpret log loss for probabilistic classification; and explain how the choice changes what errors are penalised.
 
 ## 1. Concepts and reasoning
 A loss function turns prediction errors into a numerical quantity that a training algorithm can minimise. For regression, mean squared error (MSE) squares residuals, penalising large errors strongly. Mean absolute error (MAE) uses absolute residuals and is less sensitive to extremes. For classification, log loss penalises confident incorrect probabilities.
