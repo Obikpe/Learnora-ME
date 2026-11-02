@@ -1,7 +1,8 @@
 # Lesson 4: Datasets, Features and Targets
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the key concepts, identify when they apply, implement the worked example in VS Code, and recognise the method's limitations.
+
+By the end of this lesson, you should be able to Identify the observation unit, feature matrix X and target y; distinguish features from identifiers and labels; inspect feature types and target distributions; and recognise features that would reveal information unavailable at prediction time.
 
 ## 1. Core explanation
 A dataset is a structured collection of observations. A row is an observation or example; a column is a variable. Features (often written X) are inputs available to the model. The target (often written y) is the outcome the model is asked to estimate. The unit of observation must be explicit: one row might represent a customer, a customer-month or a transaction. These are not interchangeable.
