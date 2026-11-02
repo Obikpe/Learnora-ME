@@ -385,6 +385,29 @@ def course_activities(course_id: str, user: CurrentUser = Depends(get_current_us
     return {"success": True, "quizzes": quizzes, "assignments": assignments, "projects": projects}
 
 
+@router.get("/quiz-sessions/me")
+def my_active_quiz_session(user: CurrentUser = Depends(get_current_user)):
+    try:
+        rows = (supabase.table("quiz_active_sessions")
+            .select("quiz_id,course_id,expires_at")
+            .eq("user_id", str(user.id))
+            .gt("expires_at", datetime.now(timezone.utc).isoformat())
+            .order("expires_at", desc=True)
+            .limit(1)
+            .execute()).data or []
+    except Exception as exc:
+        print(f"Active quiz session lookup failed: {type(exc).__name__}")
+        raise HTTPException(503, "Assessment access could not be verified. Please retry.") from None
+    if not rows:
+        return {"active": False}
+    return {
+        "active": True,
+        "quiz_id": rows[0].get("quiz_id"),
+        "course_id": rows[0].get("course_id"),
+        "expires_at": rows[0].get("expires_at"),
+    }
+
+
 @router.get("/quizzes/{quiz_id}")
 def get_quiz(quiz_id: str, user: CurrentUser = Depends(get_current_user)):
     result = (supabase.table("quizzes")
