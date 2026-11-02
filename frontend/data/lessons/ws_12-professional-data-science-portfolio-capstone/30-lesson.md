@@ -1,7 +1,8 @@
 # Lesson 30: Capstone: Validation and Iteration
 
 ## Learning outcomes
-Apply the professional practice, produce the capstone artefact and communicate evidence and limitations clearly.
+
+By the end of this lesson, you should be able to Iterate the capstone using validation and error analysis; record changes and reasons; test sensitivity to assumptions; and avoid choosing changes on the final test set.
 
 ## 1. Core explanation
 Validation checks whether findings are robust to reasonable changes in assumptions, samples or methods. For predictive work, use held-out data and inspect errors. For descriptive analysis, test whether conclusions change when definitions, date ranges or outlier handling vary. For statistical comparisons, examine assumptions and effect sizes.
