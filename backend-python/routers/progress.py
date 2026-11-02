@@ -149,6 +149,82 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
                 )
 
 
+def _course_assessment_summary(user_id: str, course_id: str):
+    """Completion gates for published quizzes and manually graded assignments."""
+    quizzes = (
+        supabase.table("quizzes")
+        .select("id,title,passing_score")
+        .eq("course_id", course_id)
+        .eq("is_published", True)
+        .execute()
+    ).data or []
+    quiz_ids = [str(row["id"]) for row in quizzes if row.get("id")]
+    attempts = []
+    if quiz_ids:
+        attempts = (
+            supabase.table("quiz_attempts")
+            .select("quiz_id,score,passed,submitted_at")
+            .eq("user_id", user_id)
+            .in_("quiz_id", quiz_ids)
+            .execute()
+        ).data or []
+    passed_quiz_ids = set()
+    for quiz in quizzes:
+        threshold = effective_passing_score(quiz)
+        if any(
+            str(attempt.get("quiz_id")) == str(quiz["id"])
+            and attempt.get("passed") is True
+            and float(attempt.get("score") or 0) >= threshold
+            for attempt in attempts
+        ):
+            passed_quiz_ids.add(str(quiz["id"]))
+
+    assignments = (
+        supabase.table("assignments")
+        .select("id,title,max_score")
+        .eq("course_id", course_id)
+        .eq("is_published", True)
+        .execute()
+    ).data or []
+    assignment_ids = [str(row["id"]) for row in assignments if row.get("id")]
+    submissions = []
+    if assignment_ids:
+        submissions = (
+            supabase.table("assignment_submissions")
+            .select("id,assignment_id,status,score,submitted_at,graded_at")
+            .eq("user_id", user_id)
+            .in_("assignment_id", assignment_ids)
+            .order("submitted_at", desc=True)
+            .execute()
+        ).data or []
+    latest_by_assignment = {}
+    for submission in submissions:
+        key = str(submission.get("assignment_id"))
+        if key and key not in latest_by_assignment:
+            latest_by_assignment[key] = submission
+    passed_assignment_ids = set()
+    for assignment in assignments:
+        submission = latest_by_assignment.get(str(assignment["id"]))
+        if not submission or submission.get("status") != "graded" or not submission.get("graded_at"):
+            continue
+        maximum = float(assignment.get("max_score") or 100)
+        threshold = maximum * 0.7
+        if float(submission.get("score") or 0) >= threshold:
+            passed_assignment_ids.add(str(assignment["id"]))
+
+    total = len(quizzes) + len(assignments)
+    completed = len(passed_quiz_ids) + len(passed_assignment_ids)
+    return {
+        "total_quizzes": len(quizzes),
+        "passed_quizzes": len(passed_quiz_ids),
+        "total_assignments": len(assignments),
+        "passed_assignments": len(passed_assignment_ids),
+        "total_assessments": total,
+        "completed_assessments": completed,
+        "completed": total == completed,
+    }
+
+
 def _course_summary(user_id: str, course_id: str, include_archived: bool = False):
     enrolment = _enrolment(user_id, course_id)
     if not enrolment:
@@ -214,7 +290,10 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
     )
 
     total = len(lessons)
-    percent = round((completed / total) * 100) if total else 0
+    assessment_summary = _course_assessment_summary(user_id, course_id)
+    total_units = total + assessment_summary["total_assessments"]
+    completed_units = completed + assessment_summary["completed_assessments"]
+    percent = round((completed_units / total_units) * 100) if total_units else 0
 
     module_views = []
     for module in modules:
@@ -249,7 +328,10 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
         "total_lessons": total,
         "completed_lessons": completed,
         "progress_percent": percent,
-        "completed": total > 0 and completed == total,
+        "completed": total_units > 0 and completed_units == total_units,
+        "total_assessments": assessment_summary["total_assessments"],
+        "completed_assessments": assessment_summary["completed_assessments"],
+        "assessment_summary": assessment_summary,
         "modules": module_views,
     }
 
