@@ -1,7 +1,8 @@
 # Lesson 10: Preparing Data for Learning
 
 ## Learning outcomes
-Explain the method, implement the example in Python, interpret its result, and identify risks that could invalidate the conclusion.
+
+By the end of this lesson, you should be able to Choose suitable imputation, scaling and categorical encoding methods; distinguish fit from transform; use ColumnTransformer and Pipeline; and explain why transformations must be learned from training data only.
 
 ## 1. Concepts and reasoning
 Models generally require consistent numeric inputs. Preparation may include handling missing values, encoding categories, scaling numeric fields and correcting invalid types. These steps should be chosen based on the variable meaning and model requirements, not applied mechanically.
