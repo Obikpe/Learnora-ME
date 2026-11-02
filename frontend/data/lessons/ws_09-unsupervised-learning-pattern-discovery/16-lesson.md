@@ -1,36 +1,34 @@
-# Lesson 16: Unsupervised Learning in Practice
+# Lesson 16: Unsupervised Learning Project
 
 ## Learning outcomes
 Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
 
 ## 1. Core explanation
-An unsupervised project needs a clear objective even though it has no labelled target. Define the unit of observation, feature representation, purpose and intended use. Decide whether the output is for exploration, segmentation, anomaly triage or dimensionality reduction. Establish how usefulness will be judged before running algorithms.
+The final project applies an unsupervised method to a dataset with a defensible analytical purpose. Choose clustering, dimensionality reduction, anomaly detection or association analysis. Define the observation unit and feature meaning. Explain why an unsupervised method is appropriate and what decision or investigation it supports.
 
-Compare a simple baseline or alternative algorithm. Test stability across seeds, samples and reasonable parameter changes. Inspect original records and profiles. Document how preprocessing and distance choices influence the result. If the clusters are weak or unstable, report that rather than forcing a narrative.
+Prepare data carefully, justify scaling and encoding, compare parameters or methods and validate stability. Profile clusters in original units or investigate flagged anomalies. Include visuals that clarify structure without implying more certainty than the method supports.
 
-Communicate what the algorithm discovered under its assumptions and what it did not prove. An unsupervised result does not establish causal drivers, future outcomes or objectively correct categories.
+Deliver a reproducible repository, data dictionary, analysis, evaluation, report and limitations. State whether the result is suitable for action, exploratory only or inconclusive. Do not label an anomaly as fraud or a cluster as a real customer type without independent evidence.
 
 ## 2. Worked Python example
 Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
 
 ```python
-# Unsupervised project record
-project = {
-    "purpose": "Explore customer purchasing patterns",
-    "unit": "Customer-quarter",
-    "features": ["recency", "frequency", "monetary_value"],
-    "preprocessing": "Median imputation and standardisation",
-    "methods": ["KMeans", "Agglomerative clustering"],
-    "validation": ["Silhouette", "Seed stability", "Business profile review"]
-}
-print(project)
+# Project deliverables
+# README with problem and purpose
+# Data source, licence and data dictionary
+# Reproducible preprocessing and analysis
+# At least two methods or parameter settings
+# Validation and stability analysis
+# Cluster profiles or anomaly review
+# Limitations and recommended next step
 ```
 
 ## 3. Interpretation
 Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
 
 ## 4. Guided practice
-Write a project plan comparing K-means and hierarchical clustering. Include a validation plan and a rule for deciding that no useful clusters have been found.
+Submit the project with a five-minute presentation. Rubric: problem framing 15%, data preparation 20%, method selection 15%, validation and stability 20%, interpretation 15%, reproducibility and limitations 15%.
 
 ## 5. Independent practice
 Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
