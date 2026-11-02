@@ -1,7 +1,8 @@
 # Lesson 8: Feature Selection Fundamentals
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Explain filter, wrapper and embedded feature selection; fit SelectKBest inside a pipeline; compare selected variables with a baseline; and avoid choosing features using test data.
 
 ## 1. Core explanation
 Feature selection reduces the input set to variables that contribute useful information for the task. It can improve interpretability, reduce noise, lower training cost and help prevent overfitting. It is not the same as feature extraction: selection keeps original variables, while extraction creates new representations such as PCA components.
