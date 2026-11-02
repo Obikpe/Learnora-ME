@@ -2,13 +2,21 @@
 
 import hashlib
 import hmac
+from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
-from .auth import JWT_SECRET, CurrentUser, get_current_user, supabase
+from .auth import JWT_SECRET, CurrentUser, get_current_user, log_audit_event, supabase
+from .internal_auth import InternalStaffContext, require_internal_permission
 from .progress import _course_summary
 
 router = APIRouter(prefix="/api/credentials", tags=["Credentials"])
+
+
+class CertificateRevocationIn(BaseModel):
+    reason: str = Field(..., min_length=5, max_length=1000)
 
 
 def _certificate_number(user_id: str, course_id: str) -> str:
@@ -39,6 +47,9 @@ def _certificate_view(row: dict, course_title: str | None = None) -> dict:
         "id": row.get("id"),
         "certificate_number": row.get("certificate_number"),
         "issued_at": row.get("issued_at"),
+        "revoked_at": row.get("revoked_at"),
+        "revocation_reason": row.get("revocation_reason"),
+        "valid": not bool(row.get("revoked_at")),
         "course_id": row.get("course_id"),
         "course_title": course_title or metadata.get("course_title") or "Learnora course",
         "recipient_name": metadata.get("recipient_name") or "Learnora learner",
@@ -50,7 +61,7 @@ def _certificate_view(row: dict, course_title: str | None = None) -> dict:
 def my_credentials(user: CurrentUser = Depends(get_current_user)):
     rows = (
         supabase.table("certificates")
-        .select("id,user_id,course_id,certificate_number,issued_at,metadata")
+        .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
         .eq("user_id", user.id)
         .order("issued_at", desc=True)
         .execute()
@@ -187,7 +198,7 @@ def verify_certificate(certificate_number: str):
         raise HTTPException(404, "Certificate not found.")
     rows = (
         supabase.table("certificates")
-        .select("id,course_id,certificate_number,issued_at,metadata")
+        .select("id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
         .eq("certificate_number", number)
         .limit(1)
         .execute()
@@ -206,9 +217,12 @@ def verify_certificate(certificate_number: str):
     metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
     return {
         "success": True,
-        "valid": True,
+        "valid": not bool(row.get("revoked_at")),
         "certificate": {
             "certificate_number": row.get("certificate_number"),
+            "status": "revoked" if row.get("revoked_at") else "valid",
+            "revoked_at": row.get("revoked_at"),
+            "revocation_reason": row.get("revocation_reason"),
             "issued_at": row.get("issued_at"),
             "course_title": (course_rows[0].get("title") if course_rows else None) or metadata.get("course_title") or "Learnora course",
             "recipient_name": metadata.get("recipient_name") or "Learnora learner",
@@ -216,3 +230,50 @@ def verify_certificate(certificate_number: str):
             "issuer": "Learnora ME",
         },
     }
+
+
+@router.post("/internal/{certificate_id}/revoke")
+def revoke_certificate(
+    certificate_id: str,
+    body: CertificateRevocationIn,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
+):
+    try:
+        certificate_id = str(UUID(certificate_id))
+    except ValueError:
+        raise HTTPException(404, "Certificate not found.") from None
+    reason = body.reason.strip()
+    if len(reason) < 5:
+        raise HTTPException(422, "Provide a meaningful revocation reason.")
+    rows = (
+        supabase.table("certificates")
+        .select("id,certificate_number,revoked_at")
+        .eq("id", certificate_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    if not rows:
+        raise HTTPException(404, "Certificate not found.")
+    if rows[0].get("revoked_at"):
+        return {"success": True, "already_revoked": True, "certificate_number": rows[0]["certificate_number"]}
+    now = datetime.now(timezone.utc).isoformat()
+    saved = (
+        supabase.table("certificates")
+        .update({"revoked_at": now, "revoked_by": staff.user_id, "revocation_reason": reason})
+        .eq("id", certificate_id)
+        .is_("revoked_at", "null")
+        .execute()
+    ).data or []
+    if not saved:
+        latest = supabase.table("certificates").select("revoked_at,certificate_number").eq("id", certificate_id).limit(1).execute().data or []
+        if latest and latest[0].get("revoked_at"):
+            return {"success": True, "already_revoked": True, "certificate_number": latest[0].get("certificate_number")}
+        raise HTTPException(409, "Certificate revocation could not be confirmed.")
+    log_audit_event(
+        action="course_certificate_revoked",
+        email=staff.email,
+        account_type="staff",
+        role="staff",
+        metadata={"staff_id": staff.staff_id, "certificate_id": certificate_id, "certificate_number": rows[0]["certificate_number"], "reason": reason},
+    )
+    return {"success": True, "certificate": {"id": certificate_id, "certificate_number": rows[0]["certificate_number"], "revoked_at": now}}
