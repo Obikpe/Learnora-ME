@@ -110,13 +110,28 @@ jobs:
             supabase/migrations/20261021220849_revoke_trigger_function_browser_execute.sql \
             supabase/migrations/20261102090000_learner_learning_plans.sql \
             supabase/migrations/20261102100000_quiz_active_sessions.sql \
-            supabase/migrations/20261102110000_certificate_revocation.sql
+            supabase/migrations/20261102110000_certificate_revocation.sql \
+            supabase/migrations/20261102120000_track_reviews.sql
           do
             psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/learner_learning_plans_assertions.sql
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/quiz_active_sessions_assertions.sql
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT revoked_at, revoked_by, revocation_reason FROM public.certificates LIMIT 0"
+          psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/track_reviews_assertions.sql
+          psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          \i supabase/rollback/20261102120000_track_reviews.rollback.sql
+          DO $do$ BEGIN
+            IF to_regclass('public.learnora_track_reviews') IS NOT NULL THEN
+              RAISE EXCEPTION 'track review rollback did not remove the table';
+            END IF;
+            IF EXISTS (SELECT 1 FROM public.learnora_permissions WHERE permission_key='track_reviews.moderate') THEN
+              RAISE EXCEPTION 'track review rollback did not remove the moderation permission';
+            END IF;
+          END $do$;
+          ROLLBACK;
+          SQL
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
           BEGIN;
           \i supabase/rollback/20261102110000_certificate_revocation.rollback.sql
