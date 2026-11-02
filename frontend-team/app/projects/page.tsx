@@ -47,10 +47,10 @@ export default function ProjectsWorkspace(){
  const loadDetail=useCallback(async(id:string)=>{
   if(!id){setDetail(null);setSubmissions([]);return;}
   try{
-   const [p,s]=await Promise.all([request<any>("/projects/"+encodeURIComponent(id)),request<any>("/projects/"+encodeURIComponent(id)+"/submissions")]);
-   setDetail(p.project||p);setSubmissions(s.submissions||[]);
+   const [s]=await Promise.all([request<any>("/projects/"+encodeURIComponent(id)+"/submissions")]);
+   setDetail(projects.find(p=>String(p.id)===String(id))||null);setSubmissions(s.submissions||[]);
   }catch(e:any){setError(e.message||"Project details could not be loaded.");}
- },[]);
+ },[projects]);
  useEffect(()=>{teamMe().then(x=>setRoles(x.roles||[])).catch(e=>setError(e.message||"Staff session unavailable."));void load();},[load]);
  useEffect(()=>{if(selected)void loadDetail(selected);else{setDetail(null);setSubmissions([])}},[selected,loadDetail]);
 
