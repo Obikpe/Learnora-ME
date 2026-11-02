@@ -92,7 +92,7 @@ df = pd.DataFrame({
 })
 fig, ax = plt.subplots(figsize=(7, 4))
 sns.pointplot(data=df, x="group", y="score",
-              estimator="mean", errorbar=("ci", 95),
+              errorbar=("ci", 95),
               n_boot=2000, ax=ax)
 ax.set(title="Mean score with 95% confidence intervals",
        ylabel="Mean score")
