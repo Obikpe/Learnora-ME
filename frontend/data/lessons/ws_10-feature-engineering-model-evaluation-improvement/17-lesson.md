@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Plot ROC and precision-recall curves; calculate ROC AUC and average precision; explain why PR analysis is informative for rare positives; and distinguish ranking from threshold performance.
+By the end of this lesson, you should be able to Choose a classification threshold using false-positive and false-negative costs; calculate total decision cost; compare thresholds; and state why threshold selection must use validation data rather than the final test set.
 
 ## 1. Core explanation
 A classifier's default threshold of 0.5 is a convention, not a law. The best threshold depends on the costs of false positives and false negatives, the prevalence of the positive class and operational capacity. A lower threshold usually finds more positives but creates more false alarms.
