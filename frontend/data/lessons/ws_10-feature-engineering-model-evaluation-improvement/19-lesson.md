@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Explain the bias-variance trade-off; compare training and held-out scores across model complexity; diagnose underfitting and overfitting; and propose a controlled improvement.
+By the end of this lesson, you should be able to Use GridSearchCV to tune hyperparameters; build a search around a leakage-safe pipeline; define a suitable scoring metric and cross-validation splitter; and report the best configuration without test-set tuning.
 
 ## 1. Core explanation
 Hyperparameters are settings chosen before or around model fitting, such as tree depth, regularisation strength or number of neighbours. Grid search evaluates a specified set of combinations; random search samples combinations and can explore broad spaces more efficiently when only a few settings strongly affect performance.
