@@ -1,7 +1,8 @@
 # Lesson 17: Naive Bayes
 
 ## Learning outcomes
-Explain the technique, implement the worked example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Explain Bayes' theorem and the conditional-independence assumption; distinguish Gaussian, Multinomial and Bernoulli Naive Bayes; build a text-count pipeline; and evaluate class-wise errors.
 
 ## 1. Core explanation
 Naive Bayes applies Bayes' theorem to estimate class probabilities from features. The “naive” assumption is that features are conditionally independent given the class. This assumption is often unrealistic, but the method can still perform well, especially for text classification and high-dimensional sparse data.
