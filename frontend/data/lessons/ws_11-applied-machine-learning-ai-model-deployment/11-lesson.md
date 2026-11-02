@@ -1,7 +1,8 @@
 # Lesson 11: Deployment Options and Trade-Offs
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Compare batch, online API and edge deployment; evaluate latency, throughput, cost, connectivity and maintenance; and choose a deployment pattern suited to the use case.
 
 ## 1. Core explanation
 Deployment means making a model available to the process that needs its output. Options include batch jobs, scheduled pipelines, a web API, an embedded model in an application or an edge device. Batch prediction is often simpler and cheaper when real-time responses are unnecessary. An API suits interactive requests but introduces availability and latency requirements.
