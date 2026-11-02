@@ -1,7 +1,8 @@
 # Lesson 19: Writing Strong Case Studies
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Write a project case study covering problem, context, data, method, evidence, personal contribution, limitations and next steps; and remove unsupported claims.
 
 ## 1. Core explanation
 A case study tells the story of a project through problem, evidence, method, result and limitations. Start with the decision or question, then explain why it matters. Describe the data source, coverage and preparation. Explain the method in enough detail for a technical reader to assess it, but avoid turning the case study into a list of code cells.
