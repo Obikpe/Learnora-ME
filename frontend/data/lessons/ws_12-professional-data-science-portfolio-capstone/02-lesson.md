@@ -1,7 +1,8 @@
 # Lesson 2: Turning a Vague Request into an Analytical Problem
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Translate a vague stakeholder request into a decision question, population, unit of analysis, time window and intended action; and identify scope and ethical guardrails.
 
 ## 1. Core explanation
 Stakeholder requests often begin as symptoms: “sales are falling”, “find risky learners” or “show which customers matter”. Convert the request into a specific decision and measurable question. Ask who needs the answer, what action they can take, when it is needed and what would count as success.
