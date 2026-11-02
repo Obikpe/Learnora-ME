@@ -54,8 +54,8 @@ export default function Courses() {
         </div>
         <div className="border-l border-[#d7ad35]/50 pl-5">
           <BookOpen size={22} className="gold"/>
-          <p className="mt-4 text-lg font-semibold">A catalogue grounded in what’s live</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">No invented courses or placeholder enrolment counts. If a course is not published by the platform, it will not appear here.</p>
+          <p className="mt-4 text-lg font-semibold">Find your next step</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Browse published courses by level, topic or learning track.</p>
         </div>
       </section>
 
