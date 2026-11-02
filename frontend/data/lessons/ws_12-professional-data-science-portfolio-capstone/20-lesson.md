@@ -1,7 +1,8 @@
 # Lesson 20: Presenting Projects and Demonstrating Work
 
 ## Learning outcomes
-Apply the professional practice, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Present a project in a concise narrative; demonstrate a working artefact; prepare backup material; and distinguish a prototype from a validated or deployed system.
 
 ## 1. Core explanation
 A project presentation should lead the audience through a decision narrative: context, question, evidence, method, result, limitation and recommendation. Start with the problem rather than the software. Show only technical detail needed to establish credibility and answer likely questions.
