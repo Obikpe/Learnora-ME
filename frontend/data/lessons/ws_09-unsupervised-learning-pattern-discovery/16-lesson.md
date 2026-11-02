@@ -1,7 +1,8 @@
 # Lesson 16: Unsupervised Learning Project
 
 ## Learning outcomes
-Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Deliver a reproducible unsupervised project with data provenance, preprocessing, method comparison, stability checks, profiles or anomaly review, limitations and a justified recommendation.
 
 ## 1. Core explanation
 The final project applies an unsupervised method to a dataset with a defensible analytical purpose. Choose clustering, dimensionality reduction, anomaly detection or association analysis. Define the observation unit and feature meaning. Explain why an unsupervised method is appropriate and what decision or investigation it supports.
