@@ -1,7 +1,8 @@
 # Lesson 15: Data Drift and Concept Drift
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Distinguish data drift from concept drift; use a distribution comparison such as the Kolmogorov–Smirnov test carefully; and explain why statistical change alone does not prove model degradation.
 
 ## 1. Core explanation
 Data drift occurs when the input feature distribution changes. Concept drift occurs when the relationship between features and target changes. A change in customer demographics may create data drift; a new fraud strategy may change how transaction features relate to fraud. Drift can occur independently or together.
