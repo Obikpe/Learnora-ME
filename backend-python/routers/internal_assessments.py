@@ -87,6 +87,7 @@ class AssignmentWrite(BaseModel):
     description: Optional[str] = Field(None, max_length=5000)
     instructions: Optional[str] = Field(None, max_length=12000)
     due_date: Optional[str] = None
+    lesson_id: Optional[str] = Field(None, max_length=80)
     max_score: Optional[float] = Field(None, gt=0, le=100000)
     is_published: Optional[bool] = None
 
@@ -427,6 +428,13 @@ def update_assignment(assignment_id: str, body: AssignmentWrite, staff: Internal
         raise HTTPException(400, "No assignment changes supplied.")
     if any(key in updates and updates[key] is None for key in ("title", "is_published")):
         raise HTTPException(422, "Assignment title and publication status cannot be null.")
+    if rows[0].get("is_published") and any(key != "is_published" for key in updates):
+        raise HTTPException(409, "Unpublish the assignment before changing its settings.")
+    if "lesson_id" in updates:
+        updates["lesson_id"] = _validate_assessment_location(
+            str(rows[0]["course_id"]), None, updates.get("lesson_id"),
+            require_published=updates.get("is_published") is True,
+        )
     if updates.get("is_published") is True:
         current_location = supabase.table("assignments").select("lesson_id").eq("id", assignment_id).limit(1).execute().data or []
         _validate_assessment_location(str(rows[0]["course_id"]), None, current_location[0].get("lesson_id") if current_location else None, require_published=True)
