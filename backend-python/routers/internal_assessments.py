@@ -211,6 +211,110 @@ def list_course_assessments(course_id: str, staff: InternalStaffContext = Depend
     return {"success": True, "modules": modules, "quizzes": quizzes, "assignments": assignments}
 
 
+@router.get("/courses/{course_id}/performance")
+def course_performance(course_id: str, staff: InternalStaffContext = Depends(require_internal_permission("courses.view"))):
+    _course(course_id)
+    enrolments = (
+        supabase.table("learnora_enrolments")
+        .select("id,user_id,status,enrolled_at,completed_at,organisation_id,cohort_id")
+        .eq("course_id", course_id)
+        .in_("status", ["active", "completed"])
+        .order("enrolled_at", desc=True)
+        .execute()
+    ).data or []
+    user_ids = list({str(row["user_id"]) for row in enrolments if row.get("user_id")})
+    if not user_ids:
+        return {"success": True, "course_id": course_id, "learners": [], "count": 0}
+    users = supabase.table("users").select("id,name,email,role").in_("id", user_ids).execute().data or []
+    user_map = {str(row["id"]): row for row in users}
+    modules = (
+        supabase.table("course_modules")
+        .select("id")
+        .eq("course_id", course_id)
+        .eq("status", "published")
+        .execute()
+    ).data or []
+    module_ids = [str(row["id"]) for row in modules]
+    lessons = (
+        supabase.table("learnora_lessons")
+        .select("id")
+        .in_("module_id", module_ids)
+        .eq("status", "published")
+        .execute()
+    ).data or [] if module_ids else []
+    lesson_ids = [str(row["id"]) for row in lessons]
+    progress_rows = (
+        supabase.table("learnora_lesson_progress")
+        .select("user_id,lesson_id,progress_percent,completed,last_accessed_at")
+        .in_("user_id", user_ids)
+        .in_("lesson_id", lesson_ids)
+        .execute()
+    ).data or [] if lesson_ids else []
+    quizzes = (
+        supabase.table("quizzes")
+        .select("id,title,passing_score")
+        .eq("course_id", course_id)
+        .eq("is_published", True)
+        .execute()
+    ).data or []
+    quiz_ids = [str(row["id"]) for row in quizzes]
+    attempts = (
+        supabase.table("quiz_attempts")
+        .select("id,user_id,quiz_id,score,passed,submitted_at")
+        .in_("user_id", user_ids)
+        .in_("quiz_id", quiz_ids)
+        .order("submitted_at", desc=True)
+        .execute()
+    ).data or [] if quiz_ids else []
+    assignments = (
+        supabase.table("assignments")
+        .select("id,title,max_score")
+        .eq("course_id", course_id)
+        .eq("is_published", True)
+        .execute()
+    ).data or []
+    assignment_ids = [str(row["id"]) for row in assignments]
+    submissions = (
+        supabase.table("assignment_submissions")
+        .select("id,user_id,assignment_id,status,score,feedback,submitted_at,graded_at")
+        .in_("user_id", user_ids)
+        .in_("assignment_id", assignment_ids)
+        .order("submitted_at", desc=True)
+        .execute()
+    ).data or [] if assignment_ids else []
+    by_user_progress, by_user_attempts, by_user_submissions = {}, {}, {}
+    for row in progress_rows:
+        by_user_progress.setdefault(str(row["user_id"]), []).append(row)
+    for row in attempts:
+        by_user_attempts.setdefault(str(row["user_id"]), []).append(row)
+    for row in submissions:
+        by_user_submissions.setdefault(str(row["user_id"]), []).append(row)
+    learners = []
+    for enrolment in enrolments:
+        user_id = str(enrolment.get("user_id"))
+        learner_progress = by_user_progress.get(user_id, [])
+        learner_attempts = by_user_attempts.get(user_id, [])
+        learner_submissions = by_user_submissions.get(user_id, [])
+        learners.append({
+            "enrolment": enrolment,
+            "learner": user_map.get(user_id),
+            "lesson_summary": {
+                "total": len(lesson_ids),
+                "completed": sum(1 for row in learner_progress if row.get("completed")),
+                "tracked": len(learner_progress),
+            },
+            "quiz_attempts": learner_attempts,
+            "assignment_submissions": learner_submissions,
+            "assessment_summary": {
+                "quizzes_passed": len({str(row["quiz_id"]) for row in learner_attempts if row.get("passed")}),
+                "quizzes_total": len(quizzes),
+                "assignments_graded": sum(1 for row in learner_submissions if row.get("status") == "graded"),
+                "assignments_total": len(assignments),
+            },
+        })
+    return {"success": True, "course_id": course_id, "learners": learners, "count": len(learners)}
+
+
 @router.post("/courses/{course_id}/quizzes", status_code=201)
 def create_quiz(course_id: str, body: QuizCreate, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
     _course(course_id)
