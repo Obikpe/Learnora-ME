@@ -96,18 +96,20 @@ class GradeSubmissionIn(BaseModel):
     feedback: Optional[str] = Field(None, max_length=10000)
 
 
-def _validate_assessment_location(course_id: str, module_id: Optional[str], lesson_id: Optional[str]):
+def _validate_assessment_location(course_id: str, module_id: Optional[str], lesson_id: Optional[str], require_published: bool = False):
     resolved_module = module_id
     if lesson_id:
         lesson_rows = (
             supabase.table("learnora_lessons")
-            .select("id,module_id")
+            .select("id,module_id,status")
             .eq("id", lesson_id)
             .limit(1)
             .execute()
         ).data or []
         if not lesson_rows:
             raise HTTPException(404, "Lesson not found.")
+        if require_published and lesson_rows[0].get("status") != "published":
+            raise HTTPException(409, "Publish the lesson before publishing its assessment.")
         lesson_module = str(lesson_rows[0]["module_id"])
         if resolved_module and str(resolved_module) != lesson_module:
             raise HTTPException(422, "The selected lesson does not belong to the selected module.")
@@ -115,7 +117,7 @@ def _validate_assessment_location(course_id: str, module_id: Optional[str], less
     if resolved_module:
         module_rows = (
             supabase.table("course_modules")
-            .select("id,course_id")
+            .select("id,course_id,status")
             .eq("id", resolved_module)
             .eq("course_id", course_id)
             .limit(1)
@@ -123,6 +125,8 @@ def _validate_assessment_location(course_id: str, module_id: Optional[str], less
         ).data or []
         if not module_rows:
             raise HTTPException(422, "The selected module does not belong to this course.")
+        if require_published and module_rows[0].get("status") != "published":
+            raise HTTPException(409, "Publish the module before publishing its assessment.")
     return resolved_module
 
 
@@ -173,6 +177,8 @@ def _validate_question_payload(question: dict):
 
 
 def _assert_quiz_publishable(quiz_id: str):
+    quiz = _quiz(quiz_id)
+    _validate_assessment_location(str(quiz["course_id"]), quiz.get("module_id"), quiz.get("lesson_id"), require_published=True)
     questions = _question_rows(quiz_id)
     if not questions:
         raise HTTPException(409, "Add at least one question before publishing this quiz.")
@@ -399,7 +405,7 @@ def delete_quiz_question(question_id: str, staff: InternalStaffContext = Depends
 @router.post("/courses/{course_id}/assignments", status_code=201)
 def create_assignment(course_id: str, body: AssignmentCreate, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
     _course(course_id)
-    _validate_assessment_location(course_id, None, body.lesson_id)
+    _validate_assessment_location(course_id, None, body.lesson_id, require_published=body.is_published)
     payload = body.model_dump()
     payload["course_id"] = course_id
     if payload.get("is_published") and not (payload.get("instructions") or payload.get("description")):
@@ -421,6 +427,9 @@ def update_assignment(assignment_id: str, body: AssignmentWrite, staff: Internal
         raise HTTPException(400, "No assignment changes supplied.")
     if any(key in updates and updates[key] is None for key in ("title", "is_published")):
         raise HTTPException(422, "Assignment title and publication status cannot be null.")
+    if updates.get("is_published") is True:
+        current_location = supabase.table("assignments").select("lesson_id").eq("id", assignment_id).limit(1).execute().data or []
+        _validate_assessment_location(str(rows[0]["course_id"]), None, current_location[0].get("lesson_id") if current_location else None, require_published=True)
     if updates.get("is_published") is True and not (updates.get("instructions") or updates.get("description")):
         current = supabase.table("assignments").select("description,instructions").eq("id", assignment_id).limit(1).execute().data or []
         if not current or not (current[0].get("instructions") or current[0].get("description")):
