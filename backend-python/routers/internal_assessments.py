@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from .auth import log_audit_event, supabase
 from .internal_auth import InternalStaffContext, require_internal_permission
+from .progress import effective_passing_score
 
 router = APIRouter(prefix="/api/internal/assessments", tags=["Internal Assessments"])
 def _course(course_id: str) -> dict:
