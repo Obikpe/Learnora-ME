@@ -1,7 +1,8 @@
 # Lesson 12: Visualising Missing Data and Data Quality
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to quantify and visualise missingness; compare missing rates across fields and groups; distinguish missing values from true zeros; explain MCAR, MAR and MNAR conceptually; and propose data-quality investigations.
 
 ## 1. Core explanation
 Missingness is information about the dataset and its collection process. A blank may mean not measured, not applicable, refused, unavailable or lost during processing. These meanings are not interchangeable. Count missing values by column and check whether missingness differs across groups or time.
