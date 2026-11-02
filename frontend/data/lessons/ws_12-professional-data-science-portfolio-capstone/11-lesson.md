@@ -1,7 +1,8 @@
 # Lesson 11: Exploratory Analysis for Stakeholders
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Present exploratory findings to stakeholders using clear measures, denominators and charts; distinguish counts from rates; and separate descriptive evidence from explanations.
 
 ## 1. Core explanation
 Exploratory data analysis for stakeholders begins with a decision question. Summarise the population, time period, key measures and important segments. Use appropriate comparisons and show denominators. A trend in counts may simply reflect growth in the population; rates can provide fairer comparison.
