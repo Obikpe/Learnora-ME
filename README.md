@@ -66,3 +66,5 @@ Current product sequencing is documented in [the Free Launch → Paid Expansion 
 - [Engineering history and decisions](docs/ENGINEERING_HISTORY_AND_DECISIONS.md)
 - [UI/UX research and decisions](docs/learnora-ui-ux-research.md)
 - [Active schema and migration reconciliation](docs/active-pheonix-migration-reconciliation.md)
+
+- [Learner Outcomes Phases 6–8](docs/LEARNER_OUTCOMES_PHASES_6_8.md) — certificates, verification, Practice Lab, project review, skill mastery and portfolio.
