@@ -1,49 +1,42 @@
 # Lesson 17: Presenting Insights to Different Audiences
 
 ## Learning outcomes
-Adapt analytical communication to an audience; distinguish evidence from interpretation; structure a concise presentation; annotate charts with context; and answer questions about uncertainty and limitations.
+Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
 
-## 1. The audience changes the explanation, not the evidence
+## 1. Core explanation
+The same analysis needs different explanations for different audiences. A decision-maker needs the question, finding, implication, risk and recommended action. A technical reviewer needs data definitions, sampling, methods, assumptions, diagnostics and reproducibility. An operational user needs to know what to do, when to do it and when not to trust the output.
 
-A technical audience may want methods, assumptions, data quality and uncertainty. A senior decision-maker may need the decision, expected impact, risk and next action. A general audience may need plain language and a clear explanation of why the finding matters. The underlying numbers must remain consistent. Never change a conclusion to make it more persuasive.
+Do not change the underlying evidence when changing the presentation. Change the level of detail and vocabulary. Define terms rather than assuming shared knowledge. Use annotations to guide attention, but leave enough context for the reader to verify the claim. Be prepared to explain uncertainty and answer “what would change your recommendation?”
 
-## 2. Start with the decision
+A good presentation distinguishes three layers: what was observed, what it may mean and what action is justified. Keep the technical appendix available and disclose limitations in the main narrative when they affect the decision.
 
-Before preparing slides, answer:
-- Who will use this analysis?
-- What decision or understanding do they need?
-- What do they already know?
-- What is the cost of misunderstanding the result?
-- What action is realistically available?
+## 2. Worked Python example
+Run in VS Code. Install required packages with `python -m pip install pandas numpy matplotlib seaborn plotly`.
 
-A presentation should not force the audience to discover the conclusion from a sequence of unexplained charts.
+```python
+audience_messages = {
+    "executive": "Completion declined by 8 percentage points; investigate support access in two cohorts.",
+    "technical": "The six-week cohort comparison is descriptive; sample sizes and confounding limit causal inference.",
+    "operations": "Review support requests and attendance for the two cohorts before changing the programme."
+}
+for audience, message in audience_messages.items():
+    print(audience.title(), ":", message)
+```
 
-## 3. A reliable narrative structure
+## 3. Interpretation and design checks
+State the analytical question, population, variables, units and denominator. Check missingness and sample size. Distinguish observations from explanations and recommendations. Design for the actual audience and the size at which the visual will be viewed.
 
-1. Context: what problem are we examining?
-2. Question: what did we need to find out?
-3. Evidence: what data and method were used?
-4. Finding: what does the analysis show?
-5. Meaning: why does it matter?
-6. Action: what should happen next?
-7. Caveats: what cannot be concluded?
+## 4. Guided practice
+Take one finding and write three versions: executive, technical and operational. Check that the evidence and caveat remain consistent across all three.
 
-## 4. Annotate responsibly
+## 5. Independent practice
+Apply the lesson to a dataset. Create a chart or artefact, write a caption that states the main message and caveat, and ask another person to interpret it without your explanation.
 
-A chart title should state the subject and, where useful, the finding. Axis labels need units. State the period, population and source. If a chart shows a percentage, define the denominator. If values are estimates, say so. Avoid truncated axes that exaggerate differences and avoid decorative 3D effects that distort perception.
+## 6. Knowledge check
+1. What question does this visual answer?
+2. Which encoding or design choice supports the comparison?
+3. What could mislead the audience?
+4. What uncertainty or limitation must be disclosed?
 
-## 5. Technical appendix and reproducibility
-
-Keep detailed methods, data definitions, sample sizes and validation checks available for technical review. A concise executive presentation is not a reason to hide methodological weaknesses. Preserve the code and data provenance so another analyst can reproduce the result.
-
-## Guided practice
-1. Explain one finding to a technical colleague and to a non-technical manager.
-2. Rewrite a vague chart title as a finding-led title.
-3. Add source, period, units and denominator to a chart.
-4. State one limitation without undermining a valid conclusion.
-
-## Independent practice
-Prepare a five-slide presentation from a small dataset: question, method, three evidence-led findings, recommended action and limitations. Include speaker notes explaining assumptions and likely audience questions.
-
-## Summary
-Effective communication makes evidence understandable and actionable without overstating it. Adapt vocabulary and detail, not the facts. The final lesson brings the visualisation workflow together in a portfolio artefact.
+## Lesson summary
+Effective visual communication combines accurate encoding, clear context, audience-aware design and honest interpretation.
