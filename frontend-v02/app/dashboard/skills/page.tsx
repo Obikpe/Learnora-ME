@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
-import {Award,BrainCircuit,ChartNoAxesColumnIncreasing,ShieldCheck,Sparkles} from "lucide-react";
+import {Award,BarChart3,ShieldCheck,Sparkles} from "lucide-react";
 import {request} from "../../../lib/api/client";
 import Shell from "../../../components/dashboard/Shell";
 import EmptyState from "../../../components/feedback/EmptyState";
