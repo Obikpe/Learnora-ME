@@ -1,7 +1,8 @@
 # Lesson 1: The Professional Data Scientist's Role
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Describe the responsibilities of a professional data scientist across problem framing, data work, analysis, modelling, communication and governance; and distinguish evidence-based practice from simply applying tools.
 
 ## 1. Core explanation
 A data scientist turns data into evidence that supports decisions. The work includes problem framing, data acquisition, analysis, modelling, evaluation, communication and responsible use. The role is collaborative: domain experts explain the context, engineers support reliable systems, analysts understand reporting needs and decision-makers own the actions.
