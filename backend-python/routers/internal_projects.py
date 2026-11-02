@@ -284,6 +284,50 @@ def review_project_submission(
     if body.decision == "approved" and body.score < 70:
         raise HTTPException(422, "A project must score at least 70% to be approved as skill evidence.")
 
+    learner_id = str(rows[0]["user_id"])
+    skill_ids = [str(value) for value in (project.get("skills") or [])]
+    if body.decision == "approved" and not skill_ids:
+        raise HTTPException(409, "This project has no mapped skills and cannot be approved as verified evidence.")
+
+    # Prepare evidence before marking the submission approved. The learner's
+    # mastery view verifies evidence against the submission's approved status,
+    # so a failed review update cannot create verified evidence on its own.
+    if body.decision == "approved":
+        for skill_id in skill_ids:
+            existing = (
+                supabase.table("skill_evidence")
+                .select("id")
+                .eq("user_id", learner_id)
+                .eq("skill_id", skill_id)
+                .eq("evidence_type", "project")
+                .eq("source_id", submission_id)
+                .limit(1)
+                .execute()
+            ).data or []
+            evidence_payload = {
+                "user_id": learner_id,
+                "skill_id": skill_id,
+                "evidence_type": "project",
+                "source_id": submission_id,
+                "score": body.score,
+                "notes": body.feedback.strip() if body.feedback else "Project approved by Learnora staff.",
+            }
+            try:
+                if existing:
+                    saved_evidence = (
+                        supabase.table("skill_evidence")
+                        .update(evidence_payload)
+                        .eq("id", existing[0]["id"])
+                        .execute()
+                    ).data or []
+                else:
+                    saved_evidence = supabase.table("skill_evidence").insert(evidence_payload).execute().data or []
+            except Exception as exc:
+                print(f"Project evidence preparation failed: {type(exc).__name__}")
+                raise HTTPException(503, "The project evidence could not be prepared. The submission review was not approved.") from None
+            if not saved_evidence:
+                raise HTTPException(503, "The project evidence could not be prepared. The submission review was not approved.")
+
     now = datetime.now(timezone.utc).isoformat()
     saved = (
         supabase.table("project_submissions")
@@ -301,41 +345,14 @@ def review_project_submission(
     if not saved:
         raise HTTPException(500, "Project review could not be saved.")
 
-    if body.decision == "approved":
-        for skill_id in project.get("skills") or []:
-            existing = (
-                supabase.table("skill_evidence")
-                .select("id")
-                .eq("user_id", rows[0]["user_id"])
-                .eq("skill_id", str(skill_id))
-                .eq("evidence_type", "project")
-                .eq("source_id", submission_id)
-                .limit(1)
-                .execute()
-            ).data or []
-            evidence_payload = {
-                "user_id": rows[0]["user_id"],
-                "skill_id": str(skill_id),
-                "evidence_type": "project",
-                "source_id": submission_id,
-                "score": body.score,
-                "notes": body.feedback.strip() if body.feedback else "Project approved by Learnora staff.",
-            }
-            if existing:
-                supabase.table("skill_evidence").update(evidence_payload).eq("id", existing[0]["id"]).execute()
-            else:
-                supabase.table("skill_evidence").insert(evidence_payload).execute()
-    else:
-        # If an earlier approval is reversed, its derived evidence must no longer
-        # contribute to verified mastery. Keep the learner's submission history.
-        (
-            supabase.table("skill_evidence")
-            .delete()
-            .eq("user_id", rows[0]["user_id"])
-            .eq("evidence_type", "project")
-            .eq("source_id", submission_id)
-            .execute()
-        )
+    if body.decision == "returned":
+        # Once the status is returned, mastery verification excludes these
+        # records immediately, even if evidence cleanup needs a retry.
+        try:
+            supabase.table("skill_evidence").delete().eq("user_id", learner_id).eq("evidence_type", "project").eq("source_id", submission_id).execute()
+        except Exception as exc:
+            print(f"Returned project evidence cleanup failed: {type(exc).__name__}")
+            raise HTTPException(503, "The submission was returned, but evidence cleanup needs to be retried.") from None
 
     log_audit_event(
         action="project_submission_reviewed",
@@ -344,7 +361,7 @@ def review_project_submission(
         role="staff",
         metadata={
             "staff_id": staff.staff_id,
-            "learner_user_id": rows[0]["user_id"],
+            "learner_user_id": learner_id,
             "project_id": project_id,
             "submission_id": submission_id,
             "decision": body.decision,
