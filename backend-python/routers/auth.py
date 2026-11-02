@@ -52,24 +52,19 @@ account.
 
 Email delivery
 --------------
-Email is sent through Gmail SMTP when SMTP_USERNAME and SMTP_PASSWORD are
-configured. SMTP_PASSWORD must be a Google App Password, not the account
-login password. Resend remains supported as a fallback.
+Transactional email is sent through the Gmail API over HTTPS. The backend
+uses a Google OAuth refresh token with the narrowly scoped gmail.send
+permission. No SMTP connection, app password, Resend account, or custom
+sending domain is required.
 
-Gmail SMTP environment variables:
+Gmail API environment variables:
 
-    SMTP_HOST=smtp.gmail.com
-    SMTP_PORT=465
-    SMTP_USERNAME=sender@gmail.com
-    SMTP_PASSWORD=<Google App Password>
-    SMTP_FROM_EMAIL=sender@gmail.com
-    SMTP_FROM_NAME=Learnora Me
-
-Legacy Resend fallback:
-
-    RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx
-    RESEND_FROM_EMAIL=onboarding@resend.dev
-    RESEND_FROM_NAME=Learnora Me
+    GMAIL_OAUTH_CLIENT_ID=<Google OAuth client ID>
+    GMAIL_OAUTH_CLIENT_SECRET=<Google OAuth client secret>
+    GMAIL_OAUTH_REFRESH_TOKEN=<offline OAuth refresh token>
+    GMAIL_USER_EMAIL=sender@gmail.com
+    GMAIL_FROM_EMAIL=sender@gmail.com
+    GMAIL_FROM_NAME=Learnora Me
 """
 
 import hashlib
@@ -78,8 +73,7 @@ import hmac
 import os
 import re
 import secrets
-import smtplib
-import ssl
+import base64
 import time
 
 from collections import defaultdict, deque
@@ -656,25 +650,33 @@ def _iso(
 
 
 # ---------------------------------------------------------------------------
-# EMAIL CONFIGURATION
+# EMAIL CONFIGURATION — GMAIL API (HTTPS)
 # ---------------------------------------------------------------------------
 
-def _smtp_email_configured() -> bool:
+GMAIL_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GMAIL_API_SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
+GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send"
+
+GMAIL_OAUTH_CLIENT_ID = os.getenv("GMAIL_OAUTH_CLIENT_ID", "").strip()
+GMAIL_OAUTH_CLIENT_SECRET = os.getenv("GMAIL_OAUTH_CLIENT_SECRET", "").strip()
+GMAIL_OAUTH_REFRESH_TOKEN = os.getenv("GMAIL_OAUTH_REFRESH_TOKEN", "").strip()
+GMAIL_USER_EMAIL = os.getenv("GMAIL_USER_EMAIL", "").strip()
+GMAIL_FROM_EMAIL = os.getenv("GMAIL_FROM_EMAIL", "").strip() or GMAIL_USER_EMAIL
+GMAIL_FROM_NAME = os.getenv("GMAIL_FROM_NAME", "Learnora Me").strip()
+
+
+def _gmail_api_configured() -> bool:
     return bool(
-        SMTP_HOST
-        and SMTP_PORT in {465, 587}
-        and SMTP_USERNAME
-        and SMTP_PASSWORD
-        and SMTP_FROM_EMAIL
+        GMAIL_OAUTH_CLIENT_ID
+        and GMAIL_OAUTH_CLIENT_SECRET
+        and GMAIL_OAUTH_REFRESH_TOKEN
+        and GMAIL_USER_EMAIL
+        and GMAIL_FROM_EMAIL
     )
 
 
-def _resend_email_configured() -> bool:
-    return bool(RESEND_API_KEY and RESEND_FROM_EMAIL)
-
-
 def _email_configured() -> bool:
-    return _smtp_email_configured() or _resend_email_configured()
+    return _gmail_api_configured()
 
 
 def _send_email(
@@ -684,14 +686,7 @@ def _send_email(
     text_body: str,
     html_body: str,
 ):
-    """
-    Send transactional email through Gmail SMTP when configured, otherwise
-    retain the existing Resend HTTP API as a compatibility fallback.
-
-    Gmail SMTP requires SMTP_USERNAME (full Gmail address) and an app
-    password in SMTP_PASSWORD. Port 465 uses implicit TLS; port 587 uses
-    STARTTLS. The connection is completed before this request returns.
-    """
+    """Send one MIME email through Gmail API using a server-side OAuth refresh token."""
 
     if not _email_configured():
         if APP_ENV == "development":
@@ -700,76 +695,61 @@ def _send_email(
             print(f"Subject: {subject}")
             print(text_body)
             return
-        raise RuntimeError("Email service is not configured.")
+        raise RuntimeError("Gmail API email service is not configured.")
 
-    if _smtp_email_configured():
-        message = EmailMessage()
-        message["Subject"] = subject
-        message["From"] = (
-            f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
-            if SMTP_FROM_NAME
-            else SMTP_FROM_EMAIL
-        )
-        message["To"] = recipient
-        message.set_content(text_body)
-        message.add_alternative(html_body, subtype="html")
-
-        try:
-            if SMTP_PORT == 465:
-                with smtplib.SMTP_SSL(
-                    SMTP_HOST,
-                    SMTP_PORT,
-                    timeout=20,
-                    context=ssl.create_default_context(),
-                ) as server:
-                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
-                    server.send_message(message)
-            else:
-                with smtplib.SMTP(
-                    SMTP_HOST,
-                    SMTP_PORT,
-                    timeout=20,
-                ) as server:
-                    server.ehlo()
-                    server.starttls(context=ssl.create_default_context())
-                    server.ehlo()
-                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
-                    server.send_message(message)
-            return
-        except (OSError, smtplib.SMTPException) as exc:
-            print(f"Gmail SMTP delivery failed: {type(exc).__name__}")
-            raise RuntimeError("Unable to send email.") from exc
-
-    # Backwards-compatible fallback for deployments still configured with Resend.
-    from_value = (
-        f"{RESEND_FROM_NAME} <{RESEND_FROM_EMAIL}>"
-        if RESEND_FROM_NAME
-        else RESEND_FROM_EMAIL
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = (
+        f"{GMAIL_FROM_NAME} <{GMAIL_FROM_EMAIL}>"
+        if GMAIL_FROM_NAME
+        else GMAIL_FROM_EMAIL
     )
-    payload = {
-        "from": from_value,
-        "to": [recipient],
-        "subject": subject,
-        "text": text_body,
-        "html": html_body,
-    }
-    headers = {
-        "Authorization": f"Bearer {RESEND_API_KEY}",
-        "Content-Type": "application/json",
-    }
+    message["To"] = recipient
+    message.set_content(text_body)
+    message.add_alternative(html_body, subtype="html")
+    raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode("ascii")
+
     try:
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                RESEND_API_URL,
-                headers=headers,
-                json=payload,
+        with httpx.Client(timeout=httpx.Timeout(25.0, connect=10.0)) as client:
+            token_response = client.post(
+                GMAIL_OAUTH_TOKEN_URL,
+                data={
+                    "client_id": GMAIL_OAUTH_CLIENT_ID,
+                    "client_secret": GMAIL_OAUTH_CLIENT_SECRET,
+                    "refresh_token": GMAIL_OAUTH_REFRESH_TOKEN,
+                    "grant_type": "refresh_token",
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
-        if not response.is_success:
-            print(f"Resend email API failed: HTTP {response.status_code}")
-            raise RuntimeError("Unable to send email.")
+            if not token_response.is_success:
+                print(f"Gmail OAuth token refresh failed: HTTP {token_response.status_code}")
+                raise RuntimeError("Unable to authorise Gmail API email delivery.")
+
+            token_data = token_response.json()
+            access_token = token_data.get("access_token")
+            if not isinstance(access_token, str) or not access_token:
+                print("Gmail OAuth token refresh returned no access token.")
+                raise RuntimeError("Unable to authorise Gmail API email delivery.")
+
+            send_response = client.post(
+                GMAIL_API_SEND_URL,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+                json={"raw": raw_message},
+            )
+            if not send_response.is_success:
+                # Do not automatically retry: the provider may have accepted a
+                # request even when the response was lost, and retries can duplicate mail.
+                print(f"Gmail API message send failed: HTTP {send_response.status_code}")
+                raise RuntimeError("Unable to send email.")
     except httpx.RequestError as exc:
-        print(f"Resend connection failed: {type(exc).__name__}")
-        raise RuntimeError("Unable to connect to email service.") from exc
+        print(f"Gmail API request failed: {type(exc).__name__}")
+        raise RuntimeError("Unable to connect to Gmail API.") from exc
+    except (ValueError, TypeError) as exc:
+        print(f"Gmail API response could not be parsed: {type(exc).__name__}")
+        raise RuntimeError("Unable to process Gmail API response.") from exc
 
 
 # ---------------------------------------------------------------------------
