@@ -4,14 +4,8 @@
 This final project tests whether you can improve a predictive workflow without leaking information or overfitting the validation process. You will start with a baseline, design features that would genuinely be available at prediction time, compare leakage-safe pipelines and justify whether the improvement is useful.
 
 ## Learning outcomes
-- define the prediction unit, target, prediction timestamp and decision;
-- create a feature data dictionary including source and availability time;
-- identify and prevent target leakage, temporal leakage and preprocessing leakage;
-- build a ColumnTransformer and model inside a scikit-learn Pipeline;
-- compare a baseline and at least two feature/model configurations with suitable cross-validation;
-- choose metrics and thresholds based on error costs;
-- inspect errors, uncertainty and subgroup performance;
-- document a reproducible experiment and a defensible recommendation.
+
+By the end of this lesson, you should be able to Complete a leakage-safe feature-engineering and evaluation project; document prediction-time availability; compare baseline and candidate pipelines; validate on untouched data; and communicate whether the improvement is stable and useful.
 
 ## Project brief
 Choose a classification or regression problem with a documented data source and licence. Your dataset must have a clear target and enough observations to support a train/validation design. State the decision that the prediction would support. A descriptive feature-engineering investigation is acceptable only if you explain why a predictive target is unavailable and adjust the evaluation plan.
