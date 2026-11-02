@@ -52,16 +52,24 @@ account.
 
 Email delivery
 --------------
-Email is sent through the Resend HTTP API.
+Email is sent through Gmail SMTP when SMTP_USERNAME and SMTP_PASSWORD are
+configured. SMTP_PASSWORD must be a Google App Password, not the account
+login password. Resend remains supported as a fallback.
 
-Required environment variables:
+Gmail SMTP environment variables:
+
+    SMTP_HOST=smtp.gmail.com
+    SMTP_PORT=465
+    SMTP_USERNAME=sender@gmail.com
+    SMTP_PASSWORD=<Google App Password>
+    SMTP_FROM_EMAIL=sender@gmail.com
+    SMTP_FROM_NAME=Learnora Me
+
+Legacy Resend fallback:
 
     RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx
     RESEND_FROM_EMAIL=onboarding@resend.dev
     RESEND_FROM_NAME=Learnora Me
-
-For production with a custom domain, replace RESEND_FROM_EMAIL with an
-email address belonging to a domain authenticated in Resend.
 """
 
 import hashlib
@@ -70,10 +78,13 @@ import hmac
 import os
 import re
 import secrets
+import smtplib
+import ssl
 import time
 
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 from typing import Optional
 
 import bcrypt
@@ -233,6 +244,15 @@ RESEND_FROM_NAME = (
     )
     .strip()
 )
+
+# Gmail SMTP is preferred when configured. Resend remains available as a
+# backwards-compatible HTTP API fallback.
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "").strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").replace(" ", "").strip()
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "").strip() or SMTP_USERNAME
+SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Learnora Me").strip()
 
 
 EMAIL_VERIFICATION_TTL_MINUTES = int(
@@ -639,12 +659,22 @@ def _iso(
 # EMAIL CONFIGURATION
 # ---------------------------------------------------------------------------
 
-def _email_configured() -> bool:
-
+def _smtp_email_configured() -> bool:
     return bool(
-        RESEND_API_KEY
-        and RESEND_FROM_EMAIL
+        SMTP_HOST
+        and SMTP_PORT in {465, 587}
+        and SMTP_USERNAME
+        and SMTP_PASSWORD
+        and SMTP_FROM_EMAIL
     )
+
+
+def _resend_email_configured() -> bool:
+    return bool(RESEND_API_KEY and RESEND_FROM_EMAIL)
+
+
+def _email_configured() -> bool:
+    return _smtp_email_configured() or _resend_email_configured()
 
 
 def _send_email(
@@ -655,50 +685,67 @@ def _send_email(
     html_body: str,
 ):
     """
-    Sends an email using the Resend HTTP API.
+    Send transactional email through Gmail SMTP when configured, otherwise
+    retain the existing Resend HTTP API as a compatibility fallback.
 
-    Required:
-
-        RESEND_API_KEY
-        RESEND_FROM_EMAIL
-
-    Optional:
-
-        RESEND_FROM_NAME
+    Gmail SMTP requires SMTP_USERNAME (full Gmail address) and an app
+    password in SMTP_PASSWORD. Port 465 uses implicit TLS; port 587 uses
+    STARTTLS. The connection is completed before this request returns.
     """
 
     if not _email_configured():
-
         if APP_ENV == "development":
-
-            print(
-                "EMAIL DEV MODE"
-            )
-
-            print(
-                f"To: {recipient}"
-            )
-
-            print(
-                f"Subject: {subject}"
-            )
-
-            print(
-                text_body
-            )
-
+            print("EMAIL DEV MODE")
+            print(f"To: {recipient}")
+            print(f"Subject: {subject}")
+            print(text_body)
             return
+        raise RuntimeError("Email service is not configured.")
 
-        raise RuntimeError(
-            "Resend email service is not configured."
+    if _smtp_email_configured():
+        message = EmailMessage()
+        message["Subject"] = subject
+        message["From"] = (
+            f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+            if SMTP_FROM_NAME
+            else SMTP_FROM_EMAIL
         )
+        message["To"] = recipient
+        message.set_content(text_body)
+        message.add_alternative(html_body, subtype="html")
 
+        try:
+            if SMTP_PORT == 465:
+                with smtplib.SMTP_SSL(
+                    SMTP_HOST,
+                    SMTP_PORT,
+                    timeout=20,
+                    context=ssl.create_default_context(),
+                ) as server:
+                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                    server.send_message(message)
+            else:
+                with smtplib.SMTP(
+                    SMTP_HOST,
+                    SMTP_PORT,
+                    timeout=20,
+                ) as server:
+                    server.ehlo()
+                    server.starttls(context=ssl.create_default_context())
+                    server.ehlo()
+                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                    server.send_message(message)
+            return
+        except (OSError, smtplib.SMTPException) as exc:
+            print(f"Gmail SMTP delivery failed: {type(exc).__name__}")
+            raise RuntimeError("Unable to send email.") from exc
+
+    # Backwards-compatible fallback for deployments still configured with Resend.
     from_value = (
         f"{RESEND_FROM_NAME} <{RESEND_FROM_EMAIL}>"
         if RESEND_FROM_NAME
         else RESEND_FROM_EMAIL
     )
-
     payload = {
         "from": from_value,
         "to": [recipient],
@@ -706,70 +753,23 @@ def _send_email(
         "text": text_body,
         "html": html_body,
     }
-
     headers = {
-        "Authorization": (
-            f"Bearer {RESEND_API_KEY}"
-        ),
+        "Authorization": f"Bearer {RESEND_API_KEY}",
         "Content-Type": "application/json",
     }
-
     try:
-
-        with httpx.Client(
-            timeout=30.0
-        ) as client:
-
+        with httpx.Client(timeout=30.0) as client:
             response = client.post(
                 RESEND_API_URL,
                 headers=headers,
                 json=payload,
             )
-
         if not response.is_success:
-
-            print(
-                "Resend email API failed: "
-                f"HTTP {response.status_code}"
-            )
-
-            try:
-                print(
-                    f"Resend response: {response.text}"
-                )
-
-            except Exception:
-                pass
-
-            raise RuntimeError(
-                "Unable to send email."
-            )
-
+            print(f"Resend email API failed: HTTP {response.status_code}")
+            raise RuntimeError("Unable to send email.")
     except httpx.RequestError as exc:
-
-        print(
-            f"Resend connection failed: {exc}"
-        )
-
-        raise RuntimeError(
-            "Unable to connect to email service."
-        )
-
-    except Exception as exc:
-
-        if isinstance(
-            exc,
-            RuntimeError,
-        ):
-            raise
-
-        print(
-            f"Email sending failed: {exc}"
-        )
-
-        raise RuntimeError(
-            "Unable to send email."
-        )
+        print(f"Resend connection failed: {type(exc).__name__}")
+        raise RuntimeError("Unable to connect to email service.") from exc
 
 
 # ---------------------------------------------------------------------------
