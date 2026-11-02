@@ -13,20 +13,24 @@ Packaging also includes source code, model artefacts, data schema, documentation
 ## 2. Worked Python example
 Use VS Code and a project virtual environment. Install the relevant packages with `python -m pip install pandas scikit-learn fastapi uvicorn joblib httpx` as required.
 
-```python
-# requirements.txt example
+```text
+# requirements.txt
 fastapi>=0.110,<1
 uvicorn[standard]>=0.27,<1
 pydantic>=2.6,<3
 scikit-learn>=1.4,<2
 pandas>=2.1,<4
 joblib>=1.3,<2
-#
-# In terminal:
-# python -m venv .venv
-# activate the environment
-# python -m pip install -r requirements.txt
-# python -m pip freeze > requirements-lock.txt
+httpx>=0.27,<1
+```
+
+Create a file named `requirements.txt` with those dependency declarations. Then run these commands in the VS Code terminal:
+
+```bash
+python -m venv .venv
+# Activate .venv using the command for your operating system.
+python -m pip install -r requirements.txt
+python -m pip freeze > requirements-lock.txt
 ```
 
 ## 3. Engineering checks
