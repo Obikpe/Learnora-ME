@@ -409,7 +409,7 @@ Do not begin unrelated feature work yet. The next milestone is restricted to:
 
 The product-level learner-outcomes sequence is now defined in [Learner Outcomes Product Phases 6–8](LEARNER_OUTCOMES_PHASES_6_8.md): Phase 6 certificates and verification, Phase 7 Practice Lab and project submissions, and Phase 8 skill mastery map and learner portfolio. This user-confirmed sequence supersedes the older phase numbering for the next learner-outcome work. The earlier track-completion feedback proposal remains backlog work and is not a prerequisite or a renumbering of these phases.
 
-The active Pheonix schema and migration ledger have now been rechecked read-only for the certificate, project, submission, skill and evidence tables. The relevant tables exist with RLS enabled and service-role-only direct grants; no feature migration is required for phases 6–8. The historical learner-learning-plans migration discrepancy remains separate and must not be silently applied. Browser/mobile acceptance and passing CI remain release gates. Production migration/deployment remains separately authorised.
+The active Pheonix schema and migration ledger have now been rechecked read-only for the certificate, project, submission, skill and evidence tables. The relevant tables exist with RLS enabled and service-role-only direct grants. Follow-up hardening adds two additive migrations: quiz_active_sessions for backend-enforced tutor exclusion during quizzes, and certificate revocation fields. Both have rollback scripts and are included in disposable-database CI; neither has been applied to the live project. The historical learner-learning-plans migration discrepancy remains separate and must not be silently applied. Browser/mobile acceptance and passing CI remain release gates. Production migration/deployment remains separately authorised.
 
 ## Revised learner-outcomes priority — 2 November 2026
 
@@ -429,3 +429,8 @@ The read-only connection to the active Pheonix Supabase project is now available
 The active migration ledger still does not include `20261102090000_learner_learning_plans`, and `public.learner_learning_plans` is absent. That pre-existing Phase 3 release dependency remains unapplied. No production migration, data mutation, environment change, free-mode activation or deployment was performed.
 
 The new Phase 6–8 code is committed on `main`; browser acceptance and CI evidence are still outstanding. Do not mark production release readiness until those gates have evidence.
+
+
+### Phase 6–8 implementation follow-up — 2 November 2026
+
+The learner-outcomes follow-up adds an auditable certificate revocation workflow and strengthens the quiz tutor lock across the frontend and backend. Teams has a credential register; public verification reports revoked credentials as invalid without disclosing internal revocation notes. Learner project history distinguishes approved and returned work, and only approved evidence mapped to the source project contributes to skill mastery. The two new schema migrations remain unapplied pending disposable replay and the separately required production approval. Automated workflow runs on the evolving main branch were still queued at the last status check; do not report them as passing until the final SHA completes. Phase 9 and the earlier track-review/consent proposal remain deferred.
