@@ -1,7 +1,8 @@
 # Lesson 22: Production Readiness Review
 
 ## Learning outcomes
-Explain the production concept, implement the example and evaluate the system against its intended use.
+
+By the end of this lesson, you should be able to Assess production readiness across model validity, feature parity, input validation, authentication, monitoring, rollback and ownership; identify blockers; and make a justified go/no-go recommendation.
 
 ## 1. Core explanation
 A readiness review asks whether the system is safe and supportable in its intended environment. Check model evidence, data lineage, feature parity, latency, throughput, availability, security, privacy, monitoring, retraining, rollback, cost and ownership. Ensure that a person or team is responsible for responding to incidents.
