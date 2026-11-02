@@ -2,7 +2,7 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Use GridSearchCV to tune hyperparameters; build a search around a leakage-safe pipeline; define a suitable scoring metric and cross-validation splitter; and report the best configuration without test-set tuning.
+By the end of this lesson, you should be able to Use RandomizedSearchCV and probability distributions to explore hyperparameters; compare search budgets and reproducibility; explain the concept of Bayesian optimisation; and avoid claiming it was run when only random search is shown.
 
 ## 1. Core explanation
 Randomised search samples hyperparameter combinations from defined distributions rather than testing every point in a grid. It is useful when some parameters have wide ranges or when model training is expensive. Log-uniform distributions are often suitable for parameters spanning orders of magnitude, such as regularisation strength.
