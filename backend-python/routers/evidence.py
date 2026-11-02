@@ -304,7 +304,26 @@ def available_projects(user: CurrentUser = Depends(get_current_user)):
             "course": course_map.get(course_id) if course_id else None,
             "skill_records": [skill_map[str(value)] for value in (row.get("skills") or []) if str(value) in skill_map],
         })
-    return {"success": True, "projects": available}
+    project_ids = [str(row["id"]) for row in available]
+    latest_submissions = {}
+    if project_ids:
+        submission_rows = (
+            supabase.table("project_submissions")
+            .select("id,project_id,status,score,feedback,submitted_at,reviewed_at")
+            .eq("user_id", str(user.id))
+            .in_("project_id", project_ids)
+            .order("submitted_at", desc=True)
+            .execute()
+        ).data or []
+        for submission in submission_rows:
+            latest_submissions.setdefault(str(submission["project_id"]), submission)
+    return {
+        "success": True,
+        "projects": [
+            {**project, "latest_submission": latest_submissions.get(str(project["id"]))}
+            for project in available
+        ],
+    }
 
 
 @router.get("/projects/me")
