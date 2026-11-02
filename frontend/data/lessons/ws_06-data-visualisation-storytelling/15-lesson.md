@@ -1,7 +1,8 @@
 # Lesson 15: Dashboard Design and Layout
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to organise a dashboard around user decisions; choose a small set of KPIs; provide comparisons, filters and refresh context; design a clear visual hierarchy; and evaluate accessibility and usability.
 
 ## 1. Core explanation
 A dashboard is a coordinated set of views for monitoring or decision support. Begin with the audience and decisions, then select a small number of metrics. Place the most important status or trend first, supporting breakdowns below and detailed records last. Use consistent definitions and time filters across charts.
