@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from .auth import CurrentUser, get_current_user, supabase
+from services.free_access import is_individual_learner
 
 router = APIRouter(prefix="/api/learner", tags=["Learner onboarding"])
 
@@ -13,19 +14,23 @@ class OnboardingIn(BaseModel):
     interests: list[str] = Field(default_factory=list, max_length=12)
     weekly_time_minutes: int = Field(default=180, ge=15, le=3000)
 
+def _assert_individual(user: CurrentUser):
+    if not is_individual_learner(user.role, user.account_type, getattr(user, "organisation_id", None)):
+        raise HTTPException(403, "Personal learning preferences are only available to individual learner accounts.")
+
 def _profile(user_id):
     result = supabase.table("learner_onboarding_profiles").select("*").eq("user_id", user_id).limit(1).execute()
     return result.data[0] if result.data else None
 
 @router.get("/onboarding")
 def get_onboarding(user: CurrentUser = Depends(get_current_user)):
+    _assert_individual(user)
     profile = _profile(str(user.id))
     return {"success": True, "profile": profile, "completed": bool(profile and profile.get("onboarding_completed"))}
 
 @router.put("/onboarding")
 def save_onboarding(body: OnboardingIn, user: CurrentUser = Depends(get_current_user)):
-    if getattr(user, "role", "normal") not in {"normal"}:
-        raise HTTPException(403, "Personal learning preferences are only available to individual learner accounts.")
+    _assert_individual(user)
     now = datetime.now(timezone.utc).isoformat()
     result = supabase.table("learner_onboarding_profiles").upsert({
         "user_id": str(user.id),
@@ -43,9 +48,7 @@ def save_onboarding(body: OnboardingIn, user: CurrentUser = Depends(get_current_
 
 @router.get("/recommendations")
 def recommendations(user: CurrentUser = Depends(get_current_user)):
-    role = getattr(user, "role", "normal")
-    if role == "witstart":
-        raise HTTPException(403, "Organisation learners can only access courses assigned by their organisation.")
+    _assert_individual(user)
     profile = _profile(str(user.id))
     enrolments = supabase.table("learnora_enrolments").select("course_id,status").eq("user_id", str(user.id)).in_("status", ["active","completed"]).execute().data or []
     enrolled_ids = {str(x.get("course_id")) for x in enrolments}
