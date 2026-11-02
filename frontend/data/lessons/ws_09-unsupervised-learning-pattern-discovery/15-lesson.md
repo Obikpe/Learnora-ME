@@ -1,5 +1,52 @@
-﻿# Lesson 15
-Course: ws_09
-ID: ws_09_l15
+# Lesson 15: Interpreting and Profiling Segments
 
-Write complete explanatory notes here...
+## Learning outcomes
+Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
+
+## 1. Core explanation
+Cluster profiling describes how groups differ using original feature units. Compare counts, medians, means, distributions and proportions. A profile should answer what distinguishes a segment, how large it is and whether the difference is stable. Use box plots or summary tables to reveal within-cluster variation, not only cluster averages.
+
+Cluster labels are arbitrary identifiers. Give a descriptive name only after examining evidence and confirming that the label is useful and not misleading. A segment called “high-value customers” should be based on a defined value measure, not a guess from a cluster number.
+
+Profiles can hide small or internally diverse groups. Report segment sizes and consider privacy when a cluster is tiny. Validate whether the segments support a real action and whether that action is fair and appropriate.
+
+## 2. Worked Python example
+Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
+
+```python
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+
+customers = pd.DataFrame({
+    "recency_days": [5, 8, 12, 60, 75, 90, 3, 10],
+    "orders_90d": [12, 10, 8, 2, 1, 0, 14, 9],
+    "avg_basket": [500, 420, 380, 90, 70, 30, 550, 400]
+})
+labels = KMeans(n_clusters=2, n_init=20, random_state=42).fit_predict(
+    StandardScaler().fit_transform(customers))
+profile = customers.assign(segment=labels).groupby("segment").agg(
+    size=("recency_days", "size"),
+    median_recency=("recency_days", "median"),
+    mean_orders=("orders_90d", "mean"),
+    mean_basket=("avg_basket", "mean"))
+print(profile)
+```
+
+## 3. Interpretation
+Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
+
+## 4. Guided practice
+Name the segments based on the profile, then challenge your own labels. What additional business outcome or longitudinal evidence would show whether the segmentation is useful?
+
+## 5. Independent practice
+Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
+
+## 6. Knowledge check
+1. What structure is the method attempting to discover?
+2. Which assumptions are introduced by the representation or distance?
+3. How will you assess stability and usefulness?
+4. What should not be inferred from the output?
+
+## Lesson summary
+Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
