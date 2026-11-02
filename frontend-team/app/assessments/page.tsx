@@ -8,7 +8,7 @@ import {contentCourses,contentLessons} from "../../lib/content";
 
 export default function AssessmentsWorkspace(){
  const [me,setMe]=useState<any>(null),[courses,setCourses]=useState<any[]>([]),[courseId,setCourseId]=useState("");
- const [data,setData]=useState<any>({modules:[],quizzes:[],assignments:[]}),[lessonOptions,setLessonOptions]=useState<any[]>([]),[quiz,setQuiz]=useState<any>(null),[quizDetail,setQuizDetail]=useState<any>(null),[assignment,setAssignment]=useState<any>(null),[submissions,setSubmissions]=useState<any[]>([]);
+ const [data,setData]=useState<any>({modules:[],quizzes:[],assignments:[]}),[lessonOptions,setLessonOptions]=useState<any[]>([]),[quiz,setQuiz]=useState<any>(null),[quizDetail,setQuizDetail]=useState<any>(null),[assignment,setAssignment]=useState<any>(null),[submissions,setSubmissions]=useState<any[]>([]),[performance,setPerformance]=useState<any[]>([]);
  const [quizTitle,setQuizTitle]=useState(""),[quizDescription,setQuizDescription]=useState(""),[moduleId,setModuleId]=useState(""),[passingScore,setPassingScore]=useState("70"),[maxAttempts,setMaxAttempts]=useState("");
  const [question,setQuestion]=useState(""),[questionType,setQuestionType]=useState("multiple_choice"),[options,setOptions]=useState(""),[answer,setAnswer]=useState(""),[explanation,setExplanation]=useState("");
  const [assignmentTitle,setAssignmentTitle]=useState(""),[assignmentInstructions,setAssignmentInstructions]=useState(""),[assignmentLesson,setAssignmentLesson]=useState(""),[assignmentMax,setAssignmentMax]=useState("100");
@@ -17,8 +17,8 @@ export default function AssessmentsWorkspace(){
 
  const load=useCallback(async(id:string)=>{
   if(!id){setData({modules:[],quizzes:[],assignments:[]});return;}
-  const result=await request<any>("/assessments/courses/"+encodeURIComponent(id));
-  setData(result);
+  const [result,performanceResult]=await Promise.all([request<any>("/assessments/courses/"+encodeURIComponent(id)),request<any>("/assessments/courses/"+encodeURIComponent(id)+"/performance")]);
+  setData(result);setPerformance(performanceResult.learners||[]);
   const lessonGroups=await Promise.all((result.modules||[]).map(async(m:any)=>({module:m,lessons:(await contentLessons(String(m.id))).lessons||[]})));
   setLessonOptions(lessonGroups.flatMap((group:any)=>group.lessons.map((lesson:any)=>({...lesson,module_title:group.module.title}))));
  },[]);
@@ -68,6 +68,14 @@ export default function AssessmentsWorkspace(){
     </form>
     <div className="mt-4 space-y-2">{(data.assignments||[]).map((item:any)=><div key={item.id} className="flex flex-wrap items-center gap-2 border border-white/[.06] p-3"><div className="min-w-0 flex-1"><p className="text-sm font-medium">{item.title}</p><p className="mt-1 text-xs text-slate-500">Max score: {item.max_score??"Not set"}</p></div><span className={"text-[10px] uppercase "+(item.is_published?"text-emerald-300":"text-slate-500")}>{item.is_published?"Published":"Draft"}</span><button type="button" onClick={()=>void toggleAssignment(item)} className="mini">{item.is_published?"Unpublish":"Publish"}</button><button type="button" onClick={()=>void openSubmissions(item)} className="mini">Submissions</button></div>)}{!data.assignments?.length&&<p className="py-5 text-xs text-slate-600">No assignments for this course yet.</p>}</div>
    </div>
+  </section>
+  <section className="mt-6 border border-white/[.08] bg-[#0e1319] p-5 sm:p-7">
+   <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Learner performance</h2><p className="mt-1 text-xs text-slate-500">Course progress, quiz outcomes and assignment grading from saved learner records.</p></div><span className="text-xs tabular-nums text-slate-500">{performance.length} enrolled learners</span></div>
+   <div className="mt-4 divide-y divide-white/[.07]">{performance.map((row:any)=><article key={row.enrolment?.id} className="py-4 first:pt-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-semibold">{row.learner?.name||"Learner"}</p><p className="mt-1 text-xs text-slate-500">{row.learner?.email||"No email available"} · {row.enrolment?.status}</p></div><div className="text-right text-xs text-slate-500"><p>{row.lesson_summary?.completed||0}/{row.lesson_summary?.total||0} lessons complete</p><p className="mt-1">{row.assessment_summary?.quizzes_passed||0}/{row.assessment_summary?.quizzes_total||0} quizzes passed · {row.assessment_summary?.assignments_graded||0}/{row.assessment_summary?.assignments_total||0} assignments graded</p></div></div>
+    {(row.quiz_attempts||[]).length>0&&<div className="mt-3 flex flex-wrap gap-2">{row.quiz_attempts.map((attempt:any)=><span key={attempt.id} className="border border-white/[.08] px-2 py-1 text-[10px] text-slate-400">Quiz {attempt.score??0}% · {attempt.passed?"Passed":"Not passed"}</span>)}</div>}
+    {(row.assignment_submissions||[]).length>0&&<div className="mt-2 flex flex-wrap gap-2">{row.assignment_submissions.map((submission:any)=><span key={submission.id} className="border border-white/[.08] px-2 py-1 text-[10px] text-slate-400">Assignment {submission.status} · {submission.score??"Ungraded"}</span>)}</div>}
+   </article>)}
+   {!performance.length&&<p className="py-6 text-sm text-slate-500">No learner enrolments have been recorded for this course yet.</p>}</div>
   </section>
   {quiz&&quizDetail&&<section className="mt-6 border border-[#d7ad35]/20 bg-[#0e1319] p-5 sm:p-7"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="section-kicker">Quiz editor</p><h2 className="mt-2 text-xl font-semibold">{quiz.title}</h2><p className="mt-1 text-xs text-slate-500">{quizDetail.questions?.length||0} questions · {quiz.passing_score||70}% passing score</p></div><div className="flex gap-2"><button type="button" onClick={()=>setQuiz(null)} className="mini">Close</button><button type="button" disabled={busy} onClick={()=>void toggleQuiz()} className="action inline-flex items-center gap-2"><CheckCircle2 size={14}/>{quiz.is_published?"Unpublish":"Publish quiz"}</button></div></div>
    <div className="mt-5 space-y-2">{(quizDetail.questions||[]).map((q:any,i:number)=><div key={q.id} className="flex items-start gap-3 border border-white/[.07] p-3"><div className="min-w-0 flex-1"><p className="text-xs text-slate-500">Question {i+1} · {q.question_type} · {q.points} point(s)</p><p className="mt-1 text-sm">{q.question}</p><p className="mt-1 text-xs text-slate-600">Correct answer: {String(q.correct_answer??"—")}</p></div>{!quiz.is_published&&<button type="button" disabled={busy} onClick={()=>void deleteQuestion(q.id)} className="mini text-red-300">Remove</button>}</div>)}</div>
