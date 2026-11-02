@@ -1,7 +1,8 @@
 # Lesson 1: What Machine Learning Is and When to Use It
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the key concepts, identify when they apply, implement the worked example in VS Code, and recognise the method's limitations.
+
+By the end of this lesson, you should be able to Explain when a problem is suitable for machine learning; distinguish rule-based automation from learning patterns from examples; identify a prediction target and available inputs; and describe why a baseline and evaluation plan are needed before modelling.
 
 ## 1. Core explanation
 Machine learning (ML) is a set of methods that use data to learn a pattern for making predictions or decisions. In conventional programming, a developer writes explicit rules. In supervised ML, an algorithm uses examples containing inputs and known outcomes to estimate a mapping from inputs to outcomes. The learned mapping is a model.
