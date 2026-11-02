@@ -168,7 +168,7 @@ class SubscriptionCancellationTests(unittest.TestCase):
         sidebar = (ROOT / "frontend-v02/components/dashboard/Sidebar.tsx").read_text(encoding="utf-8")
         self.assertIn('["subscription","Subscription",CreditCard]', sidebar)
         self.assertIn('setIsCohortAccount(me.account_type==="cohort")', sidebar)
-        self.assertIn('filter(([key])=>!(isCohortAccount&&key==="subscription"))', sidebar)
+        self.assertIn('filter(([key])=>!((isCohortAccount||isFreeAccess)&&key==="subscription"))', sidebar)
         self.assertIn('request<Subscription>("/billing/subscription")', page)
         self.assertIn('request<any>("/billing/subscription/cancel"', page)
         self.assertIn('role="dialog"', page)
