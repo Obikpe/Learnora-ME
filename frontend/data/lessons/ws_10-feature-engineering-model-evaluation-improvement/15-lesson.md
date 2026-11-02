@@ -1,43 +1,36 @@
-# Lesson 15: Precision-Recall and ROC Analysis
+# Lesson 15: Classification Evaluation Metrics
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Calculate precision, recall, F1, specificity and balanced accuracy; interpret a confusion matrix; and choose classification metrics based on class balance and error costs.
+By the end of this lesson, you should be able to Calculate MAE, MSE, RMSE and R-squared; interpret their units and penalties; inspect residuals; and choose regression metrics based on the actual decision.
 
 ## 1. Core explanation
-A ROC curve plots true-positive rate against false-positive rate across thresholds. ROC-AUC measures ranking ability across thresholds. A precision-recall curve plots precision against recall and is often more informative for rare positive classes. The baseline precision in a PR curve is related to positive-class prevalence.
+Accuracy is the proportion of correct labels. Precision is the proportion of predicted positives that are truly positive; recall is the proportion of actual positives found. Specificity measures the proportion of negatives correctly rejected. F1 is the harmonic mean of precision and recall. Balanced accuracy averages recall across classes.
 
-ROC-AUC can look strong even when precision is poor in a highly imbalanced problem. Always inspect the confusion matrix and precision at the operating threshold. The threshold should be chosen using validation data and operational constraints.
+Use the confusion matrix to connect metrics to errors. In fraud screening, false negatives are missed fraud and false positives are legitimate transactions flagged for review. In medical screening, the cost of missed cases may be high. No metric is universally best; choose based on the decision and report the threshold.
 
-Curves summarise ranking, not calibration or decision cost. If a model will trigger a limited number of investigations, consider precision among the top k alerts. If the goal is screening, examine recall at a tolerable false-positive rate.
+For multiclass problems, inspect per-class scores and macro/weighted averages. Accuracy can hide poor performance on rare classes. Include class support so readers understand how many observations underlie each score.
 
 ## 2. Worked Python example
 Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
 
 ```python
-from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import RocCurveDisplay, PrecisionRecallDisplay, roc_auc_score, average_precision_score
-import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, balanced_accuracy_score
 
-X, y = make_classification(n_samples=2500, weights=[.96, .04],
-                           random_state=8)
-Xtr, Xte, ytr, yte = train_test_split(X, y, stratify=y, random_state=8)
-model = LogisticRegression(max_iter=1000).fit(Xtr, ytr)
-p = model.predict_proba(Xte)[:, 1]
-print("ROC AUC", roc_auc_score(yte, p), "Average precision", average_precision_score(yte, p))
-RocCurveDisplay.from_predictions(yte, p)
-plt.show()
-PrecisionRecallDisplay.from_predictions(yte, p)
-plt.show()
+actual = [0, 0, 0, 0, 1, 1, 1, 1]
+pred =   [0, 0, 1, 0, 1, 0, 1, 1]
+print(confusion_matrix(actual, pred))
+print("Precision", precision_score(actual, pred))
+print("Recall", recall_score(actual, pred))
+print("F1", f1_score(actual, pred))
+print("Balanced accuracy", balanced_accuracy_score(actual, pred))
 ```
 
 ## 3. Interpretation and safeguards
 State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune a threshold, select features or choose hyperparameters.
 
 ## 4. Guided practice
-Compare the two curves and explain why average precision should be interpreted relative to class prevalence. Identify a threshold for a specified recall requirement using validation data.
+Explain which errors the model made. Recommend a metric for a low-cost fraud review queue and another for an automated action with serious consequences.
 
 ## 5. Independent practice
 Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
