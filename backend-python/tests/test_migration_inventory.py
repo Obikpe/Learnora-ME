@@ -50,6 +50,19 @@ class MigrationInventoryTests(unittest.TestCase):
         ):
             self.assertTrue((ACTIVE_DIR / name).is_file(), name)
 
+    def test_active_quiz_session_migration_is_server_only_and_reversible(self):
+        migration = ACTIVE_DIR / "20261102100000_quiz_active_sessions.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261102100000_quiz_active_sessions.rollback.sql"
+        self.assertTrue(migration.is_file())
+        self.assertTrue(rollback.is_file())
+        sql = migration.read_text(encoding="utf-8")
+        self.assertIn("ENABLE ROW LEVEL SECURITY", sql)
+        self.assertIn("REVOKE ALL PRIVILEGES", sql)
+        self.assertIn("FROM PUBLIC, anon, authenticated", sql)
+        self.assertIn("TO service_role", sql)
+        self.assertIn("expires_at timestamptz NOT NULL", sql)
+        self.assertIn("DROP TABLE IF EXISTS public.quiz_active_sessions", rollback.read_text(encoding="utf-8"))
+
     def test_quota_fix_preserves_unlimited_monthly_limit_contract(self):
         sql = (ACTIVE_DIR / "20261020232148_allow_unlimited_monthly_ai_quota.sql").read_text(
             encoding="utf-8"
