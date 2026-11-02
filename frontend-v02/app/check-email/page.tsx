@@ -54,12 +54,12 @@ export default function CheckEmailPage() {
         <p className="mt-8 text-[10px] font-bold uppercase tracking-[.22em] text-[var(--gold-light)]">One last step</p>
         <h1 className="mt-3 font-display text-4xl leading-tight tracking-[-.035em] sm:text-5xl">Check your email.</h1>
         <p className="mt-4 text-sm leading-7 text-slate-300">
-          Your Learnora account has been created. Open the verification link in your email to confirm your address and finish setting up your account.
+          Confirm the email address below to finish setting up your account. If you received the verification email, open its link. If it did not arrive, request another when the countdown finishes.
         </p>
         <div className="mt-7 flex items-start gap-3 rounded-2xl border border-white/[.08] bg-white/[.03] p-4">
           <MailCheck className="mt-0.5 shrink-0 text-[var(--gold-light)]" size={18} />
           <div className="min-w-0">
-            <p className="text-xs text-slate-500">Verification email sent to</p>
+            <p className="text-xs text-slate-500">Email address to verify</p>
             <p className="mt-1 break-all text-sm font-semibold text-white">{email || "Enter the email address you registered with below."}</p>
           </div>
         </div>
