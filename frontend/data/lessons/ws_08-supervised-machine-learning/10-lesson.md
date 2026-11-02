@@ -1,7 +1,8 @@
 # Lesson 10: Classification Thresholds and Probabilities
 
 ## Learning outcomes
-Explain the technique, implement the worked example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Convert predicted probabilities into class labels at different thresholds; calculate precision and recall; explain the trade-off; and choose a threshold using the costs and capacity of the intended decision.
 
 ## 1. Core explanation
 A classifier may output a probability for each class. The threshold converts a probability into a class label. With a threshold of 0.5, a positive class is predicted when its estimated probability is at least 0.5. Lowering the threshold usually increases recall and may reduce precision; raising it usually increases precision and may reduce recall.
