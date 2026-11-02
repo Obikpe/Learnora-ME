@@ -2,7 +2,7 @@
 import os
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
@@ -90,6 +90,33 @@ class InternalAssessmentTests(unittest.TestCase):
         with patch.object(internal_assessments, "supabase", FakeSupabase(self.fixtures)):
             with self.assertRaises(HTTPException) as raised:
                 internal_assessments._assert_quiz_publishable("quiz-1")
+        self.assertEqual(raised.exception.status_code, 409)
+
+    def test_published_assignment_requires_unpublishing_before_settings_change(self):
+        assignment_query = MagicMock()
+        assignment_query.select.return_value = assignment_query
+        assignment_query.eq.return_value = assignment_query
+        assignment_query.limit.return_value = assignment_query
+        assignment_query.execute.return_value = SimpleNamespace(data=[{
+            "id": "assignment-1", "course_id": "course-1", "is_published": True,
+        }])
+        course_query = MagicMock()
+        course_query.select.return_value = course_query
+        course_query.eq.return_value = course_query
+        course_query.is_.return_value = course_query
+        course_query.limit.return_value = course_query
+        course_query.execute.return_value = SimpleNamespace(data=[{
+            "id": "course-1", "ownership": "learnora", "organisation_id": None, "status": "published",
+        }])
+        db = MagicMock()
+        db.table.side_effect = lambda name: assignment_query if name == "assignments" else course_query
+        with patch.object(internal_assessments, "supabase", db):
+            with self.assertRaises(HTTPException) as raised:
+                internal_assessments.update_assignment(
+                    "assignment-1",
+                    internal_assessments.AssignmentWrite(title="Changed title"),
+                    staff=SimpleNamespace(),
+                )
         self.assertEqual(raised.exception.status_code, 409)
 
     def test_valid_quiz_can_pass_publication_readiness(self):
