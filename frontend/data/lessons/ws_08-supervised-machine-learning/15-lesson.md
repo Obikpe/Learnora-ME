@@ -1,7 +1,8 @@
 # Lesson 15: Gradient Boosting Concepts
 
 ## Learning outcomes
-Explain the technique, implement the worked example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Explain boosting as sequential correction of model errors; fit a gradient-boosting classifier; evaluate probability ranking with ROC AUC; and identify complexity and tuning risks.
 
 ## 1. Core explanation
 Boosting builds a sequence of weak learners, each focusing on errors made by the current ensemble. Gradient boosting adds trees that follow the negative gradient of a chosen loss. Learning rate controls the contribution of each new tree; the number and depth of trees control model complexity.
