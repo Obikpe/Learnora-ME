@@ -1,7 +1,8 @@
 # Lesson 13: Underfitting, Overfitting and Generalisation
 
 ## Learning outcomes
-Explain the method, implement the example in Python, interpret its result, and identify risks that could invalidate the conclusion.
+
+By the end of this lesson, you should be able to Distinguish underfitting from overfitting; explain generalisation, bias and variance; compare training and held-out performance; and identify ways to reduce model complexity or improve evidence.
 
 ## 1. Concepts and reasoning
 Underfitting occurs when a model is too simple to capture the important structure in the data. It performs poorly on both training and unseen data. Overfitting occurs when a model learns noise or accidental details in the training sample. It performs well on training data but poorly on new examples. Generalisation is the ability to perform on data drawn from the intended future population.
