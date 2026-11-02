@@ -48,3 +48,15 @@ BEGIN
     RAISE EXCEPTION 'learner plan owner/status index is missing';
   END IF;
 END $$;
+
+-- Exercise the checked-in rollback without leaving the table removed from this
+-- disposable API staging database. The enclosing transaction is rolled back.
+BEGIN;
+\i supabase/rollback/20261102090000_learner_learning_plans.rollback.sql
+DO $$
+BEGIN
+  IF to_regclass('public.learner_learning_plans') IS NOT NULL THEN
+    RAISE EXCEPTION 'learner learning-plan rollback did not remove the table';
+  END IF;
+END $$;
+ROLLBACK;
