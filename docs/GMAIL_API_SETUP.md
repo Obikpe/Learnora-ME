@@ -54,8 +54,8 @@ In the **Learnora backend Vercel project** (`learnora-backend-v02`), add these v
 | `GMAIL_OAUTH_CLIENT_SECRET` | OAuth client secret |
 | `GMAIL_OAUTH_REFRESH_TOKEN` | Refresh token from OAuth Playground |
 | `GMAIL_USER_EMAIL` | Gmail account that granted permission |
-| `GMAIL_FROM_EMAIL` | Same Gmail address, unless a verified send-as alias is configured |
-| `GMAIL_FROM_NAME` | `Learnora Me` |
+| `GMAIL_FROM_EMAIL` | Optional; defaults to `GMAIL_USER_EMAIL`. A different address must be a verified send-as alias |
+| `GMAIL_FROM_NAME` | Optional; defaults to `Learnora Me` |
 
 Keep all credentials server-side. Never add them to `NEXT_PUBLIC_*` variables, frontend projects, source files, screenshots, or chat messages. After the Gmail API configuration is in place, remove the old `SMTP_*` variables from the backend deployment; this code no longer reads them.
 
