@@ -398,3 +398,13 @@ These additions do not change the central `FREE_ACCESS_MODE`, Paystack, checkout
 ### Verification status
 
 Implementation code checkpoint: `8e21f264744a1a49d26d0f81b3272f1c5d72f24a`. All five workflows passed on this exact candidate: [backend regression tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366731), [backend verification](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366705), [frontend production builds](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366775), [quality checks](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366744), and [cohort-learning/disposable migration tests](https://github.com/Obikpe/Learnora-ME/actions/runs/41438366779). The live Pheonix schema and production migration remain unverified/unapplied because the read-only database connection fails authentication and no staging Supabase branch is available. Browser/mobile E2E and provider/fallback acceptance remain required. Do not treat CI success as production-release approval.
+
+
+## Next milestone after learner journey phases 1–5 — 2 November 2026
+
+Do not begin unrelated feature work yet. The next milestone is restricted to:
+
+1. **Live Supabase verification:** restore read-only access to the active Pheonix Supabase project; verify live catalogue/schema, migration ledger, RLS and grants against the repository baseline; reconcile the learning-plan migration; and prepare a tested, reversible migration plan. No production migration or data mutation without separate explicit approval.
+2. **Browser-based acceptance:** verify learner discovery/enrolment, track/course progress, optional AI plan and fallback, assessment flows, Teams authoring/grading/performance, and contextual tutoring. The AI tutor must be completely hidden and inaccessible during every active quiz state (including navigation, review and submission), with no floating launcher, chat panel, keyboard/accessibility route or contextual tutor request available. Prompt-level instructions are not an adequate substitute for UI and backend enforcement.
+
+After these two workstreams pass, proceed directly to **Phase 6 — track completion and feedback**: completion-gated dismissible prompt, optional rating/comment, explicit public-display consent, staff moderation, duplicate prevention and privacy-safe public display. No unrelated phase should be inserted between acceptance and Phase 6. Production migration/deployment remains separately authorised.
