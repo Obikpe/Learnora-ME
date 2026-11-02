@@ -71,7 +71,7 @@ ax.set(title="Average score by week and class",
 plt.show()
 ```
 
-If multiple observations share the same x value and group, Seaborn can estimate a summary (mean by default). `estimator="mean"` makes this explicit. `errorbar=("ci", 95)` requests a 95% confidence interval for the estimate using Seaborn's supported procedure. It is not the range containing 95% of individual learners.
+If multiple observations share the same x value and group, Seaborn can estimate a summary (mean by default). the default estimator is the mean. `errorbar=("ci", 95)` requests a 95% confidence interval for the estimate using Seaborn's supported procedure. It is not the range containing 95% of individual learners.
 
 If you want to show every raw observation without aggregation, set `estimator=None` when appropriate, or use a scatter plot. Do not let automatic aggregation hide the number or variability of observations.
 
