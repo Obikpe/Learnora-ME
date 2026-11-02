@@ -1,7 +1,8 @@
 # Lesson 7: Mathematics Refresher: Calculus and Optimisation
 
 ## Learning outcomes
-By the end of this lesson, you should be able to explain the key concepts, identify when they apply, implement the worked example in VS Code, and recognise the method's limitations.
+
+By the end of this lesson, you should be able to Explain derivatives and gradients intuitively; connect a loss function to an optimisation objective; implement a simple gradient-descent update; and recognise how learning rate and scaling affect convergence.
 
 ## 1. Core explanation
 Many models learn by minimising a loss function. A loss measures how far predictions are from desired outcomes. Optimisation adjusts model parameters to reduce that loss. A derivative describes how a function changes as its input changes; the gradient collects derivatives for multiple parameters and points toward the direction of steepest increase. Gradient descent moves in the opposite direction.
