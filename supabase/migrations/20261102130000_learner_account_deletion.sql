@@ -132,6 +132,8 @@ BEGIN
          sub_status = 'deleted',
          is_paid = false,
          subscription_tier = 'deleted',
+         expires_at = NULL,
+         trial_ends_at = NULL,
          account_deletion_token_hash = NULL,
          account_deletion_expires_at = NULL,
          account_deletion_requested_at = NULL,
