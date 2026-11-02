@@ -1,7 +1,8 @@
 # Lesson 15: Ethics, Bias and Responsible ML
 
 ## Learning outcomes
-Explain the method, implement the example in Python, interpret its result, and identify risks that could invalidate the conclusion.
+
+By the end of this lesson, you should be able to Identify ways data collection and modelling can introduce bias; compare error rates across groups where appropriate; discuss privacy, consent, explainability and human oversight; and avoid unsupported high-stakes conclusions.
 
 ## 1. Concepts and reasoning
 A model learns from data shaped by human decisions, institutions and historical conditions. If a training dataset under-represents a group or reflects unequal past treatment, model performance may differ across groups. A single overall accuracy score can hide those differences.
