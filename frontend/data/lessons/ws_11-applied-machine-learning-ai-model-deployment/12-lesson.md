@@ -1,5 +1,45 @@
-﻿# Lesson 12
-Course: ws_11
-ID: ws_11_l12
+# Lesson 12: Containerisation Concepts with Docker
 
-Write complete explanatory notes here...
+## Learning outcomes
+Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+## 1. Core explanation
+A container packages an application with its runtime dependencies so it behaves consistently across environments. A Docker image is the build artefact; a container is a running instance. A Dockerfile describes how to build the image. Containers share the host kernel and are generally lighter than full virtual machines.
+
+A container does not automatically make software secure or reproducible. Use trusted base images, keep them updated, avoid running as root, minimise included files and do not bake secrets into images. Keep model artefacts and datasets separate where appropriate. Expose only required ports.
+
+For an ML API, the image should include application code and runtime dependencies. Decide how the model is supplied: baked into the image for immutable releases or mounted/downloaded from controlled storage with version checks. Document resource requirements.
+
+## 2. Worked example
+Run the Python example in VS Code. Install relevant packages with `python -m pip install numpy pandas scipy scikit-learn`. Cloud services and hosted models are not required for the local examples.
+
+```python
+# Dockerfile example for a FastAPI service
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+EXPOSE 8000
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Build: docker build -t ml-service .
+# Run: docker run --rm -p 8000:8000 ml-service
+```
+
+## 3. Operational interpretation
+State what the example demonstrates and what it does not demonstrate. Distinguish a local prototype from a production deployment. Document dependencies, input/output contracts, data handling, failure modes and model version.
+
+## 4. Guided practice
+Write a Dockerfile for your API. Explain each instruction, identify where the model file will come from and list three steps to reduce image risk. Do not include credentials in the image.
+
+## 5. Independent practice
+Add the lesson's control or component to your own small ML application. Write a short runbook explaining how to test it, monitor it and respond when it fails.
+
+## 6. Knowledge check
+1. What can fail outside the model itself?
+2. What should be logged and what should remain private?
+3. How would you detect a change in behaviour?
+4. What is the rollback or fallback plan?
+
+## Lesson summary
+Production ML is an engineered service with explicit contracts, versioning, monitoring, security and human accountability. A model score alone is not evidence of production readiness.
