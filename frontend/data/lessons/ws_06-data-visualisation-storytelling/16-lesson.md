@@ -1,44 +1,143 @@
-# Lesson 16: Data Storytelling and Narrative Structure
+# Lesson 16: Uncertainty, Error Bars and Statistical Estimation
 
 ## Learning outcomes
+You should be able to distinguish mean, median, standard deviation, standard error and confidence interval; add error bars to Matplotlib and Seaborn charts; explain bootstrap intuition; choose uncertainty displays; and avoid interpreting intervals incorrectly.
 
-By the end of this lesson, you should be able to structure a data narrative using context, question, evidence, insight and action; distinguish observation from interpretation; select supporting visuals; and communicate caveats without cherry-picking.
+## 1. Why show uncertainty?
+A chart often displays an estimate such as an average score or conversion rate. Estimates vary because we observe a sample rather than the entire population. Measurements may also be imprecise or incomplete.
 
-## 1. Core explanation
-Data storytelling connects evidence to a decision through a clear narrative. A useful structure is context, complication, evidence, insight and action. Context explains the situation; complication identifies the question or tension; evidence supports the insight; action states what can reasonably be done.
+Distinguish:
+- Observed values: individual records.
+- Descriptive spread: variation among those records.
+- Uncertainty in an estimate: how much the estimate may vary across repeated samples under a statistical model.
 
-A story is not permission to cherry-pick. Show the relevant population, time window and denominator. Include counter-evidence and uncertainty. A chart should support one message, with annotation that guides attention but does not distort the data. Separate observed facts from interpretations and recommendations.
+These are not interchangeable.
 
-Tailor detail to the audience. Executives need the decision and implications; technical audiences may need methods, assumptions and diagnostics. Keep a technical appendix available so the main narrative remains focused without hiding important information.
-
-## 2. Worked Python example
-Run in VS Code. Install required packages with `python -m pip install pandas numpy matplotlib seaborn plotly`.
+## 2. Mean, median and standard deviation
+The mean is the sum divided by the number of values and is sensitive to extreme values. The median is the middle value after sorting and is more resistant to extremes. Standard deviation describes spread around the mean; it does not directly measure uncertainty about the mean.
 
 ```python
-story = [
-    "Context: learner completion is a priority",
-    "Complication: two cohorts show a declining rate",
-    "Evidence: completion fell from 82% to 74% over six weeks",
-    "Insight: the decline is concentrated in the two cohorts",
-    "Action: investigate support access; do not assume causation"
-]
-print("\n".join(story))
+import numpy as np
+scores = np.array([55, 60, 62, 65, 67, 68, 70, 72, 75, 95])
+print("Mean:", scores.mean())
+print("Median:", np.median(scores))
+print("Sample standard deviation:", scores.std(ddof=1))
 ```
 
-## 3. Interpretation and design checks
-State the analytical question, population, variables, units and denominator. Check missingness and sample size. Distinguish observations from explanations and recommendations. Design for the actual audience and the size at which the visual will be viewed.
+`ddof=1` uses the sample correction. A population standard deviation uses a different convention.
 
-## 4. Guided practice
-Write a five-sentence narrative for a chart you created. Include context, a specific finding, a limitation and a proportionate action. Identify one alternative explanation.
+## 3. Standard error
+For independent observations, the standard error of the sample mean is commonly estimated as:
 
-## 5. Independent practice
-Apply the lesson to a dataset. Create a chart or artefact, write a caption that states the main message and caveat, and ask another person to interpret it without your explanation.
+`SE = s / sqrt(n)`
 
-## 6. Knowledge check
-1. What question does this visual answer?
-2. Which encoding or design choice supports the comparison?
-3. What could mislead the audience?
-4. What uncertainty or limitation must be disclosed?
+where s is the sample standard deviation and n is sample size. Standard error describes estimated sampling variability of the mean. It is not the spread of individual observations.
+
+## 4. Matplotlib error bars
+```python
+import matplotlib.pyplot as plt
+groups = ["A", "B", "C"]
+means = [68, 74, 71]
+standard_errors = [2.5, 3.0, 1.8]
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.errorbar(groups, means, yerr=standard_errors,
+            fmt="o", markersize=8, capsize=5)
+ax.set(title="Group means with ±1 standard error",
+       xlabel="Group", ylabel="Mean score")
+plt.show()
+```
+
+- `yerr` supplies vertical error sizes.
+- `fmt="o"` draws circular markers.
+- `capsize` controls end caps.
+- `markersize` controls point size.
+
+The title explicitly says ±1 standard error. Without a label, the reader cannot know what the bars represent.
+
+## 5. Confidence intervals
+A confidence interval is produced by a procedure with a stated long-run coverage rate. A 95% confidence procedure is designed so that 95% of intervals constructed from repeated samples would contain the fixed population parameter, under the method's assumptions.
+
+It is not precise to say that a frequentist 95% confidence interval gives a 95% probability that the already-fixed parameter lies inside this particular interval. The 95% refers to long-run coverage of the procedure.
+
+## 6. Bootstrap intuition
+Bootstrapping repeatedly samples observations with replacement from the observed dataset, calculates a statistic for each resample, and uses the resulting distribution to estimate uncertainty.
+
+```python
+import numpy as np
+rng = np.random.default_rng(42)
+values = np.array([55, 60, 62, 65, 67, 68, 70, 72, 75, 95])
+
+bootstrap_means = []
+for _ in range(5000):
+    sample = rng.choice(values, size=len(values), replace=True)
+    bootstrap_means.append(sample.mean())
+
+lower, upper = np.percentile(bootstrap_means, [2.5, 97.5])
+print("Observed mean:", values.mean())
+print("Bootstrap percentile interval:", lower, upper)
+```
+
+This is a simple percentile bootstrap. It assumes the sample represents the population and observations can be resampled independently. Clustered, time-dependent or complex survey data require different resampling strategies.
+
+## 7. Seaborn estimation plots
+```python
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+df = pd.DataFrame({
+    "group": ["A"] * 6 + ["B"] * 6,
+    "score": [60, 62, 65, 67, 68, 70, 65, 70, 72, 75, 78, 80]
+})
+fig, ax = plt.subplots(figsize=(7, 4))
+sns.pointplot(data=df, x="group", y="score",
+              estimator="mean", errorbar=("ci", 95),
+              n_boot=2000, ax=ax)
+ax.set(title="Mean score with 95% confidence intervals",
+       ylabel="Mean score")
+plt.show()
+```
+
+`estimator` specifies the summary; `errorbar=("ci", 95)` requests a 95% confidence interval; `n_boot` controls bootstrap resamples. The exact procedure depends on Seaborn version and settings. Describe the method used.
+
+## 8. Compare uncertainty measures
+
+| Quantity | Meaning |
+|---|---|
+| Standard deviation | Spread of individual observations |
+| Standard error | Estimated sampling variability of an estimator |
+| Confidence interval | Interval from a procedure with stated long-run coverage |
+
+Do not swap these labels because all can be drawn as error bars.
+
+## 9. Uncertainty in proportions
+A percentage without a denominator can mislead. A 50% conversion rate from 2 visitors is less informative than 50% from 20,000 visitors. Show sample size and use a proportion interval method appropriate to the design. Clustered or repeated observations may invalidate simple independent-observation intervals.
+
+## 10. Common mistakes
+- Calling standard deviation standard error.
+- Labelling every error bar a confidence interval.
+- Treating overlapping intervals as a universal significance test.
+- Omitting sample sizes.
+- Ignoring clustering or time dependence.
+- Presenting a narrow interval from a biased sample as certainty.
+
+## Guided practice
+1. Calculate mean, median and standard deviation.
+2. Calculate standard error.
+3. Plot mean ±1 standard error.
+4. Run the bootstrap example with different numbers of resamples.
+5. Explain what the bootstrap assumes.
+
+## Independent practice
+Choose a group comparison with sufficient observations. Display an estimate and a clearly defined interval. Include sample sizes, method, assumptions and limitations. State whether the bars describe individual spread or uncertainty in an estimate.
+
+## Knowledge check
+1. What does standard deviation measure?
+2. How is standard error different?
+3. What does a 95% confidence procedure mean?
+4. Why bootstrap with replacement?
+5. Why should sample sizes be shown?
 
 ## Lesson summary
-Effective visual communication combines accurate encoding, clear context, audience-aware design and honest interpretation.
+Uncertainty is part of the evidence. Distinguish spread from uncertainty in an estimate, label error bars precisely, show denominators and use methods appropriate to the sampling design.
