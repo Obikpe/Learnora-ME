@@ -60,13 +60,22 @@ def _certificate_view(row: dict, course_title: str | None = None) -> dict:
 
 @router.get("/me")
 def my_credentials(user: CurrentUser = Depends(get_current_user)):
-    rows = (
-        supabase.table("certificates")
-        .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
-        .eq("user_id", user.id)
-        .order("issued_at", desc=True)
-        .execute()
-    ).data or []
+    try:
+        rows = (
+            supabase.table("certificates")
+            .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
+            .eq("user_id", user.id)
+            .order("issued_at", desc=True)
+            .execute()
+        ).data or []
+    except Exception:
+        rows = (
+            supabase.table("certificates")
+            .select("id,user_id,course_id,certificate_number,issued_at,metadata")
+            .eq("user_id", user.id)
+            .order("issued_at", desc=True)
+            .execute()
+        ).data or []
     course_ids = list({str(row["course_id"]) for row in rows if row.get("course_id")})
     course_map = {}
     if course_ids:
@@ -136,14 +145,24 @@ def issue_course_certificate(
 
     # Check by learner/course first so a JWT secret rotation cannot issue a
     # second certificate for a course that was already certified.
-    existing = (
-        supabase.table("certificates")
-        .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
-        .eq("user_id", user.id)
-        .eq("course_id", course_id)
-        .limit(1)
-        .execute()
-    ).data or []
+    try:
+        existing = (
+            supabase.table("certificates")
+            .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
+            .eq("user_id", user.id)
+            .eq("course_id", course_id)
+            .limit(1)
+            .execute()
+        ).data or []
+    except Exception:
+        existing = (
+            supabase.table("certificates")
+            .select("id,user_id,course_id,certificate_number,issued_at,metadata")
+            .eq("user_id", user.id)
+            .eq("course_id", course_id)
+            .limit(1)
+            .execute()
+        ).data or []
     if existing:
         if existing[0].get("revoked_at"):
             raise HTTPException(409, "This certificate has been revoked and cannot be reissued. Contact Learnora support.")
@@ -173,14 +192,24 @@ def issue_course_certificate(
         row = (saved.data or [None])[0]
     except Exception:
         # A concurrent request may have inserted the same deterministic credential.
-        row = (
-            supabase.table("certificates")
-            .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
-            .eq("certificate_number", number)
-            .eq("user_id", user.id)
-            .limit(1)
-            .execute()
-        ).data
+        try:
+            row = (
+                supabase.table("certificates")
+                .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
+                .eq("certificate_number", number)
+                .eq("user_id", user.id)
+                .limit(1)
+                .execute()
+            ).data
+        except Exception:
+            row = (
+                supabase.table("certificates")
+                .select("id,user_id,course_id,certificate_number,issued_at,metadata")
+                .eq("certificate_number", number)
+                .eq("user_id", user.id)
+                .limit(1)
+                .execute()
+            ).data
         row = row[0] if row else None
         if not row:
             raise HTTPException(500, "The certificate could not be issued. Please retry.") from None
@@ -199,13 +228,22 @@ def verify_certificate(certificate_number: str):
     number = certificate_number.strip().upper()
     if not number or len(number) > 80:
         raise HTTPException(404, "Certificate not found.")
-    rows = (
-        supabase.table("certificates")
-        .select("id,course_id,certificate_number,issued_at,metadata,revoked_at")
-        .eq("certificate_number", number)
-        .limit(1)
-        .execute()
-    ).data or []
+    try:
+        rows = (
+            supabase.table("certificates")
+            .select("id,course_id,certificate_number,issued_at,metadata,revoked_at")
+            .eq("certificate_number", number)
+            .limit(1)
+            .execute()
+        ).data or []
+    except Exception:
+        rows = (
+            supabase.table("certificates")
+            .select("id,course_id,certificate_number,issued_at,metadata")
+            .eq("certificate_number", number)
+            .limit(1)
+            .execute()
+        ).data or []
     if not rows:
         raise HTTPException(404, "No Learnora certificate matches that number.")
 
