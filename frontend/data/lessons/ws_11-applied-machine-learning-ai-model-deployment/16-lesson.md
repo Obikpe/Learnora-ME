@@ -1,7 +1,8 @@
 # Lesson 16: Retraining and Model Versioning
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Define a model version manifest with data and feature-schema versions; plan retraining criteria; preserve previous artefacts; and explain approval and rollback requirements.
 
 ## 1. Core explanation
 Retraining updates a model using newer data. It should be triggered by a planned schedule, a verified performance decline or a material change in the environment—not merely because new rows exist. Check label quality, representativeness and whether the new data reflects the intended population.
