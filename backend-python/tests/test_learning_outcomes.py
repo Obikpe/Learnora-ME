@@ -42,6 +42,24 @@ class LearningOutcomeContractTests(unittest.TestCase):
         self.assertNotIn("user_id", view)
         self.assertNotIn("email", view)
 
+    def test_certificate_projection_marks_revocation_without_exposing_private_data(self):
+        valid = credentials._certificate_view({
+            "id": "certificate-id", "user_id": "private-user-id", "course_id": "course-id",
+            "certificate_number": "LRN-COURSE-ABC123", "issued_at": "2026-11-02T10:00:00Z",
+            "metadata": {"recipient_name": "Learner Name", "course_title": "Data Foundations"},
+            "revoked_at": None, "revocation_reason": None,
+        })
+        revoked = credentials._certificate_view({
+            "id": "certificate-id", "user_id": "private-user-id", "course_id": "course-id",
+            "certificate_number": "LRN-COURSE-ABC123", "issued_at": "2026-11-02T10:00:00Z",
+            "metadata": {"recipient_name": "Learner Name", "course_title": "Data Foundations"},
+            "revoked_at": "2026-11-03T10:00:00Z", "revocation_reason": "Credential issued in error.",
+        })
+        self.assertTrue(valid["valid"])
+        self.assertFalse(revoked["valid"])
+        self.assertEqual(revoked["revocation_reason"], "Credential issued in error.")
+        self.assertNotIn("user_id", revoked)
+
     def test_project_review_is_bounded_and_decision_is_explicit(self):
         approved = internal_projects.ProjectReviewIn(
             score=85,
