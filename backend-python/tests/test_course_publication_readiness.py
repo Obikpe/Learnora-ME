@@ -113,6 +113,20 @@ class CoursePublicationTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 409)
 
 
+    def test_published_assignment_requires_learner_instructions(self):
+        self.fixtures["assignments"] = [{
+            "id": "assignment-1",
+            "course_id": "course-1",
+            "is_published": True,
+            "description": None,
+            "instructions": None,
+            "max_score": 100,
+        }]
+        with patch.object(internal_content, "supabase", PublishSupabase(self.fixtures)):
+            with self.assertRaises(HTTPException) as raised:
+                internal_content._assert_course_publishable("course-1")
+        self.assertEqual(raised.exception.status_code, 409)
+
     def test_published_assessment_requires_at_least_one_answerable_question(self):
         self.fixtures["quiz_questions"] = []
         with patch.object(internal_content, "supabase", PublishSupabase(self.fixtures)):
