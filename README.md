@@ -60,6 +60,7 @@ Current product sequencing is documented in [the Free Launch → Paid Expansion 
 ## Engineering documents
 
 - [Free Launch → Paid Expansion Plan](docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md)
+- [Learner Journey Phases 1–5](docs/LEARNER_JOURNEY_PHASES_1_5.md)
 - [Product engineering specification](docs/PRODUCT_ENGINEERING_SPEC.md)
 - [Engineering roadmap](docs/ROADMAP.md)
 - [Engineering history and decisions](docs/ENGINEERING_HISTORY_AND_DECISIONS.md)
