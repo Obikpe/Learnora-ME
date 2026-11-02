@@ -60,12 +60,23 @@ class GmailApiDeliveryTests(unittest.TestCase):
         self.assertEqual(mime["To"], "learner@example.com")
         self.assertEqual(mime["Subject"], "Verify your Learnora account")
 
-    def test_smtp_and_resend_are_not_accepted_as_email_configuration(self):
-        with patch.object(auth, "GMAIL_OAUTH_CLIENT_ID", ""), \
-             patch.object(auth, "GMAIL_OAUTH_CLIENT_SECRET", ""), \
-             patch.object(auth, "GMAIL_OAUTH_REFRESH_TOKEN", ""), \
-             patch.object(auth, "GMAIL_USER_EMAIL", ""), \
-             patch.object(auth, "GMAIL_FROM_EMAIL", ""):
+    def test_legacy_smtp_and_resend_environment_is_ignored(self):
+        legacy_environment = {
+            "SMTP_HOST": "smtp.gmail.com",
+            "SMTP_PORT": "465",
+            "SMTP_USERNAME": "old-sender@gmail.com",
+            "SMTP_PASSWORD": "old-app-password",
+            "RESEND_API_KEY": "legacy-resend-key",
+            "RESEND_FROM_EMAIL": "onboarding@resend.dev",
+        }
+        with (
+            patch.dict("os.environ", legacy_environment),
+            patch.object(auth, "GMAIL_OAUTH_CLIENT_ID", ""),
+            patch.object(auth, "GMAIL_OAUTH_CLIENT_SECRET", ""),
+            patch.object(auth, "GMAIL_OAUTH_REFRESH_TOKEN", ""),
+            patch.object(auth, "GMAIL_USER_EMAIL", ""),
+            patch.object(auth, "GMAIL_FROM_EMAIL", ""),
+        ):
             self.assertFalse(auth._email_configured())
 
 
