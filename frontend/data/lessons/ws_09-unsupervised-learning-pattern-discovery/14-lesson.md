@@ -1,7 +1,8 @@
 # Lesson 14: Interpreting and Profiling Segments
 
 ## Learning outcomes
-Explain the unsupervised method, implement the example and judge whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Profile cluster assignments using original feature units; compare group sizes, medians and distributions; name segments cautiously; and identify evidence needed before taking action.
 
 ## 1. Core explanation
 Cluster profiling describes how groups differ using original feature units. Compare counts, medians, means, distributions and proportions. A profile should answer what distinguishes a segment, how large it is and whether the difference is stable. Use box plots or summary tables to reveal within-cluster variation, not only averages.
