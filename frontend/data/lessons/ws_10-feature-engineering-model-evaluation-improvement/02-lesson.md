@@ -1,7 +1,8 @@
 # Lesson 2: Data Leakage and Leakage Prevention
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Define target, temporal and preprocessing leakage; identify features that contain future information; use a pipeline to fit transformations on training data only; and explain how leakage inflates evaluation.
 
 ## 1. Core explanation
 Data leakage occurs when training or evaluation uses information that would not legitimately be available at prediction time, or when information from validation/test data influences training. Target leakage includes a post-outcome field that directly or indirectly reveals the answer. Preprocessing leakage occurs when statistics such as medians or scaling parameters are learned using the full dataset before splitting.
