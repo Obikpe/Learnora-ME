@@ -1,7 +1,8 @@
 # Lesson 4: Encoding Categorical Variables
 
 ## Learning outcomes
-Explain the feature-engineering method, implement it in Python and identify leakage, reproducibility and interpretation risks.
+
+By the end of this lesson, you should be able to Encode nominal categories with one-hot encoding; handle categories not seen during training; combine numeric and categorical transformations with ColumnTransformer; and explain why category codes should not imply false order.
 
 ## 1. Core explanation
 Most estimators require numeric input. One-hot encoding creates a binary column for each category and is suitable for nominal variables. Ordinal encoding assigns ordered values and should be used only when categories have a genuine order. Target encoding replaces a category with a target-derived statistic and must be carefully cross-fitted to avoid leakage.
