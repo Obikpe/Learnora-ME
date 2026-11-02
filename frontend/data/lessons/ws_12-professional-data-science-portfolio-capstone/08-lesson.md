@@ -1,7 +1,8 @@
 # Lesson 8: Git and GitHub for Data Work
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Explain Git repositories, commits and branches; use a basic add/commit/push workflow; create a useful .gitignore; and avoid committing secrets, environments or restricted data.
 
 ## 1. Core explanation
 Git records changes to files over time. A repository contains the project history; a commit is a named snapshot. Branches allow isolated work, while a pull request supports review before changes are merged. GitHub adds collaboration, issue tracking and project documentation.
