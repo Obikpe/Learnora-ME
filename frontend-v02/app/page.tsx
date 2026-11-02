@@ -98,7 +98,7 @@ export default function Home() {
         <div className="divide-y divide-white/[.08] border-y border-white/[.08]">
           {[
             ["Is Learnora only for people changing careers?","No. You might be learning for work, school, personal growth, a new responsibility or a project you want to complete. The point is to connect learning with something useful to you."],
-            ["What makes Learnora different from a course library?","A course is one part of the journey. Learnora is being built to connect lessons with practice, projects, feedback and a record of what you have demonstrated."],
+            ["What makes Learnora different from a course library?","A course is one part of the journey. Learnora connects lessons with practice, projects, feedback and a record of what you have demonstrated."],
             ["Can my school or organisation use Learnora?","Yes. Organisations can enquire about a workspace shaped around their people, programmes, courses and agreed outcomes. Access and capacity are set through the organisation's arrangement."],
             ["I teach or have expertise to share. Can I contribute?","Instructors and creators can explore the teaching pathway and apply to contribute. Creator tools and commercial features depend on the access currently available."],
             ["Do I need to pay to get started?","Available access depends on the course, programme and account. We aim to be clear about what is available before you commit; organisation pricing is discussed directly rather than presented as a one-size-fits-all plan."],
