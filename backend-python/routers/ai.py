@@ -277,6 +277,10 @@ async def ask(
             if not quiz_rows:
                 raise HTTPException(404, "Published assessment not found in this course.")
             quiz = quiz_rows[0]
+            if quiz.get("lesson_id") and str(quiz.get("lesson_id")) != str(body.lesson_id):
+                raise HTTPException(422, "The selected assessment is not attached to this lesson.")
+            if quiz.get("module_id") and str(quiz.get("module_id")) != str(lesson.get("module_id")):
+                raise HTTPException(422, "The selected assessment is not attached to this lesson module.")
             quiz_module_id = quiz.get("module_id")
             if not quiz_module_id and quiz.get("lesson_id"):
                 quiz_lesson_rows = (
