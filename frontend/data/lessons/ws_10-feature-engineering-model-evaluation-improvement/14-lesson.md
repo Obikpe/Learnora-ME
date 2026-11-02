@@ -1,36 +1,36 @@
-# Lesson 14: Classification Evaluation Metrics
+# Lesson 14: Regression Evaluation Metrics
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Calculate MAE, MSE, RMSE and R-squared; interpret their units and penalties; inspect residuals; and choose regression metrics based on the actual decision.
+By the end of this lesson, you should be able to Compare K-fold, StratifiedKFold, GroupKFold and TimeSeriesSplit; select a splitter that matches the data structure; and explain what each validation score estimates.
 
 ## 1. Core explanation
-Accuracy is the proportion of correct labels. Precision is the proportion of predicted positives that are truly positive; recall is the proportion of actual positives found. Specificity measures the proportion of negatives correctly rejected. F1 is the harmonic mean of precision and recall. Balanced accuracy averages recall across classes.
+MAE is the average absolute error and is easy to interpret in target units. MSE squares residuals and penalises large errors; RMSE returns to target units. R-squared compares model squared error with a mean-prediction reference and can be negative on test data. MAPE expresses percentage error but behaves badly when actual values are zero or near zero.
 
-Use the confusion matrix to connect metrics to errors. In fraud screening, false negatives are missed fraud and false positives are legitimate transactions flagged for review. In medical screening, the cost of missed cases may be high. No metric is universally best; choose based on the decision and report the threshold.
+Metric choice reflects the decision. If large errors are especially harmful, RMSE may be more informative than MAE. If errors are interpreted in the original unit, MAE and RMSE are useful. If underprediction and overprediction have different costs, use an appropriate asymmetric loss or report both directions.
 
-For multiclass problems, inspect per-class scores and macro/weighted averages. Accuracy can hide poor performance on rare classes. Include class support so readers understand how many observations underlie each score.
+Always compare on the same rows and scale. Inspect residual plots and error by segment. A single average can hide systematic errors for high-value customers or long delivery routes.
 
 ## 2. Worked Python example
 Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
 
 ```python
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score, balanced_accuracy_score
+import numpy as np
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-actual = [0, 0, 0, 0, 1, 1, 1, 1]
-pred =   [0, 0, 1, 0, 1, 0, 1, 1]
-print(confusion_matrix(actual, pred))
-print("Precision", precision_score(actual, pred))
-print("Recall", recall_score(actual, pred))
-print("F1", f1_score(actual, pred))
-print("Balanced accuracy", balanced_accuracy_score(actual, pred))
+actual = np.array([100, 120, 130, 150, 180])
+pred = np.array([105, 115, 140, 145, 220])
+print("MAE", mean_absolute_error(actual, pred))
+print("RMSE", mean_squared_error(actual, pred)**.5)
+print("R2", r2_score(actual, pred))
+print("Residuals", actual - pred)
 ```
 
 ## 3. Interpretation and safeguards
 State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune a threshold, select features or choose hyperparameters.
 
 ## 4. Guided practice
-Explain which errors the model made. Recommend a metric for a low-cost fraud review queue and another for an automated action with serious consequences.
+Compare two candidate prediction arrays. Select a primary metric for a delivery-time model and explain whether late predictions or early predictions are more costly.
 
 ## 5. Independent practice
 Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
