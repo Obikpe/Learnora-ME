@@ -33,6 +33,48 @@ def _is_public_course(course: dict, organisation_map: dict, creator_map: dict) -
     return False
 
 
+def _public_track_memberships(course_ids: list[str]) -> dict:
+    """Return actual published global track relationships for catalogue courses."""
+    ids = list({str(value) for value in course_ids if value})
+    if not ids:
+        return {}
+    links = (
+        supabase.table("learnora_learning_path_courses")
+        .select("path_id,course_id,order_index,required")
+        .in_("course_id", ids)
+        .execute()
+    ).data or []
+    path_ids = list({str(row["path_id"]) for row in links if row.get("path_id")})
+    if not path_ids:
+        return {}
+    paths = (
+        supabase.table("learnora_learning_paths")
+        .select("id,name,slug,description,status")
+        .in_("id", path_ids)
+        .is_("owner_user_id", "null")
+        .is_("organisation_id", "null")
+        .eq("status", "published")
+        .execute()
+    ).data or []
+    path_map = {str(row["id"]): row for row in paths}
+    result = {}
+    for link in links:
+        track = path_map.get(str(link.get("path_id")))
+        course_id = str(link.get("course_id") or "")
+        if not track or not course_id:
+            continue
+        result.setdefault(course_id, []).append({
+            "id": str(track["id"]),
+            "name": track.get("name"),
+            "slug": track.get("slug"),
+            "order_index": link.get("order_index", 0),
+            "required": link.get("required") is not False,
+        })
+    for values in result.values():
+        values.sort(key=lambda item: (int(item.get("order_index") or 0), str(item.get("name") or "")))
+    return result
+
+
 def _public_course_payload(course: dict) -> dict:
     settings = course.get("settings") or {}
     topics = settings.get("topics") if isinstance(settings.get("topics"), list) else []
@@ -51,6 +93,7 @@ def _public_course_payload(course: dict) -> dict:
         "thumbnail_url": course.get("thumbnail_url"),
         "estimated_hours": course.get("estimated_hours"),
         "created_at": course.get("created_at"),
+        "tracks": [],
         "settings": {
             "public_catalogue": True,
             "is_free": bool(is_free),
@@ -260,13 +303,22 @@ def public_courses():
         creators = (supabase.table("learnora_creator_accounts").select("id,status").in_("id", creator_ids).execute()).data or []
         creator_map = {str(row["id"]): row for row in creators}
     visible = [_public_course_payload(row) for row in course_rows if _is_public_course(row, organisation_map, creator_map)]
+    memberships = _public_track_memberships([
+        str(row.get("id")) for row in visible
+        if row.get("ownership") == "learnora" and not row.get("organisation_id")
+    ])
+    for row in visible:
+        row["tracks"] = memberships.get(str(row.get("id")), [])
     return {"success": True, "count": len(visible), "courses": visible}
 
 
 @router.get("/courses/{course_id}")
 def public_course(course_id: str):
     course = _public_course_lookup(course_id)
-    return {"success": True, "course": _public_course_payload(course)}
+    payload = _public_course_payload(course)
+    if course.get("ownership") == "learnora" and not course.get("organisation_id"):
+        payload["tracks"] = _public_track_memberships([str(course_id)]).get(str(course_id), [])
+    return {"success": True, "course": payload}
 
 
 @router.get("/courses/{course_id}/structure")
