@@ -1,7 +1,8 @@
 # Lesson 16: Support Vector Machines
 
 ## Learning outcomes
-Explain the technique, implement the worked example, interpret the output and justify when the method is suitable.
+
+By the end of this lesson, you should be able to Explain support vector classification and the margin concept; compare linear and RBF kernels; standardise inputs; and describe how C and kernel choice affect the decision boundary.
 
 ## 1. Core explanation
 A support vector machine (SVM) seeks a decision boundary with a large margin between classes. Support vectors are the observations closest to the boundary. A linear SVM uses a straight boundary; kernel methods allow non-linear boundaries by computing similarities in a transformed feature space.
