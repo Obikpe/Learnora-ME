@@ -35,4 +35,19 @@ BEGIN
   IF v_lookup_index <> 1 THEN
     RAISE EXCEPTION 'quiz_active_sessions requires a user/expiry lookup index';
   END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='quiz_active_sessions'
+      AND column_name='client_session_id' AND is_nullable='NO'
+  ) THEN
+    RAISE EXCEPTION 'quiz_active_sessions requires a per-tab client session ID';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid='public.quiz_active_sessions'::regclass
+      AND conname='quiz_active_sessions_user_quiz_tab_unique'
+  ) THEN
+    RAISE EXCEPTION 'quiz_active_sessions must enforce one row per learner, quiz and browser tab';
+  END IF;
 END $$;
