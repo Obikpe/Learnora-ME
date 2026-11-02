@@ -1,7 +1,8 @@
 # Lesson 16: Writing an Executive Summary
 
 ## Learning outcomes
-Apply the professional method, produce a project artefact and communicate decisions with evidence.
+
+By the end of this lesson, you should be able to Write an executive summary that states the decision, main evidence, interpretation, recommendation and limitation in plain language without overstating certainty.
 
 ## 1. Core explanation
 An executive summary is a concise decision-oriented account of a longer analysis. It should state the problem, the most important evidence, what it means, the recommended action and the key limitation. Write it for a reader who may not read the technical appendix.
