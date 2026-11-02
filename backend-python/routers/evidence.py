@@ -444,24 +444,27 @@ def submit_project(
 
     now = datetime.now(timezone.utc).isoformat()
 
-    result = (
-        supabase
-        .table("project_submissions")
-        .insert({
-            "project_id": project_id,
-            "user_id": user.id,
-            **body.model_dump(),
-            "status": "submitted",
-            "submitted_at": now,
-        })
-        .execute()
-    )
+    try:
+        result = (
+            supabase
+            .table("project_submissions")
+            .insert({
+                "project_id": project_id,
+                "user_id": user.id,
+                **body.model_dump(),
+                "status": "submitted",
+                "submitted_at": now,
+            })
+            .execute()
+        )
+    except Exception as exc:
+        if "23505" in str(exc) or "project_submissions_one_active_per_learner_idx" in str(exc):
+            raise HTTPException(409, "You already have an active submission for this project.") from None
+        print(f"Project submission insert failed: {type(exc).__name__}")
+        raise HTTPException(500, "Unable to save project submission.") from None
 
     if not result.data:
-        raise HTTPException(
-            500,
-            "Unable to save project submission.",
-        )
+        raise HTTPException(500, "Unable to save project submission.")
 
     return {
         "success": True,
