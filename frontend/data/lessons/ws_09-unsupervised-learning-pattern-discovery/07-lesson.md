@@ -1,7 +1,8 @@
 # Lesson 7: DBSCAN and Density-Based Clustering
 
 ## Learning outcomes
-Explain the unsupervised-learning concept, implement the worked example, interpret the output and assess whether the discovered structure is meaningful.
+
+By the end of this lesson, you should be able to Explain density-based clustering; configure DBSCAN's eps and min_samples; identify noise points; and describe how scale and density variation affect its results.
 
 ## 1. Core explanation
 DBSCAN groups points in dense regions and marks isolated points as noise. It uses eps (the neighbourhood radius) and min_samples (the minimum neighbours needed for a core point). Unlike K-means, it does not require a cluster count and can identify non-spherical shapes.
