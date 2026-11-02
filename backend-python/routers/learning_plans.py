@@ -7,6 +7,7 @@ track curriculum.
 from datetime import datetime, timezone
 import json
 from typing import Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -54,6 +55,11 @@ def _catalogue(track_id: Optional[str], profile: dict):
         .execute()
     ).data or []
     preferred = str(profile.get("preferred_track") or "").strip().lower()
+    if track_id:
+        try:
+            UUID(str(track_id))
+        except (ValueError, TypeError, AttributeError):
+            raise HTTPException(404, "Published global track not found.") from None
     track = next((row for row in tracks if str(row.get("id")) == str(track_id)), None) if track_id else None
     if track_id and not track:
         raise HTTPException(404, "Published global track not found.")
@@ -85,6 +91,9 @@ def _catalogue(track_id: Optional[str], profile: dict):
             .execute()
         ).data or []
         by_id = {str(row["id"]): row for row in courses}
+        unavailable_required = [str(link["course_id"]) for link in links if link.get("required") is not False and str(link.get("course_id")) not in by_id]
+        if unavailable_required:
+            raise HTTPException(409, "A required course in this published track is not currently available. Contact Learnora support.")
         sequence = [
             {**by_id[str(link["course_id"])], "required": link.get("required") is not False, "order_index": link.get("order_index", 0)}
             for link in links if str(link.get("course_id")) in by_id
@@ -137,10 +146,6 @@ def _schedule(courses: list[dict], weekly_minutes: int):
                 week_number += 1
                 current_tasks = []
                 remaining = capacity
-            if week_number > 52:
-                break
-        if week_number > 52:
-            break
 
     if current_tasks:
         week_rows.append({"week": week_number, "minutes": capacity - remaining, "tasks": current_tasks})
