@@ -1,7 +1,8 @@
 # Lesson 16: Data Storytelling and Narrative Structure
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to structure a data narrative using context, question, evidence, insight and action; distinguish observation from interpretation; select supporting visuals; and communicate caveats without cherry-picking.
 
 ## 1. Core explanation
 Data storytelling connects evidence to a decision through a clear narrative. A useful structure is context, complication, evidence, insight and action. Context explains the situation; complication identifies the question or tension; evidence supports the insight; action states what can reasonably be done.
