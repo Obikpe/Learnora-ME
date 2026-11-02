@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from html import escape
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
@@ -49,6 +50,18 @@ def request_account_deletion(
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(minutes=DELETION_TOKEN_TTL_MINUTES)
 
+    existing_request = (
+        auth.supabase.table("users")
+        .select("account_status,account_deletion_expires_at")
+        .eq("id", user.id)
+        .limit(1)
+        .execute()
+    ).data or []
+    if existing_request and existing_request[0].get("account_status") == "deletion_pending":
+        current_expiry = auth._parse_datetime(existing_request[0].get("account_deletion_expires_at"))
+        if current_expiry and current_expiry > now:
+            raise HTTPException(status_code=409, detail="A confirmation email is already on its way. Check your inbox or wait for the link to expire before requesting another.")
+
     saved = (
         auth.supabase.table("users")
         .update({
@@ -58,7 +71,7 @@ def request_account_deletion(
             "account_deletion_requested_at": now.isoformat(),
         })
         .eq("id", user.id)
-        .eq("account_status", "active")
+        .in_("account_status", ["active", "deletion_pending"])
         .execute()
     ).data or []
     if not saved:
@@ -66,6 +79,7 @@ def request_account_deletion(
 
     confirmation_url = f"{auth.FRONTEND_URL}/confirm-account-deletion#token={raw_token}"
     display_name = user.name or "there"
+    safe_display_name = escape(display_name)
     text_body = (
         f"Hi {display_name},\n\n"
         "We received a request to delete your Learnora account. "
@@ -81,7 +95,7 @@ def request_account_deletion(
 <html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
 <div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
 <h1 style="margin:0 0 16px">Confirm account deletion</h1>
-<p>Hi {display_name},</p>
+<p>Hi {safe_display_name},</p>
 <p>We received a request to delete your Learnora account. This action will sign you out and remove access to your account.</p>
 <p style="margin:28px 0"><a href="{confirmation_url}" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#172033;color:#fff;text-decoration:none;font-weight:bold">Confirm account deletion</a></p>
 <p style="font-size:13px;line-height:1.6;color:#64748b">This secure link expires in 60 minutes. Your account will not be deleted unless you confirm. Active recurring Learnora subscriptions will be cancelled before deletion is completed.</p>
