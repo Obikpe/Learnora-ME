@@ -259,7 +259,7 @@ async def ask(
                 "Learner's recent assessment results: " + str(attempts),
                 "Never reveal or infer the hidden answer key. Coach the learner through reasoning and hints.",
             ])
-        learning_context = "\\n".join(context_lines)
+        learning_context = "\n".join(context_lines)
 
     conversation_id = body.conversation_id
 
