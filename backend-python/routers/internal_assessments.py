@@ -139,16 +139,44 @@ def _question_rows(quiz_id: str):
     ).data or []
 
 
+def _validate_question_payload(question: dict):
+    question_type = str(question.get("question_type") or "").lower()
+    answer = question.get("correct_answer")
+    if answer is None or (isinstance(answer, str) and not answer.strip()):
+        raise HTTPException(422, "Provide a correct answer for every auto-graded question.")
+    if question_type in {"true_false", "boolean"}:
+        value = answer.get("value", answer.get("answer")) if isinstance(answer, dict) else answer
+        if str(value).strip().lower() not in {"true", "false"}:
+            raise HTTPException(422, "True/false questions must use True or False as the correct answer.")
+        return
+    options = question.get("options")
+    if isinstance(options, dict):
+        values = [str(value).strip().casefold() for value in options.keys()]
+        values.extend(str(value).strip().casefold() for value in options.values())
+    elif isinstance(options, list):
+        values = []
+        for option in options:
+            if isinstance(option, dict):
+                values.append(str(option.get("value", option.get("label", option.get("text", "")))).strip().casefold())
+            else:
+                values.append(str(option).strip().casefold())
+    else:
+        values = []
+    if not values:
+        raise HTTPException(422, "Choice questions need at least one answer option.")
+    if isinstance(answer, dict):
+        answer = answer.get("value", answer.get("answer", answer.get("label", "")))
+    answers = answer if isinstance(answer, list) else [answer]
+    if any(str(value).strip().casefold() not in values for value in answers):
+        raise HTTPException(422, "The correct answer must match one of the configured answer options.")
+
+
 def _assert_quiz_publishable(quiz_id: str):
     questions = _question_rows(quiz_id)
     if not questions:
         raise HTTPException(409, "Add at least one question before publishing this quiz.")
     for question in questions:
-        if question.get("correct_answer") is None:
-            raise HTTPException(409, "Every auto-graded question needs a correct answer.")
-        options = question.get("options")
-        if str(question.get("question_type")) not in {"true_false", "boolean"} and not options:
-            raise HTTPException(409, "Every choice question needs answer options.")
+        _validate_question_payload(question)
         if float(question.get("points") or 0) <= 0:
             raise HTTPException(409, "Every question must have a positive point value.")
 
@@ -217,6 +245,7 @@ def get_quiz_for_staff(quiz_id: str, staff: InternalStaffContext = Depends(requi
 @router.post("/quizzes/{quiz_id}/questions", status_code=201)
 def add_quiz_question(quiz_id: str, body: QuestionIn, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
     _draft_quiz(quiz_id)
+    _validate_question_payload(body.model_dump())
     saved = supabase.table("quiz_questions").insert({"quiz_id": quiz_id, **body.model_dump()}).execute()
     if not saved.data:
         raise HTTPException(500, "Question could not be added.")
@@ -229,6 +258,7 @@ def update_quiz_question(question_id: str, body: QuestionIn, staff: InternalStaf
     if not rows:
         raise HTTPException(404, "Question not found.")
     _draft_quiz(str(rows[0]["quiz_id"]))
+    _validate_question_payload(body.model_dump())
     saved = supabase.table("quiz_questions").update(body.model_dump()).eq("id", question_id).execute()
     if not saved.data:
         raise HTTPException(500, "Question update could not be confirmed.")
