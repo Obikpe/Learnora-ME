@@ -16,11 +16,11 @@ const labels:any={learning:"My learning",discover:"Discover",practice:"Practise"
 const descriptions:any={
  learning:"Return to enrolled courses and continue where you left off.",
  discover:"Explore published courses that are available to your account.",
- practice:"Use exercises and feedback to strengthen your understanding.",
+ practice:"Work on practical projects, submit your work and receive structured feedback.",
  projects:"Review the practical work you have submitted through Learnora.",
  skills:"See the skills recorded in your learning profile and the evidence connected to them.",
  evidence:"Review the work and records attached to your learning journey.",
- certificates:"View certificates issued to your account.",
+ certificates:"Claim certificates for completed courses and verify issued credentials.",\n portfolio:"Bring together your credentials, reviewed work and verified skills in one private portfolio.",
  community:"Ask questions and connect learning to the people who can support you.",
  settings:"Manage the profile and preferences currently available to your account."
 };
@@ -36,7 +36,7 @@ export default function Page({params}:{params:{section:string}}){
     const s=params.section;
     const result=s==="discover"?await courses()
       :s==="learning"?await progress()
-      :["evidence","skills","certificates"].includes(s)?await evidence()
+      :["evidence","skills"].includes(s)?await evidence()
       :s==="projects"?await request<any>("/evidence/projects/me")
       :s==="practice"?await request<any>("/evidence/projects")
       :s==="portfolio"?await Promise.all([evidence(),request<any>("/evidence/projects/me"),request<any>("/credentials/me")]).then(([ev,pr,cr])=>({evidence:ev.evidence||[],skills:ev.skills||[],certificates:cr.certificates||[],submissions:pr.submissions||[]}))
