@@ -1,7 +1,8 @@
 # Lesson 5: Inference and Batch Prediction
 
 ## Learning outcomes
-Explain the applied ML engineering concept, implement the example and identify operational risks.
+
+By the end of this lesson, you should be able to Generate predictions for one record and a batch; preserve input identifiers and model version; validate output shape and type; and distinguish a prediction from a decision or action.
 
 ## 1. Core explanation
 Inference applies a fitted model to new observations. Single-record inference is useful for interactive applications; batch inference processes many records at once. Both must apply the same schema and transformations used in training. Validate required fields, types, missingness and plausible ranges before prediction.
