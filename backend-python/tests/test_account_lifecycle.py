@@ -31,7 +31,7 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn("password_hash = NULL", migration)
         self.assertIn("account_status = 'deleted'", migration)
         self.assertIn("email = 'deleted+'", migration)
-        self.assertNotIn("DELETE FROM public.users", migration.upper())
+        self.assertNotIn("DELETE FROM PUBLIC.USERS", migration.upper())
 
     def test_account_deletion_history_is_not_browser_readable(self):
         migration = (ROOT / "supabase/migrations/20261102130000_learner_account_deletion.sql").read_text(encoding="utf-8")
