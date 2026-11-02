@@ -1,7 +1,8 @@
 # Lesson 18: Generative AI and Foundation Models
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Explain foundation models and generative AI at a conceptual level; identify suitable and unsuitable tasks; recognise hallucination, privacy and cost risks; and review prompts and outputs before use.
 
 ## 1. Core explanation
 A foundation model is trained on broad data and can be adapted to many tasks. Large language models (LLMs) predict text tokens based on context; other foundation models work with images, audio or multimodal inputs. Generative AI creates new content, but fluent output is not the same as factual correctness.
