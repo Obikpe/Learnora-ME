@@ -32,6 +32,7 @@ class LessonNoteIn(BaseModel):
 
 class QuizAttemptIn(BaseModel):
     answers: dict[str, Any] = Field(default_factory=dict)
+    session_id: UUID | None = None
 
 
 class AssignmentSubmissionIn(BaseModel):
@@ -398,14 +399,16 @@ def get_quiz(quiz_id: str, user: CurrentUser = Depends(get_current_user)):
         _assert_module_unlocked(str(user.id), str(quiz["module_id"]))
     now = datetime.now(timezone.utc)
     try:
-        supabase.table("quiz_active_sessions").upsert({
+        session_rows = supabase.table("quiz_active_sessions").insert({
             "user_id": str(user.id),
             "quiz_id": str(quiz_id),
             "course_id": str(quiz["course_id"]),
             "lesson_id": str(quiz.get("lesson_id")) if quiz.get("lesson_id") else None,
             "started_at": now.isoformat(),
             "expires_at": (now + timedelta(hours=2)).isoformat(),
-        }, on_conflict="user_id,quiz_id").execute()
+        }).select("id").execute().data or []
+        if not session_rows:
+            raise RuntimeError("Active quiz session ID was not returned")
     except Exception as exc:
         print(f"Quiz session protection could not be established: {type(exc).__name__}")
         raise HTTPException(503, "Quiz protection is temporarily unavailable. Please retry.") from None
@@ -416,7 +419,7 @@ def get_quiz(quiz_id: str, user: CurrentUser = Depends(get_current_user)):
         .select("id,score,passed,submitted_at")
         .eq("quiz_id", quiz_id).eq("user_id", user.id)
         .order("submitted_at", desc=True).execute()).data or []
-    return {"success": True, "quiz": quiz, "questions": questions, "attempts": attempts}
+    return {"success": True, "quiz": quiz, "questions": questions, "attempts": attempts, "session_id": session_rows[0]["id"]}
 
 
 @router.post("/quizzes/{quiz_id}/attempts", status_code=201)
@@ -431,6 +434,22 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
         raise HTTPException(403, "You are not enrolled in this course.")
     if quiz.get("module_id"):
         _assert_module_unlocked(str(user.id), str(quiz["module_id"]))
+    if not body.session_id:
+        raise HTTPException(409, "Open the quiz again before submitting this attempt.")
+    try:
+        active_session = (supabase.table("quiz_active_sessions")
+            .select("id")
+            .eq("id", str(body.session_id))
+            .eq("user_id", str(user.id))
+            .eq("quiz_id", str(quiz_id))
+            .gt("expires_at", datetime.now(timezone.utc).isoformat())
+            .limit(1)
+            .execute()).data or []
+    except Exception as exc:
+        print(f"Quiz submission session check failed: {type(exc).__name__}")
+        raise HTTPException(503, "Quiz protection is temporarily unavailable. Please retry.") from None
+    if not active_session:
+        raise HTTPException(409, "This quiz session has expired. Reopen the quiz to continue.")
     previous = (supabase.table("quiz_attempts")
         .select("id,score,passed,submitted_at")
         .eq("quiz_id", quiz_id).eq("user_id", user.id)
@@ -486,15 +505,15 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
     if not inserted.data:
         raise HTTPException(500, "Unable to save quiz attempt.")
     try:
-        supabase.table("quiz_active_sessions").delete().eq("user_id", str(user.id)).eq("quiz_id", str(quiz_id)).execute()
+        supabase.table("quiz_active_sessions").delete().eq("id", str(body.session_id)).eq("user_id", str(user.id)).eq("quiz_id", str(quiz_id)).execute()
     except Exception as exc:
         print(f"Completed quiz session cleanup deferred: {type(exc).__name__}")
     return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score}
 
 
-@router.delete("/quizzes/{quiz_id}/session")
-def close_quiz_session(quiz_id: str, user: CurrentUser = Depends(get_current_user)):
-    supabase.table("quiz_active_sessions").delete().eq("user_id", str(user.id)).eq("quiz_id", str(quiz_id)).execute()
+@router.delete("/quizzes/{quiz_id}/session/{session_id}")
+def close_quiz_session(quiz_id: str, session_id: str, user: CurrentUser = Depends(get_current_user)):
+    supabase.table("quiz_active_sessions").delete().eq("id", str(session_id)).eq("user_id", str(user.id)).eq("quiz_id", str(quiz_id)).execute()
     return {"success": True}
 
 
