@@ -350,8 +350,9 @@ def my_project_submissions(
                 **row,
                 "project": project_map.get(str(row.get("project_id"))),
                 "review_state": (
-                    "reviewed"
-                    if row.get("reviewed_at")
+                    "approved" if row.get("status") == "approved"
+                    else "returned" if row.get("status") == "returned"
+                    else "reviewed" if row.get("status") == "reviewed"
                     else "awaiting_review"
                 ),
             }
