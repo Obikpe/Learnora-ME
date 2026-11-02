@@ -1,38 +1,42 @@
-# Lesson 26: Saving and Loading Trained Models
+# Lesson 26: End-to-End Regression Case Study
 
 ## Learning outcomes
 Explain the technique, implement the example, interpret the output and justify when the method is suitable.
 
 ## 1. Core explanation
-A trained model is a software artefact. Save the full preprocessing-and-model Pipeline, not only the estimator, so future inputs receive the same transformations. Record training data version, target definition, feature order, library versions, evaluation report and model identifier.
+This case study predicts a continuous target using the California housing dataset bundled with scikit-learn. The purpose is to practise a complete workflow, not to create a property valuation product. The dataset has limitations in geography, collection period and feature meaning; predictions must not be used for lending, pricing or individual decisions without substantial further validation.
 
-Python tools such as joblib can persist scikit-learn objects. Only load model files from trusted sources: pickle-based formats can execute arbitrary code during loading. A saved model may not be compatible across library versions. Treat model files as versioned artefacts and test them before use.
+Define the target, split the data, build a baseline, train a pipeline, evaluate with MAE and RMSE, and inspect residuals. If a dataset has geographic or temporal structure, a random split may overstate performance on genuinely new locations or future periods. Discuss the intended generalisation setting.
 
-Before deployment, test that loading the saved model produces the same predictions as the in-memory object on a known sample. Validate input schema and fail clearly when required columns are missing or types are invalid.
+A good report explains target units, test sample, baseline, candidate model and error profile. Avoid presenting one metric as a guarantee for every neighbourhood or property type.
 
 ## 2. Worked Python example
 Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas matplotlib scikit-learn`. Some dataset loaders may require internet access on first use.
 
 ```python
-import joblib
-import pandas as pd
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
+from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split
+from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-X = pd.DataFrame({"hours": [1, 2, 3, 4, 5, 6]})
-y = [0, 0, 0, 1, 1, 1]
-model = make_pipeline(StandardScaler(), LogisticRegression()).fit(X, y)
-joblib.dump(model, "supervised_pipeline.joblib")
-loaded = joblib.load("supervised_pipeline.joblib")
-print(loaded.predict(pd.DataFrame({"hours": [2.5, 5.5]})))
+data = fetch_california_housing(as_frame=True)
+Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
+    test_size=.2, random_state=42)
+models = [DummyRegressor(strategy="median"),
+          RandomForestRegressor(n_estimators=150, min_samples_leaf=3, random_state=42)]
+for model in models:
+    model.fit(Xtr, ytr)
+    p = model.predict(Xte)
+    print(type(model).__name__, "MAE", mean_absolute_error(yte, p),
+          "RMSE", mean_squared_error(yte, p)**.5)
 ```
 
 ## 3. Interpretation and checks
 Record the target, sample size, split design, metric and model settings. Inspect class-wise results or residuals, not only the headline score. Keep the test set untouched during model selection and report dataset limitations.
 
 ## 4. Guided practice
-Save a complete pipeline and reload it in a new Python process. Compare predictions before and after loading. Record package versions and explain why loading an untrusted pickle/joblib file is unsafe.
+Write the regression case-study report. Include target units, split rationale, baseline comparison, MAE and RMSE, residual limitations and a statement that the demonstration is not a deployable valuation system.
 
 ## 5. Independent practice
 Extend the example with another model or evaluation view. Compare candidates using the same training/validation design. Write a short report for a non-technical stakeholder and state what further validation is required.
