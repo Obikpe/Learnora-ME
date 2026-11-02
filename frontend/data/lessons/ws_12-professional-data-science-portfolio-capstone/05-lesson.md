@@ -1,7 +1,8 @@
 # Lesson 5: Data Ethics, Privacy and Licensing
 
 ## Learning outcomes
-Explain the professional practice, apply it to a data-science project and produce evidence that another person can review.
+
+By the end of this lesson, you should be able to Apply data ethics and privacy principles; minimise collected fields; check lawful use and licence terms; protect personal information; and prepare safe portfolio data.
 
 ## 1. Core explanation
 Ethical data work begins with purpose. Collect only information needed for a defined task, use it for compatible purposes, restrict access and retain it only as long as justified. Personal data can remain identifiable even after obvious names are removed, especially when records contain combinations of location, dates and rare attributes.
