@@ -1,7 +1,8 @@
 # Lesson 19: Prompting, Embeddings and Retrieval Concepts
 
 ## Learning outcomes
-Explain the production concept, implement the worked example where applicable, and identify reliability, security and governance requirements.
+
+By the end of this lesson, you should be able to Explain embeddings and semantic similarity; create a TF-IDF retrieval baseline; compare query and document representations; and distinguish keyword overlap from true semantic understanding.
 
 ## 1. Core explanation
 Prompting gives a model instructions, context and an output format. Good prompts define the task, audience, constraints and evidence boundaries. Few-shot prompting includes examples. Structured-output prompting requests a schema, but the output must still be validated.
