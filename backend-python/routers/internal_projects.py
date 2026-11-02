@@ -325,6 +325,17 @@ def review_project_submission(
                 supabase.table("skill_evidence").update(evidence_payload).eq("id", existing[0]["id"]).execute()
             else:
                 supabase.table("skill_evidence").insert(evidence_payload).execute()
+    else:
+        # If an earlier approval is reversed, its derived evidence must no longer
+        # contribute to verified mastery. Keep the learner's submission history.
+        (
+            supabase.table("skill_evidence")
+            .delete()
+            .eq("user_id", rows[0]["user_id"])
+            .eq("evidence_type", "project")
+            .eq("source_id", submission_id)
+            .execute()
+        )
 
     log_audit_event(
         action="project_submission_reviewed",
