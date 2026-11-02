@@ -1,7 +1,8 @@
 # Lesson 16: A Complete First ML Project
 
 ## Learning outcomes
-Explain the method, implement the example in Python, interpret its result, and identify risks that could invalidate the conclusion.
+
+By the end of this lesson, you should be able to Complete a small supervised-learning project from problem framing to final evaluation; build a leakage-safe pipeline; compare with a baseline; inspect errors; and present reproducible code, findings and limitations.
 
 ## 1. Concepts and reasoning
 This lesson brings the workflow together using a familiar, small classification problem. A complete project states the decision, target, unit of observation, available features, data source, split method, baseline, candidate model, metric, error analysis and limitations. The notebook or script should be reproducible from a clean environment.
