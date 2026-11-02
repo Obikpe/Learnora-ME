@@ -1,7 +1,8 @@
 # Lesson 9: Multivariate Visualisation
 
 ## Learning outcomes
-Explain the visualisation method, implement the worked example in Python, interpret it and communicate its limitations.
+
+By the end of this lesson, you should be able to visualise three or more variables using hue, size, facets and pair plots; read a correlation heatmap; reduce visual clutter; and explain how subgroup structure can change an overall relationship.
 
 ## 1. Core explanation
 Multivariate analysis examines three or more variables. A scatter plot can use hue, marker shape or size for additional fields, but each encoding increases complexity. A pair plot displays pairwise relationships among numeric variables and can reveal clusters or redundant features. A correlation heatmap summarises linear associations, not causal links.
