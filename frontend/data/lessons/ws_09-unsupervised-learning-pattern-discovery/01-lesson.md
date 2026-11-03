@@ -60,3 +60,11 @@ Three common tasks are clustering (group similar observations), dimensionality r
 Use this workflow: question → observation unit → features → representation → algorithm → diagnostics → interpretation → validation → decision. Unsupervised learning is not automatically appropriate just because no target exists. A descriptive table or transparent business rule may be better. If the data is too small, noisy or poorly measured, the algorithm can create convincing but unstable patterns.
 
 **Practice:** Write one sentence describing the decision your analysis might support and another sentence describing what the algorithm cannot establish. Keep exploration separate from evidence.
+
+### Worked example: decide whether a cluster is meaningful
+
+Suppose an algorithm divides customers into three groups. Before naming them, calculate each group's size and compare recency, order frequency and average basket value with the full dataset. A group with high average spend but only four customers may be an unstable outlier group rather than a useful segment. A group with lower recent activity may be worth exploring, but it does not prove those customers will churn.
+
+Ask three separate questions. Is the pattern mathematically visible? Does it remain when reasonable modelling choices change? Does it support an action that can be tested safely? A “yes” to the first question does not imply a “yes” to the others.
+
+A good report uses cautious language: “The algorithm identified a group with longer purchase recency in this dataset.” Avoid “The algorithm discovered customers who are about to leave.” The latter predicts a future outcome that was not established by the clustering exercise.
