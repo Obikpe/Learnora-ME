@@ -157,6 +157,7 @@ frequent_itemsets = apriori(
 
 rules = association_rules(
     frequent_itemsets,
+    num_itemsets=len(basket_matrix),
     metric="confidence",
     min_threshold=0.4
 )
