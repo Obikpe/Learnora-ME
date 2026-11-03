@@ -47,9 +47,9 @@ export default function CohortCoursePage() {
   const completedCount = useMemo(() => lessons.filter((lesson: any) => progress[String(lesson.id)]?.completed).length, [lessons, progress]);
   const percent = lessons.length ? Math.round(completedCount / lessons.length * 100) : 0;
 
-  if (loading) return <Shell active="learning" restricted role="assigned"><Skeleton label="Loading your assigned course"/></Shell>;
+  if (loading) return <Shell active="learning" restricted role="assigned" trackLearning={false}><Skeleton label="Loading your assigned course"/></Shell>;
 
-  return <Shell active="learning" restricted role="assigned">
+  return <Shell active="learning" restricted role="assigned" trackLearning={false}>
     <div className="mb-6">
       <Link href="/dashboard/cohort" className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--primary)]"><ArrowLeft size={14}/> Back to My Learning</Link>
     </div>
