@@ -98,3 +98,13 @@ Create a missingness report with counts, percentages and at least one visual. Co
 
 ## Lesson summary
 Missing data requires diagnosis before treatment. Choose an approach that respects the field's meaning and missingness process, and keep learned imputation statistics inside the leakage-safe modelling pipeline.
+
+## 7. Deeper reasoning: imputation changes the data, not just the blank cells
+
+Imputation is an assumption about what an unavailable value should be represented by. Replacing a missing salary with the median does not recover the person's true salary. It creates a consistent numerical placeholder so an estimator can operate. The analyst must therefore explain what information is lost and whether the missingness itself is informative.
+
+Consider two customers with missing income. One may have skipped the question; the other may be a student for whom the field is not applicable. Giving both the same median value can hide a meaningful distinction. A missingness indicator can preserve the fact that a value was absent, while a separate category or rule may be more suitable for structurally inapplicable data. These choices should be based on how the field is collected and used.
+
+Imputation can also distort distributions. Mean and median imputation create repeated values at one point and usually reduce observed variance. This can affect correlations and downstream model behaviour. More sophisticated methods can preserve relationships better, but they introduce extra assumptions and may be unstable when the dataset is small. Begin with a transparent baseline, compare alternatives using the same folds and do not claim that a complex imputer must be better.
+
+In a deployed system, monitor missingness after training. If the proportion of missing income rises from 5% to 40%, the model is now receiving a different input pattern. The original imputation strategy may still run, but its predictions may be less reliable. Missingness is therefore both a preprocessing concern and a data-quality signal that deserves operational monitoring.
