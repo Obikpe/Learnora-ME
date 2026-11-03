@@ -88,8 +88,11 @@ export default function LearningSessionTracker() {
       const role = String(me?.role || "").toLowerCase();
       const accountType = String(me?.account_type || "").toLowerCase();
       const organisationRole = String(me?.organisation_role || "").toLowerCase();
+      const hasPrivilegedMembership = (me?.organisation_memberships || []).some((membership: any) =>
+        membership.status === "active" && ["owner", "admin", "team_manager"].includes(String(membership.role || "").toLowerCase())
+      );
       eligibleLearner = accountType === "cohort" ||
-        (role === "normal" && !["owner", "admin", "team_manager"].includes(organisationRole));
+        (role === "normal" && !hasPrivilegedMembership && !["owner", "admin", "team_manager"].includes(organisationRole));
       if (eligibleLearner) void start();
     }).catch(() => {});
     heartbeatTimer = window.setInterval(heartbeat, 30_000);
