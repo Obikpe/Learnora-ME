@@ -18,7 +18,7 @@ export default function CourseDetail({params}:{params:{id:string}}) {
   async function enrol(){setEnrolError("");setEnrolling(true);try{await request<any>("/courses/"+encodeURIComponent(params.id)+"/enrol",{method:"POST"});setEnrolled(true);location.href="/dashboard/learning/"+encodeURIComponent(params.id)}catch(e:any){setEnrolError(e.message||"Enrolment is not available for this course.")}finally{setEnrolling(false)}}
   useEffect(()=>{if(!authResolved||!user||!c)return;let active=true;request<any>("/progress/me").then(result=>{if(!active)return;const existing=(result.courses||[]).some((row:any)=>String(row.course?.id||row.enrolment?.course_id)===String(params.id));setEnrolled(existing);if(existing&&new URLSearchParams(window.location.search).get("enrol")==="1"){location.replace("/dashboard/learning/"+encodeURIComponent(params.id));return;}if(!existing&&new URLSearchParams(window.location.search).get("enrol")==="1"&&!autoEnrolStarted.current){autoEnrolStarted.current=true;void enrol();}}).catch(()=>{});return()=>{active=false}},[authResolved,user,c,params.id]);
   const signedIn=Boolean(user);
-  const pageContent=error?<main className="mx-auto max-w-5xl px-5 pb-24 pt-12"><EmptyState title="Course unavailable" message={error}/><a href="/courses" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold gold">Back to courses <ArrowRight size={15}/></a></main>:!c?<main className="mx-auto max-w-[82rem] px-5 pb-24 pt-12 lg:px-8"><Skeleton variant="course" label="Loading course details"/></main>:null;
+  const pageContent=error?<main className={`mx-auto max-w-5xl px-5 pb-24 ${signedIn?"pt-12":"pt-36"}`}><EmptyState title="Course unavailable" message={error}/><a href="/courses" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold gold">Back to courses <ArrowRight size={15}/></a></main>:!c?<main className="mx-auto max-w-[82rem] px-5 pb-24 pt-12 lg:px-8"><Skeleton variant="course" label="Loading course details"/></main>:null;
   if(!authResolved||!c&&!error)return <main className="min-h-screen bg-[var(--bg)] px-5 pt-28"><div className="mx-auto max-w-[82rem]"><Skeleton variant="course" label="Loading course details"/></div></main>;
   if(pageContent)return signedIn?<Shell active="discover">{pageContent}</Shell>:<><PublicNav/>{pageContent}<PublicFooter/></>;
   const modules=s?.modules||s?.structure?.modules||[];
@@ -31,7 +31,7 @@ export default function CourseDetail({params}:{params:{id:string}}) {
     ||(explicitlyFree&&["normal","witstart"].includes(user.role))
   );
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
-  const pageBody=<main className="mx-auto max-w-[82rem] px-5 pb-24 pt-8 lg:px-8">
+  const pageBody=<main className={`mx-auto max-w-[82rem] px-5 pb-24 ${signedIn?"pt-8":"pt-32"} lg:px-8`}>
       <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-600"><a href="/" className="hover:text-slate-300">Home</a><span>/</span><a href="/courses" className="hover:text-slate-300">Courses</a><span>/</span><span className="max-w-[18rem] truncate text-slate-400">{c.title}</span></nav>
       <section className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_23rem] xl:gap-16">
         <div className="min-w-0">
