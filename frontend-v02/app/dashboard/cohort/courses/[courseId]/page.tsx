@@ -36,7 +36,7 @@ export default function CohortCoursePage() {
   useEffect(() => { if (courseId) void load(); }, [courseId]);
 
   return <main className="min-h-screen bg-[#090c10] px-5 py-8 text-slate-100 sm:px-8 lg:px-12">
-    <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 border-b border-white/[.08] pb-6"><Logo/><Link href="/dashboard/cohort" className="text-xs text-slate-400 hover:text-[#f2d477]">My courses</Link></header>
+    <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 border-b border-white/[.08] pb-6"><Link href="/dashboard/cohort" aria-label="Return to your Learnora dashboard"><Logo/></Link><Link href="/dashboard/cohort" className="text-xs text-slate-400 hover:text-[#f2d477]">My courses</Link></header>
     <div className="mx-auto max-w-5xl">
       <Link href="/dashboard/cohort" className="mt-8 inline-flex items-center gap-2 text-xs text-slate-500 hover:text-slate-200"><ArrowLeft size={14}/> Back to assigned courses</Link>
       <p className="mt-8 text-[10px] font-bold uppercase tracking-[.2em] text-[#f2d477]">Your course</p>
