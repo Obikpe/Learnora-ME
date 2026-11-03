@@ -81,3 +81,13 @@ Compare five-fold StratifiedKFold with GroupKFold on a dataset containing repeat
 
 ## Lesson summary
 Cross-validation estimates how a workflow behaves across different partitions. Its value depends on selecting folds that respect class balance, groups and time, and on fitting every learned step within each fold.
+
+## 6. Deeper reasoning: validation estimates the whole workflow
+
+The object being evaluated is not only the estimator. It is the complete procedure: feature preparation, imputation, encoding, scaling, selection, hyperparameter choice and fitting. If any of these steps learn from held-out observations, the cross-validation score no longer represents a clean evaluation of the procedure.
+
+This is why pipelines are important, but also why the splitter matters. StratifiedKFold is suitable for many independent classification rows because it aims to preserve class proportions. It is not appropriate for every dataset. If one person contributes repeated observations, GroupKFold may be needed. If the target concerns future dates, TimeSeriesSplit may be more appropriate. A model can have excellent stratified scores and still fail on future data if the data-generating process changes over time.
+
+The number of folds is a trade-off. More folds mean each model trains on a larger proportion of the available data, but they also increase computation. With very small datasets, each validation fold may contain too few positive cases to estimate precision or recall reliably. In that situation, report the class counts and interpret fold variation cautiously.
+
+A common misconception is that the average cross-validation score is the exact expected score in production. It is an estimate under the assumptions of the split and sample. If production data differs in geography, time, collection process or user population, the estimate may not transfer. Validation design should be described as part of the result, not hidden in a footnote.
