@@ -7,6 +7,7 @@ import { Bell, BellRing, Check, CheckCheck, Clock3, ExternalLink, RefreshCw, Spa
 import Shell from "../../../components/dashboard/Shell";
 import EmptyState from "../../../components/feedback/EmptyState";
 import { request } from "../../../lib/api/client";
+import { currentUser } from "../../../lib/api";
 
 type Notice = {
   id: string;
@@ -74,10 +75,15 @@ export default function NotificationsPage() {
     if (!quiet) setLoading(true);
     setError("");
     try {
+      await currentUser();
       const result = await request<{notifications?: Notice[]}>("/notifications/me?limit=100");
       setItems(Array.isArray(result.notifications) ? result.notifications : []);
     } catch (e: any) {
-      setError(e?.message || "Notifications are temporarily unavailable. Please try again.");
+      if (/401|unauthori[sz]ed|not authenticated|session has expired/i.test(e?.message || "")) {
+        if (typeof window !== "undefined") window.location.replace("/");
+        return;
+      }
+      setError("Notifications are temporarily unavailable. Please try again.");
     } finally {
       if (!quiet) setLoading(false);
     }
@@ -108,7 +114,7 @@ export default function NotificationsPage() {
       await request(`/notifications/${encodeURIComponent(item.id)}/read`, { method: "PATCH" });
       setItems(old => old.map(n => n.id === item.id ? { ...n, read_at: new Date().toISOString() } : n));
     } catch (e: any) {
-      setError(e?.message || "This notification could not be marked as read.");
+      setError("This notification could not be marked as read. Please try again.");
     } finally {
       setBusyId("");
     }
@@ -129,7 +135,7 @@ export default function NotificationsPage() {
       const now = new Date().toISOString();
       setItems(old => old.map(item => item.read_at ? item : { ...item, read_at: now }));
     } catch (e: any) {
-      setError(e?.message || "Notifications could not be marked as read.");
+      setError("Notifications could not be marked as read. Please try again.");
     } finally {
       setMarkingAll(false);
     }
