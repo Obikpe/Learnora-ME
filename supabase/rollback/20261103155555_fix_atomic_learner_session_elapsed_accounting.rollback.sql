@@ -1,0 +1,5 @@
+-- Intentionally no-op.
+-- The preceding function definitions contained an elapsed-time accounting
+-- defect. Reverting to them would silently stop counting learning time.
+-- To roll back this correction, first deploy an explicitly reviewed replacement
+-- implementation; do not restore the defective pre-correction functions.
