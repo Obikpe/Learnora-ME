@@ -43,3 +43,15 @@ Apply the method to a dataset. Compare at least two parameter settings or method
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: plan before choosing an algorithm
+
+A credible project starts with a question and decision context, not a favourite algorithm. Define the observation unit, intended use, features, exclusions, preprocessing, candidate methods and validation plan before modelling. Compare against a simple baseline or rule-based grouping. A complicated model is not automatically better than a transparent rule.
+
+Record the data snapshot, code version, parameters and random seeds so the analysis can be reproduced. Test stability across seeds, samples and relevant time periods. Inspect original records and profiles. Document how preprocessing and distance choices influence the result.
+
+Report negative and inconclusive results. If clusters are unstable, overlap heavily or cannot be interpreted, say so. “The current features do not support a stable segmentation” is a valid result. Do not keep changing parameters until a persuasive story appears; that is confirmation bias.
+
+Separate observed output, interpretation and recommendation. State the population, time period and limitations. Avoid causal language unless a separate causal design supports it. An unsupervised result does not establish causal drivers, future outcomes or objectively correct categories.
+
+**Practice:** Produce a one-page analysis charter and ask another learner to challenge the observation unit, feature choices, validation plan and proposed action before fitting a model.
