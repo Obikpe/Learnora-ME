@@ -4,7 +4,7 @@
 
 By the end of this lesson, you should be able to profile clusters using original feature values; compare counts, medians, means and distributions; create useful segment summaries and visualisations; name segments cautiously; recognise small-group and fairness risks; and translate findings into testable recommendations.
 
-![A cluster profile should be grounded in measured features](/course-assets/ws09/clustering-concepts.svg)
+![Teaching diagram: 14](/course-assets/ws09/segment-profiling.svg)
 
 ## 1. A cluster label is only the beginning
 
