@@ -76,7 +76,7 @@ function cacheLifetime(path: string) {
   if (/^\/public\/(courses|tracks)(\/|$)/.test(path)) return 5 * 60_000;
   if (path === "/access/mode") return 5 * 60_000;
   if (path === "/learner/onboarding") return 2 * 60_000;
-  if (/^\/progress\/(learning-summary|learning-sessions)(\/|$)/.test(path)) return 0;
+  if (/^\/progress\/(learning-summary|learning-sessions)([?\/]|$)/.test(path)) return 0;
   if (path === "/progress/me") return 60_000;
   if (path === "/evidence/me" || path === "/credentials/me") return 5 * 60_000;
   if (/^\/(notifications|ai|billing|payments|webhooks|admin|analytics|audit|reports)(\/|$)/.test(path)) return 0;
