@@ -43,27 +43,39 @@ const adminItems: NavItem[] = [
   { key: "settings", label: "Settings", href: "/dashboard/admin/settings", icon: Settings },
 ];
 
-export default function Sidebar({ admin = false, role = "", active, hideTutor = false }: {
-  admin?: boolean; role?: string; active: string; hideTutor?: boolean;
+export default function Sidebar({ admin = false, role = "", active, hideTutor = false, restricted = false }: {
+  admin?: boolean; role?: string; active: string; hideTutor?: boolean; restricted?: boolean;
 }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [canTeach, setCanTeach] = useState(false);
+  const [assignedLearner, setAssignedLearner] = useState(restricted || role === "assigned");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     currentUser().then((me: any) => {
       if (cancelled) return;
-      setCanTeach((me.organisation_memberships || []).some((membership: any) =>
+      const memberships = me.organisation_memberships || [];
+      setCanTeach(memberships.some((membership: any) =>
         membership.role === "instructor" && membership.status === "active"
       ));
+      setAssignedLearner(Boolean(
+        restricted ||
+        me.account_type === "cohort" ||
+        me.cohort_id ||
+        me.organisation_role === "learner" ||
+        memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
+      ));
     }).catch(() => {});
+
     return () => { cancelled = true; };
   }, []);
 
+  const isRestrictedLearner = restricted || assignedLearner || role === "assigned";
   const items = (admin ? adminItems : learnerItems).filter(item =>
-    !(hideTutor && item.key === "ai")
+    !(hideTutor && item.key === "ai") &&
+    !(isRestrictedLearner && ["discover", "tracks"].includes(item.key))
   );
   const extraItems = canTeach && !admin
     ? [...items, { key: "instructor", label: "Teaching", href: "/dashboard/instructor", icon: GraduationCap }]
@@ -115,11 +127,11 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
       </details>}
     </nav>
 
-    <form onSubmit={submitSearch} role="search" className="hidden min-w-40 max-w-xs flex-1 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-soft)] px-3.5 py-2 lg:flex">
+    {!isRestrictedLearner && <form onSubmit={submitSearch} role="search" className="hidden min-w-40 max-w-xs flex-1 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-soft)] px-3.5 py-2 lg:flex">
       <Search size={16} className="shrink-0 text-[var(--text-muted)]"/>
       <input aria-label="Search courses" name="search" value={search} onChange={event => setSearch(event.target.value)}
         placeholder="What do you want to learn?" className="min-w-0 w-full bg-transparent text-xs text-[var(--text-body)] outline-none placeholder:text-[var(--text-muted)]"/>
-    </form>
+    </form>}}
 
 
 
@@ -130,11 +142,11 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
           <span className="font-bold text-[var(--text-heading)]">Learnora <span className="text-[var(--primary)]">ME</span></span>
           <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="grid size-9 place-items-center rounded-lg hover:bg-[var(--bg-soft)]"><X size={18}/></button>
         </div>
-        <form onSubmit={submitSearch} role="search" className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] px-3 py-2">
+        {!isRestrictedLearner && <form onSubmit={submitSearch} role="search" className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] px-3 py-2">
           <Search size={16} className="text-[var(--text-muted)]"/>
           <input aria-label="Search courses" value={search} onChange={event => setSearch(event.target.value)} placeholder="What do you want to learn?" className="w-full bg-transparent py-1 text-sm outline-none"/>
           <button type="submit" className="text-xs font-semibold text-[var(--primary)]">Search</button>
-        </form>
+        </form>}
         <nav aria-label="Learning destinations" className="flex-1 space-y-1 overflow-y-auto">
           {mobileItems.map(item => navLink(item, true))}
         </nav>
