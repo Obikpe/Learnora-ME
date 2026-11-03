@@ -7,29 +7,71 @@ function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function inline(value: string) {
+  let text = escapeHtml(value);
+  const code: string[] = [];
+  text = text.replace(/`([^`]+)`/g, (_match, content: string) => {
+    const marker = `%%CODE${code.length}%%`;
+    code.push("<code>" + content + "</code>");
+    return marker;
+  });
+  text = text.replace(/[([^]]+)]((https?:\/\/[^\s)]+|mailto:[^\s)]+))/g, (_match, label: string, href: string) => "<a href=\"" + escapeHtml(href) + "\">" + label + "</a>");
+  text = text.replace(/**(.+?)**/g, "<strong>$1</strong>").replace(/__(.+?)__/g, "<strong>$1</strong>");
+  text = text.replace(/(^|[^*])*([^*\n]+)*(?!*)/g, "$1<em>$2</em>").replace(/(^|[^_])_([^_\n]+)_(?!_)/g, "$1<em>$2</em>");
+  return text.replace(/%%CODE(\d+)%%/g, (_match, index: string) => code[Number(index)] || "");
+}
+
+function sanitiseEditorHtml(value: string) {
+  const allowed = new Set(["p","br","h1","h2","h3","h4","h5","h6","strong","b","em","i","u","ul","ol","li","blockquote","pre","code","a","hr"]);
+  return value
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<\s*(script|style|iframe|object|embed|svg|math)\b[\s\S]*?<\/\s*\1\s*>/gi, "")
+    .replace(/<\/?([a-z][a-z0-9]*)([^>]*)>/gi, (match, rawTag: string, attrs: string) => {
+      const tag = rawTag.toLowerCase();
+      const closing = /^<\s*\//.test(match);
+      if (tag === "div") return closing ? "</p>" : "<p>";
+      if (tag === "span") return "";
+      if (!allowed.has(tag)) return "";
+      if (closing) return tag === "br" || tag === "hr" ? "" : "</" + tag + ">";
+      if (tag === "a") {
+        const hrefMatch = attrs.match(/href\s*=\s*(["'])(.*?)\1/i);
+        const href = hrefMatch?.[2] || "";
+        return /^(https?:\/\/|mailto:|\/|#)/i.test(href) ? "<a href=\"" + escapeHtml(href) + "\">" : "<a>";
+      }
+      return "<" + tag + ">";
+    });
+}
+
 function toEditorHtml(value: string) {
   const raw = String(value || "").trim();
   if (!raw) return "<p></p>";
-  if (/<\s*(p|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|pre|code|a|br|hr)\b/i.test(raw)) {
-    return raw.replace(/<script\b[\s\S]*?<\/script>/gi, "").replace(/\son\w+\s*=\s*(["']).*?\1/gi, "").replace(/javascript:/gi, "");
-  }
+  if (/<\s*(p|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|pre|code|a|br|hr)\b/i.test(raw)) return sanitiseEditorHtml(raw);
   const lines = raw.replace(/\r\n?/g, "\n").split("\n");
   const html: string[] = [];
   let paragraph: string[] = [];
   let listType = "";
   let items: string[] = [];
-  const flushParagraph = () => { if (paragraph.length) html.push("<p>" + paragraph.map(escapeHtml).join("<br/>") + "</p>"); paragraph = []; };
-  const flushList = () => { if (listType) html.push("<" + listType + ">" + items.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</" + listType + ">"); listType = ""; items = []; };
+  let quote: string[] = [];
+  let code: string[] = [];
+  let inCode = false;
+  const flushParagraph = () => { if (paragraph.length) html.push("<p>" + paragraph.map(inline).join("<br/>") + "</p>"); paragraph = []; };
+  const flushList = () => { if (listType) html.push("<" + listType + ">" + items.map(item => "<li>" + inline(item) + "</li>").join("") + "</" + listType + ">"); listType = ""; items = []; };
+  const flushQuote = () => { if (quote.length) html.push("<blockquote>" + quote.map(item => "<p>" + inline(item) + "</p>").join("") + "</blockquote>"); quote = []; };
+  const flushCode = () => { if (inCode) html.push("<pre><code>" + escapeHtml(code.join("\n")) + "</code></pre>"); code = []; inCode = false; };
   for (const line of lines) {
-    const heading = line.match(/^\s{0,3}(#{1,3})\s+(.+)$/);
+    if (/^\s*```/.test(line)) { flushParagraph(); flushList(); flushQuote(); if (inCode) flushCode(); else inCode = true; continue; }
+    if (inCode) { code.push(line); continue; }
+    const heading = line.match(/^\s{0,3}(#{1,6})\s+(.+)$/);
     const bullet = line.match(/^\s*[-*+]\s+(.+)$/);
     const numbered = line.match(/^\s*\d+[.)]\s+(.+)$/);
-    if (heading) { flushParagraph(); flushList(); const tag = "h" + heading[1].length; html.push("<" + tag + ">" + escapeHtml(heading[2]) + "</" + tag + ">"); continue; }
-    if (bullet || numbered) { flushParagraph(); const next = bullet ? "ul" : "ol"; if (listType && listType !== next) flushList(); listType = next; items.push((bullet || numbered)![1]); continue; }
-    if (!line.trim()) { flushParagraph(); flushList(); continue; }
-    flushList(); paragraph.push(line);
+    const quoteLine = line.match(/^\s*>\s?(.*)$/);
+    if (heading) { flushParagraph(); flushList(); flushQuote(); const tag = "h" + heading[1].length; html.push("<" + tag + ">" + inline(heading[2]) + "</" + tag + ">"); continue; }
+    if (bullet || numbered) { flushParagraph(); flushQuote(); const next = bullet ? "ul" : "ol"; if (listType && listType !== next) flushList(); listType = next; items.push((bullet || numbered)![1]); continue; }
+    if (quoteLine) { flushParagraph(); flushList(); quote.push(quoteLine[1]); continue; }
+    if (!line.trim()) { flushParagraph(); flushList(); flushQuote(); continue; }
+    flushList(); flushQuote(); paragraph.push(line);
   }
-  flushParagraph(); flushList();
+  flushParagraph(); flushList(); flushQuote(); flushCode();
   return html.join("") || "<p></p>";
 }
 
