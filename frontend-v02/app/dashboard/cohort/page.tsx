@@ -90,10 +90,10 @@ export default function CohortDashboardPage() {
   const learnerName = [learner?.first_name, learner?.last_name].filter(Boolean).join(" ") || learner?.name || "";
 
   if (loading) {
-    return <Shell active="learning" restricted role="assigned"><Skeleton label="Loading your assigned learning"/></Shell>;
+    return <Shell active="learning" restricted role="assigned" trackLearning={false}><Skeleton label="Loading your assigned learning"/></Shell>;
   }
 
-  return <Shell active="learning" restricted role="assigned">
+  return <Shell active="learning" restricted role="assigned" trackLearning={false}>
     <section className="flex flex-wrap items-start justify-between gap-5 pb-6">
       <div className="flex min-w-0 items-center gap-4">
         <div className="grid size-14 shrink-0 place-items-center rounded-full bg-[var(--primary-tint)] text-xl font-bold text-[var(--primary)] sm:size-16 sm:text-2xl" aria-hidden="true">
