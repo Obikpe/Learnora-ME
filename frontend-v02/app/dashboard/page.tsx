@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight, BookOpen, CheckCircle2, Compass, Clock3, FileCheck2,
-  Sparkles, Users, CalendarDays, Route, GraduationCap
+  ArrowRight, BookOpen, CheckCircle2, Clock3, FileCheck2,
+  Users, Route, GraduationCap
 } from "lucide-react";
 import { currentUser, getCachedCurrentUser } from "../../lib/api";
 import { progress, evidence } from "../../lib/api/learning";
