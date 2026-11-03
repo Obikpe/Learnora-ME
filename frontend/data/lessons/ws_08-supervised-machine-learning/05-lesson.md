@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Fit a multiple linear regression model with several numeric predictors; interpret coefficients conditionally; evaluate MAE and R-squared; and recognise multicollinearity and confounding limitations.
 
+
+![regression concept diagram](/course-assets/ws08/regression.svg)
+
 ## 1. Core explanation
 Multiple linear regression uses several features: prediction = intercept + b1x1 + b2x2 + ... . Each coefficient describes the model's expected change in prediction for a one-unit increase in that feature while holding the other included features fixed. This “holding other features fixed” interpretation is conditional on the model and data; it is not automatically causal.
 
