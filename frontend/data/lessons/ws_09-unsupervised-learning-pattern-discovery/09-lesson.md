@@ -44,3 +44,15 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: PCA rotates the coordinate system
+
+Principal Component Analysis creates new axes that are linear combinations of the original features. The first component points in the direction of greatest variance. The second is perpendicular to the first and captures the greatest remaining variance, and so on. PCA does not simply select the best original column; it combines columns.
+
+Imagine height and arm span measurements that tend to increase together. Much of their variation may lie along one diagonal direction. PCA rotates the coordinate system so that this shared variation becomes the first component. The new component scores describe each observation's position on these new axes.
+
+PCA is commonly calculated using singular value decomposition. Standardising first is important when variables use different units or ranges; otherwise a feature measured in thousands can dominate one measured in fractions. PCA preserves directions of high variance, not necessarily information most useful for prediction or a business decision. It is linear and sensitive to outliers.
+
+Component weights (loadings) show how original variables contribute to a component. Large absolute weights indicate stronger contribution, but the sign is relative: multiplying an entire component by -1 gives an equivalent direction. Do not interpret positive as good and negative as bad.
+
+**Practice:** Plot two correlated original features and their PCA coordinates. Explain why component axes are not original measurement units and why compression can lose useful distinctions.
