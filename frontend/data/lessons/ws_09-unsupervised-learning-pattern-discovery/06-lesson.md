@@ -48,3 +48,13 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: reading a dendrogram
+
+Agglomerative hierarchical clustering begins with each observation as its own group. It repeatedly merges the two closest groups until all observations belong to one tree. A dendrogram displays this merge history. Leaves represent observations; merge height represents the dissimilarity at which groups were joined. A horizontal cut through the tree determines the number of groups.
+
+Linkage defines how distance between groups is measured. Single linkage uses the closest pair and can create long chains. Complete linkage uses the farthest pair and tends to form compact groups but can be sensitive to outliers. Average linkage uses average pairwise distance. Ward linkage merges groups that produce the smallest increase in within-cluster variance and is normally paired with Euclidean geometry.
+
+A large vertical jump can suggest that relatively distinct groups were forced together at that stage. It is a diagnostic, not proof of natural categories. Hierarchical clustering can be expensive in memory and time for large datasets. Scaling, distance and linkage all affect the tree.
+
+**Practice:** Draw two horizontal cuts and compare the resulting cluster counts. Then change from Ward to average linkage. Explain why the tree changes and which assumptions make one result more defensible for your data.
