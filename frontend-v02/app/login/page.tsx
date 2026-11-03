@@ -6,7 +6,6 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import Logo from "../../components/brand/Logo";
 import { IMAGES } from "../../lib/constants";
 import Toast from "../../components/feedback/Toast";
-import Skeleton from "../../components/feedback/Skeleton";
 import { login,setToken,currentUser,organisationContext,setOrganisationContext,clearOrganisationContext } from "../../lib/api";
 
 export default function Login() {
@@ -17,14 +16,24 @@ export default function Login() {
     try {
       const result:any=await login(email,password);setToken(result.token||result.access_token);
       if(result.account_type==="admin"){if(["super_admin","staff_admin"].includes(result.role)){clearOrganisationContext();router.push("https://teamslearnora.vercel.app/login");return;}setError("This administrator account is not configured for learner sign-in. Please contact your organisation administrator.");return;}
-      const me:any=await currentUser().catch(()=>result);
+      const verifiedMe:any=await currentUser().catch(()=>null);
+      const me:any=verifiedMe||result;
       const memberships=me.organisation_memberships||[];
       const privileged=memberships.filter((m:any)=>["owner","admin"].includes(m.role));
       const savedId=organisationContext();
       const selected=(me.organisation_id?memberships.find((m:any)=>String(m.organisation_id)===String(me.organisation_id)):null)||(savedId?memberships.find((m:any)=>String(m.organisation_id)===String(savedId)&&["owner","admin"].includes(m.role)):null)||(privileged.length===1?privileged[0]:null);
       const requestedNext = new URLSearchParams(window.location.search).get("next") || "";
       const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "";
-      if (me.role === "normal" && safeNext) {
+      const assignedLearner = Boolean(
+        me.cohort_id ||
+        me.organisation_id ||
+        me.organisation_role ||
+        me.role === "witstart" ||
+        memberships.some((membership:any) => ["learner", "member"].includes(membership.role))
+      );
+      // Course links must never turn sign-in into an enrolment or access grant
+      // for learners whose learning is controlled by a cohort or organisation.
+      if (verifiedMe && me.role === "normal" && !assignedLearner && safeNext) {
         clearOrganisationContext();
         router.push(safeNext);
         return;
@@ -34,7 +43,6 @@ export default function Login() {
     } catch(e:any) {setError(e.message||"We could not sign you in. Check your details and try again.");}
     finally {setBusy(false);}
   }
-  if (busy) return <main className="min-h-screen bg-[var(--bg)] px-5 py-10 sm:px-8 lg:px-12"><div className="mx-auto max-w-5xl pt-8"><Skeleton label="Verifying your account and preparing your learning workspace" /></div>{error&&<Toast title="Sign in failed" message={error} type="error" onClose={()=>setError("")}/>}</main>;
   return <main className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1fr_.92fr]">
     <aside className="relative hidden min-h-screen overflow-hidden border-r border-white/[.1] bg-[#11171e] lg:block">
       <img src={IMAGES.login} alt="A quiet study space ready for focused learning" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
