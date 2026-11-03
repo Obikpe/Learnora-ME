@@ -67,7 +67,7 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
         me.role === "witstart" ||
         me.cohort_id ||
         me.organisation_role === "learner" ||
-        memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
+        memberships.some((membership: any) => ["learner", "member"].includes(membership.role) && membership.status === "active")
       ));
     }).catch(() => {}).finally(() => {
       if (!cancelled) setIdentityResolved(true);
