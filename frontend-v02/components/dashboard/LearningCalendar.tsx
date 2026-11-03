@@ -57,6 +57,5 @@ export default function LearningCalendar({ courses }: { courses: any[] }) {
         </span>;
       })}
     </div>
-    <div className="mt-3 flex items-center gap-2 text-[10px] text-[var(--text-muted)]"><span className="size-1.5 rounded-full bg-[var(--primary)]"/> Activity recorded from your course enrolments and lesson progress</div>
   </section>;
 }
