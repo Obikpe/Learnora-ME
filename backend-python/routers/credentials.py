@@ -95,12 +95,16 @@ def my_credentials(user: CurrentUser = Depends(get_current_user)):
     enrolled_ids = list({str(row["course_id"]) for row in enrolments if row.get("course_id")})
     eligible = []
     if enrolled_ids:
-        courses = (
-            supabase.table("learnora_courses")
-            .select("id,title,status")
-            .in_("id", enrolled_ids)
-            .execute()
-        ).data or []
+        try:
+            courses = (
+                supabase.table("learnora_courses")
+                .select("id,title,status")
+                .in_("id", enrolled_ids)
+                .execute()
+            ).data or []
+        except Exception as exc:
+            print(f"Certificate course eligibility lookup failed: {type(exc).__name__}")
+            courses = []
         issued_course_ids = {str(row["course_id"]) for row in rows}
         for course in courses:
             if str(course["id"]) in issued_course_ids or course.get("status") not in {"published", "archived"}:
