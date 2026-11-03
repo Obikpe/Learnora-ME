@@ -73,3 +73,13 @@ Using daily sales, build lag-1, lag-7 and previous-7-day mean features. Verify o
 
 ## Lesson summary
 Dates, sequences and text contain structure that can become useful model inputs. Respect ordering, timezones and prediction boundaries so features describe only information legitimately available at the moment of prediction.
+
+## 7. Deeper reasoning: time features must respect event order
+
+Time-dependent features are particularly easy to get wrong because the current row may contain both predictors and the outcome period. Suppose the task is to predict tomorrow's sales using today's information. A seven-day rolling average that includes tomorrow's sales is leakage. A rolling window that includes today's sales may be valid if today's sales are already complete at the moment the forecast is made. The correct calculation depends on the exact forecast timestamp, not simply on whether a column is called “sales”.
+
+When data contains several stores or customers, calculate lags separately within each entity. A lag created after sorting the whole table can accidentally take the previous row from another store. In pandas, group by the entity and then shift or roll within each group. Also decide how to handle missing calendar dates. If a store has no row on Sunday, the previous row may be Saturday, not “one day ago” in a continuous daily series.
+
+Cyclical encoding is useful when the end and beginning of a scale are neighbours. Hour 23 and hour 0 are only one hour apart, but their raw numeric difference is 23. Sine and cosine represent the position around a circle. The same idea can apply to day of week or month of year. The pair of values is needed because a single sine value cannot uniquely identify every point in a cycle.
+
+Text features have similar timing and reproducibility requirements. A vocabulary or TF-IDF weighting is learned from a document collection, so it belongs inside the pipeline. A keyword feature should be based on text available before the prediction, not on a later customer-service note that describes the outcome.
