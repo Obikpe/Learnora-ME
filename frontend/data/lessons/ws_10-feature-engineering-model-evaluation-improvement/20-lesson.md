@@ -70,3 +70,13 @@ Compare a small GridSearchCV with RandomizedSearchCV under the same cross-valida
 
 ## Lesson summary
 Randomised and Bayesian methods can explore broad search spaces more efficiently than exhaustive grids. Their value depends on sensible distributions, evaluation budgets and reliable validation.
+
+## 6. Deeper reasoning: the search budget is part of the method
+
+Grid search, random search and Bayesian optimisation spend evaluation effort differently. A grid is predictable and easy to audit, but its candidates are fixed before results are known. Random search samples settings from a distribution and can explore a wider variety of values when only a limited number of trials are affordable. Bayesian optimisation uses earlier outcomes to guide later evaluations, which can be attractive when each fit is expensive.
+
+The search space should reflect parameter meaning. A parameter such as regularisation strength may work across several orders of magnitude, so a log-uniform distribution is often more useful than uniform sampling between 0 and 100. A parameter such as maximum tree depth may be discrete and bounded. Some parameters are conditional: gamma matters for an RBF SVM but not for a linear kernel. Avoid searching combinations that the estimator will ignore.
+
+Random search is stochastic. A different random seed can sample different configurations. If the best result is unstable, run a second search or examine whether the top region is broad enough to be credible. Do not repeatedly search until a lucky score appears and then report only that run. Record the number of trials, distributions, seed and validation method.
+
+Bayesian optimisation also depends on a surrogate model and acquisition strategy. It can be efficient, but noisy cross-validation scores may mislead the search process. A more sophisticated search method does not compensate for a poor metric, leakage or an unrepresentative split. The most important resource is not the number of tools used; it is the quality of the experiment design.
