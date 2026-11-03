@@ -101,7 +101,9 @@ Check:
 - Whether the differences are meaningful for the stated purpose.
 
 ```python
-result = customers.assign(cluster=labels)
+# A self-contained profile example using the same observations.
+best_labels = KMeans(n_clusters=3, n_init=20, random_state=42).fit_predict(X)
+result = customers.assign(cluster=best_labels)
 
 print(result["cluster"].value_counts().sort_index())
 print(result.groupby("cluster").agg(
