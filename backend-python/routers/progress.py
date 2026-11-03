@@ -1087,6 +1087,17 @@ def my_progress(
             ).data or []
             if saved:
                 saved_enrolment = saved[0]
+            else:
+                latest = (
+                    supabase.table("learnora_enrolments")
+                    .select("id,status,enrolled_at,completed_at")
+                    .eq("id", str(enrolment["id"]))
+                    .eq("user_id", str(user.id))
+                    .limit(1)
+                    .execute()
+                ).data or []
+                if latest:
+                    saved_enrolment = {**enrolment, **latest[0]}
 
         completed = bool(saved_enrolment.get("status") == "completed" or calculated_complete)
         summaries.append({
