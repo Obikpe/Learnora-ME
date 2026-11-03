@@ -27,15 +27,9 @@ export default function LessonAIPanel({ courseId, lessonId, lessonTitle, notes, 
     setError("");
     setMessages(old => [...old, { role: "user", content: question }]);
     setBusy(true);
-    const transcript = transcriptText(video);
-    const references = [
-      "Learner is asking about the currently open lesson: " + lessonTitle,
-      lessonContent ? "Lesson material:\n" + lessonContent.slice(0, 7000) : "",
-      notes ? "Learner's own saved lesson notes:\n" + notes.slice(0, 5000) : "",
-      transcript ? "Video transcript/captions:\n" + transcript : "No video transcript was supplied in the lesson media record."
-    ].filter(Boolean).join("\n\n");
+    const learnerNotes = notes.trim() ? "My current lesson notes (may include unsaved edits):\n" + notes.slice(0, 2500) + "\n\n" : "";
     try {
-      const result = await askAI(references + "\n\nLearner question: " + question, "tutor", conversationId, { course_id: courseId, lesson_id: lessonId });
+      const result = await askAI(learnerNotes + question, "tutor", conversationId, { course_id: courseId, lesson_id: lessonId });
       setConversationId(result.conversation_id);
       setMessages(old => [...old, { role: "assistant", content: result.content || "I could not generate a response just now." }]);
     } catch (e: any) {
