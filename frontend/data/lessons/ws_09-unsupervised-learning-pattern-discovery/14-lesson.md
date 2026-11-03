@@ -60,3 +60,11 @@ Avoid turning a descriptive profile into a psychological story. “Customers wit
 If a segment suggests a campaign, run an experiment or careful evaluation. Clustering does not establish that a campaign will work. Check fairness because a segment may proxy for sensitive characteristics or create unequal treatment. Small clusters can create re-identification risks; suppress or aggregate small groups where appropriate.
 
 **Practice:** Write a segment card for each cluster: size, neutral name, distinguishing evidence, uncertainty, proposed low-risk test and what the analysis does not prove.
+
+### Worked example: build a segment card
+
+For each cluster, create a small card with the number and percentage of observations, median recency, median frequency, median spend and one or two distribution plots. Compare the group with the overall population. This makes the distinction visible and prevents a name from carrying more meaning than the measurements support.
+
+Use descriptive labels such as “higher recent frequency” rather than judgemental labels such as “loyal” or “poor”. Include a caveat when the group is small or unstable. If the group is intended to guide a campaign, propose a test with a control group rather than assuming the campaign will work.
+
+Segment profiling is not a substitute for fairness review. Consider who may be excluded, whether features proxy for sensitive attributes, and whether the resulting action is proportionate.
