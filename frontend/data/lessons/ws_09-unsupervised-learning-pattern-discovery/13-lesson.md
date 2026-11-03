@@ -2,64 +2,215 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Calculate support, confidence and lift for item associations; explain the transaction unit and minimum support; and distinguish co-occurrence from causation.
+By the end of this lesson, you should be able to explain transaction-based association analysis; define itemsets and association rules; calculate support, confidence and lift by hand; use mlxtend's Apriori workflow; interpret rule direction; and explain why co-occurrence does not prove causation.
 
-![Support, confidence and lift describe association](/course-assets/ws09/association-metrics.svg)
+![Association rules and co-occurrence measures](/course-assets/ws09/association-metrics.svg)
 
-## 1. Core explanation
-Association analysis searches for items that occur together in transactions. Support is the proportion of transactions containing an itemset. Confidence estimates how often B occurs when A occurs. Lift compares that confidence with the baseline frequency of B; lift greater than one indicates co-occurrence above independence under the measure.
+## 1. What is association analysis?
 
-Association rules are descriptive, not causal. A rule bread -> butter does not mean bread causes butter purchases. Rare itemsets can have high confidence but tiny support, so inspect all three measures. Minimum support controls which itemsets are considered; too high misses rare patterns, too low creates a huge number of rules.
+Association analysis searches for items or events that occur together more often than might be expected under a simple independence assumption. A familiar example is market-basket analysis: a supermarket examines which products are often purchased in the same shopping basket.
 
-The transaction definition matters. A basket might be one checkout, one customer-day or one account-month. Combining transactions incorrectly changes support and confidence. Protect customer privacy and avoid sensitive inferences about individuals.
+The aim is not to predict a numeric target. Instead, the analysis discovers recurring combinations and expresses them as rules. For example:
 
-## 2. Worked Python example
-Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
+```
+{bread} -> {butter}
+```
+
+This rule asks whether transactions containing bread also tend to contain butter. It does not say that bread causes customers to buy butter. Both items may be common, a promotion may affect both, or another factor may explain their co-occurrence.
+
+Association analysis can also be used for web-page co-visitation, medical symptom co-occurrence, product bundles and event sequences. The transaction definition must be meaningful for the problem.
+
+## 2. What is a transaction?
+
+A transaction is a defined collection of items or events. In a retail example, one transaction may be one checkout basket. The data can be represented as a list of sets:
 
 ```python
 transactions = [
-    {"bread", "milk"}, {"bread", "butter"}, {"bread", "milk", "butter"},
-    {"milk"}, {"bread", "milk"}, {"butter", "milk"}
+    {"bread", "milk"},
+    {"bread", "butter"},
+    {"bread", "milk", "butter"},
+    {"milk"},
+    {"bread", "milk"}
 ]
-def support(itemset):
-    return sum(itemset.issubset(t) for t in transactions) / len(transactions)
-s_a, s_b = support({"bread"}), support({"butter"})
-s_ab = support({"bread", "butter"})
-print("Support", s_ab, "Confidence", s_ab/s_a, "Lift", (s_ab/s_a)/s_b)
 ```
 
-## 3. Interpretation
-Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
+Each set contains the distinct items in one basket. The same item should not appear twice in one set if the question is simply whether the item was present. If quantity matters, that is a different analytical representation.
 
-## 4. Guided practice
-Calculate milk -> bread support, confidence and lift. Explain why high confidence can occur because bread is common and why lift adds context.
+Be careful about the transaction unit. One checkout, one customer per week and one customer per month can produce different associations. A customer who buys bread on Monday and butter on Friday has not necessarily purchased them together in one basket. Do not combine separate events unless the time window and business question justify it.
 
-## 5. Independent practice
-Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
+## 3. Itemsets and association rules
 
-## 6. Knowledge check
-1. What structure is the method attempting to discover?
-2. Which assumptions are introduced by the representation or distance?
-3. How will you assess stability and usefulness?
-4. What should not be inferred from the output?
+An **itemset** is a collection of one or more items. A one-item set might be {bread}. A two-item set might be {bread, milk}. A three-item set might be {bread, milk, eggs}.
+
+An **association rule** has an antecedent and a consequent:
+
+```
+Antecedent -> Consequent
+A -> B
+```
+
+The antecedent is the condition on the left. The consequent is the item or itemset on the right. The rule is directional. A → B and B → A have the same pair support but can have different confidence because their antecedent frequencies differ.
+
+## 4. Support: how common is the combination?
+
+Support is the proportion of all transactions that contain the complete itemset.
+
+```
+support(A) = transactions containing A / total transactions
+support(A and B) = transactions containing both A and B / total transactions
+```
+
+Suppose there are 100 baskets. Bread appears in 40 baskets, butter appears in 30, and both appear together in 18.
+
+- Support(bread) = 40/100 = 0.40 or 40%.
+- Support(butter) = 30/100 = 0.30 or 30%.
+- Support(bread and butter) = 18/100 = 0.18 or 18%.
+
+Support tells you how frequently the itemset occurs in the full transaction population. It helps prevent a rule from looking important simply because it is based on one or two baskets.
+
+## 5. Confidence: how often does B appear when A appears?
+
+Confidence for A → B is the proportion of transactions containing A that also contain B.
+
+```
+confidence(A -> B) = support(A and B) / support(A)
+```
+
+Using the example:
+
+```
+confidence(bread -> butter) = 0.18 / 0.40 = 0.45
+```
+
+So 45% of baskets containing bread also contain butter.
+
+Confidence is directional. If butter appears in 30 baskets, then:
+
+```
+confidence(butter -> bread) = 0.18 / 0.30 = 0.60
+```
+
+Thus 60% of butter baskets also contain bread. Pair support is the same in both directions, but confidence differs because the antecedent base rate differs.
+
+## 6. Lift: compare confidence with the baseline
+
+Confidence can be misleading when the consequent is already common. Lift compares the rule's confidence with the overall support of the consequent:
+
+```
+lift(A -> B) = confidence(A -> B) / support(B)
+```
+
+In the example:
+
+```
+lift(bread -> butter) = 0.45 / 0.30 = 1.5
+```
+
+A lift of 1.5 means butter is 1.5 times as common among bread baskets as it is in the full transaction population.
+
+Common interpretation:
+- Lift greater than 1: positive association under this measure.
+- Lift equal to 1: the antecedent and consequent occur at the rate expected under independence.
+- Lift less than 1: negative association under this measure.
+
+Lift is not a causal effect and does not show that placing items together will increase sales.
+
+## 7. Find frequent itemsets with Apriori
+
+Apriori is an algorithm for finding frequent itemsets. It uses the principle that if an itemset is frequent, all of its non-empty subsets must also be frequent. Conversely, if a subset is infrequent, any larger itemset containing it cannot be frequent at the same minimum support threshold.
+
+This property helps reduce the search space. Rather than testing every possible combination blindly, Apriori grows candidate itemsets from smaller frequent itemsets.
+
+Install mlxtend:
+
+```bash
+python -m pip install pandas mlxtend
+```
+
+Create a transaction indicator table, often called a one-hot encoded basket matrix:
+
+```python
+import pandas as pd
+from mlxtend.frequent_patterns import apriori, association_rules
+
+transactions = [
+    ["bread", "milk"],
+    ["bread", "butter"],
+    ["bread", "milk", "butter"],
+    ["milk"],
+    ["bread", "milk"],
+    ["butter", "milk"],
+    ["bread", "butter"]
+]
+
+all_items = sorted({item for basket in transactions for item in basket})
+
+basket_matrix = pd.DataFrame(
+    [{item: item in basket for item in all_items} for basket in transactions]
+)
+
+frequent_itemsets = apriori(
+    basket_matrix,
+    min_support=0.25,
+    use_colnames=True
+)
+
+rules = association_rules(
+    frequent_itemsets,
+    metric="confidence",
+    min_threshold=0.4
+)
+
+print(frequent_itemsets.sort_values("support", ascending=False))
+print(rules[["antecedents", "consequents", "support", "confidence", "lift"]])
+```
+
+The basket matrix has one row per transaction and one column per item. A True value means the item is present in that basket; False means it is absent.
+
+- `min_support=0.25` keeps itemsets appearing in at least 25% of transactions.
+- `use_colnames=True` displays actual item names rather than numeric column positions.
+- `association_rules` derives directional rules from the frequent itemsets.
+- `metric="confidence"` tells the function which rule measure to threshold.
+- `min_threshold=0.4` retains rules with confidence at least 0.4.
+
+The threshold choices are illustrative. A high threshold can hide useful lower-confidence rules; a low threshold can produce too many weak rules. Always examine support and lift as well.
+
+## 8. Practical interpretation and responsible use
+
+A useful association report includes the transaction definition, time period, number of transactions, support, confidence and lift. It should also describe whether promotions, seasonality, product availability or store layout could influence the result.
+
+Avoid presenting rules based on very few baskets as reliable. If thousands of rules are generated, multiple comparisons and chance patterns become a concern. Use sensible thresholds, test whether rules persist in another time period and validate any proposed intervention through an experiment.
+
+Protect privacy. Item combinations can sometimes reveal sensitive behaviour, particularly in small groups. Aggregate and suppress small counts where appropriate.
+
+## 9. Common mistakes
+
+- Confusing support with confidence.
+- Treating confidence as symmetric.
+- Ignoring lift and the overall frequency of the consequent.
+- Changing the transaction definition without documenting it.
+- Calling co-occurrence a causal relationship.
+- Reporting rules supported by very few transactions.
+- Assuming a high lift guarantees commercial value.
+
+## 10. Guided practice
+
+Using the 100-basket example, calculate support for bread and butter, confidence for bread → butter, confidence for butter → bread, and lift for bread → butter. Explain why the two confidence values differ.
+
+## 11. Independent practice
+
+Create a small transaction dataset or use a public market-basket dataset. Generate frequent itemsets with at least two minimum-support settings. Create association rules and compare support, confidence and lift. Identify three rules worth investigating and explain why none should be described as causal.
+
+## 12. Knowledge check
+
+1. What is a transaction?
+2. What is an itemset?
+3. How is support calculated?
+4. Why is confidence directional?
+5. What does lift greater than 1 indicate?
+6. What is the Apriori principle?
+7. Why does a high-lift rule still need a minimum support check?
 
 ## Lesson summary
-Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
 
-## Deeper explanation: derive support, confidence and lift
-
-Suppose 100 baskets exist. Bread appears in 40, butter in 30, and both appear together in 18. Support of the pair is 18/100 = 18%. Confidence of bread → butter is 18/40 = 45%. Lift is 0.45/0.30 = 1.5. Butter is 1.5 times as common among bread baskets as in the overall population. This is association, not causation.
-
-For a rule A → B, support is the proportion of transactions containing both A and B. Confidence is the proportion of A transactions that also contain B. Lift divides that confidence by the overall frequency of B. Lift above 1 indicates positive association under this measure; 1 indicates independence; below 1 indicates negative association.
-
-Always report support alongside confidence and lift. A rule can have high confidence because the consequent is common. Association mining can generate thousands of rules, so thresholds should reflect transaction volume and the decision. Check duplicate items, returns, basket definition and time window. Changing the transaction unit from checkout to customer-month changes the measures.
-
-**Practice:** Calculate milk → bread and bread → milk for the example baskets. Pair support is the same in both directions, but confidence differs because the antecedent base rates differ. Explain the asymmetry.
-
-### Worked example: interpret an association rule carefully
-
-Confidence is directional. Bread → butter asks what fraction of bread baskets also contain butter. Butter → bread asks what fraction of butter baskets also contain bread. Their support is identical because both refer to the same item pair, but their confidence values can differ because the antecedent counts differ.
-
-Lift compares confidence with the baseline frequency of the consequent. This helps distinguish elevated co-occurrence from a rule that merely predicts a very common item. Even high lift can be based on very few transactions, so support and sample size remain essential.
-
-Association can be affected by seasonality, promotions, store layout and customer mix. A rule is a useful hypothesis for a merchandising test, not evidence that placing items together will cause higher sales. Use an experiment to evaluate a causal business intervention.
+Association analysis finds recurring co-occurrence patterns. Support measures how common an itemset is, confidence measures how often the consequent appears when the antecedent appears, and lift compares that confidence with the consequent's baseline frequency. Apriori efficiently finds frequent itemsets, but rules remain hypotheses about association—not evidence of causation.
