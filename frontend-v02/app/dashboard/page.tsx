@@ -94,15 +94,19 @@ export default function MyLearningPage() {
     const progressResult = await Promise.allSettled([
       request<any>("/progress/me"),
     ]);
-    const progressLoaded = progressResult[0].status === "fulfilled";
-    if (progressLoaded) setLearning(progressResult[0].value);
-    else {
+    const progressResponse = progressResult[0];
+    const progressLoaded = progressResponse.status === "fulfilled";
+    const progressData = progressResponse.status === "fulfilled" ? progressResponse.value : null;
+
+    if (progressData) {
+      setLearning(progressData);
+    } else {
       setLearning({ courses: [] });
       setError("Your learning records could not be loaded.");
     }
     setLoading(false);
 
-    const hasEnrolments = progressLoaded && (progressResult[0].value.courses || []).length > 0;
+    const hasEnrolments = Boolean(progressData && (progressData.courses || []).length > 0);
     if (!hasEnrolments && progressLoaded) {
       setCatalogueLoading(true);
       try {
