@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Build a reproducible supervised workflow using a train/test split, a preprocessing-and-model pipeline, a baseline and an appropriate metric; and explain how to keep test data separate from model selection.
 
+
+![workflow concept diagram](/course-assets/ws08/workflow.svg)
+
 ## 1. Core explanation
 A supervised workflow should be reproducible from raw data to final metric. Keep data loading, validation, splitting, preprocessing, model fitting and evaluation explicit. Use a fixed random seed when a random split is appropriate, but remember that a seed alone does not guarantee full reproducibility across library versions or hardware.
 
