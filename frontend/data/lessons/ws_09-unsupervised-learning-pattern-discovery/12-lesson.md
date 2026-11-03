@@ -57,3 +57,11 @@ Evaluate an alerting workflow by asking how many records are flagged, how many a
 Keep the original record, model version, score, threshold and review outcome. Route flags to a human process. Do not block customers, accuse people or delete data based only on an anomaly score. Monitor drift and investigate process changes before retraining.
 
 **Practice:** Build an alert-review table with score, flag, original feature values, reviewer outcome and follow-up action. Explain why a flagged case is a lead for investigation, not a verdict.
+
+### Worked example: set a review threshold
+
+An anomaly detector returns a score or label based on its learned notion of normality. A team may only have capacity to review 20 alerts per day. The threshold should therefore be evaluated against review capacity, false-positive cost and the risk of missing a relevant event. Contamination is a modelling assumption or threshold control, not a fraud rate.
+
+If a labelled review sample exists, calculate precision and recall at several thresholds. Also inspect cases the model did not flag, because false negatives matter. If labels are unavailable, sample both flagged and unflagged records for expert review and document the limitations of that process.
+
+Keep an audit trail so decisions can be challenged. The model should prioritise investigation, while a separate evidence-based process determines what action is justified.
