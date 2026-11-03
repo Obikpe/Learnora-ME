@@ -564,29 +564,34 @@ def _record_learning_day(user: CurrentUser, activity_type: str) -> None:
         print(f"Learning-day record failed: {type(exc).__name__}")
 
 
+def _rpc_integer(result, default: int = 0) -> int:
+    value = getattr(result, "data", default)
+    if isinstance(value, list):
+        value = value[0] if value else default
+    if isinstance(value, dict):
+        value = next(iter(value.values()), default)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 @router.post("/learning-sessions/start", status_code=201)
 def start_learning_session(body: LearningSessionStartIn, user: CurrentUser = Depends(get_current_user)):
-    now = datetime.now(timezone.utc)
     account_type = _learning_account_type(user)
     timezone_name = _validated_timezone(body.timezone)
-    stale_before = (now - timedelta(minutes=3)).isoformat()
     try:
-        supabase.table("learning_sessions").update({
-            "status": "interrupted",
-            "ended_at": stale_before,
-        }).eq("learner_id", str(user.id)).eq("account_type", account_type).eq("status", "active").lt("last_heartbeat_at", stale_before).execute()
-        inserted = supabase.table("learning_sessions").insert({
-            "learner_id": str(user.id),
-            "account_type": account_type,
-            "started_at": now.isoformat(),
-            "last_heartbeat_at": now.isoformat(),
-            "timezone": timezone_name,
-            "status": "active",
-            "active_seconds": 0,
+        result = supabase.rpc("start_learner_learning_session", {
+            "p_learner_id": str(user.id),
+            "p_account_type": account_type,
+            "p_timezone": timezone_name,
         }).execute()
-        if not inserted.data:
-            raise RuntimeError("Session insert returned no row")
-        return {"success": True, "session": inserted.data[0]}
+        session = getattr(result, "data", None)
+        if isinstance(session, list):
+            session = session[0] if session else None
+        if not isinstance(session, dict) or not session.get("id"):
+            raise RuntimeError("Session start RPC returned no session")
+        return {"success": True, "session": session}
     except Exception as exc:
         print(f"Learning session start failed: {type(exc).__name__}")
         raise HTTPException(503, "Learning-time tracking is temporarily unavailable.") from None
@@ -594,25 +599,20 @@ def start_learning_session(body: LearningSessionStartIn, user: CurrentUser = Dep
 
 @router.post("/learning-sessions/{session_id}/heartbeat")
 def heartbeat_learning_session(session_id: UUID, body: LearningSessionHeartbeatIn, user: CurrentUser = Depends(get_current_user)):
-    now = datetime.now(timezone.utc)
     account_type = _learning_account_type(user)
-    rows = (supabase.table("learning_sessions")
-        .select("id,last_heartbeat_at,status")
-        .eq("id", str(session_id)).eq("learner_id", str(user.id))
-        .eq("account_type", account_type).eq("status", "active").limit(1).execute()).data or []
-    if not rows:
-        raise HTTPException(404, "Learning session not found.")
     try:
-        previous = datetime.fromisoformat(str(rows[0]["last_heartbeat_at"]).replace("Z", "+00:00"))
-        elapsed = max(0, min(60, int((now - previous).total_seconds()))) if body.active else 0
-        current = (supabase.table("learning_sessions").select("active_seconds")
-            .eq("id", str(session_id)).eq("learner_id", str(user.id)).eq("account_type", account_type).eq("status", "active").limit(1).execute()).data or []
-        total = int(current[0].get("active_seconds") or 0) if current else 0
-        supabase.table("learning_sessions").update({
-            "last_heartbeat_at": now.isoformat(),
-            "active_seconds": total + elapsed,
-        }).eq("id", str(session_id)).eq("learner_id", str(user.id)).eq("account_type", account_type).eq("status", "active").execute()
-        return {"success": True, "counted_seconds": elapsed}
+        result = supabase.rpc("heartbeat_learner_learning_session", {
+            "p_session_id": str(session_id),
+            "p_learner_id": str(user.id),
+            "p_account_type": account_type,
+            "p_active": bool(body.active),
+        }).execute()
+        counted = _rpc_integer(result, -1)
+        if counted < 0:
+            raise HTTPException(404, "Learning session not found.")
+        return {"success": True, "counted_seconds": counted}
+    except HTTPException:
+        raise
     except Exception as exc:
         print(f"Learning session heartbeat failed: {type(exc).__name__}")
         raise HTTPException(503, "Learning-time tracking is temporarily unavailable.") from None
@@ -620,24 +620,15 @@ def heartbeat_learning_session(session_id: UUID, body: LearningSessionHeartbeatI
 
 @router.post("/learning-sessions/{session_id}/end")
 def end_learning_session(session_id: UUID, body: LearningSessionHeartbeatIn, user: CurrentUser = Depends(get_current_user)):
-    now = datetime.now(timezone.utc)
     account_type = _learning_account_type(user)
-    rows = (supabase.table("learning_sessions")
-        .select("id,last_heartbeat_at,active_seconds,status")
-        .eq("id", str(session_id)).eq("learner_id", str(user.id))
-        .eq("account_type", account_type).eq("status", "active").limit(1).execute()).data or []
-    if not rows:
-        return {"success": True, "already_ended": True}
     try:
-        previous = datetime.fromisoformat(str(rows[0]["last_heartbeat_at"]).replace("Z", "+00:00"))
-        elapsed = max(0, min(60, int((now - previous).total_seconds()))) if body.active else 0
-        supabase.table("learning_sessions").update({
-            "last_heartbeat_at": now.isoformat(),
-            "ended_at": now.isoformat(),
-            "active_seconds": int(rows[0].get("active_seconds") or 0) + elapsed,
-            "status": "ended",
-        }).eq("id", str(session_id)).eq("learner_id", str(user.id)).eq("account_type", account_type).eq("status", "active").execute()
-        return {"success": True, "counted_seconds": elapsed}
+        result = supabase.rpc("end_learner_learning_session", {
+            "p_session_id": str(session_id),
+            "p_learner_id": str(user.id),
+            "p_account_type": account_type,
+            "p_active": bool(body.active),
+        }).execute()
+        return {"success": True, "counted_seconds": max(0, _rpc_integer(result))}
     except Exception as exc:
         print(f"Learning session end failed: {type(exc).__name__}")
         raise HTTPException(503, "Learning-time tracking is temporarily unavailable.") from None
