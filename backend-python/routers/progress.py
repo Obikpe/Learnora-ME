@@ -254,9 +254,9 @@ def _course_assessment_summary(user_id: str, course_id: str):
     }
 
 
-def _sync_enrolment_completion(user_id: str, course_id: str, include_archived: bool = False):
+def _sync_enrolment_completion(user_id: str, course_id: str, include_archived: bool = False, include_lesson_content: bool = True):
     """Persist verified course completion on the learner's enrolment row."""
-    summary = _course_summary(user_id, course_id, include_archived=include_archived)
+    summary = _course_summary(user_id, course_id, include_archived=include_archived, include_lesson_content=include_lesson_content)
     enrolment = summary.get("enrolment") or {}
     if summary.get("completed") and enrolment.get("status") == "active":
         completed_at = datetime.now(timezone.utc).isoformat()
@@ -284,7 +284,7 @@ def _sync_enrolment_completion(user_id: str, course_id: str, include_archived: b
     return summary
 
 
-def _course_summary(user_id: str, course_id: str, include_archived: bool = False):
+def _course_summary(user_id: str, course_id: str, include_archived: bool = False, include_lesson_content: bool = True):
     enrolment = _enrolment(user_id, course_id)
     if not enrolment:
         raise HTTPException(
@@ -314,7 +314,8 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
             .table("learnora_lessons")
             .select(
                 "id,module_id,title,order_index,lesson_type,"
-                "content,duration_minutes,status"
+                + ("content," if include_lesson_content else "")
+                + "duration_minutes,status"
             )
             .in_("module_id", module_ids)
         )
@@ -719,6 +720,7 @@ def my_progress(
             str(user.id),
             course_id,
             include_archived=course.get("status") == "archived",
+            include_lesson_content=False,
         )
         saved_enrolment = summary.get("enrolment") or enrolment
         completed = bool(saved_enrolment.get("status") == "completed" or summary.get("completed"))
