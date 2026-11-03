@@ -4,7 +4,7 @@
 
 By the end of this lesson, you should be able to deliver a complete, reproducible unsupervised-learning project; justify the method and feature representation; compare at least two methods or meaningful parameter settings; validate structure and stability; interpret results in original units; communicate limitations; and present a responsible recommendation.
 
-![The end-to-end unsupervised project workflow](/course-assets/ws09/clustering-concepts.svg)
+![Teaching diagram: 16](/course-assets/ws09/unsupervised-workflow.svg)
 
 ## 1. Project purpose
 
