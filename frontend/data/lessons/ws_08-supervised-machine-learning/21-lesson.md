@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Calculate and interpret permutation feature importance on held-out data; explain why importance is model- and dataset-dependent; and avoid treating importance as causal effect.
 
+
+![validation concept diagram](/course-assets/ws08/validation.svg)
+
 ## 1. Core explanation
 Interpretation explains how a model uses inputs. Linear coefficients describe changes in the model output under the fitted parameterisation. Tree importance often measures impurity reduction. Permutation importance measures the decline in a validation score when one feature is shuffled. SHAP-style methods attribute individual predictions, but explanations depend on assumptions about feature dependence and the background distribution.
 
