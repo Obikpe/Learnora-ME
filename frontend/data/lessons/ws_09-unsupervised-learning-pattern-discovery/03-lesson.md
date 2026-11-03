@@ -42,3 +42,15 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: calculate distance before trusting it
+
+For points A=(1,2) and B=(4,6), Euclidean distance is the straight-line distance: square the coordinate differences, add them, and take the square root. The result is 5. Manhattan distance adds the absolute coordinate differences, giving 7. They differ because they define closeness differently.
+
+Cosine similarity compares the angle between vectors rather than their lengths. Vectors (1,2) and (2,4) point in the same direction, so their cosine similarity is 1 even though their Euclidean distance is not zero. This is useful for comparing text vectors where document length may matter less than word proportions. It is unsuitable when magnitude itself is meaningful, such as total energy consumption.
+
+Euclidean distance is common for continuous numeric measurements but is sensitive to scale and outliers. Manhattan distance can suit additive coordinate differences. Cosine similarity is common for sparse text vectors. Jaccard similarity compares overlap between sets or binary attributes; it is not a general replacement for distance on continuous measurements.
+
+High-dimensional data creates another problem: as dimensions increase, distances can become less discriminative. Irrelevant features add noise. Standardisation helps with units but does not solve poor feature selection. A full pairwise distance matrix for n rows contains n-squared distances and can become expensive.
+
+**Practice:** Compare vectors (1,2), (2,4), and (8,1) using Euclidean distance and cosine similarity. Explain why the first two are directionally alike but differ in magnitude. Then describe a real situation where that distinction matters.
