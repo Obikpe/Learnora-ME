@@ -56,9 +56,14 @@ export const clearToken = () => {
     const key = sessionStorage.key(index);
     if (key?.startsWith("learnora_current_user_cache:")) sessionStorage.removeItem(key);
   }
+  for (let index = sessionStorage.length - 1; index >= 0; index--) {
+    const key = sessionStorage.key(index);
+    if (key && (key.startsWith("learnora_") || key.startsWith("phx_"))) sessionStorage.removeItem(key);
+  }
   sessionStorage.removeItem("phx_token");
   sessionStorage.removeItem("phx_session_epoch");
   localStorage.removeItem("phx_token");
+  localStorage.removeItem("learnora_organisation_id");
   sessionStorage.setItem("phx_logged_out", "1");
   clearOrganisationContext();
   void fetch("/api/auth/logout", { method: "POST", credentials: "same-origin", keepalive: true }).catch(() => {});
