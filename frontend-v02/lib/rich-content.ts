@@ -45,7 +45,11 @@ function inlineMarkdown(value: string) {
     code.push(`<code>${content}</code>`);
     return marker;
   });
-  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+|\/[^\s)]*|#[^\s)]*)\)/g, (_match, label: string, href: string) => {
+  text = text.replace(/!\\[([^\\]]*)\\]\\(([^\\s)]+)\\)/g, (_match, alt: string, src: string) => {
+    const safe = /^(https?:\\/\\/|\\/|\\.\\.?\\/)[^\\s"'<>]+$/i.test(src) && !/[\\u0000-\\u001f\\\\]/.test(src) ? src : "";
+    return safe ? `<img src="${escapeHtml(safe)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />` : alt;
+  });
+  text = text.replace(/\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+|mailto:[^\\s)]+|\\/[^\\s)]*|#[^\\s)]*)\\)/g, (_match, label: string, href: string) => {
     const safe = safeHref(href);
     return safe ? `<a href="${escapeHtml(safe)}" rel="noopener noreferrer">${label}</a>` : label;
   });
