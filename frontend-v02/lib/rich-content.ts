@@ -87,27 +87,30 @@ function markdownToHtml(value: string) {
     inCode = false;
   };
 
-  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {\n    const line = lines[lineIndex];
-    if (/^\s*```/.test(line)) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
+    if (/^\s*\x60{3}/.test(line)) {
       flushParagraph(); flushList(); flushQuote();
       if (inCode) flushCode(); else inCode = true;
       continue;
     }
     if (inCode) { code.push(line); continue; }
     const nextLine = lines[lineIndex + 1] || "";
-    const isTableHeader = /^\\s*\\|.*\\|\\s*$/.test(line) && /^\\s*\\|?\\s*:?-{3,}:?\\s*(\\|\\s*:?-{3,}:?\\s*)+\\|?\\s*$/.test(nextLine);
+    const isTableHeader = /^\s*\|.*\|\s*$/.test(line) && /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(nextLine);
     if (isTableHeader) {
       flushParagraph(); flushList(); flushQuote();
-      const cells = (row: string) => row.trim().replace(/^\\|/, "").replace(/\\|$/, "").split("|").map(cell => cell.trim());
+      const cells = (row: string) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(cell => cell.trim());
       const headers = cells(line);
       const rows: string[][] = [];
       lineIndex += 2;
-      while (lineIndex < lines.length && /^\\s*\\|.*\\|\\s*$/.test(lines[lineIndex])) {
+      while (lineIndex < lines.length && /^\s*\|.*\|\s*$/.test(lines[lineIndex])) {
         rows.push(cells(lines[lineIndex]));
         lineIndex++;
       }
       lineIndex--;
-      output.push(`<table><thead><tr>${headers.map(cell => `<th>${inlineMarkdown(cell)}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${headers.map((_header, index) => `<td>${inlineMarkdown(row[index] || "")}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+      const headHtml = headers.map(cell => "<th>" + inlineMarkdown(cell) + "</th>").join("");
+      const bodyHtml = rows.map(row => "<tr>" + headers.map((_header, index) => "<td>" + inlineMarkdown(row[index] || "") + "</td>").join("") + "</tr>").join("");
+      output.push("<table><thead><tr>" + headHtml + "</tr></thead><tbody>" + bodyHtml + "</tbody></table>");
       continue;
     }
     const heading = line.match(/^\s{0,3}(#{1,6})\s+(.+)$/);
