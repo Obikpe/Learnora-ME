@@ -11,12 +11,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true;
     setAuthorised(false);
-    currentUser().then(() => {
+    const validate = () => currentUser().then(() => {
       if (active) setAuthorised(true);
     }).catch(() => {
       if (active) window.location.replace("/");
     });
-    return () => { active = false; };
+    void validate();
+    const onPageShow = () => {
+      if (sessionStorage.getItem("phx_logged_out") === "1") window.location.replace("/");
+      else void validate();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => { active = false; window.removeEventListener("pageshow", onPageShow); };
   }, [pathname]);
   if (!authorised) return <main className="min-h-screen bg-[var(--bg)] p-6"><div className="mx-auto max-w-5xl pt-12"><Skeleton label="Checking your Learnora session"/></div></main>;
   return children;
