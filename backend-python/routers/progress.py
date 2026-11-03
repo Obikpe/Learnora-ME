@@ -764,7 +764,7 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
     }).execute())
     if not inserted.data:
         raise HTTPException(500, "Unable to save quiz attempt.")
-    course_progress = _sync_enrolment_completion(str(user.id), str(quiz["course_id"]))
+    course_progress = _sync_enrolment_completion(str(user.id), str(quiz["course_id"]), include_lesson_content=False)
     return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score, "course_progress": course_progress}
 
 
