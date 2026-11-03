@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
 import Logo from "../../components/brand/Logo";
-import Skeleton from "../../components/feedback/Skeleton";
 import { request, setToken } from "../../lib/api/client";
 
 export default function CohortLoginPage() {
@@ -33,7 +32,6 @@ export default function CohortLoginPage() {
     }
   }
 
-  if (busy) return <main className="min-h-screen bg-[#090c10] px-5 py-10 text-slate-100 sm:px-8 lg:px-12"><div className="mx-auto max-w-5xl pt-8"><Skeleton label="Verifying your cohort account and preparing your learning workspace" /></div></main>;
 
   return <main className="grid min-h-screen bg-[#090c10] text-slate-100 lg:grid-cols-[1fr_.9fr]">
     <aside className="relative hidden min-h-screen overflow-hidden border-r border-white/[.08] bg-[#11171e] p-12 lg:flex lg:flex-col lg:justify-between xl:p-16">
