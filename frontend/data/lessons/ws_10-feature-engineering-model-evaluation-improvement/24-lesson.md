@@ -6,6 +6,8 @@ This final project brings together feature engineering, leakage prevention, prep
 ## Learning outcomes
 By the end of this project, you should be able to frame a predictive task; document prediction-time feature availability; create and compare engineered features; build leakage-safe pipelines; evaluate with an appropriate split and metric; diagnose errors; and communicate a responsible recommendation.
 
+![End-to-end model improvement workflow](/course-assets/ws10/reproducible-workflow.svg)
+
 ## 1. Choose a problem
 Select a public dataset with a clear licence and a target that supports a meaningful prediction task. Suitable examples include customer churn, loan repayment, product demand, energy use or delivery duration. State:
 - what one row represents;
