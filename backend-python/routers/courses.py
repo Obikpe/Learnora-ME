@@ -84,6 +84,45 @@ COURSE_LEVELS = {
 }
 
 
+def _require_individual_self_enrolment(user: CurrentUser) -> None:
+    """Reject public self-enrolment for every organisation/cohort identity.
+
+    The JWT organisation context is not the sole source of truth: resolve
+    active memberships from the database so a missing/stale claim cannot
+    turn an assigned learner into an individual self-enroller.
+    """
+    if not is_individual_learner(
+        user.role,
+        user.account_type,
+        getattr(user, "organisation_id", None),
+    ):
+        raise HTTPException(403, "Only individual learner accounts can self-enrol in public courses.")
+
+    try:
+        organisation_memberships = (
+            supabase.table("organisation_members")
+            .select("id")
+            .eq("user_id", str(user.id))
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+        cohort_memberships = (
+            supabase.table("cohort_members")
+            .select("id")
+            .eq("user_id", str(user.id))
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+    except Exception as exc:
+        print(f"Self-enrolment membership check failed: {type(exc).__name__}")
+        raise HTTPException(503, "Learner access could not be verified. Please retry.") from None
+
+    if organisation_memberships or cohort_memberships:
+        raise HTTPException(403, "Assigned learners must use courses provided by their organisation or cohort.")
+
+
 # ============================================================
 # MODELS
 # ============================================================
@@ -613,8 +652,7 @@ def self_enrol_in_free_course(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Enrol a learner in a published free course or the free-launch catalogue."""
-    if user.role not in {"normal", "witstart"}:
-        raise HTTPException(403, "This account type cannot self-enrol in learner courses.")
+    _require_individual_self_enrolment(user)
 
     course_result = (
         supabase.table("learnora_courses")
@@ -691,8 +729,7 @@ def self_enrol_in_track(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Enrol an individual learner in every course of a published global track."""
-    if not is_individual_learner(user.role, user.account_type, getattr(user, "organisation_id", None)):
-        raise HTTPException(403, "Only individual learner accounts can self-enrol in public tracks.")
+    _require_individual_self_enrolment(user)
     try:
         track_id = str(UUID(track_id))
     except (ValueError, TypeError, AttributeError):
