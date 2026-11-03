@@ -59,7 +59,7 @@ function CourseCard({ row, completed }: { row: any; completed: boolean }) {
 
 function RecommendedCourseCard({ course }: { course: any }) {
   const id = String(course.id || "");
-  const free = course.ownership === "learnora" || course.settings?.is_free === true || course.settings?.access_type === "free";
+  const free = course.settings?.is_free === true || course.settings?.access_type === "free";
   const href = "/courses/" + encodeURIComponent(id) + (free ? "?enrol=1" : "");
   return <article className="flex min-w-0 flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
     {course.thumbnail_url && <img src={course.thumbnail_url} alt="" loading="lazy" className="mb-4 aspect-[16/9] w-full rounded-lg object-cover"/>}
