@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Standardise numeric features and fit PCA; explain principal components as linear combinations; interpret explained variance; and project observations into a lower-dimensional space.
 
+![PCA rotates correlated features into principal components](/course-assets/ws09/pca-rotation.svg)
+
 ## 1. Core explanation
 Principal Component Analysis (PCA) is a linear dimensionality-reduction method. It finds orthogonal directions (principal components) that capture as much variance as possible. The first component captures the largest possible variance; each later component captures the largest remaining variance subject to being orthogonal to earlier components.
 
