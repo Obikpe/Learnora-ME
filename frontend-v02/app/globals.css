@@ -255,3 +255,14 @@ html[data-theme="dark"] .text-emerald-200 { color: var(--success) !important; }
 .landing-image-caption { color: var(--text-heading); }
 .landing-image-caption span { color: var(--primary); }
 .landing-image-caption strong { color: var(--text-heading); }
+
+
+/* Cover the remaining common dark utility surfaces across the entire frontend. */
+[class~="bg-black"], [class*="bg-black/"],
+[class~="bg-neutral-900"], [class~="bg-neutral-950"],
+[class~="bg-gray-900"], [class~="bg-gray-950"],
+[class~="bg-slate-900"], [class~="bg-slate-950"],
+[class~="bg-zinc-900"], [class~="bg-zinc-950"],
+[class~="bg-stone-900"], [class~="bg-stone-950"] {
+  background-color: var(--card) !important;
+}
