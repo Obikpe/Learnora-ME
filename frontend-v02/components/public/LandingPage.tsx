@@ -113,7 +113,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
 
 function CourseCard({ course, index }: { course: PublicCourse; index: number }) {
   const free = course.settings?.is_free === true || course.settings?.access_type === "free";
-  const selfEnrolAvailable = free || course.ownership === "learnora";
+  const selfEnrolAvailable = free;
   return (
     <article className="landing-course-card">
       <Link href={courseHref(course)} className="landing-course-image" aria-label={"View " + course.title}>
