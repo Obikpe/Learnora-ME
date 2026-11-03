@@ -170,7 +170,7 @@ export default function MyLearningPage() {
     user?.cohort_id ||
     user?.organisation_role === "learner" ||
     (user?.organisation_memberships || []).some((membership: any) =>
-      membership.role === "learner" && membership.status === "active"
+      ["learner", "member"].includes(membership.role) && membership.status === "active"
     )
   );
   const courses = learning?.courses || [];
