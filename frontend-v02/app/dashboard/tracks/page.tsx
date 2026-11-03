@@ -7,6 +7,7 @@ import Shell from "../../../components/dashboard/Shell";
 import Skeleton from "../../../components/feedback/Skeleton";
 import EmptyState from "../../../components/feedback/EmptyState";
 import { request } from "../../../lib/api/client";
+import { currentUser } from "../../../lib/api";
 
 type TrackProgress = {
   track: { id: string; name: string; description?: string | null; status: string };
@@ -51,7 +52,19 @@ export default function MyLearningTracksPage() {
         if (active) setLoading(false);
       }
     }
-    void load();
+    currentUser().then(me => {
+      const memberships = me.organisation_memberships || [];
+      const assignedLearner = Boolean(
+        me.account_type === "cohort" || me.role === "witstart" || me.cohort_id ||
+        me.organisation_role === "learner" ||
+        memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
+      );
+      if (assignedLearner) {
+        window.location.replace(me.account_type === "cohort" ? "/dashboard/cohort" : "/dashboard");
+        return;
+      }
+      void load();
+    }).catch(() => { if (active) void load(); });
     return () => { active = false; };
   }, []);
 
