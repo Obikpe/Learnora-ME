@@ -1,49 +1,129 @@
 # Lesson 2: Types of Machine Learning
 
 ## Learning outcomes
+Distinguish supervised, unsupervised, semi-supervised and reinforcement learning; explain classification and regression; identify clustering and dimensionality reduction; and match a learning setup to a problem.
 
-By the end of this lesson, you should be able to Distinguish supervised, unsupervised and reinforcement learning; identify the role of labels, feedback and rewards; classify practical use cases; and explain why the learning setup must match the problem.
+## 1. Why are there different types?
+Machine learning is a family of methods. The learning setup depends on what information is available and what the system must do. The first question is often: do we have known outcome labels for the examples?
 
-## 1. Core explanation
-Supervised learning uses labelled examples: each training row has input features and a known target. Regression predicts a numeric target such as delivery time; classification predicts a class such as late/on-time. Unsupervised learning has no target label and searches for structure, such as customer segments or unusual records. Reinforcement learning studies an agent that takes actions and receives rewards over time.
+![Machine learning learning paradigms](./assets/02-learning-paradigms.svg)
 
-The distinction is about the learning signal, not the software package. Clustering a dataset is not classification simply because the clusters are numbered. A cluster ID is a model-generated grouping, not a known class label. Semi-supervised learning combines a small labelled dataset with a larger unlabelled one. Self-supervised learning creates training targets from the data itself and is important in modern language and vision systems.
+## 2. Supervised learning
+Supervised learning uses examples with known target values. The algorithm learns a relationship between input features and the target.
 
-Choose the learning setup from the question and available evidence. If a reliable outcome is available, supervised learning may fit. If the task is to explore structure without known outcomes, unsupervised methods may help. If decisions influence future states and rewards, reinforcement learning may be relevant.
+### Classification predicts categories
+Examples:
+- spam or not spam;
+- learner completes or does not complete;
+- transaction legitimate or potentially fraudulent;
+- image contains a cat, dog or bird.
 
-## 2. Worked Python example
-Use a project virtual environment. Install relevant packages with `python -m pip install numpy pandas matplotlib scikit-learn scipy` when required.
+Binary classification has two classes. Multiclass classification has more than two mutually exclusive classes. Multilabel classification allows several labels for one observation, such as a news article tagged both business and politics.
 
+A classifier may return a class label or probabilities. A probability score is not automatically the final decision; a threshold or decision policy is needed.
+
+### Regression predicts numerical values
+Regression predicts a numerical quantity, such as rent, delivery duration, monthly sales or energy demand. The output is a number rather than a category.
+
+Do not confuse regression with logistic regression. Despite its name, logistic regression is commonly used for classification.
+
+## 3. Unsupervised learning
+Unsupervised learning looks for structure in features without a supplied target label.
+
+### Clustering
+Clustering groups observations based on a similarity rule. Customer segmentation is one example. A clustering algorithm may group customers with similar purchase frequency and average spend.
+
+A cluster is not automatically a real-world customer type. Results depend on feature choice, scaling, distance measure and algorithm. A person must inspect whether the groups are meaningful and useful.
+
+### Dimensionality reduction
+Dimensionality reduction represents data using fewer variables while trying to preserve important information or structure. It can help visualise high-dimensional data, reduce redundancy or support later modelling. Principal Component Analysis (PCA) is a common linear technique.
+
+### Anomaly detection
+Anomaly detection identifies observations that differ from an expected pattern. An unusual transaction is not automatically fraudulent; a rare legitimate event can be an anomaly, while a carefully disguised fraud may look ordinary.
+
+## 4. Semi-supervised learning
+Semi-supervised learning combines a relatively small labelled dataset with a larger unlabelled dataset. It can be useful when labels are expensive, such as specialist annotation of medical images. The unlabelled examples do not magically contain correct answers; the method relies on assumptions about the structure of the data.
+
+## 5. Reinforcement learning
+Reinforcement learning studies an agent that interacts with an environment. The agent chooses actions, receives rewards or penalties and learns a policy for choosing actions.
+
+- Agent: the learner or decision-making system.
+- Environment: the world it interacts with.
+- State: information describing the current situation.
+- Action: a choice the agent can make.
+- Reward: feedback about the outcome.
+- Policy: a strategy mapping states to actions.
+
+![Reinforcement learning interaction](./assets/02-reinforcement-loop.svg)
+
+A reward is a proxy for what we value. Poor reward design can encourage harmful behaviour even when the agent is optimising exactly as specified.
+
+## 6. Match the task to the learning setup
+| Problem | Likely approach |
+|---|---|
+| Predict whether a learner passes | Supervised classification |
+| Estimate a property's rent | Supervised regression |
+| Group customers without predefined segments | Unsupervised clustering |
+| Compress hundreds of variables into fewer dimensions | Dimensionality reduction |
+| Find unusual sensor readings | Anomaly detection |
+| Learn from a few labelled and many unlabelled images | Semi-supervised learning |
+| Train a robot to navigate by acting and receiving rewards | Reinforcement learning |
+
+## 7. Python examples: classification and regression
 ```python
-from sklearn.cluster import KMeans
-from sklearn.linear_model import LinearRegression
-import numpy as np
+from sklearn.datasets import make_classification, make_regression
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.metrics import accuracy_score, mean_absolute_error
 
-# Supervised regression: inputs paired with known numeric outcomes.
-X = np.array([[1], [2], [3], [4], [5]])
-y = np.array([2, 4, 6, 8, 10])
-reg = LinearRegression().fit(X, y)
-print("Predicted value at x=6:", reg.predict([[6]])[0])
+# Classification: target values are class labels.
+Xc, yc = make_classification(
+    n_samples=300, n_features=4, n_informative=3,
+    n_redundant=0, random_state=12
+)
+X_train, X_test, y_train, y_test = train_test_split(
+    Xc, yc, test_size=0.2, random_state=12, stratify=yc
+)
+classifier = LogisticRegression(max_iter=1000)
+classifier.fit(X_train, y_train)
+print("Classification accuracy:",
+      accuracy_score(y_test, classifier.predict(X_test)))
 
-# Unsupervised clustering: no target labels are supplied.
-groups = KMeans(n_clusters=2, random_state=4, n_init=10).fit_predict(X)
-print("Cluster assignments:", groups)
+# Regression: target values are numerical.
+Xr, yr = make_regression(
+    n_samples=300, n_features=4, noise=15, random_state=12
+)
+X_train, X_test, y_train, y_test = train_test_split(
+    Xr, yr, test_size=0.2, random_state=12
+)
+regressor = LinearRegression()
+regressor.fit(X_train, y_train)
+print("Regression MAE:",
+      mean_absolute_error(y_test, regressor.predict(X_test)))
 ```
 
-## 3. Read the result
-Do not stop when the code runs. Explain what each input represents, what the output measures and whether the result is plausible. Check data types and shapes. Keep a note of assumptions and information that would not be available at prediction time.
+make_classification creates a synthetic classification dataset; make_regression creates a synthetic numerical target. LogisticRegression predicts classes; LinearRegression predicts numerical values. Accuracy measures exact class agreement, while MAE measures average absolute numerical error in target units.
 
-## 4. Guided practice
-For each scenario, identify the learning type and explain why: predicting house price, grouping shoppers by behaviour, detecting fraudulent transactions from confirmed historical labels, and training a robot to navigate using reward feedback.
+## Common misunderstandings
+- Classification predicts categories; regression predicts numbers.
+- Clustering does not use known class labels in the supervised way.
+- A cluster is not necessarily a natural group.
+- An anomaly does not prove wrongdoing.
+- Reinforcement learning is not just supervised learning with another name.
+- A probability is not itself an action.
 
-## 5. Independent practice
-Find or create a small dataset related to the topic. Define its unit of observation and write a data dictionary. Repeat the technique without copying the worked example. Include a brief interpretation and one limitation.
+## Guided practice
+Identify the likely learning setup for: student pass/fail; monthly rent estimation; customer grouping without labels; unusual sensor detection; and a robot learning to navigate. Explain your reasoning.
 
-## 6. Knowledge check
-1. Define the key terms in this lesson in your own words.
-2. When would this method be inappropriate?
-3. What can go wrong if data is not representative or is prepared incorrectly?
-4. What evidence would you need before trusting the result?
+## Independent practice
+Create a table of five real problems. State available data, target if any, learning type, expected output and one limitation.
+
+## Knowledge check
+1. What makes data labelled?
+2. Explain classification versus regression.
+3. Why can feature scaling affect clustering?
+4. What does reward do in reinforcement learning?
+5. Why is an anomaly not necessarily fraud?
 
 ## Lesson summary
-Machine learning depends on a clearly defined problem, appropriate data, sound mathematical reasoning and careful evaluation. Tools make implementation easier, but they do not remove the need for judgement.
+The learning paradigm depends on the available information and desired output. Choosing the correct setup is the first step toward an appropriate model.
