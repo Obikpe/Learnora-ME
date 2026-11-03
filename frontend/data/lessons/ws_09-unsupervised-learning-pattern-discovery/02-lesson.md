@@ -11,7 +11,7 @@ By the end of this lesson, you should be able to:
 - Explain standardisation and normalisation and decide when they are appropriate.
 - Build a reproducible preprocessing workflow with scikit-learn.
 
-![A structured data preparation workflow](/course-assets/ws09/clustering-concepts.svg)
+![Teaching diagram: 02](/course-assets/ws09/feature-preparation.svg)
 
 ## 1. Why preparation is especially important in unsupervised learning
 
