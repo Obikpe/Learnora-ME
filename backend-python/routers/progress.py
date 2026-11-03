@@ -40,6 +40,44 @@ class AssignmentSubmissionIn(BaseModel):
     file_url: Optional[str] = Field(default=None, max_length=2000)
 
 
+def _lesson_context(lesson_id: str, user_id: str):
+    rows = (
+        supabase.table("learnora_lessons")
+        .select("id,module_id,content,course_modules!inner(course_id)")
+        .eq("id", lesson_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    if not rows:
+        raise HTTPException(404, "Lesson not found.")
+    lesson = rows[0]
+    course_id = str(lesson["course_modules"]["course_id"])
+    if not _enrolment(user_id, course_id):
+        raise HTTPException(403, "You are not enrolled in this course.")
+    _assert_module_unlocked(user_id, str(lesson["module_id"]))
+    return lesson, course_id
+
+
+def _sign_lesson_assets(rows: list[dict], require_supabase_provider: bool = False):
+    for row in rows:
+        row["signed_url"] = None
+        if not row.get("storage_path"):
+            continue
+        if require_supabase_provider and row.get("provider") != "supabase":
+            continue
+        try:
+            signed = supabase.storage.from_("learnora-course-media").create_signed_url(
+                row["storage_path"],
+                3600,
+            )
+            data = getattr(signed, "data", None) or signed
+            if isinstance(data, dict):
+                row["signed_url"] = data.get("signedUrl") or data.get("signed_url")
+        except Exception:
+            row["signed_url"] = None
+    return rows
+
+
 def _course_for_lesson(lesson_id: str):
     result = (
         supabase
@@ -477,26 +515,52 @@ def get_lesson_content(
     lesson_id: str,
     user: CurrentUser = Depends(get_current_user),
 ):
-    lesson_rows = (
-        supabase.table("learnora_lessons")
-        .select("id,module_id,content,course_modules!inner(course_id)")
-        .eq("id", lesson_id)
-        .limit(1)
-        .execute()
-    ).data or []
-    if not lesson_rows:
-        raise HTTPException(404, "Lesson not found.")
-    lesson = lesson_rows[0]
-    course_id = str(lesson["course_modules"]["course_id"])
-    if not _enrolment(str(user.id), course_id):
-        raise HTTPException(403, "You are not enrolled in this course.")
-    _assert_module_unlocked(str(user.id), str(lesson["module_id"]))
+    lesson, _course_id = _lesson_context(lesson_id, str(user.id))
     return {
         "success": True,
         "lesson_id": str(lesson["id"]),
         "content": lesson.get("content") or "",
     }
 
+
+@router.get("/lessons/{lesson_id}/workspace")
+def get_lesson_workspace(
+    lesson_id: str,
+    user: CurrentUser = Depends(get_current_user),
+):
+    lesson, _course_id = _lesson_context(lesson_id, str(user.id))
+    note_rows = (
+        supabase.table("learner_lesson_notes")
+        .select("id,content,created_at,updated_at")
+        .eq("user_id", user.id)
+        .eq("lesson_id", lesson_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    videos = (
+        supabase.table("lesson_videos")
+        .select("*")
+        .eq("lesson_id", lesson_id)
+        .order("created_at", desc=True)
+        .execute()
+    ).data or []
+    resources = (
+        supabase.table("lesson_resources")
+        .select("*")
+        .eq("lesson_id", lesson_id)
+        .order("created_at", desc=True)
+        .execute()
+    ).data or []
+    _sign_lesson_assets(videos, require_supabase_provider=True)
+    _sign_lesson_assets(resources)
+    return {
+        "success": True,
+        "lesson_id": str(lesson["id"]),
+        "content": lesson.get("content") or "",
+        "note": note_rows[0] if note_rows else None,
+        "videos": videos,
+        "resources": resources,
+    }
 
 @router.get("/lessons/{lesson_id}/notes")
 def get_lesson_note(lesson_id: str, user: CurrentUser = Depends(get_current_user)):
