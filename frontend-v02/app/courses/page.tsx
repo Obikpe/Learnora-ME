@@ -10,7 +10,8 @@ import { courses, currentUser } from "../../lib/api";
 import Shell from "../../components/dashboard/Shell";
 import { IMAGES } from "../../lib/constants";
 
-export default function Courses() {\n  const [signedIn, setSignedIn] = useState(false);
+export default function Courses() {
+  const [signedIn, setSignedIn] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
