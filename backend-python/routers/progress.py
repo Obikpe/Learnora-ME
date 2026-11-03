@@ -126,17 +126,6 @@ def _enrolment(user_id: str, course_id: str):
         if cohort_account:
             return None
 
-        cohort_memberships = (
-            supabase.table("cohort_members")
-            .select("id")
-            .eq("user_id", user_id)
-            .eq("status", "active")
-            .limit(1)
-            .execute()
-        ).data or []
-        if cohort_memberships:
-            return None
-
         memberships = (
             supabase.table("organisation_members")
             .select("organisation_id,role")
