@@ -8,6 +8,66 @@ from .internal_auth import InternalStaffContext, require_internal_permission
 from pydantic import BaseModel, Field
 from typing import Optional, Literal
 
+class _LessonHTMLSanitizer(HTMLParser):
+    allowed_tags = {"p", "br", "h1", "h2", "h3", "h4", "h5", "h6", "strong", "b", "em", "i", "u", "ul", "ol", "li", "blockquote", "pre", "code", "a", "hr"}
+    void_tags = {"br", "hr"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag == "div":
+            self.parts.append("<p>")
+            return
+        if tag == "span":
+            return
+        if tag not in self.allowed_tags:
+            return
+        if tag == "a":
+            href = next((value or "" for key, value in attrs if key.lower() == "href"), "").strip()
+            safe = href.startswith(("https://", "http://", "mailto:", "/", "#"))
+            self.parts.append(f'<a href="{html_escape(href, quote=True)}" rel="noopener noreferrer">' if safe else "<a>")
+            return
+        self.parts.append(f"<{tag}>")
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag == "div":
+            self.parts.append("</p>")
+            return
+        if tag == "span":
+            return
+        if tag in self.allowed_tags and tag not in self.void_tags:
+            self.parts.append(f"</{tag}>")
+
+    def handle_data(self, data):
+        self.parts.append(html_escape(data))
+
+
+def _sanitise_lesson_content(value):
+    if value is None:
+        return None
+    raw = str(value).strip()
+    if not raw:
+        return ""
+    has_html = re.search(r"<\s*[a-z][^>]*>", raw, re.IGNORECASE)
+    if not has_html:
+        is_legacy_markdown = re.search(
+            r"(^\s{0,3}#{1,6}\s|^\s*[-*+]\s|^\s*\d+[.)]\s|^\s*>|^\s*\x60{3}|\*\*|__)",
+            raw,
+            re.MULTILINE,
+        )
+        if is_legacy_markdown:
+            return raw
+        return "".join(f"<p>{html_escape(part)}</p>" for part in raw.split("\n\n") if part.strip())
+    parser = _LessonHTMLSanitizer()
+    parser.feed(raw)
+    parser.close()
+    return "".join(parser.parts)
+
+
 router = APIRouter(prefix="/api/internal/content", tags=["Internal Content"])
 
 def _global_learnora_course(course_id: str):
@@ -418,8 +478,6 @@ def update_module(module_id: str, payload: ModuleWrite, staff: InternalStaffCont
     data = payload.model_dump(exclude_unset=True)
     if "title" in data and data["title"]:
         data["title"] = data["title"].strip()
-    if "content" in data:
-        data["content"] = _sanitise_lesson_content(data["content"])
     if not data:
         raise HTTPException(status_code=400, detail="No changes supplied.")
     row = supabase.table("course_modules").update(data).eq("id", module_id).execute()
@@ -443,6 +501,8 @@ def update_lesson(lesson_id: str, payload: LessonWrite, staff: InternalStaffCont
     data = payload.model_dump(exclude_unset=True)
     if "title" in data and data["title"]:
         data["title"] = data["title"].strip()
+    if "content" in data:
+        data["content"] = _sanitise_lesson_content(data["content"])
     if not data:
         raise HTTPException(status_code=400, detail="No changes supplied.")
     row = supabase.table("learnora_lessons").update(data).eq("id", lesson_id).execute()
