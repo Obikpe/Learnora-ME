@@ -1,4 +1,4 @@
-const allowedTags = new Set(["p","br","h1","h2","h3","h4","h5","h6","strong","b","em","i","u","ul","ol","li","blockquote","pre","code","a","hr"]);
+const allowedTags = new Set(["p","br","h1","h2","h3","h4","h5","h6","strong","b","em","i","u","ul","ol","li","blockquote","pre","code","a","hr","img"]);
 
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -20,6 +20,14 @@ function sanitizeHtml(value: string) {
       if (tag === "span") return "";
       if (!allowedTags.has(tag)) return "";
       if (closing) return ["br","hr"].includes(tag) ? "" : `</${tag}>`;
+      if (tag === "img") {
+        const srcMatch = attrs.match(/src\\s*=\\s*(["'])(.*?)\\1/i);
+        const altMatch = attrs.match(/alt\\s*=\\s*(["'])(.*?)\\1/i);
+        const src = srcMatch?.[2]?.trim() || "";
+        const safeSrc = /^(https?:\\/\\/|\\/|\\.\\.?\\/)[^\\s"'<>]+$/i.test(src) && !/[\\u0000-\\u001f\\\\]/.test(src) ? src : "";
+        if (!safeSrc) return "";
+        return `<img src="${escapeHtml(safeSrc)}" alt="${escapeHtml(altMatch?.[2] || "")}" loading="lazy" decoding="async" />`;
+      }
       if (tag === "a") {
         const hrefMatch = attrs.match(/href\s*=\s*(["'])(.*?)\1/i);
         const href = hrefMatch ? safeHref(hrefMatch[2]) : "";
