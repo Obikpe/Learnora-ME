@@ -52,6 +52,20 @@ Use:
 - Proportions to describe categorical features.
 
 ```python
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+
+customers = pd.DataFrame({
+    "recency_days": [5, 8, 12, 65, 75, 90, 3, 10],
+    "orders_90d": [12, 10, 8, 2, 1, 0, 14, 9],
+    "average_basket": [500, 420, 380, 90, 70, 30, 550, 400]
+})
+
+X_scaled = StandardScaler().fit_transform(customers)
+labels = KMeans(n_clusters=2, n_init=20, random_state=42).fit_predict(X_scaled)
+result = customers.assign(cluster=labels)
+
 profile = result.groupby("cluster").agg(
     customers=("recency_days", "size"),
     mean_recency=("recency_days", "mean"),
