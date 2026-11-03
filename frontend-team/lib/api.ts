@@ -50,9 +50,9 @@ export class ApiRequestError extends Error {
 }
 
 function cacheableGet(path: string) {
-  if (/^\/(auth\/me|staff|staff\/roles\/catalog|departments|teams|teams\/[^/]+\/members|ai\/profiles)$/.test(path)) return 20_000;
-  if (/^\/(content\/courses|content\/courses\/[^/]+|content\/courses\/[^/]+\/structure|content\/courses\/[^/]+\/modules|content\/modules\/[^/]+\/lessons|content\/lessons\/[^/]+|ai\/health)$/.test(path)) return 30_000;
-  return 0;
+  if (/^\/(ai|notifications|billing|payments|webhooks|audit|security|logs)(\/|$)/.test(path)) return 0;
+  if (path.startsWith("/content/")) return 30_000;
+  return 15_000;
 }
 
 function readCached<T>(key: string): T | undefined {
