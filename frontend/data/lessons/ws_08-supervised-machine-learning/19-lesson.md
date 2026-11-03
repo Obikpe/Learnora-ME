@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Explain k-fold and stratified cross-validation; choose group-aware or time-aware splitters when needed; keep preprocessing inside a pipeline; and interpret fold-level variation.
 
+
+![validation concept diagram](/course-assets/ws08/validation.svg)
+
 ## 1. Core explanation
 Cross-validation estimates performance by repeatedly dividing available training data into folds. In k-fold cross-validation, each fold acts as validation once while the others train. Scores are summarised across folds. StratifiedKFold preserves class proportions; GroupKFold keeps related groups together; TimeSeriesSplit respects temporal order.
 
