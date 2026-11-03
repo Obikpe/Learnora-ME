@@ -38,7 +38,7 @@ function clearStoredCache() {
   try {
     for (let index = sessionStorage.length - 1; index >= 0; index--) {
       const key = sessionStorage.key(index);
-      if (key?.startsWith(CACHE_PREFIX)) sessionStorage.removeItem(key);
+      if (key?.startsWith(CACHE_PREFIX) || key?.startsWith("learnora_current_user_cache:")) sessionStorage.removeItem(key);
     }
   } catch {}
 }
@@ -72,6 +72,10 @@ function cacheLifetime(path: string) {
   if (path === "/evidence/me" || path === "/credentials/me") return 5 * 60_000;
   if (/^\/(notifications|ai|billing|payments|webhooks|admin|analytics|audit|reports)(\/|$)/.test(path)) return 0;
   return 20_000;
+}
+
+function mutationInvalidatesCache(path: string) {
+  return !/^\/(ai|notifications|analytics|usage)(\/|$)/.test(path);
 }
 
 function cacheKey(path: string) {
@@ -152,7 +156,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
       throw new Error(message);
     }
     if (key) writeCache(key, body, lifetime);
-    else if (method !== "GET") invalidateRequestCache();
+    else if (method !== "GET" && mutationInvalidatesCache(path)) invalidateRequestCache();
     return body as T;
   })();
 
