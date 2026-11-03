@@ -1191,7 +1191,7 @@ def update_lesson_progress(
             "Unable to save lesson progress.",
         )
 
-    summary = _sync_enrolment_completion(str(user.id), course_id)
+    summary = _sync_enrolment_completion(str(user.id), course_id, include_lesson_content=False) if completed else None
 
     return {
         "success": True,
@@ -1283,6 +1283,7 @@ def track_progress(
             str(user.id),
             course_id,
             include_archived=course.get("status") != "published",
+            include_lesson_content=False,
         ) if enrolment else {
             "total_lessons": 0,
             "completed_lessons": 0,
@@ -1393,6 +1394,7 @@ def legacy_user_progress(
             summary = _course_summary(
                 str(user.id),
                 str(course["id"]),
+                include_lesson_content=False,
             )
         except HTTPException:
             continue
