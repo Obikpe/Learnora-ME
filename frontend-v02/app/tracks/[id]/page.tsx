@@ -31,8 +31,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
   useEffect(() => {
     let active = true;
     setHasOrganisationContext(Boolean(organisationContext()));
-    currentUser().then(me => { if (active) setUser(me); }).catch(() => { if (active) setUser(null); });
-    request<any>("/public/tracks/"+encodeURIComponent(params.id))
+    const loadTrack = () => request<any>("/public/tracks/"+encodeURIComponent(params.id))
       .then(async result => {
         if (!active) return;
         setTrack(result.track);
@@ -45,8 +44,8 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
       })
       .catch(async e => {
         try {
-          // Existing learners retain access to saved track progress after a
-          // track is unpublished or archived from new learner discovery.
+          // Existing individual learners retain saved progress after a track
+          // is unpublished or archived from public discovery.
           const saved = await request<any>("/progress/tracks/"+encodeURIComponent(params.id));
           if (active) {
             setProgress(saved);
@@ -62,6 +61,27 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
         }
       })
       .finally(() => { if (active) setLoading(false); });
+    currentUser().then(me => {
+      if (!active) return;
+      const memberships = me.organisation_memberships || [];
+      const assignedLearner = Boolean(
+        me.account_type === "cohort" || me.role === "witstart" || me.cohort_id ||
+        me.organisation_role === "learner" ||
+        memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
+      );
+      if (assignedLearner) {
+        setUser(me);
+        window.location.replace(me.account_type === "cohort" ? "/dashboard/cohort" : "/dashboard");
+        return;
+      }
+      setUser(me);
+      void loadTrack();
+    }).catch(() => {
+      if (active) {
+        setUser(null);
+        void loadTrack();
+      }
+    });
     return () => { active = false; };
   }, [params.id]);
 
