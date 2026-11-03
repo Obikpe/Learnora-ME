@@ -123,32 +123,76 @@ export default function Courses() {
       </section>
 
       <section className="mt-8" aria-live="polite">
-        {loading ? showSkeleton ? <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">{Array.from({length:6}).map((_,i)=><div key={i} className="animate-pulse bg-[#10151b]"><div className="h-52 bg-[#171e27]"/><div className="space-y-3 p-5"><div className="h-4 w-2/3 bg-white/[.06]"/><div className="h-3 w-full bg-white/[.04]"/><div className="h-3 w-4/5 bg-white/[.04]"/></div></div>)}</div>
-        : error ? <div className="border border-white/10 bg-[#10151b] p-8 sm:p-10"><EmptyState title="Courses unavailable" message={error}/><button onClick={loadCourses} className="mt-4 border border-white/15 px-4 py-2.5 text-sm font-semibold hover:border-[#d7ad35]/50">Try again</button></div>
-        : filtered.length ? <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map(course => {
-            const candidate = typeof course.thumbnail_url === "string" ? course.thumbnail_url.trim() : "";
-            const imageKey = candidate ? candidate.split("?")[0] : "";
-            const image = imageKey && !usedImages.has(imageKey) ? candidate : "";
-            if (image) usedImages.add(imageKey);
-            return <Link key={course.id} href={"/courses/" + course.id} className="group min-w-0 bg-[#0b0f14] transition-colors hover:bg-[#10151b]">
-              <div className="relative h-52 overflow-hidden bg-[#151c24]">
-                {image ? <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"/> : <div className="flex h-full items-end justify-between p-5"><BookOpen size={42} className="text-white/30"/><span className="text-xs uppercase tracking-[.18em] text-[#f2d477]">Learnora / Course</span></div>}
-                <span className="absolute left-4 top-4 border border-white/15 bg-[#080a0d] px-3 py-1.5 text-[10px] uppercase tracking-[.15em] text-slate-200">{course.level || "All levels"}</span>
-                {Array.isArray(course.tracks)&&course.tracks.length>0&&<span className="absolute bottom-4 left-4 max-w-[85%] truncate border border-[#d7ad35]/35 bg-[#080a0d]/90 px-3 py-1.5 text-[10px] uppercase tracking-[.12em] text-[#f2d477]">{course.tracks.slice(0,2).map((t:any)=>t.name).join(" · ")}</span>}
-              </div>
-              <div className="p-5 sm:p-6">
-                <h2 className="font-display text-2xl leading-snug">{course.title}</h2>
-                {(course.settings?.is_free === true || course.settings?.access_type === "free") && <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-[#f2d477]">Free for individual learners</p>}
-                <p className="mt-3 min-h-12 text-sm leading-6 text-slate-400">{course.short_description || course.description || "Explore the curriculum and available access options."}</p>
-                <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/[.08] pt-4 text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-2"><Clock3 size={14}/>{course.estimated_hours ? course.estimated_hours + " hours" : "Self-paced"}</span>
-                  <span className="inline-flex items-center gap-2 font-semibold text-[#f2d477]">View course <ArrowRight size={14}/></span>
+        {loading && showSkeleton && (
+          <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="animate-pulse bg-[#10151b]">
+                <div className="h-52 bg-[#171e27]" />
+                <div className="space-y-3 p-5">
+                  <div className="h-4 w-2/3 bg-white/[.06]" />
+                  <div className="h-3 w-full bg-white/[.04]" />
+                  <div className="h-3 w-4/5 bg-white/[.04]" />
                 </div>
               </div>
-            </Link>;
-          })}
-        </div> : <EmptyState title={query || level !== "all" || track !== "all" ? "No courses match those filters" : "No published courses yet"} message={query || level !== "all" || track !== "all" ? "Try a broader search, another level or a different learning track." : "Learnora has not returned published courses from the backend yet. Draft content is intentionally not shown as available learning."}/>}
+            ))}
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="border border-white/10 bg-[#10151b] p-8 sm:p-10">
+            <EmptyState title="Courses unavailable" message={error} />
+            <button onClick={loadCourses} className="mt-4 border border-white/15 px-4 py-2.5 text-sm font-semibold hover:border-[#d7ad35]/50">Try again</button>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length > 0 && (
+          <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map(course => {
+              const candidate = typeof course.thumbnail_url === "string" ? course.thumbnail_url.trim() : "";
+              const imageKey = candidate ? candidate.split("?")[0] : "";
+              const image = imageKey && !usedImages.has(imageKey) ? candidate : "";
+              if (image) usedImages.add(imageKey);
+              return (
+                <Link key={course.id} href={"/courses/" + course.id} className="group min-w-0 bg-[#0b0f14] transition-colors hover:bg-[#10151b]">
+                  <div className="relative h-52 overflow-hidden bg-[#151c24]">
+                    {image ? (
+                      <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />
+                    ) : (
+                      <div className="flex h-full items-end justify-between p-5">
+                        <BookOpen size={42} className="text-white/30" />
+                        <span className="text-xs uppercase tracking-[.18em] text-[#f2d477]">Learnora / Course</span>
+                      </div>
+                    )}
+                    <span className="absolute left-4 top-4 border border-white/15 bg-[#080a0d] px-3 py-1.5 text-[10px] uppercase tracking-[.15em] text-slate-200">{course.level || "All levels"}</span>
+                    {Array.isArray(course.tracks) && course.tracks.length > 0 && (
+                      <span className="absolute bottom-4 left-4 max-w-[85%] truncate border border-[#d7ad35]/35 bg-[#080a0d]/90 px-3 py-1.5 text-[10px] uppercase tracking-[.12em] text-[#f2d477]">
+                        {course.tracks.slice(0, 2).map((item: any) => item.name).join(" · ")}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-5 sm:p-6">
+                    <h2 className="font-display text-2xl leading-snug">{course.title}</h2>
+                    {(course.settings?.is_free === true || course.settings?.access_type === "free") && (
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-[#f2d477]">Free for individual learners</p>
+                    )}
+                    <p className="mt-3 min-h-12 text-sm leading-6 text-slate-400">{course.short_description || course.description || "Explore the curriculum and available access options."}</p>
+                    <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/[.08] pt-4 text-xs text-slate-500">
+                      <span className="inline-flex items-center gap-2"><Clock3 size={14} />{course.estimated_hours ? course.estimated_hours + " hours" : "Self-paced"}</span>
+                      <span className="inline-flex items-center gap-2 font-semibold text-[#f2d477]">View course <ArrowRight size={14} /></span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
+          <EmptyState
+            title={query || level !== "all" || track !== "all" ? "No courses match those filters" : "No published courses yet"}
+            message={query || level !== "all" || track !== "all" ? "Try a broader search, another level or a different learning track." : "Learnora has not returned published courses from the backend yet. Draft content is intentionally not shown as available learning."}
+          />
+        )}
       </section>
     </main>
     <PublicFooter/>
