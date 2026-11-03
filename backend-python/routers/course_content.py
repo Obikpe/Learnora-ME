@@ -550,8 +550,10 @@ def _check_course_view_access(
         for enrolment in enrolment_result.data or []:
             enrolment_org = enrolment.get("organisation_id")
             if organisation_id:
+                # An organisation-scoped identity must not inherit a
+                # separate personal enrolment with no tenant assignment.
                 if enrolment_org is None:
-                    return
+                    continue
                 if str(enrolment_org) == str(organisation_id) and _has_active_scoped_course_source(
                     str(user_id), str(organisation_id), course_id, enrolment
                 ):
