@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Save and reload a complete preprocessing-and-model pipeline with joblib; verify predictions before and after loading; and explain version and trust risks when loading untrusted model files.
 
+
+![validation concept diagram](/course-assets/ws08/validation.svg)
+
 ## 1. Core explanation
 A trained model is a software artefact. Save the full preprocessing-and-model Pipeline, not only the estimator, so future inputs receive the same transformations. Record training data version, target definition, feature order, library versions, evaluation report and model identifier.
 
