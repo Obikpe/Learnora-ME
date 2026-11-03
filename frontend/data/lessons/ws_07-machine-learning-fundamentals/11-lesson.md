@@ -8,7 +8,7 @@ A model's purpose is to make predictions for cases it has not learned from. If w
 
 A held-out dataset provides an estimate of generalisation. The estimate is only meaningful if the held-out examples represent the intended future use and were not used to make modelling decisions.
 
-![Training validation and test split](./assets/11-train-validation-test.svg)
+![Training validation and test split](/course-assets/ws07/11-train-validation-test.svg)
 
 ## 2. Three different roles
 - **Training set:** used to fit model parameters and learn preprocessing transformations.
@@ -47,7 +47,7 @@ If the task is to predict next month's demand, training on randomly selected fut
 ### Grouped data
 If a learner has multiple weekly records, randomly splitting rows can put the same learner in both training and test sets. The model may recognise learner-specific patterns and appear better than it would on new learners. Split by learner ID when the intended use is new learners.
 
-![Random split leakage versus group split](./assets/11-group-time-split.svg)
+![Random split leakage versus group split](/course-assets/ws07/11-group-time-split.svg)
 
 ## 5. Group-based splitting
 ```python
