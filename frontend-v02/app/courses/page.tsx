@@ -12,6 +12,7 @@ import { IMAGES } from "../../lib/constants";
 
 export default function Courses() {
   const [signedIn, setSignedIn] = useState(false);
+  const [authResolved, setAuthResolved] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -33,7 +34,7 @@ export default function Courses() {
     }
   }
 
-  useEffect(() => { let active = true; currentUser().then(() => { if (active) setSignedIn(true); }).catch(() => { if (active) setSignedIn(false); }); const initialSearch = new URLSearchParams(window.location.search).get("search") || ""; if (initialSearch) setQuery(initialSearch); loadCourses(); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; currentUser().then(() => { if (active) setSignedIn(true); }).catch(() => { if (active) setSignedIn(false); }).finally(() => { if (active) setAuthResolved(true); }); const initialSearch = new URLSearchParams(window.location.search).get("search") || ""; if (initialSearch) setQuery(initialSearch); loadCourses(); return () => { active = false; }; }, []);
   useEffect(() => {
     if (!loading) { setShowSkeleton(false); return; }
     const timeout = window.setTimeout(() => setShowSkeleton(true), 180);
@@ -81,6 +82,8 @@ export default function Courses() {
     IMAGES.tutors, IMAGES.community, IMAGES.aboutHero, IMAGES.aboutVision,
     IMAGES.learnerPage, IMAGES.instructorPage, IMAGES.organisationPage, IMAGES.login,
   ].forEach(url => usedImages.add(url.split("?")[0]));
+
+  if (!authResolved) return <main className="min-h-screen bg-[var(--bg)] p-8"><div className="mx-auto max-w-7xl pt-12 text-sm text-[var(--text-muted)]">Loading course catalogue…</div></main>;
 
   const catalogue = <main className={"mx-auto max-w-7xl px-5 pb-24 " + (signedIn ? "pt-8" : "pt-32") + " lg:px-8"}>
       <section className="grid gap-10 border-b border-white/[.1] pb-12 lg:grid-cols-[1fr_.6fr] lg:items-end">
