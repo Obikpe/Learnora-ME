@@ -82,3 +82,13 @@ Generate a learning curve for a model. Then inspect the ten largest regression e
 
 ## Lesson summary
 Learning curves show how performance changes with data volume, while error analysis shows where predictions fail. Combine both with leakage checks and controlled experiments to choose the next improvement.
+
+## 6. Deeper reasoning: error analysis turns a score into a hypothesis
+
+A learning curve helps describe whether performance changes with more training data, but it cannot tell you exactly why individual predictions fail. That is the purpose of error analysis. Start by examining a sample of the largest errors or the false positives and false negatives. Look for common properties: a particular region, customer type, time period, product category or range of the target. These patterns can suggest missing features, inconsistent data collection or an unsuitable model assumption.
+
+Avoid selecting only the most interesting failures. Use a reproducible sampling method, such as the largest absolute regression errors plus a random sample of ordinary errors. For classification, inspect both false positives and false negatives. If you only study cases the model got wrong in one direction, you may miss a different failure mode.
+
+Subgroup analysis needs enough observations to be meaningful. A subgroup with three examples can show a concerning pattern, but its metric will be highly uncertain. Report support counts and avoid making broad claims from tiny groups. Consider whether subgroup differences reflect real behaviour, data quality, different label definitions or historical bias in the data.
+
+Translate each finding into a testable hypothesis. For example: “Delivery predictions are less accurate for rural locations because distance is represented as a straight-line measure rather than road travel time.” Then propose one feature or data improvement and evaluate it using the same validation design. This turns error inspection into a disciplined improvement cycle rather than a collection of anecdotes.
