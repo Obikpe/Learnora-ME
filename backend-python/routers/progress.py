@@ -224,6 +224,7 @@ def _module_unlock_states(user_id: str, modules: list[dict], lessons: list[dict]
                 if str(quiz["id"]) not in passed_ids
                 or not any(
                     str(attempt.get("quiz_id")) == str(quiz["id"])
+                    and attempt.get("passed") is True
                     and float(attempt.get("score") or 0) >= effective_passing_score(quiz)
                     for attempt in attempts
                 )
