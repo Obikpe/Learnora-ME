@@ -13,6 +13,8 @@ Bayesian optimisation builds a probabilistic model of how hyperparameter setting
 
 The process is sequential: evaluate a candidate, update the surrogate model, then choose another candidate. It can be useful when each model evaluation is expensive. It adds complexity and requires care with noisy validation estimates.
 
+![Randomised search process](/course-assets/ws10/hyperparameter-search.svg)
+
 ## 3. Worked example: random search
 ```python
 from scipy.stats import loguniform, randint
