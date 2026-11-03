@@ -80,3 +80,13 @@ Use validation predictions to compare thresholds. Report precision, recall, conf
 
 ## Lesson summary
 Threshold selection converts model scores into operational actions. Select it with validation evidence and an explicit cost or capacity objective, then protect the test set for final evaluation.
+
+## 7. Deeper reasoning: threshold choice is a policy decision
+
+A threshold determines which observations receive an action. That action might be an alert, a manual review, a customer call or an automatic block. The threshold therefore connects statistical output to an operational policy. Before selecting it, identify who bears the cost of each error and what happens after a positive prediction. A false positive that triggers a quick manual check has a different cost from one that automatically freezes an account.
+
+The simple cost formula in this lesson assumes every false positive has the same cost and every false negative has the same cost. Real cases may differ. A high-value transaction may have a different expected loss from a low-value one. A review may take longer for some case types. A more advanced decision process can estimate expected cost per observation, but it still requires reliable assumptions and careful validation.
+
+Thresholds can also drift operationally. If the model is unchanged but the incoming population changes, the proportion of scores above a fixed threshold can increase. The review team may suddenly receive too many alerts. Monitor alert volume, precision where labels become available, false-negative estimates and score distributions. A threshold should be revisited through a documented governance process, not adjusted informally whenever workload becomes uncomfortable.
+
+Finally, do not assume that lowering the threshold always improves the business outcome. It usually increases recall on a fixed ranked set, but it may flood the team with false positives, delay investigation and reduce attention to the most serious cases. Evaluate the complete process, including human capacity and downstream consequences.
