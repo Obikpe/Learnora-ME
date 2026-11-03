@@ -4,7 +4,7 @@
 
 By the end of this lesson, you should be able to explain why clustering needs validation even without target labels; calculate and interpret silhouette scores; explain Davies–Bouldin and Calinski–Harabasz scores; examine cluster size and stability; compare methods fairly; and report uncertainty and limitations.
 
-![A cluster validation workflow](/course-assets/ws09/clustering-concepts.svg)
+![Teaching diagram: 08](/course-assets/ws09/validation-checks.svg)
 
 ## 1. Why is clustering validation different?
 
