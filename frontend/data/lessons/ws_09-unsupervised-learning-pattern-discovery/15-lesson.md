@@ -57,3 +57,11 @@ Report negative and inconclusive results. If clusters are unstable, overlap heav
 Separate observed output, interpretation and recommendation. State the population, time period and limitations. Avoid causal language unless a separate causal design supports it. An unsupervised result does not establish causal drivers, future outcomes or objectively correct categories.
 
 **Practice:** Produce a one-page analysis charter and ask another learner to challenge the observation unit, feature choices, validation plan and proposed action before fitting a model.
+
+### Worked example: write a defensible results summary
+
+A useful executive summary names the dataset and period, observation unit, method and key settings, validation performed, main observed pattern, uncertainty and next step. It does not start with a cluster label and tell a story unsupported by evidence.
+
+For example: “Using customer-quarter records from the selected period, we compared K-means and agglomerative clustering after median imputation and standardisation. The three-group K-means solution was more stable across seeds, but one group was small. We recommend further testing before using the segments for targeting.” This is more informative than saying “AI discovered three customer types”.
+
+Keep a reproducibility record: source version, code, package versions, parameters, random seeds and transformation details. If the analysis is refreshed, compare results with the previous period and investigate changes rather than assuming they are meaningful.
