@@ -45,7 +45,7 @@ function sanitiseEditorHtml(value: string) {
 function toEditorHtml(value: string) {
   const raw = String(value || "").trim();
   if (!raw) return "";
-  if (/<\s*(p|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|pre|code|a|br|hr)\b/i.test(raw)) return sanitiseEditorHtml(raw);
+  if (/^\s*<\s*(p|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|pre|code|a|br|hr)\b/i.test(raw)) return sanitiseEditorHtml(raw);
   const lines = raw.replace(/\r\n?/g, "\n").split("\n");
   const html: string[] = [];
   let paragraph: string[] = [];
