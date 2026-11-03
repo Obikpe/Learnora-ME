@@ -11,7 +11,7 @@ A derivative describes how quickly a function changes when its input changes. Im
 
 For f(w)=w², the derivative is 2w. At w=3, the slope is 6. Moving w slightly upward increases f; moving it downward decreases f. This tells us which direction to move if our goal is to minimise f.
 
-![Gradient descent moving down a loss curve](./assets/07-gradient-descent.svg)
+![Gradient descent moving down a loss curve](/course-assets/ws07/07-gradient-descent.svg)
 
 ## 3. From derivative to gradient
 A model may have many parameters. The **gradient** is the vector of partial derivatives: one derivative for each parameter. It points in the direction of steepest local increase. To reduce the function, gradient descent moves in the opposite direction.
