@@ -44,3 +44,15 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: validate from several angles
+
+Clustering has no single universally correct score because ground-truth labels may not exist. Internal measures use only the data and assignments. Silhouette rewards cohesion and separation. Davies–Bouldin compares within-cluster scatter with separation between clusters; lower is generally better. Calinski–Harabasz compares between-cluster dispersion with within-cluster dispersion; higher is generally better. These measures favour particular geometries and are not interchangeable truth.
+
+External measures compare assignments with known labels when available. Such labels can be useful diagnostics, but they were not used to fit the unsupervised model. High agreement does not prove that the algorithm discovered the only meaningful structure.
+
+Stability checks rerun the method with different seeds, bootstrap samples or time periods. Cluster IDs can swap, so compare partitions with a label-invariant measure such as adjusted Rand index rather than comparing raw numeric labels. Adjusted Rand index is 1 for identical partitions up to label permutation, around 0 for chance-level agreement and can be negative.
+
+Domain review is essential. Inspect representative records, cluster sizes, original-unit profiles and whether the distinction supports a useful action. A mathematically separated group may be irrelevant or unfair to use.
+
+**Practice:** Create a validation table containing method, parameters, internal scores, stability, cluster sizes and a domain interpretation. Identify which evidence is strong, weak or missing.
