@@ -31,9 +31,7 @@ export default function CourseDetail({params}:{params:{id:string}}) {
     ||(explicitlyFree&&["normal","witstart"].includes(user.role))
   );
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
-  return <>
-    <PublicNav/>
-    <main className="mx-auto max-w-[82rem] px-5 pb-24 pt-32 lg:px-8">
+  const pageBody=<main className="mx-auto max-w-[82rem] px-5 pb-24 pt-8 lg:px-8">
       <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-600"><a href="/" className="hover:text-slate-300">Home</a><span>/</span><a href="/courses" className="hover:text-slate-300">Courses</a><span>/</span><span className="max-w-[18rem] truncate text-slate-400">{c.title}</span></nav>
       <section className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_23rem] xl:gap-16">
         <div className="min-w-0">
@@ -73,7 +71,6 @@ export default function CourseDetail({params}:{params:{id:string}}) {
       </section>
 
       <section className="mt-16 border border-white/[.1] bg-[#0d1217] p-6 sm:p-8"><div className="flex items-start gap-4"><LockKeyhole className="mt-1 shrink-0 gold" size={20}/><div><h2 className="text-lg font-semibold">Progress and evidence</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">Course progress is stored for your account. Completing lessons records activity; skill verification should be based on appropriate assessment or reviewed evidence rather than course completion alone.</p></div></div></section>
-    </main>
-    <PublicFooter/>
-  </>;
+    </main>;
+  return signedIn?<Shell active="discover">{pageBody}</Shell>:<><PublicNav/>{pageBody}<PublicFooter/></>;
 }
