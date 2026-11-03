@@ -204,7 +204,8 @@ img { color: transparent; }
 [class*="bg-[#090b0e]/95"] { background-color: color-mix(in srgb, var(--bg) 95%, transparent) !important; }
 [class*="bg-[#090b0e]/65"] { background-color: color-mix(in srgb, var(--bg) 65%, transparent) !important; }
 [class*="bg-[#080a0d]/90"] { background-color: color-mix(in srgb, var(--card) 90%, transparent) !important; }
-[class*="hover:bg-[var(--gold-light)]"]:hover { background-color: var(--primary-hover) !important; }
+[class*="hover:bg-[var(--gold-light)]"]:hover, [class*="hover:bg-[#d7ad35]"]:hover, [class*="hover:bg-[#d5b15b]"]:hover { background-color: var(--primary-hover) !important; }
+[class~="accent-[#d7ad35]"], [class~="accent-[#d5b15b]"] { accent-color: var(--primary) !important; }
 [class*="text-[#f2d477]"] { color: var(--primary) !important; }
 [class*="text-black"], [class*="text-[#16140f]"], [class*="text-[#17140d]"] { color: var(--on-primary) !important; }
 [class~="border-[#d7ad35]"], [class~="border-[#d5b15b]"] { border-color: var(--primary) !important; }
