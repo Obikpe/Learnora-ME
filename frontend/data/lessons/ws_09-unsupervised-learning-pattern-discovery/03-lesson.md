@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Calculate and compare Euclidean distance and cosine similarity; explain when magnitude versus direction matters; and identify why scaling and feature choice change similarity.
 
+![Feature points are compared using a chosen similarity definition](/course-assets/ws09/clustering-concepts.svg)
+
 ## 1. Core explanation
 Distance quantifies how far two observations are in feature space. Euclidean distance is the straight-line distance and is common for continuous numeric data. Manhattan distance sums absolute coordinate differences. Cosine similarity compares vector direction and is useful for sparse text representations where magnitude may be less important. Jaccard similarity compares overlap between sets or binary attributes.
 
