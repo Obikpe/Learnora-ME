@@ -7,6 +7,7 @@ const CACHE_PREFIX = "learnora_api_cache_v1:";
 
 export const token = () => {
   if (typeof window === "undefined") return "";
+  if (sessionStorage.getItem("phx_logged_out") === "1" || localStorage.getItem("phx_logged_out") === "1") return "";
   localStorage.removeItem("phx_token");
   const value = sessionStorage.getItem("phx_token") || "";
   if (value && value !== "cookie-session") {
