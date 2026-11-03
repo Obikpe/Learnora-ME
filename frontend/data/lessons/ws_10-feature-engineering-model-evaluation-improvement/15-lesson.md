@@ -78,3 +78,13 @@ Train a classifier on an imbalanced dataset. Report the confusion matrix, precis
 
 ## Lesson summary
 Classification evaluation must expose the kinds of mistakes a model makes. Define the positive class, inspect the confusion matrix and choose metrics according to class balance and the real cost of errors.
+
+## 7. Deeper reasoning: the positive class and the decision context matter
+
+Precision and recall are not abstract properties detached from the task. They describe different consequences. In a fraud-screening system, a false negative is a fraudulent transaction that was not flagged; a false positive is a legitimate transaction sent for review. In a disease-screening context, a false negative may mean a person who needs follow-up is missed, while a false positive may cause additional testing and anxiety. The preferred balance depends on the context and must involve the people responsible for the decision.
+
+Class imbalance changes how useful accuracy is. If only 2 out of 1,000 cases are positive, predicting negative every time gives 99.8% accuracy but zero recall for the positive class. A baseline should therefore be chosen thoughtfully. Compare the model against simple strategies and report how many positive cases were available in the test set.
+
+For multiclass classification, macro and weighted averages answer different questions. Macro averaging gives every class equal weight, which can expose poor performance on a rare class. Weighted averaging reflects class support, so common classes dominate the result. If a rare class is especially important, weighted F1 can conceal its weakness. Report per-class precision, recall and support where the consequences differ.
+
+Also distinguish the predicted label from the model's score. A class label is the result after a threshold has been applied. Precision and recall at one threshold do not describe ranking performance across all thresholds. Use probability or decision scores for curve analysis, and state the threshold used for the confusion matrix.
