@@ -53,6 +53,7 @@ export default function MyLearningTracksPage() {
       }
     }
     currentUser().then(me => {
+      if (!active) return;
       const memberships = me.organisation_memberships || [];
       const assignedLearner = Boolean(
         me.account_type === "cohort" || me.role === "witstart" || me.cohort_id ||
