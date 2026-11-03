@@ -90,3 +90,13 @@ Choose a public dataset and write a small feature dictionary. For each feature, 
 
 ## Lesson summary
 Feature engineering translates raw records into meaningful model inputs. Strong features have a defined observation grain, clear calculation, consistent units and legitimate prediction-time availability. Every feature should be documented and tested rather than accepted because it produces a convenient score.
+
+## 9. Deeper reasoning: features are a model's view of reality
+
+A model never receives a customer, machine or business process in its full real-world form. It receives a representation assembled from recorded fields. That representation is a measurement system, and measurement choices shape what the model can learn. If a business records only total spending, two customers who spend the same amount may look identical even if one makes frequent small purchases and the other makes one large purchase. Adding order count and average basket value reveals a distinction that total spend alone hides.
+
+This is why feature engineering begins with the question, not with a list of transformations. Ask what behaviour could reasonably be related to the target, then identify how that behaviour can be measured. For example, predicting churn may require recency and frequency, while predicting delivery delay may require distance, dispatch hour, weather and workload at dispatch time. The same raw table can support different feature sets because the questions differ.
+
+A useful discipline is to write a feature definition in plain language before writing code. “Customer activity” is too broad. “Count of completed sessions during the 30 calendar days ending immediately before the prediction timestamp” is testable. Another analyst can check the window, event status and boundary. A precise definition also exposes hidden decisions such as whether cancelled orders count, whether the start date is inclusive and how timezone differences are handled.
+
+Feature engineering should preserve lineage. Keep a record of which source fields produced a feature, the transformation applied, the units and the time boundary. If a feature later behaves unexpectedly, lineage makes it possible to investigate whether the issue came from source data, business rules or code. A feature is ready for modelling only when its definition can be repeated consistently on new observations.
