@@ -57,7 +57,7 @@ def _is_assigned_learner(user: CurrentUser) -> bool:
             supabase.table("organisation_members")
             .select("id")
             .eq("user_id", str(user.id))
-            .eq("role", "learner")
+            .in_("role", ["learner", "member"])
             .eq("status", "active")
             .limit(1)
             .execute()
