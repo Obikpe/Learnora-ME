@@ -2,66 +2,177 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Plan an unsupervised analysis by defining the observation unit, intended use, feature representation and validation approach; compare methods; and set criteria for reporting inconclusive results.
+By the end of this lesson, you should be able to plan an unsupervised project from question to report; select an appropriate method; create a reproducible workflow; compare models and settings; document data and modelling decisions; communicate uncertainty; and recognise when a simpler analysis is preferable.
 
-![A defensible unsupervised workflow from question through validation](/course-assets/ws09/clustering-concepts.svg)
+![A defensible unsupervised-learning workflow](/course-assets/ws09/clustering-concepts.svg)
 
-## 1. Core explanation
-An unsupervised project needs a clear objective even though it has no labelled target. Define the unit of observation, feature representation, purpose and intended use. Decide whether the output is for exploration, segmentation, anomaly triage or dimensionality reduction. Establish how usefulness will be judged before running algorithms.
+## 1. Start with a question and a decision context
 
-Compare a simple baseline or alternative algorithm. Test stability across seeds, samples and reasonable parameter changes. Inspect original records and profiles. Document how preprocessing and distance choices influence the result. If clusters are weak or unstable, report that rather than forcing a narrative.
+An unsupervised project still needs a clear purpose. “Run clustering on this spreadsheet” is not a good problem statement. It identifies a tool but not the question.
 
-Communicate what the algorithm discovered under its assumptions and what it did not prove. An unsupervised result does not establish causal drivers, future outcomes or objectively correct categories.
+A stronger question is: “Can we identify recurring patterns in customer purchasing behaviour that help us design and test more relevant service messages?” This gives the analysis a context without promising that clusters will definitely exist.
 
-## 2. Worked Python example
-Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
+Before writing code, clarify:
+- Who will use the result?
+- What decision or investigation might it support?
+- What is the unit of observation?
+- What period does each observation cover?
+- What would make the analysis useful?
+- What would make the result inconclusive or unsafe to use?
+
+## 2. Select the method based on the task
+
+Use the analytical question to guide the method:
+- Clustering groups similar observations.
+- Dimensionality reduction creates a smaller representation.
+- Anomaly detection flags unusual observations.
+- Association analysis identifies recurring co-occurrence.
+
+Then consider the data type, size, dimensionality, expected shape, noise and computational constraints. Do not use K-means simply because it is familiar. A density-based method may suit irregular spatial patterns; PCA may suit correlated numeric features; association analysis may suit transaction baskets.
+
+## 3. Create an analysis charter
+
+An analysis charter records the plan before modelling. It reduces the temptation to change the question after seeing a convenient result.
+
+Example:
 
 ```python
-project = {
-    "purpose": "Explore customer purchasing patterns",
-    "unit": "Customer-quarter",
-    "features": ["recency", "frequency", "monetary_value"],
-    "preprocessing": "Median imputation and standardisation",
-    "methods": ["KMeans", "Agglomerative clustering"],
-    "validation": ["Silhouette", "Seed stability", "Profile review"]
+project_plan = {
+    "question": "Explore recurring customer purchasing patterns",
+    "observation_unit": "One customer over a fixed 90-day period",
+    "purpose": "Exploratory segmentation for a controlled test",
+    "candidate_features": [
+        "days_since_last_purchase",
+        "order_count_90d",
+        "average_basket_value"
+    ],
+    "excluded_fields": ["customer_id", "future_campaign_response"],
+    "preprocessing": [
+        "inspect missingness",
+        "median imputation if justified",
+        "standardise numeric features"
+    ],
+    "candidate_methods": ["KMeans", "AgglomerativeClustering"],
+    "validation": [
+        "silhouette",
+        "cluster-size review",
+        "stability across seeds",
+        "original-unit profiling"
+    ],
+    "limitations": [
+        "clusters do not predict churn",
+        "historical behaviour may change"
+    ]
 }
-print(project)
+
+for key, value in project_plan.items():
+    print(f"{key}: {value}")
 ```
 
-## 3. Interpretation
-Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
+This dictionary is a simple planning artefact, not a machine-learning model. Its purpose is to make decisions visible and reviewable.
 
-## 4. Guided practice
-Write a project plan comparing K-means and hierarchical clustering. Include validation and a rule for deciding that no useful clusters have been found.
+## 4. Build a reproducible project structure
 
-## 5. Independent practice
-Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
+A clear folder structure makes it easier for another analyst to understand and rerun the work.
 
-## 6. Knowledge check
-1. What structure is the method attempting to discover?
-2. Which assumptions are introduced by the representation or distance?
-3. How will you assess stability and usefulness?
-4. What should not be inferred from the output?
+```
+unsupervised-project/
+├── README.md
+├── requirements.txt
+├── data/
+│   ├── raw/
+│   └── processed/
+├── notebooks/
+├── src/
+│   ├── prepare_data.py
+│   ├── clustering.py
+│   └── evaluate.py
+├── reports/
+│   ├── figures/
+│   └── final-report.md
+└── outputs/
+```
+
+Keep raw data unchanged. Save processed data separately and document how it was produced. Do not commit private customer data, secrets or restricted datasets to a public repository. Follow the source licence and data-protection requirements.
+
+A `requirements.txt` file records the libraries needed to run the project. Pin versions when reproducibility requires it, and state the Python version used.
+
+## 5. Separate preparation, modelling and interpretation
+
+A practical workflow has distinct stages:
+
+1. Load and validate the source data.
+2. Confirm the observation unit and data dictionary.
+3. Explore missingness, duplicates, distributions and unusual values.
+4. Select and transform features.
+5. Fit a baseline or simple method.
+6. Fit alternative methods or parameter settings.
+7. Evaluate geometry, stability and group sizes.
+8. Profile results in original units.
+9. Interpret limitations and possible actions.
+10. Write a report and preserve the code and settings.
+
+Keeping these stages separate makes it easier to identify whether a change in output came from new data, different features, scaling or a different algorithm.
+
+## 6. Compare methods without cherry-picking
+
+A comparison table should record the method, parameters, preprocessing, number of clusters or noise points, validation metrics, stability and interpretation.
+
+Do not keep changing parameters until you find a result that confirms your preferred narrative. Decide what evidence matters before testing, document the settings explored and report disappointing results.
+
+A model with a slightly better silhouette score may be less useful if it creates tiny groups that cannot be interpreted. A simpler model may be preferable if it is stable and supports the intended task.
+
+## 7. Reproducibility and versioning
+
+Record:
+- Data source and extraction date.
+- Data version or checksum where possible.
+- Observation-unit definition and time window.
+- Feature list and exclusions.
+- Missing-value and scaling decisions.
+- Algorithm and parameters.
+- Random seed.
+- Python and package versions.
+- Evaluation results and limitations.
+
+Random seeds help reproduce stochastic procedures, but they do not guarantee identical results across every software version or computing environment. Reproducibility also depends on preserving data and preprocessing decisions.
+
+## 8. Communicate what the result does and does not show
+
+A good report separates:
+- **Observation:** what the output and profiles show.
+- **Interpretation:** what the pattern may mean in context.
+- **Recommendation:** what should be tested or investigated next.
+- **Limitation:** what the analysis cannot establish.
+
+For example: “The three-group K-means solution identified one group with longer purchase recency and lower recent order frequency. The group remained broadly similar across tested seeds, but its membership does not prove that customers will churn. We recommend a controlled re-engagement test before operational use.”
+
+This is stronger than saying “AI found customers who are about to leave.”
+
+## 9. When a simpler method is better
+
+Unsupervised learning is not always necessary. A descriptive summary, rule-based segmentation, business-defined categories or a carefully designed chart may answer the question more transparently.
+
+If the dataset is small, poorly measured, unstable or unsuitable for the chosen method, do not force a model. Report the limitation and recommend better data collection or a simpler analysis.
+
+## 10. Guided practice
+
+Write an analysis charter for a dataset of machine sensor readings. Define the observation unit, intended use, features, exclusions, candidate method, validation approach and conditions under which you would report no useful clusters.
+
+## 11. Independent practice
+
+Create a reproducible mini-project using a public or synthetic dataset. Include a README, data dictionary, preparation script, at least two model settings or methods, validation results, original-unit profiles, visuals and a short report. Ask another learner to reproduce the result using your instructions.
+
+## 12. Knowledge check
+
+1. Why should the question be defined before selecting an algorithm?
+2. What belongs in an analysis charter?
+3. Why should raw data be kept separate from processed data?
+4. What is cherry-picking in model comparison?
+5. Why record random seeds and package versions?
+6. How should a report distinguish observation from interpretation?
+7. When might a descriptive table be better than clustering?
 
 ## Lesson summary
-Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
 
-## Deeper explanation: plan before choosing an algorithm
-
-A credible project starts with a question and decision context, not a favourite algorithm. Define the observation unit, intended use, features, exclusions, preprocessing, candidate methods and validation plan before modelling. Compare against a simple baseline or rule-based grouping. A complicated model is not automatically better than a transparent rule.
-
-Record the data snapshot, code version, parameters and random seeds so the analysis can be reproduced. Test stability across seeds, samples and relevant time periods. Inspect original records and profiles. Document how preprocessing and distance choices influence the result.
-
-Report negative and inconclusive results. If clusters are unstable, overlap heavily or cannot be interpreted, say so. “The current features do not support a stable segmentation” is a valid result. Do not keep changing parameters until a persuasive story appears; that is confirmation bias.
-
-Separate observed output, interpretation and recommendation. State the population, time period and limitations. Avoid causal language unless a separate causal design supports it. An unsupervised result does not establish causal drivers, future outcomes or objectively correct categories.
-
-**Practice:** Produce a one-page analysis charter and ask another learner to challenge the observation unit, feature choices, validation plan and proposed action before fitting a model.
-
-### Worked example: write a defensible results summary
-
-A useful executive summary names the dataset and period, observation unit, method and key settings, validation performed, main observed pattern, uncertainty and next step. It does not start with a cluster label and tell a story unsupported by evidence.
-
-For example: “Using customer-quarter records from the selected period, we compared K-means and agglomerative clustering after median imputation and standardisation. The three-group K-means solution was more stable across seeds, but one group was small. We recommend further testing before using the segments for targeting.” This is more informative than saying “AI discovered three customer types”.
-
-Keep a reproducibility record: source version, code, package versions, parameters, random seeds and transformation details. If the analysis is refreshed, compare results with the previous period and investigate changes rather than assuming they are meaningful.
+A strong unsupervised project is more than a fitted algorithm. It has a clear question, a defensible observation unit, meaningful features, documented preparation, fair comparisons, validation, interpretation and reproducible reporting. Be willing to report that the data does not support a useful pattern.
