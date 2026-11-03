@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Explain L1 and L2 regularisation; fit Ridge and Lasso models with scaled features; interpret how the penalty changes coefficients; and compare models using a held-out evaluation design.
 
+
+![regression concept diagram](/course-assets/ws08/regression.svg)
+
 ## 1. Core explanation
 Regularisation discourages unnecessarily large coefficients to reduce model complexity. Ridge regression adds a penalty proportional to the sum of squared coefficients (L2). It shrinks coefficients towards zero but usually does not make them exactly zero. Lasso adds the sum of absolute coefficients (L1) and can set some coefficients to zero, acting as a form of feature selection.
 
