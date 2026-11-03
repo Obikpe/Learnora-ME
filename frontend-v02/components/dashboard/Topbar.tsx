@@ -45,7 +45,7 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
         if (!root.hasAttribute("data-theme")) setTheme(event.matches ? "dark" : "light");
       };
       media.addEventListener?.("change", updateFromSystem);
-      return () => media.removeEventListener?.("change", updateFromSystem);
+      return () => { media.removeEventListener?.("change", updateFromSystem); };
     }
   }, []);
 
