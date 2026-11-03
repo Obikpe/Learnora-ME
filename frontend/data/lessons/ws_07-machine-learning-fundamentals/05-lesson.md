@@ -8,7 +8,7 @@ Most tabular ML data can be represented as numbers arranged in rows and columns.
 
 A **scalar** is one number, such as 4. A **vector** is an ordered list of numbers. A **matrix** is a rectangular arrangement of numbers. A **tensor** generalises this idea to arrays with more than two dimensions; images, for example, can be represented as height × width × colour-channel arrays.
 
-![Vector and matrix dimensions](./assets/05-vectors-matrices.svg)
+![Vector and matrix dimensions](/course-assets/ws07/05-vectors-matrices.svg)
 
 ## 2. Represent an observation as a vector
 Suppose a learner is described by study hours, attendance percentage and completed assignments. One learner could be represented as:
