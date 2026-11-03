@@ -14,7 +14,7 @@ export default function Courses() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [showSkeleton, setShowSkeleton] = useState(false);
-  const [query, setQuery = useState("");
+  const [query, setQuery] = useState("");
   const [level, setLevel] = useState("all");
   const [track, setTrack] = useState("all");
 
