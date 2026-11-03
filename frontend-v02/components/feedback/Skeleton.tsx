@@ -1,12 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 type SkeletonProps = {
   variant?: "workspace" | "course" | "compact" | "directory";
   label?: string;
 };
 
-/** Layout-shaped placeholders used while the authenticated workspace is being verified. */
-export default function Skeleton({ variant = "workspace", label = "Verifying your account" }: SkeletonProps) {
+export default function Skeleton({ variant = "workspace", label = "Loading" }: SkeletonProps) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setVisible(true), 180);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  if (!visible) return null;
+
   const bar = (className: string) => <div className={"animate-pulse motion-reduce:animate-none rounded-md bg-white/[.07] " + className} />;
 
   if (variant === "directory") {
