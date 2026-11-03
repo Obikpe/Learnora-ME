@@ -22,7 +22,7 @@ export default function AudiencePage({type}:{type:"learner"|"instructor"|"organi
           <p className="mt-5 max-w-lg text-[11px] leading-5 text-slate-600">Learnora is evolving. Features shown as part of the product direction may not all be available to every account today.</p>
         </div>
         <div className="relative">
-          <div className="mb-3 flex items-center justify-between border-b border-white/[.12] pb-3 text-[10px] uppercase tracking-[.18em] text-slate-500"><span>Designed around your work</span><span>Learnora / {type==="learner"?"01":type==="instructor"?"02":"03"}</span></div>
+          <div className="mb-3 flex items-center justify-between border-b border-white/[.12] pb-3 text-[10px] uppercase tracking-[.18em] text-slate-500"><span>Designed around your work</span></div>
           <div className="relative aspect-[4/4.3] overflow-hidden border border-white/[.12] bg-[#151c24]">
             <img src={d.image} alt={type==="learner"?"A learner studying and developing practical skills":type==="instructor"?"An instructor preparing and sharing learning": "A collaborative professional workspace"} loading="lazy" decoding="async" className="h-full w-full object-cover"/>
             <div className="absolute inset-x-0 bottom-0 border-t border-white/20 bg-[#090b0e]/95 p-5 sm:p-6"><Icon className="gold" size={21}/><p className="mt-3 max-w-md font-display text-2xl leading-snug sm:text-3xl">{d.promise}</p></div>
