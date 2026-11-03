@@ -371,7 +371,7 @@ def course_activities(course_id: str, user: CurrentUser = Depends(get_current_us
     if not _enrolment(str(user.id), course_id):
         raise HTTPException(403, "You are not enrolled in this course.")
     quizzes = (supabase.table("quizzes")
-        .select("id,lesson_id,title,description,passing_score,max_attempts")
+        .select("id,lesson_id,module_id,title,description,passing_score,max_attempts")
         .eq("course_id", course_id).eq("is_published", True)
         .order("created_at").execute()).data or []
     assignments = (supabase.table("assignments")
