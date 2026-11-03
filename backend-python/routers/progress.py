@@ -647,6 +647,11 @@ def end_learning_session(session_id: UUID, body: LearningSessionHeartbeatIn, use
 def learning_summary(timezone_name: str = Query(default="Africa/Lagos", alias="timezone"), user: CurrentUser = Depends(get_current_user)):
     timezone_name = _validated_timezone(timezone_name)
     account_type = _learning_account_type(user)
+    latest_session = (supabase.table("learning_sessions").select("timezone")
+        .eq("learner_id", str(user.id)).eq("account_type", account_type)
+        .order("started_at", desc=True).limit(1).execute()).data or []
+    if latest_session:
+        timezone_name = _validated_timezone(latest_session[0].get("timezone"))
     seconds_result = supabase.rpc("get_learner_learning_seconds", {
         "p_learner_id": str(user.id),
         "p_account_type": account_type,
