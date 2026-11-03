@@ -5,7 +5,10 @@
   },
   "functions": {
     "backend-python/main.py": {
-      "runtime": "vercel-python@4.2.0"
+      "runtime": "vercel-python@4.2.0",
+      "regions": [
+        "cdg1"
+      ]
     }
   },
   "rewrites": [
