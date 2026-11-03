@@ -170,7 +170,7 @@ export default function OrganisationLandingPage() {
 
   return (
     <main className="org-page">
-      <div className="org-audience-strip"><div className="org-wrap"><Link href="/for-learners">For individuals</Link><Link href="/for-organisations" aria-current="page">For organisations</Link><Link href="/for-instructors">For instructors</Link><span>Learning built around the people and work that matter</span></div></div>
+      <div className="org-audience-strip"><div className="org-wrap"><Link href="/for-learners">For individuals</Link><Link href="/for-instructors">For instructors</Link><Link href="/for-organisations" aria-current="page">For organisations</Link><span>Learning built around the people and work that matter</span></div></div>
 
       <section className="org-hero">
         <div className="org-hero-photo"><img src={IMAGES.organisationPage} alt="Colleagues collaborating in a bright workspace" fetchPriority="high"/><div className="org-photo-overlay"><span>LEARNORA ME · ORGANISATIONS</span><strong>Develop people. Strengthen capability. Make learning useful.</strong></div></div>
