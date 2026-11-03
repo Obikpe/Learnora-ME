@@ -128,7 +128,10 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
             .execute()
         ).data or []
         if not quizzes:
-            continue
+            raise HTTPException(
+                423,
+                f'Complete the published assessment for "{previous.get("title") or "the previous module"}" before moving on. The module is not unlocked because it has no published quiz yet.',
+            )
         for quiz in quizzes:
             threshold = effective_passing_score(quiz)
             attempts = (
