@@ -35,7 +35,7 @@ export default function PublicNav() {
       if (!root.hasAttribute("data-theme")) setTheme(event.matches ? "dark" : "light");
     };
     media.addEventListener?.("change", updateFromSystem);
-    return () => media.removeEventListener?.("change", updateFromSystem);
+    return () => { media.removeEventListener?.("change", updateFromSystem); };
   }, []);
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
