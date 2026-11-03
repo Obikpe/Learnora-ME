@@ -30,7 +30,7 @@ The 25th percentile is a value at or below which approximately 25% of observatio
 
 A distribution describes how values occur. It may be symmetric, skewed, multimodal or have heavy tails. Many ML algorithms do not require every feature to be normally distributed, despite a common misconception. Distribution shape still matters for outliers, transformations, uncertainty and model assumptions.
 
-![Normal distribution and standard deviations](./assets/06-normal-distribution.svg)
+![Normal distribution and standard deviations](/course-assets/ws07/06-normal-distribution.svg)
 
 ## 5. Probability
 Probability describes uncertainty on a scale from 0 to 1. An impossible event has probability 0; a certain event has probability 1. The probability of an event A is written P(A).
