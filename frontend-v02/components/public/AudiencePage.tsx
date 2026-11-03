@@ -14,8 +14,8 @@ export default function AudiencePage({type}:{type:"learner"|"instructor"|"organi
   return <main className="pt-20">
     <div className="org-audience-strip"><div className="org-wrap">
       <a href="/for-learners" aria-current={type === "learner" ? "page" : undefined}>For individuals</a>
-      <a href="/for-organisations">For organisations</a>
       <a href="/for-instructors" aria-current={type === "instructor" ? "page" : undefined}>For instructors</a>
+      <a href="/for-organisations">For organisations</a>
       <span>Learning built around the people and work that matter</span>
     </div></div>
     <section className="border-b border-white/[.1]">
