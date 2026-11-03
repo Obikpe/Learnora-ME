@@ -18,6 +18,11 @@ export const token = () => {
 
 export const setToken = (_v: string) => {
   if (typeof window === "undefined") return;
+  invalidateRequestCache();
+  for (let index = sessionStorage.length - 1; index >= 0; index--) {
+    const key = sessionStorage.key(index);
+    if (key?.startsWith("learnora_current_user_cache:")) sessionStorage.removeItem(key);
+  }
   localStorage.removeItem("phx_token");
   sessionStorage.removeItem("phx_logged_out");
   sessionStorage.setItem("phx_session_epoch", String(Date.now()) + "-" + Math.random().toString(36).slice(2));
@@ -47,6 +52,10 @@ export function invalidateRequestCache() {
 export const clearToken = () => {
   if (typeof window === "undefined") return;
   invalidateRequestCache();
+  for (let index = sessionStorage.length - 1; index >= 0; index--) {
+    const key = sessionStorage.key(index);
+    if (key?.startsWith("learnora_current_user_cache:")) sessionStorage.removeItem(key);
+  }
   sessionStorage.removeItem("phx_token");
   sessionStorage.removeItem("phx_session_epoch");
   localStorage.removeItem("phx_token");
