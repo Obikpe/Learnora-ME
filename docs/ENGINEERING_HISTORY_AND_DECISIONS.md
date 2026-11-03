@@ -1,6 +1,6 @@
 # Learnora Engineering History, Decisions and Open Risks
 
-**Last updated:** 26 October 2026  
+**Last updated:** 3 November 2026  
 **Purpose:** preserve product decisions and the work already carried out so a new engineer can understand the present state without relying on chat history.  
 **Scope:** Learnora ME, Learnora Teams, their shared backend, and Supabase schema/migration work.  
 **Branch rule for the current documentation task:** all three new engineering documents are committed to `main`; no alternate branch is to be used for this documentation work.
