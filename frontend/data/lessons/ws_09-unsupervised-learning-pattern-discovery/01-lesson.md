@@ -10,7 +10,7 @@ By the end of this lesson, you should be able to:
 - Describe the difference between an algorithmic pattern and a useful real-world discovery.
 - Frame an unsupervised-learning question with a clear observation unit, purpose and limitation.
 
-![An overview of the unsupervised-learning workflow](/course-assets/ws09/clustering-concepts.svg)
+![Teaching diagram: 01](/course-assets/ws09/unsupervised-workflow.svg)
 
 ## 1. Begin with the problem: what is machine learning?
 
