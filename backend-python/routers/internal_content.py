@@ -436,6 +436,7 @@ class VideoWrite(BaseModel):
     file_size_bytes: Optional[int] = Field(None, ge=0)
     mime_type: Optional[str] = None
     thumbnail_url: Optional[str] = None
+    transcript_text: Optional[str] = Field(None, max_length=200000)
     status: str = "pending"
     is_private: bool = True
 
@@ -641,7 +642,7 @@ def update_video(video_id: str, payload: VideoWrite, staff: InternalStaffContext
     if not existing.data:
         raise HTTPException(status_code=404, detail="Video not found.")
     _module_for_lesson(str(existing.data[0]["lesson_id"]))
-    row = supabase.table("lesson_videos").update(payload.model_dump()).eq("id", video_id).execute()
+    row = supabase.table("lesson_videos").update(payload.model_dump(exclude_unset=True)).eq("id", video_id).execute()
     if not row.data:
         raise HTTPException(status_code=404, detail="Video not found.")
     return {"success": True, "video": row.data[0]}
