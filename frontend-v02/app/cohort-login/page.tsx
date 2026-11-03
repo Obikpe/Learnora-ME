@@ -51,7 +51,7 @@ export default function CohortLoginPage() {
           <label className="grid gap-2 text-xs font-medium text-slate-300">Username<input required autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#0e1319] px-4 py-3 text-sm outline-none focus:border-[#d7ad35]/50" placeholder="your.username" /></label>
           <label className="grid gap-2 text-xs font-medium text-slate-300">Password<input required type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#0e1319] px-4 py-3 text-sm outline-none focus:border-[#d7ad35]/50" placeholder="Your password" /></label>
           {error && <p role="alert" className="rounded-xl border border-red-400/20 bg-red-400/[.05] p-3 text-sm text-red-200">{error}</p>}
-          <button disabled={busy} className="mt-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#d7ad35] px-5 text-sm font-bold text-black disabled:opacity-50">Sign in <ArrowRight size={16}/></button>
+          <button disabled={busy} className="mt-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#d7ad35] px-5 text-sm font-bold text-black disabled:cursor-wait disabled:opacity-50">{busy ? "Signing in…" : "Sign in"}{!busy && <ArrowRight size={16}/>}</button>
         </div>
         <p className="mt-7 text-xs leading-6 text-slate-500">Not activated yet? <Link href="/cohort-activate" className="font-semibold text-[#f2d477] hover:underline">Activate your account</Link>. If you need a new link, contact your organisation.</p>
       </form>
