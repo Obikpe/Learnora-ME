@@ -56,3 +56,11 @@ Euclidean distance is common for continuous numeric measurements but is sensitiv
 High-dimensional data creates another problem: as dimensions increase, distances can become less discriminative. Irrelevant features add noise. Standardisation helps with units but does not solve poor feature selection. A full pairwise distance matrix for n rows contains n-squared distances and can become expensive.
 
 **Practice:** Compare vectors (1,2), (2,4), and (8,1) using Euclidean distance and cosine similarity. Explain why the first two are directionally alike but differ in magnitude. Then describe a real situation where that distinction matters.
+
+### Worked example: interpret the distance matrix
+
+A pairwise distance matrix is symmetric: distance from A to B equals distance from B to A. The diagonal is zero because every observation has zero distance from itself. The smallest off-diagonal value identifies the closest pair under the chosen measure, not necessarily the pair that a subject expert would consider most alike.
+
+Do not interpret a numerical distance without its representation. A distance of 2 after standardisation is not two naira, two customers or two units of physical separation. It is a distance in the transformed feature space. If a feature is duplicated, it can effectively receive extra weight because its contribution is counted more than once.
+
+Before using nearest neighbours, inspect whether the data contains duplicate rows, highly correlated features or sparse columns. These can make some observations appear unusually close for reasons unrelated to the intended concept.
