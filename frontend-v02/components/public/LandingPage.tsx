@@ -192,8 +192,8 @@ export default function LandingPage() {
       <div className="landing-audience-strip">
         <div className="landing-wrap">
           <Link href="/for-learners" aria-current="page">For individuals</Link>
-          <Link href="/for-organisations">For organisations</Link>
           <Link href="/for-instructors">For instructors</Link>
+          <Link href="/for-organisations">For organisations</Link>
           <span>Learning that connects to real work</span>
         </div>
       </div>
