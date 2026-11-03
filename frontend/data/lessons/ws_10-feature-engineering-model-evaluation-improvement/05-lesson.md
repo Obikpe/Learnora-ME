@@ -77,3 +77,13 @@ Compare StandardScaler, MinMaxScaler and RobustScaler inside the same cross-vali
 
 ## Lesson summary
 Scaling makes numerical units more comparable for algorithms sensitive to magnitude. Select the transformation based on the algorithm, distribution and intended interpretation, and never learn scaling parameters from held-out data.
+
+## 8. Deeper reasoning: scaling is relative to the training population
+
+A standardised value describes a position relative to the mean and standard deviation learned from the training data. If the training mean income is ₦300,000 and the standard deviation is ₦100,000, an income of ₦400,000 transforms to +1. This does not mean the customer is “one unit richer”; it means the value is one training standard deviation above the training mean. When the fitted scaler is reused later, it keeps the same reference point. Do not recalculate the mean and standard deviation for each new batch, because that would change the model's input scale over time.
+
+Scaling also does not remove skewness or make outliers disappear. A very large value can still become a large standardised value. Robust scaling reduces the influence of extreme observations on the location and scale estimates, but it does not automatically make an outlier harmless. Investigate whether the value is a valid rare observation, a data-entry error or a different population.
+
+For distance-based algorithms, scaling can change the geometry of the problem. Imagine customer distance is calculated from income and number of logins. If income is measured in hundreds of thousands and logins in tens, unscaled Euclidean distance may be dominated by income. Scaling gives both variables comparable numerical influence, but that is a modelling decision: it implicitly changes how much each variable contributes. If income should matter more, consider a justified weighting strategy rather than assuming standard scaling is always neutral.
+
+Finally, distinguish transformations applied to inputs from transformations applied to the target. Transforming a heavily skewed regression target can sometimes help, but predictions must be converted back to the original unit and metrics should be interpreted on the business scale.
