@@ -72,3 +72,13 @@ Compare SelectKBest with mutual information and RFECV on a classification datase
 
 ## Lesson summary
 Filter methods provide efficient screening, while wrapper methods evaluate subsets through model fitting. Both must be embedded in a sound validation design; neither produces a universally correct feature list.
+
+## 6. Deeper reasoning: a selector's score is not the final answer
+
+A filter score is a screening signal. Mutual information, for example, estimates how much knowing a feature helps reduce uncertainty about the target. It does not tell you whether the feature is available at prediction time, stable across months, fair to all groups or inexpensive to maintain. A very high score may even be a warning if the feature was created after the target event.
+
+Wrapper methods ask a more direct question: does this subset help this estimator under this scoring procedure? The cost is repeated fitting. If there are many columns, RFE can become slow because the estimator is fitted repeatedly as features are removed. RFECV adds another layer of cross-validation to choose the subset size. On large datasets, begin with a sensible filter to reduce obviously irrelevant columns, then test a wrapper on a manageable set.
+
+The evaluation design must include the selector. Imagine five-fold cross-validation. In each fold, the selector should calculate its scores using only the four training folds, choose features and fit the model. It then transforms the held-out fold using that learned selection. This means the selected columns may differ from fold to fold. That is not an error; it reveals selection instability.
+
+For a final model, the selection process is fitted again using the full training partition after model choices have been made. The test set is transformed by that fitted selection without influencing it. Document the final selected features, but also report how consistently they appeared during validation.
