@@ -44,3 +44,17 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: the analyst's role
+
+Imagine a spreadsheet of customers containing recency, order count and average spend, but no column naming customers as loyal, at-risk or high-value. A supervised algorithm learns from examples with known answers. An unsupervised algorithm has no answer column; it applies a mathematical definition of similarity and reports recurring structure.
+
+That makes the analyst's responsibility different. You are not simply comparing predictions with known answers. You must decide whether the representation is sensible, whether the pattern survives reasonable changes, and whether it helps answer a real question. A cluster is a hypothesis about similarity, not a fact about identity.
+
+The unit of observation is crucial. If each row is a transaction, the groups describe transactions. If each row is a customer-quarter, the groups describe customer-quarter behaviour. Do not call transaction clusters customer segments unless the data has first been aggregated to customers.
+
+Three common tasks are clustering (group similar observations), dimensionality reduction (represent many features with fewer dimensions), and anomaly detection (identify observations that are unusual under a chosen representation). Association analysis finds items that co-occur in defined transactions.
+
+Use this workflow: question → observation unit → features → representation → algorithm → diagnostics → interpretation → validation → decision. Unsupervised learning is not automatically appropriate just because no target exists. A descriptive table or transparent business rule may be better. If the data is too small, noisy or poorly measured, the algorithm can create convincing but unstable patterns.
+
+**Practice:** Write one sentence describing the decision your analysis might support and another sentence describing what the algorithm cannot establish. Keep exploration separate from evidence.
