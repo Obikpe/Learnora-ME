@@ -149,15 +149,15 @@ export default function Courses() {
         )}
 
         {!loading && !error && filtered.length > 0 && (
-          <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="landing-course-grid">
             {filtered.map(course => {
               const candidate = typeof course.thumbnail_url === "string" ? course.thumbnail_url.trim() : "";
               const imageKey = candidate ? candidate.split("?")[0] : "";
               const image = imageKey && !usedImages.has(imageKey) ? candidate : "";
               if (image) usedImages.add(imageKey);
               return (
-                <Link key={course.id} href={"/courses/" + course.id} className="group min-w-0 bg-[#0b0f14] transition-colors hover:bg-[#10151b]">
-                  <div className="relative h-52 overflow-hidden bg-[#151c24]">
+                <Link key={course.id} href={"/courses/" + course.id} className="landing-course-card group min-w-0">
+                  <div className="landing-course-image relative">
                     {image ? (
                       <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />
                     ) : (
@@ -173,7 +173,7 @@ export default function Courses() {
                       </span>
                     )}
                   </div>
-                  <div className="p-5 sm:p-6">
+                  <div className="landing-course-copy">
                     <h2 className="font-display text-2xl leading-snug">{course.title}</h2>
                     {(course.settings?.is_free === true || course.settings?.access_type === "free") && (
                       <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-[#f2d477]">Free for individual learners</p>
