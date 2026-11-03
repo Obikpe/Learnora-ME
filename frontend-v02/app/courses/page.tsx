@@ -38,16 +38,46 @@ export default function Courses() {
     return () => window.clearTimeout(timeout);
   }, [loading]);
 
-  const levels = useMemo(() => ["all", ...Array.from(new Set(items.map(c => String(c.level || "").trim()).filter(Boolean)))], [items]);
-  const tracks = useMemo(() => ["all", ...Array.from(new Set(items.flatMap(c => (Array.isArray(c.tracks) ? c.tracks : []).map((t:any) => String(t.name || "").trim()).filter(Boolean)))).sort((a,b) => a.localeCompare(b))], [items]);
-  const filtered = useMemo(() => items.filter(c => {
-    const courseTracks = Array.isArray(c.tracks) ? c.tracks.map((t:any) => String(t.name || "")) : [];
-    const topics = Array.isArray(c.settings?.topics) ? c.settings.topics.join(" ") : "";
-    const text = [c.title, c.short_description, c.description, c.level, courseTracks.join(" "), topics].filter(Boolean).join(" ").toLowerCase();
-    return text.includes(query.trim().toLowerCase()) && (level === "all" || c.level === level) && (track === "all" || courseTracks.includes(track));
-  }), [items, query, level, track]);
+  const levels = useMemo(() => {
+    const values = items.map(course => String(course.level || "").trim()).filter(Boolean);
+    return ["all", ...Array.from(new Set(values))];
+  }, [items]);
 
-  const usedImages = new Set<string>([IMAGES.hero,IMAGES.learners,IMAGES.instructors,IMAGES.organisations,IMAGES.portfolio,IMAGES.studio,IMAGES.library,IMAGES.workshop,IMAGES.tutors,IMAGES.community,IMAGES.aboutHero,IMAGES.aboutVision,IMAGES.learnerPage,IMAGES.instructorPage,IMAGES.organisationPage,IMAGES.login].map(url => url.split("?")[0]));
+  const tracks = useMemo(() => {
+    const values = items.flatMap(course =>
+      (Array.isArray(course.tracks) ? course.tracks : [])
+        .map((item: any) => String(item.name || "").trim())
+        .filter(Boolean)
+    );
+    return ["all", ...Array.from(new Set(values)).sort((a, b) => a.localeCompare(b))];
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    return items.filter(course => {
+      const courseTracks = Array.isArray(course.tracks)
+        ? course.tracks.map((item: any) => String(item.name || ""))
+        : [];
+      const topics = Array.isArray(course.settings?.topics) ? course.settings.topics.join(" ") : "";
+      const searchable = [
+        course.title,
+        course.short_description,
+        course.description,
+        course.level,
+        courseTracks.join(" "),
+        topics,
+      ].filter(Boolean).join(" ").toLowerCase();
+      return searchable.includes(query.trim().toLowerCase())
+        && (level === "all" || course.level === level)
+        && (track === "all" || courseTracks.includes(track));
+    });
+  }, [items, query, level, track]);
+
+  const usedImages = new Set([
+    IMAGES.hero, IMAGES.learners, IMAGES.instructors, IMAGES.organisations,
+    IMAGES.portfolio, IMAGES.studio, IMAGES.library, IMAGES.workshop,
+    IMAGES.tutors, IMAGES.community, IMAGES.aboutHero, IMAGES.aboutVision,
+    IMAGES.learnerPage, IMAGES.instructorPage, IMAGES.organisationPage, IMAGES.login,
+  ].map(url => url.split("?")[0]));
 
   return <>
     <PublicNav />
