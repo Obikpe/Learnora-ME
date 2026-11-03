@@ -21,10 +21,21 @@ export default function PublicNav() {
   const [audienceOpen, setAudienceOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   useEffect(() => {
+    const root = document.documentElement;
     const saved = window.localStorage.getItem("learnora_theme");
-    const initial = saved === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = initial;
-    setTheme(initial);
+    if (saved === "light" || saved === "dark") {
+      root.dataset.theme = saved;
+      setTheme(saved);
+      return;
+    }
+    root.removeAttribute("data-theme");
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    setTheme(media.matches ? "dark" : "light");
+    const updateFromSystem = (event: MediaQueryListEvent) => {
+      if (!root.hasAttribute("data-theme")) setTheme(event.matches ? "dark" : "light");
+    };
+    media.addEventListener?.("change", updateFromSystem);
+    return () => media.removeEventListener?.("change", updateFromSystem);
   }, []);
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
@@ -60,7 +71,7 @@ export default function PublicNav() {
           <button type="button" onClick={toggleTheme} aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]">{theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}</button>
           <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Contact Learnora support" title="Contact support" className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]"><LifeBuoy size={17}/></a>
           <a href="/login" className="rounded-lg px-2 py-3 text-sm text-slate-300 transition-colors hover:text-white">Sign in</a>
-          <a href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--gold)] px-4 text-sm font-semibold text-[#16140f] transition-colors hover:bg-[var(--gold-light)]">Get started <ArrowRight size={15}/></a>
+          <a href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 text-sm font-semibold text-[var(--on-primary)] transition-colors hover:bg-[var(--primary-hover)]">Get started <ArrowRight size={15}/></a>
         </div>
 
         <button type="button" className="grid size-11 place-items-center rounded-xl border border-white/[.12] text-slate-200 transition-colors hover:bg-white/[.05] lg:hidden" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} onClick={() => setOpen(v => !v)}>
@@ -80,7 +91,7 @@ export default function PublicNav() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <a href="/login" onClick={close} className="grid min-h-12 place-items-center rounded-lg border border-white/[.14] text-sm font-semibold">Sign in</a>
-            <a href="/register" onClick={close} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--gold)] text-sm font-semibold text-[#16140f]">Get started <ArrowRight size={15}/></a>
+            <a href="/register" onClick={close} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--primary)] text-sm font-semibold text-[var(--on-primary)]">Get started <ArrowRight size={15}/></a>
           </div>
         </nav>
       </div>}
