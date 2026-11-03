@@ -7,6 +7,7 @@ import SectionHeader from "../../../components/dashboard/SectionHeader";
 import EmptyState from "../../../components/feedback/EmptyState";
 import Skeleton from "../../../components/feedback/Skeleton";
 import { request } from "../../../lib/api/client";
+import { currentUser } from "../../../lib/api";
 
 export default function CreatorStudio() {
   const [workspace, setWorkspace] = useState<any>(null);
@@ -49,7 +50,7 @@ export default function CreatorStudio() {
     }
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { let active = true; currentUser().then((me: any) => { if (!active) return; if (me.account_type === "learner" || me.role === "normal") { window.location.replace("/dashboard"); return; } void load(); }).catch(() => { if (active) window.location.replace("/"); }); return () => { active = false; }; }, []);
   const selectedCourse = useMemo(() => courses.find(course => String(course.id) === String(selectedId)), [courses, selectedId]);
   useEffect(() => { if (selectedCourse) setEditCourseForm({ title: selectedCourse.title || "", slug: selectedCourse.slug || "", short_description: selectedCourse.short_description || "", description: selectedCourse.description || "", level: selectedCourse.level || "beginner" }); }, [selectedCourse]);
   const isApproved = Boolean(workspace?.creator && ["approved", "active"].includes(workspace.creator.status));
