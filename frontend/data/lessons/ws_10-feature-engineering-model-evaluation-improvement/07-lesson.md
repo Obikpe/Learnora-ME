@@ -71,3 +71,13 @@ Compare a baseline linear regression with a pipeline that includes degree-2 poly
 
 ## Lesson summary
 Binning, interactions and polynomial terms let models represent patterns that simple raw columns may not express. Use them selectively, preserve prediction-time validity and verify improvements across reliable validation folds.
+
+## 7. Deeper reasoning: complexity grows faster than intuition suggests
+
+Polynomial expansion can increase the number of columns much more quickly than a learner expects. With p original features and degree two, the expanded matrix includes the original terms, squared terms and pairwise products. With dozens of original columns, this can create hundreds or thousands of candidate terms. Higher degrees increase the number further. The result may be computationally expensive and difficult to interpret.
+
+An interaction is meaningful when the effect of one feature plausibly depends on another. For example, the effect of delivery distance on delivery time may differ by vehicle type. A distance-by-vehicle interaction could represent that difference. However, an interaction term should not be added merely because two columns exist. It needs a hypothesis and a way to evaluate whether the additional complexity helps.
+
+Binning has a different trade-off. It can make a relationship easier to communicate, but it creates discontinuities. Two customers aged 39 and 40 might be placed in different bands even though their ages are nearly identical. The model may then treat them as more different than customers aged 40 and 59 within the same band. If boundaries are chosen from business rules, document why. If boundaries are learned from quantiles or data distributions, fit them within training folds.
+
+A sound experiment compares a baseline with a carefully chosen transformation and examines both score and stability. If a feature expansion improves one fold but harms others, it may be fitting sample-specific noise. Regularisation can help, but it cannot rescue a poorly defined prediction problem or a leaky feature.
