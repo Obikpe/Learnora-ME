@@ -2,65 +2,227 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Deliver a reproducible unsupervised project with data provenance, preprocessing, method comparison, stability checks, profiles or anomaly review, limitations and a justified recommendation.
+By the end of this lesson, you should be able to deliver a complete, reproducible unsupervised-learning project; justify the method and feature representation; compare at least two methods or meaningful parameter settings; validate structure and stability; interpret results in original units; communicate limitations; and present a responsible recommendation.
 
-![A complete unsupervised learning workflow](/course-assets/ws09/clustering-concepts.svg)
+![The end-to-end unsupervised project workflow](/course-assets/ws09/clustering-concepts.svg)
 
-## 1. Core explanation
-The final project applies an unsupervised method to a dataset with a defensible analytical purpose. Choose clustering, dimensionality reduction, anomaly detection or association analysis. Define the observation unit and feature meaning. Explain why an unsupervised method is appropriate and what decision or investigation it supports.
+## 1. Project purpose
 
-Prepare data carefully, justify scaling and encoding, compare parameters or methods and validate stability. Profile clusters in original units or investigate flagged anomalies. Include visuals that clarify structure without implying more certainty than the method supports.
+This final project brings together the ideas from the entire course. You will use an unsupervised method to investigate a dataset without relying on a supplied target label to define the groups.
 
-Deliver a reproducible repository, data dictionary, analysis, evaluation, report and limitations. State whether the result is suitable for action, exploratory only or inconclusive. Do not label an anomaly as fraud or a cluster as a real customer type without independent evidence.
+Choose one project direction:
 
-## 2. Worked Python example
-Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
+- **Customer or product segmentation:** discover recurring behaviour or product profiles.
+- **Sensor-pattern exploration:** group operating conditions or detect unusual readings.
+- **Anomaly review:** identify observations that deserve investigation.
+- **Dimensionality reduction:** create a smaller representation and explain what it retains.
+- **Association analysis:** identify frequent co-occurrence patterns in transactions.
+
+Use public, synthetic or properly authorised data. Do not upload private customer records or sensitive personal information to a public repository.
+
+## 2. Required project stages
+
+### Stage 1: Define the question
+
+Write a concise problem statement. Identify the audience, intended use and decision context. Explain why an unsupervised method is appropriate and what a useful result would look like.
+
+### Stage 2: Define the observation unit
+
+State exactly what one row represents. Examples include one customer over 90 days, one retail transaction, one machine-hour or one product. If the unit is unclear, the results will be difficult to interpret.
+
+### Stage 3: Describe and inspect the data
+
+Include:
+- Source and licence.
+- Collection period.
+- Number of rows and columns.
+- Data types.
+- Feature definitions and units.
+- Missingness and duplicate findings.
+- Data-quality concerns.
+- Privacy and ethical considerations.
+
+### Stage 4: Prepare the representation
+
+Explain why each feature is included or excluded. Document imputation, encoding, transformations and scaling. Preserve the raw data and make the preparation process reproducible.
+
+### Stage 5: Fit and compare methods
+
+Use at least two methods or materially different parameter settings. Examples include K-means with different K values, K-means compared with hierarchical clustering, or Isolation Forest compared with LOF.
+
+Do not compare methods only by one score. Consider the geometry, cluster sizes, noise points, stability, interpretability and intended use.
+
+### Stage 6: Validate
+
+For clustering, consider silhouette, Davies–Bouldin, Calinski–Harabasz, stability and cluster profiles. For anomaly detection, inspect flagged records, compare methods and document the review process. For PCA, show explained variance and loadings. For association rules, report support, confidence and lift.
+
+Use metrics appropriate to the task. Do not force a clustering score onto an association-analysis project or treat a visual embedding as a validation metric.
+
+### Stage 7: Interpret and communicate
+
+Show results using readable tables and relevant charts. Explain what the algorithm found under its assumptions, what the pattern may mean, what action could be tested and what the result cannot prove.
+
+## 3. Suggested project: customer behaviour exploration
+
+If you need a structured starting point, use a synthetic customer dataset with:
+- Days since last purchase.
+- Number of orders in a fixed 90-day period.
+- Average basket value.
+- Number of product categories purchased.
+
+Define one row as one customer over the same 90-day period. Exclude customer ID from the model. Compare K-means for several K values with an agglomerative method. Scale the numeric features, validate the groups, and profile the result in original units.
+
+The project should not claim to predict churn. You may propose a controlled experiment if a segment suggests a possible re-engagement action.
+
+## 4. Suggested code workflow
+
+The following is a starting structure. Adapt it to your selected dataset and explain every change.
 
 ```python
-# Project deliverables
-# README with problem and purpose
-# Data source, licence and data dictionary
-# Reproducible preprocessing and analysis
-# At least two methods or parameter settings
-# Validation and stability analysis
-# Cluster profiles or anomaly review
-# Limitations and recommended next step
+import pandas as pd
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+
+# Load a prepared table; one row must represent the chosen observation unit.
+df = pd.read_csv("data/processed/observations.csv")
+
+feature_columns = [
+    "feature_one",
+    "feature_two",
+    "feature_three"
+]
+X = df[feature_columns]
+
+# Fit preprocessing on the analysis data.
+preparation = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="median")),
+    ("scaler", StandardScaler())
+])
+X_scaled = preparation.fit_transform(X)
+
+# Method A: K-means.
+kmeans = KMeans(n_clusters=3, n_init=20, random_state=42)
+kmeans_labels = kmeans.fit_predict(X_scaled)
+
+# Method B: hierarchical clustering.
+hierarchical = AgglomerativeClustering(
+    n_clusters=3,
+    metric="euclidean",
+    linkage="ward"
+)
+hierarchical_labels = hierarchical.fit_predict(X_scaled)
+
+print("K-means silhouette:",
+      silhouette_score(X_scaled, kmeans_labels))
+print("Hierarchical silhouette:",
+      silhouette_score(X_scaled, hierarchical_labels))
+
+# Attach labels to original values for profiling.
+profile_data = df[feature_columns].copy()
+profile_data["kmeans_cluster"] = kmeans_labels
+profile_data["hierarchical_cluster"] = hierarchical_labels
+
+print(profile_data.groupby("kmeans_cluster").median(numeric_only=True))
 ```
 
-## 3. Interpretation
-Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
+This is a template, not a complete project solution. Replace the placeholder feature names with real columns, confirm the data types and missingness, and justify whether median imputation is appropriate. Do not use the same K or linkage automatically for every dataset.
 
-## 4. Guided practice
-Submit the project with a five-minute presentation. Rubric: problem framing 15%, data preparation 20%, method selection 15%, validation and stability 20%, interpretation 15%, reproducibility and limitations 15%.
+The silhouette scores provide a geometric comparison, but they do not decide the winner. Inspect cluster sizes, original-unit profiles and stability. If the data contains irregular density or noise, DBSCAN may be a more suitable comparison.
 
-## 5. Independent practice
-Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
+## 5. Required deliverables
 
-## 6. Knowledge check
-1. What structure is the method attempting to discover?
-2. Which assumptions are introduced by the representation or distance?
-3. How will you assess stability and usefulness?
-4. What should not be inferred from the output?
+Submit the following:
+
+1. **README:** project question, setup instructions, data source, method and summary.
+2. **Data dictionary:** one definition, unit and meaning for each feature.
+3. **Preparation record:** missingness, duplicates, exclusions, encoding, scaling and transformations.
+4. **Reproducible code:** scripts or notebook that can be rerun.
+5. **Method comparison:** at least two methods or meaningful parameter settings.
+6. **Validation:** appropriate metrics, stability checks and qualitative review.
+7. **Visualisations:** charts with clear titles, labelled axes, legends where required and explanatory captions.
+8. **Interpretation:** profiles or anomaly investigations in original units.
+9. **Limitations and ethics:** what is uncertain, what could be harmful and what the model cannot prove.
+10. **Recommendation:** a justified next step, including the option not to use the model.
+
+## 6. Suggested folder structure
+
+```
+ws09-final-project/
+├── README.md
+├── requirements.txt
+├── data/
+│   ├── raw/
+│   └── processed/
+├── notebooks/
+├── src/
+│   ├── prepare.py
+│   ├── model.py
+│   └── validate.py
+├── outputs/
+│   ├── tables/
+│   └── figures/
+└── report/
+    └── final-report.md
+```
+
+Keep restricted data outside the repository. If you cannot share the dataset, provide instructions for obtaining it legally and a small synthetic dataset that demonstrates the expected input structure.
+
+## 7. Assessment rubric
+
+| Area | Weight | What strong work demonstrates |
+|---|---:|---|
+| Problem framing and provenance | 15% | Clear question, observation unit, source and licence |
+| Data preparation and feature reasoning | 20% | Defensible features, careful missingness handling and scaling |
+| Method selection and implementation | 15% | Appropriate methods and correct, reproducible code |
+| Validation and stability | 20% | Relevant metrics, sensitivity checks and honest evaluation |
+| Interpretation and communication | 15% | Original-unit profiles, clear visuals and cautious conclusions |
+| Reproducibility, ethics and limitations | 15% | Complete setup, documented choices, privacy and risk awareness |
+
+A high score does not require discovering a dramatic pattern. A well-executed project that demonstrates the data does not support stable clusters can be stronger than a project that forces an attractive but misleading result.
+
+## 8. Presentation structure
+
+Prepare a five-to-seven-minute presentation:
+
+1. The problem and intended use.
+2. The dataset and observation unit.
+3. Feature selection and preparation.
+4. Methods and parameter choices.
+5. Validation and stability.
+6. Main profiles or patterns.
+7. Limitations and responsible next step.
+
+Use charts to explain evidence, not to decorate slides. Every visual should answer a question. State when a plot is a two-dimensional projection of higher-dimensional data.
+
+## 9. Final reflection
+
+Answer these questions in your report:
+
+- What did the algorithm identify under the chosen representation?
+- Which preprocessing decision had the greatest effect?
+- Did different methods or settings produce similar results?
+- Which finding is strongest, and which is most uncertain?
+- What could the model not establish?
+- What would you do next if the result were unstable?
+- Would a simpler descriptive or rule-based approach be more appropriate?
+
+## 10. Final knowledge check
+
+1. Why must an unsupervised project still begin with a clear question?
+2. Why is the observation unit essential?
+3. What evidence should accompany a clustering result?
+4. Why is a high silhouette score insufficient on its own?
+5. Why should results be profiled in original feature units?
+6. What is the difference between an observation and an interpretation?
+7. Why is “no stable pattern found” an acceptable conclusion?
+
+## Course completion standard
+
+Your project is complete when another learner can understand the question, obtain the data legally, reproduce the preparation and modelling steps, inspect the validation evidence, interpret the output and understand its limitations. The aim is not to make an algorithm produce a result at any cost. The aim is to make a defensible analytical decision.
 
 ## Lesson summary
-Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
 
-## Final project specification and marking guide
-
-Choose a dataset with a clear source, licence and data dictionary. Suitable topics include retail, public services, education, sensors or other non-sensitive data. Prefer public or synthetic data for a learning project. Define the observation unit and explain why an unsupervised method suits the question.
-
-The report must include: problem framing and intended use; data source, licence, row meaning and feature definitions; missingness, duplicates and data-quality findings; preprocessing decisions and justification; comparison of at least two methods or materially different settings; validation and stability checks; original-unit profiles or careful anomaly review; visuals with clear captions; and limitations, risks and next steps.
-
-Assessment rubric: problem framing and provenance 15%; preparation and feature reasoning 20%; method selection and implementation 15%; validation and stability 20%; interpretation and communication 15%; reproducibility, ethics and limitations 15%.
-
-Submit a README with setup instructions, a reproducible notebook or script, a data dictionary, preprocessing record, method comparisons, validation results and a report that separates observation from interpretation. State clearly what the model cannot prove.
-
-**Reflection:** If the result is unstable or not useful, what would you recommend instead? Strong analysts are willing to reject a model when the evidence does not justify its use.
-
-### Project extension: make the result reproducible
-
-Organise the project so another learner can reproduce it. Separate raw data, processed data, notebooks or scripts, figures and the written report. Do not overwrite the raw source. Include setup commands and package versions, and explain how to obtain the dataset legally. If the data cannot be redistributed, document the source and provide a small synthetic example.
-
-The final presentation should show the question, observation unit, feature decisions, method comparison, validation, profile and limitations. A chart needs labelled axes, a legend where relevant and a caption that explains the finding and caveat. A screenshot without interpretation is not an analytical result.
-
-Finish with a recommendation that matches the evidence: proceed to a controlled test, collect better features, monitor a pattern, use a simpler method or conclude that no reliable structure was found.
+This project demonstrates the full unsupervised-learning workflow: define the problem, establish the observation unit, prepare meaningful features, select and compare methods, validate structure, profile results, communicate uncertainty and recommend a responsible next step. A trustworthy analyst values evidence more than an attractive cluster plot.
