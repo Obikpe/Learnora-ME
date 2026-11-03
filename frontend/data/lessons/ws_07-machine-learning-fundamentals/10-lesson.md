@@ -8,7 +8,7 @@ A dataset collected for people to read is not automatically ready for an algorit
 
 Preparation is not a universal cleaning recipe. The correct method depends on what a column means, why values are missing and which algorithm will use it.
 
-![Data preparation pipeline](./assets/10-preprocessing-pipeline.svg)
+![Data preparation pipeline](/course-assets/ws07/10-preprocessing-pipeline.svg)
 
 ## 2. Split before fitting transformations
 Imagine you calculate the average income using all rows, including the future test set, then use that average to fill missing training values. Information from the test set has influenced the model preparation. This is leakage.
