@@ -6,7 +6,7 @@ Explain observations, features and targets; distinguish numerical, categorical a
 ## 1. Understand the table
 In a tabular dataset, rows usually represent cases and columns represent variables. But the meaning of a row must be explicit: one row may represent a learner, purchase, learner-week or sensor reading.
 
-![Features and target in a dataset](./assets/04-features-target.svg)
+![Features and target in a dataset](/course-assets/ws07/04-features-target.svg)
 
 Suppose each row represents one learner:
 - study_hours: study time per week;
