@@ -66,7 +66,7 @@ The horizontal ordering of leaves is often rearranged for readability. Do not in
 Install the required packages:
 
 ```bash
-python -m pip install numpy scipy matplotlib scikit-learn
+python -m pip install numpy scipy matplotlib 'scikit-learn>=1.2'
 ```
 
 ```python
