@@ -79,3 +79,18 @@ Train a classifier on imbalanced data. Plot ROC and PR curves, report ROC-AUC an
 
 ## Lesson summary
 ROC and PR curves evaluate ranking across thresholds. They are useful summaries, but the final operating point must be chosen using validation evidence, class prevalence and the consequences of each error.
+
+## 6. Deeper reasoning: ranking, calibration and decisions are separate questions
+
+ROC-AUC and average precision assess how well a model ranks positive observations ahead of negative observations across possible thresholds. They do not directly answer whether a probability of 0.8 really corresponds to an 80% event rate. That is a calibration question. Nor do they decide how many cases a team should investigate. That is an operational threshold question.
+
+These three questions should be considered separately:
+1. **Ranking:** does the model generally give higher scores to positives than negatives?
+2. **Calibration:** do predicted probabilities correspond to observed frequencies?
+3. **Decision:** at what score should an action be taken, given costs and capacity?
+
+A model can rank cases well but be overconfident. Another model can have reasonable calibration but weaker ranking. If the organisation uses scores to estimate expected losses or communicate individual risk, calibration may be important. If the system only prioritises a fixed number of cases for review, ranking and capacity may dominate.
+
+PR curves are especially helpful when positives are rare because precision directly reflects the share of flagged cases that are truly positive. However, precision depends on prevalence. If fraud prevalence changes from 1% to 5%, precision can change even when the model's underlying ranking behaviour remains similar. Always report the positive-class prevalence with PR results.
+
+The test set should not become a threshold-selection tool. Use validation data or out-of-fold predictions to choose the operating threshold, then evaluate the fixed workflow once on the final test set. This preserves a clearer separation between development and final evaluation.
