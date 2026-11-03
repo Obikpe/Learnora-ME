@@ -134,6 +134,12 @@ export default function MyLearningPage() {
     currentUser().then(async me => {
       if (me.role === "organisation_prospect") { location.href = "/organisation-portal"; return; }
       if (me.role === "witstart") { location.href = "/dashboard/witstart"; return; }
+      const privileged = (me.organisation_memberships || []).filter((membership: any) => ["owner", "admin"].includes(membership.role));
+      if (me.organisation_id && ["owner", "admin"].includes(me.organisation_role)) { location.href = "/dashboard/organisation"; return; }
+      if (privileged.length) { location.href = "/dashboard/organisation" + (privileged.length > 1 && !me.organisation_id ? "?choose=1" : ""); return; }
+      if (cancelled) return;
+      setUser(me);
+      const dashboardLoad = load();
       if (me.role === "normal") {
         try {
           const onboarding = await request<any>("/learner/onboarding");
@@ -142,12 +148,7 @@ export default function MyLearningPage() {
           if (!cancelled) setGoal(profile.goal || profile.career_goal || profile.learning_goal || profile.preferred_track || "");
         } catch {}
       }
-      const privileged = (me.organisation_memberships || []).filter((membership: any) => ["owner", "admin"].includes(membership.role));
-      if (me.organisation_id && ["owner", "admin"].includes(me.organisation_role)) { location.href = "/dashboard/organisation"; return; }
-      if (privileged.length) { location.href = "/dashboard/organisation" + (privileged.length > 1 && !me.organisation_id ? "?choose=1" : ""); return; }
-      if (cancelled) return;
-      setUser(me);
-      await load();
+      await dashboardLoad;
     }).catch(() => { if (!cancelled) location.href = "/login"; });
     return () => { cancelled = true; };
   }, []);
