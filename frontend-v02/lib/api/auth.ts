@@ -2,7 +2,25 @@ import { request } from "./client";
 
 let cachedUser: any = null;
 let cachedForToken = "";
+let cachedAt = 0;
 let currentUserRequest: Promise<any> | null = null;
+const USER_CACHE_PREFIX = "learnora_current_user_cache:";
+
+function restoreCachedUser(token: string) {
+  if (cachedUser && cachedForToken === token) return cachedUser;
+  if (typeof window === "undefined") return null;
+  try {
+    const epoch = sessionStorage.getItem("phx_session_epoch") || "implicit";
+    const raw = sessionStorage.getItem(USER_CACHE_PREFIX + epoch);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved?.user || typeof saved.savedAt !== "number") return null;
+    cachedUser = saved.user;
+    cachedAt = saved.savedAt;
+    cachedForToken = token;
+    return cachedUser;
+  } catch { return null; }
+}
 
 function activeToken() {
   if (typeof window === "undefined") return "";
@@ -15,7 +33,7 @@ function activeToken() {
 /** Synchronous cache read for client-side route transitions. */
 export function getCachedCurrentUser() {
   const token = activeToken();
-  return token && token === cachedForToken ? cachedUser : null;
+  return token ? restoreCachedUser(token) : null;
 }
 
 export const login = (email: string, password: string) =>
@@ -32,18 +50,28 @@ export function currentUser(): Promise<any> {
     return Promise.reject(new Error("Your session has expired. Please sign in again."));
   }
 
-  if (cachedUser && cachedForToken === token) return Promise.resolve(cachedUser);
+  if (cachedUser && cachedForToken === token && Date.now() - cachedAt < 120_000) return Promise.resolve(cachedUser);
+  restoreCachedUser(token);
+  if (cachedUser && cachedForToken === token && Date.now() - cachedAt < 120_000) return Promise.resolve(cachedUser);
   if (currentUserRequest && cachedForToken === token) return currentUserRequest;
 
   cachedForToken = token;
   const pending = request<any>("/auth/me")
     .then((user) => {
-      if (activeToken() === token) cachedUser = user;
+      if (activeToken() === token) {
+        cachedUser = user;
+        cachedAt = Date.now();
+        try {
+          const epoch = sessionStorage.getItem("phx_session_epoch") || "implicit";
+          sessionStorage.setItem(USER_CACHE_PREFIX + epoch, JSON.stringify({ savedAt: cachedAt, user }));
+        } catch {}
+      }
       return user;
     })
     .catch((error) => {
       if (cachedForToken === token) {
         cachedUser = null;
+        cachedAt = 0;
         cachedForToken = "";
       }
       throw error;
