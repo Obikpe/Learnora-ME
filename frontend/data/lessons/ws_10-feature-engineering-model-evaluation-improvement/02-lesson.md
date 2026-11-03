@@ -1,18 +1,35 @@
 # Lesson 2: Data Leakage and Leakage Prevention
 
 ## Learning outcomes
+Explain target, temporal and preprocessing leakage; recognise leakage through duplicates and group overlap; choose an appropriate split; and use pipelines to keep learned transformations inside training folds.
 
-By the end of this lesson, you should be able to Define target, temporal and preprocessing leakage; identify features that contain future information; use a pipeline to fit transformations on training data only; and explain how leakage inflates evaluation.
+## 1. What leakage means
+**Data leakage** occurs when information that should not be available to a model influences training or evaluation. The model then appears more capable than it will be in real use. Leakage is dangerous because the resulting metric can look excellent while the deployed model fails.
 
-## 1. Core explanation
-Data leakage occurs when training or evaluation uses information that would not legitimately be available at prediction time, or when information from validation/test data influences training. Target leakage includes a post-outcome field that directly or indirectly reveals the answer. Preprocessing leakage occurs when statistics such as medians or scaling parameters are learned using the full dataset before splitting.
+Consider a hospital model intended to predict whether a patient will be admitted to intensive care at the moment of arrival. A column recording the ICU transfer decision would reveal the outcome. It may be strongly associated with the target, but it is recorded after the prediction moment. This is target or temporal leakage.
 
-Leakage creates an overly optimistic estimate and often causes deployment failure. Examples include using a discharge code to predict hospital mortality before discharge, or calculating a customer feature using transactions after the prediction date. Duplicate or related records across partitions can also leak identity-specific information.
+Leakage can enter through feature construction, splitting, preprocessing, feature selection, hyperparameter tuning or repeated inspection of the test set. It is not limited to suspicious column names.
 
-Prevent leakage by defining the prediction timestamp, using time-aware or group-aware splits, fitting transformations inside Pipelines and keeping the final test set untouched. Review feature lineage, not only column names. A feature can be suspicious even when it has no obvious target-like name.
+## 2. Main forms of leakage
+**Target leakage:** a feature directly or indirectly contains the answer. A refund status recorded after a purchase cannot be used to predict whether that purchase will be refunded at the moment of sale.
 
-## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas scikit-learn`.
+**Temporal leakage:** future events enter a historical prediction. Rolling averages must be shifted or bounded so they only use earlier observations.
+
+**Preprocessing leakage:** an imputer, scaler, encoder or selector learns statistics from validation or test rows before evaluation. For example, calculating the median using the full dataset allows information about the test distribution into training.
+
+**Group or identity leakage:** records from the same person, household, machine or organisation appear in both train and test when the deployment task requires generalisation to unseen groups.
+
+**Duplicate leakage:** duplicate or near-duplicate examples are split across partitions, allowing the model to encounter almost the same record during training and testing.
+
+![Leakage prevention boundary](/course-assets/ws10/leakage-boundary.svg)
+
+## 3. Build the split around the real task
+A random split is appropriate only when observations can reasonably be treated as independent and identically distributed for the intended use. If predicting the future, use a chronological split. If predicting for new customers, use group-aware splitting so a customer's records do not cross partitions. For repeated measurements, consider both time and group structure.
+
+The test set is a final estimate, not a workspace for repeated model decisions. Use training data for fitting and cross-validation for selecting transformations and hyperparameters. Consult the final test set after the design is settled.
+
+## 4. Worked example: leakage-safe imputation
+Install scikit-learn and pandas: `python -m pip install pandas scikit-learn`.
 
 ```python
 import pandas as pd
@@ -21,29 +38,52 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LogisticRegression
 
-df = pd.DataFrame({"x": [1, 2, None, 4, 5, None, 7, 8],
-                   "y": [0, 0, 0, 0, 1, 1, 1, 1]})
-Xtr, Xte, ytr, yte = train_test_split(df[["x"]], df["y"],
-                                      test_size=.25, random_state=1)
-pipe = make_pipeline(SimpleImputer(strategy="median"), LogisticRegression())
-pipe.fit(Xtr, ytr)
-print("Test score:", pipe.score(Xte, yte))
+data = pd.DataFrame({
+    "income": [20, 25, None, 40, 45, None, 70, 80, 30, 60],
+    "late_payment": [0, 0, 0, 0, 1, 1, 0, 1, 0, 1]
+})
+X = data[["income"]]
+y = data["late_payment"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y
+)
+
+model = make_pipeline(
+    SimpleImputer(strategy="median"),
+    LogisticRegression()
+)
+model.fit(X_train, y_train)
+print("Test accuracy:", model.score(X_test, y_test))
 ```
 
-## 3. Interpretation and safeguards
-State when each feature is available, how it was derived and whether it can be calculated consistently at prediction time. Fit all learned transformations on training data only. Compare performance using the same validation design and check that transformations do not remove meaningful information.
+The pipeline fits the median using only the training partition, then applies that learned median to test rows. If you impute the full dataset before splitting, the test data has influenced the transformation.
 
-## 4. Guided practice
-Describe a scenario where a feature is recorded after the target outcome. Explain why high test accuracy from that feature is invalid. Then explain why the Pipeline prevents the imputer from learning its median from test rows.
+## 5. A practical leakage audit
+For every feature ask: when is it created? Who records it? Could it be updated after the outcome? Does it contain a summary that includes future rows? Is it derived from the target? Would it exist for a new prediction? Then inspect split boundaries, entity overlap, duplicates and transformation fitting.
 
-## 5. Independent practice
-Create a small feature-engineering workflow for a dataset. Include a data dictionary, transformation rationale, pipeline and validation plan. Identify one transformation you decided not to use and explain why.
+A high score is not evidence that leakage is absent. A suspiciously perfect result is a reason to investigate, not celebrate.
 
-## 6. Knowledge check
-1. What information does this transformation add?
-2. Could it leak information from after the prediction time?
-3. Does it need to be fitted on training data?
-4. How will you test its value and stability?
+## 6. Common mistakes
+- Randomly splitting time-series data and claiming future forecasting ability.
+- Fitting a scaler or imputer before splitting.
+- Selecting features using the complete dataset.
+- Letting the same customer appear in train and test when unseen-customer performance is the goal.
+- Repeatedly changing the model after inspecting test errors.
+- Removing a suspicious feature without investigating how it was generated.
+
+## 7. Guided practice
+A bank wants to predict loan default at application time. Review these fields: application income, credit history, repayment status six months later, date of application, loan decision and customer ID. Classify each as potentially valid, leakage-prone or dependent on the precise prediction question. Explain your reasoning.
+
+## 8. Independent practice
+Take a dataset with dates or repeated entities. Design a split that reflects deployment. Write code to check for overlapping customer IDs or duplicated rows across partitions. Explain what your checks do not prove.
+
+## Knowledge check
+1. Why can a feature with strong predictive power still be invalid?
+2. How does a pipeline reduce preprocessing leakage?
+3. When is a chronological split preferable?
+4. Why might group-aware splitting be necessary?
+5. Why should the test set be used sparingly?
 
 ## Lesson summary
-Feature engineering should create meaningful, available and reproducible inputs. Every transformation must be justified and validated within a leakage-safe workflow.
+Leakage creates false confidence. Define prediction time, investigate feature lineage, split according to the deployment scenario and fit every learned preprocessing step only on the training data within a pipeline.

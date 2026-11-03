@@ -1,53 +1,85 @@
 # Lesson 4: Encoding Categorical Variables
 
 ## Learning outcomes
+Explain why most estimators require numeric inputs; distinguish nominal and ordinal categories; apply one-hot and ordinal encoding; handle unseen categories; and avoid misleading numeric order.
 
-By the end of this lesson, you should be able to Encode nominal categories with one-hot encoding; handle categories not seen during training; combine numeric and categorical transformations with ColumnTransformer; and explain why category codes should not imply false order.
+## 1. Categories are not automatically numbers
+A categorical variable records membership in a set of labels. Examples include payment method, product family, region and subscription tier. Many machine-learning estimators operate on numeric matrices, so categories must be represented numerically.
 
-## 1. Core explanation
-Most estimators require numeric input. One-hot encoding creates a binary column for each category and is suitable for nominal variables. Ordinal encoding assigns ordered values and should be used only when categories have a genuine order. Target encoding replaces a category with a target-derived statistic and must be carefully cross-fitted to avoid leakage.
+First decide whether the category is **nominal** or **ordinal**. Nominal categories have no natural order: Lagos, Kano and Enugu are not ranked values. Ordinal categories do have a meaningful order: low, medium and high. The encoding should preserve the meaning rather than invent one.
 
-Unknown categories may appear in production. OneHotEncoder(handle_unknown="ignore") prevents a runtime failure but does not mean the unseen category has been learned. Rare-category grouping can reduce dimensionality, but the grouping rule should be fitted on training data. High-cardinality identifiers are often not useful categorical predictors.
+## 2. One-hot encoding
+One-hot encoding creates a binary column for each category. If payment method is {card, transfer, cash}, the representation might be:
+- card: (1, 0, 0)
+- transfer: (0, 1, 0)
+- cash: (0, 0, 1)
 
-Use ColumnTransformer to apply different transformations to numeric and categorical columns. Keep the transformer in a Pipeline so cross-validation and deployment use the same schema.
+This does not claim that cash is larger than card. It simply indicates category membership. It can create many columns when a feature has thousands of distinct values, so high-cardinality variables need special consideration.
 
-## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas scikit-learn`.
+## 3. Ordinal encoding
+Ordinal encoding maps ordered categories to integers, for example low=0, medium=1, high=2. Use it only when the order is defensible. The numerical distances may still imply more than the original labels support: the gap from low to medium is not necessarily equal to the gap from medium to high.
 
+For nominal labels, assigning 1, 2 and 3 can create a false ordering. A tree model may split on "category code <= 2", treating the arbitrary code as meaningful.
+
+![Categorical encoding comparison](/course-assets/ws10/categorical-encoding.svg)
+
+## 4. Worked example
 ```python
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.pipeline import make_pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
-df = pd.DataFrame({"age": [20, 35, 42, 28, 31, 50],
-                   "region": ["North", "South", "East", "North", "West", "South"],
-                   "renewed": [0, 1, 1, 0, 1, 1]})
-prep = ColumnTransformer([
-    ("num", make_pipeline(SimpleImputer(strategy="median"), StandardScaler()), ["age"]),
-    ("cat", OneHotEncoder(handle_unknown="ignore"), ["region"])
-])
-model = make_pipeline(prep, LogisticRegression())
-model.fit(df[["age", "region"]], df["renewed"])
-print(model.predict(pd.DataFrame({"age": [29], "region": ["Central"]})))
+customers = pd.DataFrame({
+    "region": ["North", "South", "East", "South"],
+    "satisfaction": ["high", "medium", "low", "high"]
+})
+
+nominal_encoder = OneHotEncoder(
+    handle_unknown="ignore",
+    sparse_output=False
+)
+region_encoded = nominal_encoder.fit_transform(customers[["region"]])
+print(nominal_encoder.get_feature_names_out(["region"]))
+print(region_encoded)
+
+ordinal_encoder = OrdinalEncoder(
+    categories=[["low", "medium", "high"]]
+)
+satisfaction_encoded = ordinal_encoder.fit_transform(
+    customers[["satisfaction"]]
+)
+print(satisfaction_encoded)
 ```
 
-## 3. Interpretation and safeguards
-State when each feature is available, how it was derived and whether it can be calculated consistently at prediction time. Fit all learned transformations on training data only. Compare performance using the same validation design and check that transformations do not remove meaningful information.
+`fit_transform` learns the category mapping from the supplied training data and applies it. In production, call `transform` using the fitted encoder; do not refit on each incoming batch. In older scikit-learn versions, the dense-output argument was named `sparse`; current versions use `sparse_output`. If using an older environment, consult the installed version's documentation.
 
-## 4. Guided practice
-Explain why region should be one-hot encoded rather than assigned arbitrary numbers. Add an unseen region and observe how the encoder handles it. Describe what this does and does not guarantee.
+## 5. Unknown and rare categories
+A model may encounter a new region or product type after training. With `handle_unknown="ignore"`, OneHotEncoder produces zeros for the unknown category across the learned columns. This prevents an exception, but it does not teach the model what the new category means. Monitor unseen-category rates and decide whether categories should be grouped, retrained or handled through a business rule.
 
-## 5. Independent practice
-Create a small feature-engineering workflow for a dataset. Include a data dictionary, transformation rationale, pipeline and validation plan. Identify one transformation you decided not to use and explain why.
+Rare categories can create unstable estimates. Grouping them into "Other" may be reasonable, but define the grouping rule using training data and preserve the ability to apply it consistently later.
 
-## 6. Knowledge check
-1. What information does this transformation add?
-2. Could it leak information from after the prediction time?
-3. Does it need to be fitted on training data?
-4. How will you test its value and stability?
+## 6. Put encoding in a pipeline
+Use a ColumnTransformer to apply different operations to numeric and categorical columns. This prevents manual train/test mismatch and ensures the encoder is fitted only on training folds. Never one-hot encode the full dataset before cross-validation if category discovery itself could expose validation information.
+
+## 7. Common mistakes
+- Encoding nominal categories as arbitrary integers.
+- Assuming ordinal labels have equal spacing.
+- Fitting the encoder separately on train and test.
+- Ignoring unseen categories in production.
+- Creating hundreds of sparse columns without considering dimensionality.
+- Treating a high-cardinality identifier as a normal category without evaluating its generalisation risk.
+
+## Guided practice
+Encode a dataset containing region, browser, education level and satisfaction rating. Identify which fields are nominal and which are ordinal. Explain your ordering for any ordinal field.
+
+## Independent practice
+Build a ColumnTransformer that imputes and one-hot encodes categorical features while scaling numeric features. Split the data first, fit on training data, and demonstrate that the pipeline can transform a row with an unseen category.
+
+## Knowledge check
+1. What is the difference between nominal and ordinal data?
+2. Why is one-hot encoding suitable for nominal categories?
+3. What assumption can ordinal encoding introduce?
+4. What does `handle_unknown="ignore"` do?
+5. Why should encoders be fitted within the pipeline?
 
 ## Lesson summary
-Feature engineering should create meaningful, available and reproducible inputs. Every transformation must be justified and validated within a leakage-safe workflow.
+Encoding is a representation decision. Choose a method that respects category meaning, anticipate unseen and rare labels, and fit the encoder only on training data.

@@ -1,47 +1,75 @@
 # Lesson 6: Date, Time and Text Features
 
 ## Learning outcomes
+Extract useful calendar and elapsed-time features; create lag and rolling-window features without future information; represent simple text characteristics; and explain why time-aware feature engineering requires careful ordering.
 
-By the end of this lesson, you should be able to Extract calendar and time features from timestamps; encode cyclical time with sine and cosine; derive text features carefully; and prevent timezone or future-information leakage.
+## 1. Date and time are structured information
+A timestamp can encode several useful concepts: day of week, month, hour, season, elapsed time since an event and time between events. A raw timestamp may be difficult for a model to use directly, so analysts often derive interpretable components.
 
-## 1. Core explanation
-Dates and text contain useful structure but need transformations. Date features may include day of week, month, elapsed time, weekend flag or time since a prior event. Cyclical fields such as hour or month can be represented with sine and cosine so that December and January are close on the circle. Avoid creating a future-derived feature.
+For a delivery service, day of week may help capture demand patterns. For subscription churn, days since last activity may be useful. For equipment monitoring, time since last maintenance may matter. These features are meaningful only if their calculation matches the prediction moment.
 
-Text can be represented using token counts, TF-IDF or embeddings. Tokenisation, lowercasing and stop-word handling depend on language and task. Fit vocabulary and weighting on training text only. Text features can be high-dimensional and sparse, so regularised linear models are useful baselines.
+## 2. Calendar and elapsed-time features
+Calendar features include year, month, day, weekday, hour and weekend indicators. Elapsed-time features include days since signup, hours between events and age of an account at prediction time. Use timezone-aware timestamps when records originate in multiple regions. Daylight-saving changes and inconsistent timezones can create subtle errors.
 
-Respect temporal availability and privacy. Do not extract sensitive personal details unless there is a lawful and necessary purpose. Check whether text includes target leakage such as a resolution note written after the event.
+Cyclical variables such as hour of day wrap around: 23:00 is close to 00:00, not far away. One approach is sine/cosine encoding:
 
-## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas scikit-learn`.
+`sin(2π × hour / 24)` and `cos(2π × hour / 24)`
 
+This represents the cycle on a circle so neighbouring times remain close.
+
+## 3. Lag and rolling features
+A **lag feature** uses a previous observation, such as yesterday's sales. A **rolling feature** summarises a trailing window, such as the average of the previous seven days. Sort by entity and timestamp before calculating them. Shift the series so the current target period is not included.
+
+![Temporal feature window](/course-assets/ws10/temporal-features.svg)
+
+## 4. Worked time-series example
 ```python
-import numpy as np
 import pandas as pd
+import numpy as np
 
-df = pd.DataFrame({"timestamp": pd.to_datetime([
-    "2026-01-01 08:00", "2026-01-15 20:00", "2026-02-01 12:00"
-])})
-df["hour"] = df.timestamp.dt.hour
-df["hour_sin"] = np.sin(2*np.pi*df.hour/24)
-df["hour_cos"] = np.cos(2*np.pi*df.hour/24)
-df["weekday"] = df.timestamp.dt.dayofweek
-print(df)
+daily = pd.DataFrame({
+    "date": pd.date_range("2026-01-01", periods=12, freq="D"),
+    "sales": [10, 12, 9, 15, 18, 20, 17, 22, 19, 25, 23, 28]
+})
+daily["weekday"] = daily["date"].dt.dayofweek
+daily["month"] = daily["date"].dt.month
+daily["day_of_year"] = daily["date"].dt.dayofyear
+daily["sales_lag_1"] = daily["sales"].shift(1)
+daily["sales_mean_previous_3"] = (
+    daily["sales"].shift(1).rolling(window=3).mean()
+)
+daily["hour_sin"] = np.sin(2 * np.pi * 12 / 24)
+daily["hour_cos"] = np.cos(2 * np.pi * 12 / 24)
+print(daily)
 ```
 
-## 3. Interpretation and safeguards
-State when each feature is available, how it was derived and whether it can be calculated consistently at prediction time. Fit all learned transformations on training data only. Compare performance using the same validation design and check that transformations do not remove meaningful information.
+The shift happens before rolling. Therefore the feature for a date uses earlier sales rather than including that date's sales. The first row has missing lag and rolling values because no prior observations exist. Do not fill these blindly; the missingness is a consequence of the window definition.
 
-## 4. Guided practice
-Create cyclical encodings for month and hour. Explain why month 12 should be close to month 1. Identify a text field that might contain information entered after the target event.
+## 5. Text-derived features
+Text can be represented using simple features such as character count, word count, number of exclamation marks, presence of a keyword or TF-IDF values. TF-IDF represents terms according to how informative they are within a document collection. It creates a sparse numerical representation and is commonly used with linear classifiers.
 
-## 5. Independent practice
-Create a small feature-engineering workflow for a dataset. Include a data dictionary, transformation rationale, pipeline and validation plan. Identify one transformation you decided not to use and explain why.
+Text preprocessing must be learned appropriately. A vocabulary fitted on all documents before splitting can leak information about the held-out distribution. Use a text vectorizer inside a Pipeline. Avoid assuming that word counts or sentiment scores capture meaning perfectly.
 
-## 6. Knowledge check
-1. What information does this transformation add?
-2. Could it leak information from after the prediction time?
-3. Does it need to be fitted on training data?
-4. How will you test its value and stability?
+## 6. Common mistakes
+- Calculating rolling averages that include the target period.
+- Forgetting to sort by entity and timestamp.
+- Mixing timezones or treating local time as UTC.
+- Using a timestamp recorded after the outcome.
+- Treating cyclic hours as a simple linear number without considering wrap-around.
+- Fitting a text vocabulary before splitting.
+
+## Guided practice
+Create weekday, weekend, account-age and days-since-last-login features. State the prediction timestamp and identify any fields that could be recorded after that timestamp.
+
+## Independent practice
+Using daily sales, build lag-1, lag-7 and previous-7-day mean features. Verify one row manually. Then build a text classification pipeline with TF-IDF and a linear classifier using a train/test split.
+
+## Knowledge check
+1. What is a lag feature?
+2. Why is shift applied before rolling?
+3. Why should observations be sorted by entity and time?
+4. What is cyclical encoding designed to preserve?
+5. Why should a text vectorizer be part of a pipeline?
 
 ## Lesson summary
-Feature engineering should create meaningful, available and reproducible inputs. Every transformation must be justified and validated within a leakage-safe workflow.
+Dates, sequences and text contain structure that can become useful model inputs. Respect ordering, timezones and prediction boundaries so features describe only information legitimately available at the moment of prediction.

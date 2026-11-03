@@ -1,45 +1,73 @@
 # Lesson 7: Binning, Interactions and Polynomial Features
 
 ## Learning outcomes
+Explain discretisation and its trade-offs; construct interaction and polynomial terms; recognise overfitting risk; and decide when engineered combinations are justified.
 
-By the end of this lesson, you should be able to Create bins, polynomial terms and interaction features; explain what new structure they represent; compare interpretability and complexity; and avoid data-driven binning leakage.
+## 1. Binning numerical values
+Binning converts a continuous variable into intervals. Age might be grouped into ranges, or transaction value into low, medium and high bands. Binning can simplify interpretation and represent non-linear relationships, but it discards detail and introduces boundaries.
 
-## 1. Core explanation
-Binning converts a continuous feature into intervals. It can simplify non-linear relationships and produce interpretable groups, but loses information and depends on chosen cut points. Use domain-defined thresholds where possible; otherwise learn quantile or uniform bins from training data.
+Equal-width bins divide the numerical range into intervals of equal size. Quantile bins aim for similar numbers of observations per bin. Neither is universally superior. Quantile bins can produce different boundaries in different samples; equal-width bins can leave some bins nearly empty when data is skewed.
 
-Interaction features represent the effect of one variable depending on another, such as price sensitivity varying by customer segment. Polynomial features add powers and combinations to represent curvature. These features can increase dimensionality quickly and create multicollinearity. Regularisation and validation are important.
+## 2. Interactions
+An interaction feature represents a combined effect. Suppose the relationship between advertising spend and sales differs by campaign channel. A model with only two additive terms may not represent that difference. An interaction such as spend multiplied by a channel indicator can allow a different slope for that channel.
 
-All data-dependent cut points and transformations must be fitted inside the training pipeline. Avoid choosing bins after looking at test outcomes. Explain how the transformed feature maps back to the original variables.
+Interactions should be motivated by domain reasoning or exploratory evidence, not generated indiscriminately. With many variables, the number of possible pairwise interactions grows rapidly.
 
-## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas scikit-learn`.
+## 3. Polynomial features
+Polynomial expansion can add squared terms and interactions. For a feature x, a degree-2 expansion may include x, x² and interactions with other features. This allows a linear model to represent some curved relationships while remaining linear in its learned coefficients.
 
+The number of terms can increase quickly. For p input features and degree d, expansion may produce many combinations. High-dimensional expansion can overfit, increase computation and make interpretation harder. Regularisation and cross-validation become important.
+
+![Feature combinations](/course-assets/ws10/feature-combinations.svg)
+
+## 4. Worked example
 ```python
 import pandas as pd
 from sklearn.preprocessing import KBinsDiscretizer, PolynomialFeatures
 
-X = pd.DataFrame({"age": [18, 22, 30, 42, 55, 68],
-                  "income": [20, 25, 35, 48, 60, 75]})
-binner = KBinsDiscretizer(n_bins=3, encode="ordinal", strategy="quantile")
-print("Age bins:", binner.fit_transform(X[["age"]]).ravel())
+X = pd.DataFrame({
+    "age": [19, 24, 31, 42, 55, 67],
+    "income": [20, 28, 35, 55, 80, 95]
+})
+
+binner = KBinsDiscretizer(
+    n_bins=3, encode="ordinal", strategy="quantile"
+)
+age_band = binner.fit_transform(X[["age"]])
+print("Age bands:", age_band.ravel())
+print("Learned edges:", binner.bin_edges_[0])
+
 poly = PolynomialFeatures(degree=2, include_bias=False)
-print("Polynomial feature names:", poly.fit(X).get_feature_names_out())
+expanded = poly.fit_transform(X[["age", "income"]])
+print(poly.get_feature_names_out(["age", "income"]))
+print(expanded)
 ```
 
-## 3. Interpretation and safeguards
-State when each feature is available, how it was derived and whether it can be calculated consistently at prediction time. Fit all learned transformations on training data only. Compare performance using the same validation design and check that transformations do not remove meaningful information.
+The bin edges are learned from the data supplied to `fit`; in evaluation they must be learned from training folds only. `include_bias=False` avoids adding a constant column because most estimators already handle an intercept. The expanded names reveal the generated terms, such as squared age and age multiplied by income.
 
-## 4. Guided practice
-Create an interaction between study hours and attendance. Explain a plausible interpretation and why the interaction should be validated against a model without it.
+## 5. Choosing whether to engineer
+Ask what relationship you expect the new feature to represent. Is the effect plausible? Can the feature be computed at prediction time? Does it create a stable improvement across folds? Is the resulting model still understandable enough for its use? Compare a baseline with one controlled change at a time.
 
-## 5. Independent practice
-Create a small feature-engineering workflow for a dataset. Include a data dictionary, transformation rationale, pipeline and validation plan. Identify one transformation you decided not to use and explain why.
+## 6. Common mistakes
+- Treating bin boundaries as natural facts.
+- Binning every numeric variable and losing useful precision.
+- Creating all pairwise interactions without a rationale.
+- Expanding features without checking dimensionality.
+- Evaluating a transformed dataset using a split that allowed the transformation to learn from test data.
+- Interpreting a polynomial coefficient without considering the other terms and feature scale.
 
-## 6. Knowledge check
-1. What information does this transformation add?
-2. Could it leak information from after the prediction time?
-3. Does it need to be fitted on training data?
-4. How will you test its value and stability?
+## Guided practice
+For a model predicting delivery time, propose one binned feature, one interaction and one squared term. Explain the real-world relationship each might capture.
+
+## Independent practice
+Compare a baseline linear regression with a pipeline that includes degree-2 polynomial features and regularisation. Use identical cross-validation folds and inspect both error and model complexity.
+
+## Knowledge check
+1. What information can binning discard?
+2. What is an interaction feature?
+3. Why can polynomial expansion overfit?
+4. What does `include_bias=False` control?
+5. How would you test whether an engineered term is useful?
 
 ## Lesson summary
-Feature engineering should create meaningful, available and reproducible inputs. Every transformation must be justified and validated within a leakage-safe workflow.
+Binning, interactions and polynomial terms let models represent patterns that simple raw columns may not express. Use them selectively, preserve prediction-time validity and verify improvements across reliable validation folds.
