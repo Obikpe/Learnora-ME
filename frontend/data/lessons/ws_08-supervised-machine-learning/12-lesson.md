@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Explain distance-based K-nearest neighbours; standardise numeric features; compare neighbourhood sizes; and describe the effect of feature scale, distance and the choice of k.
 
+
+![classification concept diagram](/course-assets/ws08/classification.svg)
+
 ## 1. Core explanation
 K-nearest neighbours (KNN) predicts from the labels or values of the closest training observations. For classification, it uses a majority vote among the k neighbours; for regression, it averages their target values. “Closeness” is defined by a distance measure such as Euclidean distance.
 
