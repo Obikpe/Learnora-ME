@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Explain Bayes' theorem and the conditional-independence assumption; distinguish Gaussian, Multinomial and Bernoulli Naive Bayes; build a text-count pipeline; and evaluate class-wise errors.
 
+
+![classification concept diagram](/course-assets/ws08/classification.svg)
+
 ## 1. Core explanation
 Naive Bayes applies Bayes' theorem to estimate class probabilities from features. The “naive” assumption is that features are conditionally independent given the class. This assumption is often unrealistic, but the method can still perform well, especially for text classification and high-dimensional sparse data.
 
