@@ -3,6 +3,8 @@
 ## Learning outcomes
 Set up a project-specific Python environment in VS Code; install and import the core ML libraries; understand arrays and DataFrames; use scikit-learn estimators and transformers; and build a simple pipeline.
 
+![Python machine-learning toolkit](/course-assets/ws07/08-python-ml-toolkit.svg)
+
 ## 1. The core Python toolkit
 - **Python:** programming language used to organise the workflow.
 - **NumPy:** efficient numerical arrays and mathematical operations.
