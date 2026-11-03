@@ -83,3 +83,13 @@ Build a ColumnTransformer that imputes and one-hot encodes categorical features 
 
 ## Lesson summary
 Encoding is a representation decision. Choose a method that respects category meaning, anticipate unseen and rare labels, and fit the encoder only on training data.
+
+## 7. Deeper reasoning: encoding defines what the model can infer
+
+Encoding is not a neutral conversion from words to numbers. It determines which relationships the model is allowed to perceive. With one-hot encoding, a linear model can estimate a separate contribution for each category relative to a reference representation. It does not assume that the categories are ordered. With ordinal encoding, the integer mapping may cause an estimator to treat a higher code as a larger quantity, even when the original categories are labels without rank.
+
+For example, assigning North=0, South=1 and East=2 creates an artificial numeric order. A linear model may interpret the difference between North and South as the same kind of step as the difference between South and East. There is no business reason for that assumption. One-hot encoding is generally safer for nominal values, though it increases the number of columns.
+
+High-cardinality features need more thought. A product identifier may have thousands of categories. One-hot encoding could create a very wide matrix, and the model may memorise products seen during training rather than learn generalisable product properties. If new products appear regularly, consider whether product attributes, category hierarchy, frequency grouping or a suitable specialised encoding is more appropriate. Any target-informed encoding must be performed inside cross-validation to prevent leakage.
+
+Also distinguish a genuinely new category from a data-cleaning inconsistency. “Lagos”, “lagos” and “LAGOS” may be the same region written three ways. Normalise spelling and whitespace using documented rules before encoding. Otherwise the model learns separate categories that reflect data-entry habits rather than meaningful differences.
