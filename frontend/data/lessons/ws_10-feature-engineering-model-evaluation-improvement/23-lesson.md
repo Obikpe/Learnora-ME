@@ -99,3 +99,13 @@ Organise a small project using the suggested structure. Write a README with setu
 
 ## Lesson summary
 Reproducible modelling turns isolated experiments into an auditable process. Preserve data provenance, environment details, feature logic, validation design and experiment decisions so results can be checked and maintained.
+
+## 7. Deeper reasoning: reproducibility includes the decision trail
+
+A reproducible project should let another analyst answer not only “How did you train the final model?” but also “Why did you make these choices?” Preserve the baseline, rejected experiments and the reason each change was accepted or rejected. This decision trail helps prevent the team from repeating unproductive work and makes it easier to revisit a choice when new data becomes available.
+
+A random seed supports repeatability for operations that use randomness, but it is not a complete guarantee. Different library versions, hardware, parallel execution and algorithm implementations can affect results. Record the Python and package versions, the random seeds, the operating environment and any relevant configuration. For high-assurance work, capture the data version or checksum and the exact code revision used for the experiment.
+
+Reproducibility also requires data governance. If the dataset contains personal or restricted information, do not commit it simply to make the repository self-contained. Instead, document the approved access process, expected schema and steps needed to create a reproducible training extract. Keep credentials in secure environment configuration, never in notebooks or source files.
+
+Finally, a model artifact should be accompanied by its feature contract: expected columns, data types, units, category handling and preprocessing assumptions. A saved estimator without this information is difficult to use safely. Treat the pipeline, feature definitions, evaluation report and environment record as one deliverable.
