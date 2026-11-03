@@ -86,6 +86,7 @@ export default function LearningSessionTracker() {
     };
 
     const markActivity = () => { lastActivityAt.current = Date.now(); };
+    const markMediaActivity = () => { if (document.visibilityState === "visible") markActivity(); };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") pause(true);
       else {
@@ -98,6 +99,9 @@ export default function LearningSessionTracker() {
     const activityEvents = ["pointerdown", "pointermove", "keydown", "scroll", "touchstart"];
     activityEvents.forEach(event => window.addEventListener(event, markActivity, { passive: true }));
     document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("play", markMediaActivity, true);
+    document.addEventListener("playing", markMediaActivity, true);
+    document.addEventListener("timeupdate", markMediaActivity, true);
     window.addEventListener("pagehide", onPageHide);
 
     void currentUser().then(me => {
@@ -120,6 +124,9 @@ export default function LearningSessionTracker() {
       if (heartbeatTimer) window.clearInterval(heartbeatTimer);
       activityEvents.forEach(event => window.removeEventListener(event, markActivity));
       document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("play", markMediaActivity, true);
+      document.removeEventListener("playing", markMediaActivity, true);
+      document.removeEventListener("timeupdate", markMediaActivity, true);
       window.removeEventListener("pagehide", onPageHide);
       pause(true);
     };
