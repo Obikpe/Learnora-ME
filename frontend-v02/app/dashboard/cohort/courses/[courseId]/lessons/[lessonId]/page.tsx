@@ -67,9 +67,9 @@ export default function CohortLessonPage() {
     }
   }
 
-  if (loading) return <Shell active="learning" restricted role="assigned"><Skeleton variant="course" label="Loading your assigned lesson"/></Shell>;
+  if (loading) return <Shell active="learning" restricted role="assigned" trackLearning={false}><Skeleton variant="course" label="Loading your assigned lesson"/></Shell>;
 
-  return <Shell active="learning" restricted role="assigned">
+  return <Shell active="learning" restricted role="assigned" trackLearning={false}>
     <div className="mb-6">
       <Link href={"/dashboard/cohort/courses/" + encodeURIComponent(courseId)} className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--primary)]"><ArrowLeft size={14}/> Back to course lessons</Link>
     </div>
