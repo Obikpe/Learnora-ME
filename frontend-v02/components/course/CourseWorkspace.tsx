@@ -1,6 +1,7 @@
 "use client";
 import{useEffect,useMemo,useRef,useState}from"react";
 import Logo from"../brand/Logo";
+import RichContent from"./RichContent";
 import EmptyState from"../feedback/EmptyState";
 import Skeleton from"../feedback/Skeleton";
 import{request}from"../../lib/api/client";
