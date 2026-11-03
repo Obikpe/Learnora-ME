@@ -44,3 +44,15 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: feature design defines similarity
+
+Preprocessing is not merely cleaning a spreadsheet. It determines what the algorithm is allowed to regard as similar. Two customers with equal order frequency but different basket sizes may be grouped if spend is omitted and separated if spend is included. Neither outcome is inherently correct; the right representation depends on the question.
+
+Audit every feature for meaning and units, availability at the intended decision time, scale, redundancy, missingness and sensitivity. Exclude identifiers because arbitrary numbers do not represent behaviour. Exclude post-outcome variables because they introduce information unavailable at the intended time. A feature can be mathematically valid yet conceptually irrelevant.
+
+A common numeric pipeline is median imputation followed by standardisation. Median imputation replaces missing values with the feature median. Standardisation subtracts the feature mean and divides by its standard deviation. This places numeric columns on comparable scales, but does not make them equally meaningful or fair. A noisy feature can still distort distance after scaling.
+
+For reproducibility, fit transformations as part of a pipeline and reuse the fitted pipeline for future data. Do not independently scale a future dataset using different means and standard deviations. For mixed numeric and categorical data, consider a representation and distance designed for mixed types; one-hot encoding can create many dimensions and alter the meaning of distance.
+
+**Practice:** Build two defensible feature sets for the same analytical question. Compare their results and explain which assumptions changed. If the conclusions change dramatically, report the sensitivity instead of hiding it.
