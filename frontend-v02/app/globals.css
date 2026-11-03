@@ -266,3 +266,17 @@ html[data-theme="dark"] .text-emerald-200 { color: var(--success) !important; }
 [class~="bg-stone-900"], [class~="bg-stone-950"] {
   background-color: var(--card) !important;
 }
+
+
+/* Keep formerly light-on-dark copy readable after dark panels are removed. */
+.text-gray-100, .text-gray-200, .text-neutral-100, .text-neutral-200,
+.text-zinc-100, .text-zinc-200, .text-stone-100, .text-stone-200 {
+  color: var(--text-heading) !important;
+}
+.text-gray-300, .text-neutral-300, .text-zinc-300, .text-stone-300 {
+  color: var(--text-body) !important;
+}
+.text-gray-400, .text-gray-500, .text-neutral-400, .text-neutral-500,
+.text-zinc-400, .text-zinc-500, .text-stone-400, .text-stone-500 {
+  color: var(--text-muted) !important;
+}
