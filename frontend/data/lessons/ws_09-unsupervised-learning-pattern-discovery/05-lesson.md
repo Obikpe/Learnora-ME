@@ -66,3 +66,11 @@ An average silhouette score can conceal a poorly represented small cluster. Insp
 Choose k only when metrics, stability, interpretability and intended use support the same decision. A slightly better score may not justify a tiny unstable segment with no practical distinction. It is acceptable to conclude that the data does not support a useful segmentation.
 
 **Practice:** Write a selection memo listing candidate k values, inertia, silhouette, cluster sizes, stability and original-unit profiles. Explain the trade-offs or justify declining to select a value.
+
+### Worked example: compare candidate k values
+
+Imagine inertia falls sharply from k=2 to k=3, then only slightly from k=3 to k=4. That bend may support k=3, but check whether all three groups have reasonable sizes and whether their profiles differ in a useful way. If k=3 creates a group containing one observation, investigate whether it is an outlier or data-quality issue.
+
+Silhouette adds another perspective, but it is not an objective truth score. It favours compact, separated groups and can penalise valid structures with different densities or shapes. Compare scores alongside domain interpretation and stability. Do not select k using the highest score alone.
+
+A defensible conclusion might be: “We retained k=3 because the elbow, silhouette distribution, seed stability and original-unit profiles were jointly acceptable. The groups are exploratory and will be tested before operational use.”
