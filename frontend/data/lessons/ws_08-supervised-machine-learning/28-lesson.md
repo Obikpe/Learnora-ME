@@ -7,6 +7,9 @@ This assessment brings together the supervised-learning skills from WS08. You wi
 
 By the end of this lesson, you should be able to Demonstrate the full supervised-learning workflow in an assessed project; frame a defensible target; prevent leakage; compare models; evaluate errors; and submit reproducible code, a report and limitations.
 
+
+![Supervised learning project workflow](/course-assets/ws08/workflow.svg)
+
 ## Assessment brief
 Choose one of the following routes, or propose a comparable dataset with a documented source and licence.
 
