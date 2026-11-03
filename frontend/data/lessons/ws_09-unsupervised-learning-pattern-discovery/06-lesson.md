@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Build a hierarchical clustering tree; explain linkage and Ward's method; interpret a dendrogram and cut level; and compare the resulting groups with K-means.
 
+![Reading a hierarchical clustering dendrogram](/course-assets/ws09/dendrogram.svg)
+
 ## 1. Core explanation
 Hierarchical clustering builds a tree of nested groups. Agglomerative clustering begins with each observation as its own cluster and repeatedly merges the closest clusters. Linkage defines cluster-to-cluster distance: single uses the nearest pair, complete uses the farthest pair, average uses mean pairwise distance, and Ward minimises the increase in within-cluster variance.
 
