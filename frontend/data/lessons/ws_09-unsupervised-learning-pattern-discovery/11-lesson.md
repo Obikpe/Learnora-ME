@@ -98,3 +98,11 @@ A two-dimensional map can make groups look separated even when separation is wea
 Fit PCA as an interpretable baseline, then compare t-SNE or UMAP with documented settings. Repeat with nearby parameter values. Check whether local neighbours remain similar and return to original features for profiling and validation. If labels are used as colours to inspect a map, do not pass them into the unsupervised fitting step.
 
 **Practice:** Create a comparison figure and caption explaining each method's objective. Include a warning that the map is exploratory and does not prove natural clusters.
+
+### Worked example: avoid embedding over-interpretation
+
+Suppose a t-SNE map shows three islands. This is a visual arrangement produced by a neighbourhood-preserving optimisation. It does not prove that the original data has exactly three natural clusters. Island gaps and relative island sizes are not generally reliable measures of global distance or population density.
+
+Repeat the embedding with different seeds and nearby perplexity values. If local neighbourhoods change substantially, the apparent pattern is sensitive. Compare with PCA and cluster validation in the original feature space. A visually attractive map is useful for exploration, not a score of model quality.
+
+State the method and settings in every figure caption. Do not compare coordinates from two separately fitted embeddings as if they shared a fixed coordinate system.
