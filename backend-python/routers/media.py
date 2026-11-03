@@ -1,6 +1,6 @@
 """Provider-neutral lesson media metadata API. Files are stored outside the Vercel app."""
 from fastapi import APIRouter,Depends,HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 from .auth import supabase
 from .permissions import PermissionContext,require_permission
 from services.audit import audit
@@ -15,6 +15,7 @@ class VideoIn(BaseModel):
     file_size_bytes:int|None=None
     mime_type:str|None=None
     thumbnail_url:str|None=None
+    transcript_text:str|None=Field(default=None,max_length=200000)
     status:str="pending"
     is_private:bool=True
 
@@ -48,7 +49,7 @@ def add_video(lesson_id:str,body:VideoIn,context:PermissionContext=Depends(requi
 
 @router.patch("/videos/{video_id}")
 def update_video(video_id:str,body:VideoIn,context:PermissionContext=Depends(require_permission("content.video"))):
-    r=supabase.table("lesson_videos").update(body.model_dump()).eq("id",video_id).execute()
+    r=supabase.table("lesson_videos").update(body.model_dump(exclude_unset=True)).eq("id",video_id).execute()
     if not r.data:raise HTTPException(404,"Video not found.")
     return {"success":True,"video":r.data[0]}
 
