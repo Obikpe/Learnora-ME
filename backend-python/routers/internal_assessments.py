@@ -495,6 +495,7 @@ def grade_assignment_submission(assignment_id: str, submission_id: str, body: Gr
     course_progress = _sync_enrolment_completion(
         str(submission_rows[0]["user_id"]),
         str(assignment["course_id"]),
+        include_lesson_content=False,
     )
     log_audit_event(
         action="assignment_submission_graded",
