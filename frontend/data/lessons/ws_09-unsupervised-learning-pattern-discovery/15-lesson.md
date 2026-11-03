@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Plan an unsupervised analysis by defining the observation unit, intended use, feature representation and validation approach; compare methods; and set criteria for reporting inconclusive results.
 
+![A defensible unsupervised workflow from question through validation](/course-assets/ws09/clustering-concepts.svg)
+
 ## 1. Core explanation
 An unsupervised project needs a clear objective even though it has no labelled target. Define the unit of observation, feature representation, purpose and intended use. Decide whether the output is for exploration, segmentation, anomaly triage or dimensionality reduction. Establish how usefulness will be judged before running algorithms.
 
