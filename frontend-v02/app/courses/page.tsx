@@ -72,12 +72,13 @@ export default function Courses() {
     });
   }, [items, query, level, track]);
 
-  const usedImages = new Set([
+  const usedImages = new Set<string>();
+  [
     IMAGES.hero, IMAGES.learners, IMAGES.instructors, IMAGES.organisations,
     IMAGES.portfolio, IMAGES.studio, IMAGES.library, IMAGES.workshop,
     IMAGES.tutors, IMAGES.community, IMAGES.aboutHero, IMAGES.aboutVision,
     IMAGES.learnerPage, IMAGES.instructorPage, IMAGES.organisationPage, IMAGES.login,
-  ].map(url => url.split("?")[0]));
+  ].forEach(url => usedImages.add(url.split("?")[0]));
 
   return <>
     <PublicNav />
