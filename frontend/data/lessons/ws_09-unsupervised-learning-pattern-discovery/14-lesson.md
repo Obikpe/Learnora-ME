@@ -46,3 +46,15 @@ Apply the method to a dataset. Compare at least two parameter settings or method
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: turn cluster IDs into defensible profiles
+
+A cluster profile translates a mathematical assignment into evidence people can inspect. Start with size, then compare distributions—not only means. Means can be distorted by skew and extreme values, so medians and interquartile ranges are often useful. Include proportions for categorical variables and show within-cluster spread.
+
+A useful profile answers: how many observations are in the group; which measured features distinguish it from the overall population; how much variation exists inside it; whether the distinction persists across seeds or time periods; and what action, if any, could reasonably be tested.
+
+Avoid turning a descriptive profile into a psychological story. “Customers with fewer recent orders and longer recency” is grounded. “Disloyal customers” is a judgement that may not be supported. Names should be neutral and tied to measurable behaviour.
+
+If a segment suggests a campaign, run an experiment or careful evaluation. Clustering does not establish that a campaign will work. Check fairness because a segment may proxy for sensitive characteristics or create unequal treatment. Small clusters can create re-identification risks; suppress or aggregate small groups where appropriate.
+
+**Practice:** Write a segment card for each cluster: size, neutral name, distinguishing evidence, uncertainty, proposed low-risk test and what the analysis does not prove.
