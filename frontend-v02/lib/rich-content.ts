@@ -118,7 +118,7 @@ function markdownToHtml(value: string) {
 export function lessonContentToHtml(value?: string | null) {
   const raw = String(value || "").trim();
   if (!raw) return "";
-  if (/<\s*(p|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|pre|code|a|br|hr)\b/i.test(raw)) {
+  if (/^\s*<\s*(p|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|pre|code|a|br|hr)\b/i.test(raw)) {
     return sanitizeHtml(raw);
   }
   return markdownToHtml(raw);
