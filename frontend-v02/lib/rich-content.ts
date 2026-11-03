@@ -6,7 +6,7 @@ function escapeHtml(value: string) {
 
 function safeHref(value: string) {
   const href = value.trim();
-  return /^(https?:\/\/|mailto:|\/|#)/i.test(href) ? href : "";
+  return /^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(href) && !/[\u0000-\u001f\\]/.test(href) ? href : "";
 }
 
 function sanitizeHtml(value: string) {
