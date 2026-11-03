@@ -36,7 +36,7 @@ For each numeric feature, check minimum, maximum, mean, median, quartiles and st
 
 Histograms show the distribution of one numerical variable. Box plots summarise median, quartiles and potential outliers. Scatter plots reveal relationships between two numerical variables. These plots help generate questions, not prove causation.
 
-![EDA distribution and box plot concepts](./assets/09-eda-distributions.svg)
+![EDA distribution and box plot concepts](/course-assets/ws07/09-eda-distributions.svg)
 
 ```python
 import matplotlib.pyplot as plt
