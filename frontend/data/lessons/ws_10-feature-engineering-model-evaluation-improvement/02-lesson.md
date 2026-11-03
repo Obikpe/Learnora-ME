@@ -87,3 +87,13 @@ Take a dataset with dates or repeated entities. Design a split that reflects dep
 
 ## Lesson summary
 Leakage creates false confidence. Define prediction time, investigate feature lineage, split according to the deployment scenario and fit every learned preprocessing step only on the training data within a pipeline.
+
+## 7. Deeper reasoning: leakage is a question about information flow
+
+The central leakage question is not simply “Does this column look suspicious?” It is “Could this exact value have been known at the instant this prediction is supposed to happen?” A variable may be legitimate in one task and leakage in another. A payment status is valid when predicting whether a payment will fail tomorrow if it describes yesterday's payments; it is invalid if it is the final settlement status of the payment being predicted.
+
+Draw a simple timeline for the use case. Mark the prediction timestamp, the period from which the target is measured and the moment each candidate feature becomes available. If the target is whether a customer will cancel within the next 30 days, the model might be scored at the end of each month. A feature such as “support tickets in the previous 60 days” is valid if ticket timestamps are reliable. “Final cancellation reason” is not valid because it is recorded after cancellation.
+
+Leakage can also arise from how records are created. Suppose one customer contributes ten monthly rows. A random row split can put January and February for that customer in training and March in testing. If the task is to predict future months for existing customers, this may be acceptable only if the historical information is available and the validation design reflects the same future prediction process. If the goal is to predict for entirely new customers, all rows for each customer must remain in one partition.
+
+A useful audit therefore includes feature timing, entity relationships, duplicates, target construction and preprocessing. When a model produces an implausibly high score, trace the data flow rather than assuming the algorithm is unusually powerful. Leakage is often a dataset-design problem disguised as a modelling success.
