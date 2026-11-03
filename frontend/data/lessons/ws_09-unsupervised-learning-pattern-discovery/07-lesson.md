@@ -4,7 +4,7 @@
 
 By the end of this lesson, you should be able to explain density-based clustering; define epsilon, min_samples, core points, border points and noise; describe how DBSCAN expands clusters; fit DBSCAN with scikit-learn; interpret noise labels; and explain why scaling and parameter selection are important.
 
-![Density-based clustering separates dense regions and noise](/course-assets/ws09/clustering-concepts.svg)
+![Teaching diagram: 07](/course-assets/ws09/density-clustering.svg)
 
 ## 1. Why do we need another clustering method?
 
