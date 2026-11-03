@@ -60,40 +60,38 @@ def _certificate_view(row: dict, course_title: str | None = None) -> dict:
 
 @router.get("/me")
 def my_credentials(user: CurrentUser = Depends(get_current_user)):
-    try:
-        rows = (
-            supabase.table("certificates")
-            .select("id,user_id,course_id,certificate_number,issued_at,metadata,revoked_at,revocation_reason")
-            .eq("user_id", user.id)
-            .order("issued_at", desc=True)
-            .execute()
-        ).data or []
-    except Exception:
-        rows = (
-            supabase.table("certificates")
-            .select("id,user_id,course_id,certificate_number,issued_at,metadata")
-            .eq("user_id", user.id)
-            .order("issued_at", desc=True)
-            .execute()
-        ).data or []
+    rows = (
+        supabase.table("certificates")
+        .select("id,user_id,course_id,certificate_number,issued_at,metadata")
+        .eq("user_id", user.id)
+        .order("issued_at", desc=True)
+        .execute()
+    ).data or []
     course_ids = list({str(row["course_id"]) for row in rows if row.get("course_id")})
     course_map = {}
     if course_ids:
-        course_rows = (
-            supabase.table("learnora_courses")
-            .select("id,title")
-            .in_("id", course_ids)
+        try:
+            course_rows = (
+                supabase.table("learnora_courses")
+                .select("id,title")
+                .in_("id", course_ids)
+                .execute()
+            ).data or []
+            course_map = {str(row["id"]): row.get("title") for row in course_rows}
+        except Exception as exc:
+            print(f"Certificate course-title lookup failed: {type(exc).__name__}")
+
+    try:
+        enrolments = (
+            supabase.table("learnora_enrolments")
+            .select("course_id,status")
+            .eq("user_id", user.id)
+            .in_("status", ["active", "completed"])
             .execute()
         ).data or []
-        course_map = {str(row["id"]): row.get("title") for row in course_rows}
-
-    enrolments = (
-        supabase.table("learnora_enrolments")
-        .select("course_id,status")
-        .eq("user_id", user.id)
-        .in_("status", ["active", "completed"])
-        .execute()
-    ).data or []
+    except Exception as exc:
+        print(f"Certificate eligibility lookup failed: {type(exc).__name__}")
+        enrolments = []
     enrolled_ids = list({str(row["course_id"]) for row in enrolments if row.get("course_id")})
     eligible = []
     if enrolled_ids:
@@ -107,11 +105,18 @@ def my_credentials(user: CurrentUser = Depends(get_current_user)):
         for course in courses:
             if str(course["id"]) in issued_course_ids or course.get("status") not in {"published", "archived"}:
                 continue
-            summary = _course_summary(
-                str(user.id),
-                str(course["id"]),
-                include_archived=course.get("status") == "archived",
-            )
+            try:
+                summary = _course_summary(
+                    str(user.id),
+                    str(course["id"]),
+                    include_archived=course.get("status") == "archived",
+                    include_lesson_content=False,
+                )
+            except HTTPException:
+                continue
+            except Exception as exc:
+                print(f"Certificate eligibility calculation failed: {type(exc).__name__}")
+                continue
             if summary.get("completed"):
                 eligible.append({
                     "course_id": str(course["id"]),
