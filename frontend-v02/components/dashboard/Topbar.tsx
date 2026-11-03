@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, Check, X, Sun, Moon, LifeBuoy } from "lucide-react";
+import { Bell, Check, X, Sun, Moon, LifeBuoy, CircleUserRound } from "lucide-react";
 import { request } from "../../lib/api/client";
 
 type NoticePreview = {
@@ -13,9 +13,7 @@ type NoticePreview = {
   action_url?: string | null;
   created_at?: string;
 };
-
 type ToastNotice = NoticePreview & { extraCount?: number };
-
 const POLL_INTERVAL_MS = 15000;
 const MAX_TRACKED_IDS = 100;
 
@@ -27,12 +25,28 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
   const router = useRouter();
   const [unread, setUnread] = useState(0);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [toast, setToast] = useState<ToastNotice | null>(null);
+  const lastSeenIds = useRef<Set<string> | null>(null);
+  const browserSeenIds = useRef<Set<string> | null>(null);
+  const inFlight = useRef(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const root = document.documentElement;
     const saved = window.localStorage.getItem("learnora_theme");
-    const initial = saved === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = initial;
-    setTheme(initial);
+    if (saved === "light" || saved === "dark") {
+      root.dataset.theme = saved;
+      setTheme(saved);
+    } else {
+      root.removeAttribute("data-theme");
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      setTheme(media.matches ? "dark" : "light");
+      const updateFromSystem = (event: MediaQueryListEvent) => {
+        if (!root.hasAttribute("data-theme")) setTheme(event.matches ? "dark" : "light");
+      };
+      media.addEventListener?.("change", updateFromSystem);
+      return () => media.removeEventListener?.("change", updateFromSystem);
+    }
   }, []);
 
   const toggleTheme = () => {
@@ -41,11 +55,6 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
     document.documentElement.dataset.theme = next;
     window.localStorage.setItem("learnora_theme", next);
   };
-  const [toast, setToast] = useState<ToastNotice | null>(null);
-  const lastSeenIds = useRef<Set<string> | null>(null);
-  const browserSeenIds = useRef<Set<string> | null>(null);
-  const inFlight = useRef(false);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((notice: ToastNotice) => {
     setToast(notice);
@@ -63,35 +72,26 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
       ]);
       setUnread(Math.max(0, Number(countResult.unread_count || 0)));
       const notices = Array.isArray(feed.notifications) ? feed.notifications : [];
-      const currentIds = new Set(notices.map((notice) => notice.id));
+      const currentIds = new Set(notices.map(notice => notice.id));
 
       if (lastSeenIds.current === null) {
-        // Establish a quiet baseline on first load so old inbox items do not
-        // suddenly appear as new alerts every time a learner opens Learnora.
         lastSeenIds.current = currentIds;
         let savedBrowserIds: string[] | null = null;
         try {
           const saved = localStorage.getItem("learnora_last_notification_ids");
           if (saved) savedBrowserIds = JSON.parse(saved);
-        } catch {
-          savedBrowserIds = null;
-        }
+        } catch { savedBrowserIds = null; }
         browserSeenIds.current = savedBrowserIds ? new Set(savedBrowserIds) : currentIds;
-        // If desktop alerts were enabled earlier, surface notices created while
-        // the learner was away, without replaying the entire historical inbox.
         if (savedBrowserIds) {
           const savedSet = new Set(savedBrowserIds);
           const missed = notices
-            .filter((notice) => !savedSet.has(notice.id))
+            .filter(notice => !savedSet.has(notice.id))
             .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
           if (missed.length) {
             showToast({ ...missed[0], extraCount: Math.max(0, missed.length - 1) });
-            if (
-              localStorage.getItem("learnora_desktop_notifications") === "enabled" &&
-              "Notification" in window &&
-              Notification.permission === "granted"
-            ) {
-              missed.slice(0, 3).reverse().forEach((notice) => {
+            if (localStorage.getItem("learnora_desktop_notifications") === "enabled" &&
+              "Notification" in window && Notification.permission === "granted") {
+              missed.slice(0, 3).reverse().forEach(notice => {
                 try {
                   const alert = new Notification(notice.title, { body: notice.body, tag: notice.id });
                   alert.onclick = () => {
@@ -99,62 +99,45 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
                     router.push(safeInternalPath(notice.action_url));
                     alert.close();
                   };
-                } catch {
-                  // Browser notifications are optional; in-app inbox remains authoritative.
-                }
+                } catch { /* In-app notifications remain available. */ }
               });
             }
           }
         }
       } else {
         const fresh = notices
-          .filter((notice) => !lastSeenIds.current!.has(notice.id))
+          .filter(notice => !lastSeenIds.current!.has(notice.id))
           .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-
         if (fresh.length) {
           showToast({ ...fresh[0], extraCount: Math.max(0, fresh.length - 1) });
-          const browserEnabled =
-            localStorage.getItem("learnora_desktop_notifications") === "enabled" &&
-            "Notification" in window &&
-            Notification.permission === "granted";
-
+          const browserEnabled = localStorage.getItem("learnora_desktop_notifications") === "enabled" &&
+            "Notification" in window && Notification.permission === "granted";
           if (browserEnabled) {
             const alreadyBrowserSeen = browserSeenIds.current || new Set<string>();
-            fresh.slice(0, 3).reverse().forEach((notice) => {
+            fresh.slice(0, 3).reverse().forEach(notice => {
               if (alreadyBrowserSeen.has(notice.id)) return;
               try {
-                const alert = new Notification(notice.title, {
-                  body: notice.body,
-                  tag: notice.id,
-                });
+                const alert = new Notification(notice.title, { body: notice.body, tag: notice.id });
                 alert.onclick = () => {
                   window.focus();
                   router.push(safeInternalPath(notice.action_url));
                   alert.close();
                 };
-              } catch {
-                // Browser notifications are optional; the in-app inbox remains authoritative.
-              }
+              } catch { /* In-app notifications remain available. */ }
             });
           }
         }
         lastSeenIds.current = currentIds;
       }
 
-      // Keep browser alert deduplication bounded and scoped to recent notices.
       const priorBrowserIds = browserSeenIds.current || new Set<string>();
-      currentIds.forEach((id) => priorBrowserIds.add(id));
+      currentIds.forEach(id => priorBrowserIds.add(id));
       browserSeenIds.current = new Set(Array.from(priorBrowserIds).slice(-MAX_TRACKED_IDS));
       try {
-        localStorage.setItem(
-          "learnora_last_notification_ids",
-          JSON.stringify(Array.from(browserSeenIds.current)),
-        );
-      } catch {
-        // Storage may be disabled; in-memory deduplication still works.
-      }
+        localStorage.setItem("learnora_last_notification_ids", JSON.stringify(Array.from(browserSeenIds.current)));
+      } catch { /* In-memory deduplication still works. */ }
     } catch {
-      // Notification service outages must never interrupt dashboard navigation.
+      // Notification service outages must not interrupt dashboard navigation.
     } finally {
       inFlight.current = false;
     }
@@ -178,79 +161,36 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
     };
   }, [refresh]);
 
-  return (
-    <>
-      <header className="sticky top-16 z-30 flex h-16 items-center justify-between border-b border-white/[.08] bg-[#090b0e]/95 px-5 backdrop-blur-xl lg:top-0 lg:h-20 lg:px-8">
-        <div className="min-w-0 truncate text-sm text-slate-500">
-          {admin ? "Learnora administration" : "Your learning workspace"}
-        </div>
-        <div className="ml-4 flex shrink-0 items-center gap-2">
-          <button type="button" onClick={toggleTheme} aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className="grid size-10 place-items-center rounded-lg border border-white/[.1] text-slate-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d7ad35]">{theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}</button>
-          {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Contact Learnora support" title="Contact support" className="grid size-10 place-items-center rounded-lg border border-white/[.1] text-slate-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d7ad35]"><LifeBuoy size={17}/></a>}
-          <Link
-            href="/dashboard/notifications"
-            aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
-            className="relative grid size-10 place-items-center rounded-lg border border-white/[.1] text-slate-400 transition-colors hover:border-[#d7ad35]/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#d7ad35]"
-          >
-            <Bell size={17} />
-            {unread > 0 && (
-              <span
-                aria-label={`${unread} unread notifications`}
-                className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[#090b0e] bg-[#d7ad35] px-1 text-[10px] font-bold text-[#11151a]"
-              >
-                {unread > 99 ? "99+" : unread}
-              </span>
-            )}
-          </Link>
-        </div>
-      </header>
+  const actionClass = "grid size-10 place-items-center rounded-full border border-[var(--border)] bg-[var(--card)] text-[var(--text-body)] transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-tint)] hover:text-[var(--primary)]";
 
-      {toast && !admin && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed right-4 top-20 z-[70] w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#d7ad35]/30 bg-[#11161d] shadow-2xl shadow-black/40"
-        >
-          <div className="flex items-start gap-3 p-4">
-            <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[#d7ad35]/10 text-[#f2d477]">
-              <Bell size={17} />
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                router.push(safeInternalPath(toast.action_url));
-                setToast(null);
-              }}
-              className="min-w-0 flex-1 text-left"
-            >
-              <span className="block text-[10px] font-bold uppercase tracking-[.16em] text-[#f2d477]">
-                New learning update
-              </span>
-              <span className="mt-1 block text-sm font-semibold text-white">{toast.title}</span>
-              <span className="mt-1 block text-xs leading-5 text-slate-400">{toast.body}</span>
-              {!!toast.extraCount && (
-                <span className="mt-2 block text-[11px] font-medium text-[#f2d477]">
-                  +{toast.extraCount} more update{toast.extraCount === 1 ? "" : "s"}
-                </span>
-              )}
-              <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#f2d477]">
-                View update <Check size={13} />
-              </span>
-            </button>
-            <button
-              type="button"
-              aria-label="Dismiss notification"
-              onClick={() => setToast(null)}
-              className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-500 hover:bg-white/[.06] hover:text-white"
-            >
-              <X size={15} />
-            </button>
-          </div>
-          <div className="h-0.5 bg-[#d7ad35]/20">
-            <div className="h-full w-full origin-left animate-[toast-progress_9s_linear_forwards] bg-[#d7ad35]" />
-          </div>
-        </div>
-      )}
-    </>
-  );
+  return <>
+    <div className="flex shrink-0 items-center gap-2">
+      {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Contact Learnora support" title="Help and support" className={actionClass}><LifeBuoy size={17}/></a>}
+      <button type="button" onClick={toggleTheme}
+        aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
+        title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className={actionClass}>
+        {theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}
+      </button>
+      {!admin && <Link href="/dashboard/notifications" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className={`relative ${actionClass}`}>
+        <Bell size={17}/>
+        {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
+      </Link>}
+      {!admin && <Link href="/dashboard/settings" aria-label="Account settings" title="Account settings" className={actionClass}><CircleUserRound size={18}/></Link>}
+    </div>
+
+    {toast && !admin && <div role="status" aria-live="polite" className="fixed right-4 top-20 z-[70] w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
+      <div className="flex items-start gap-3 p-4">
+        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--primary-tint)] text-[var(--primary)]"><Bell size={17}/></span>
+        <button type="button" onClick={() => { router.push(safeInternalPath(toast.action_url)); setToast(null); }} className="min-w-0 flex-1 text-left">
+          <span className="block text-[10px] font-bold uppercase tracking-[.12em] text-[var(--primary)]">New learning update</span>
+          <span className="mt-1 block text-sm font-semibold text-[var(--text-heading)]">{toast.title}</span>
+          <span className="mt-1 block text-xs leading-5 text-[var(--text-muted)]">{toast.body}</span>
+          {!!toast.extraCount && <span className="mt-2 block text-[11px] font-medium text-[var(--primary)]">+{toast.extraCount} more update{toast.extraCount === 1 ? "" : "s"}</span>}
+          <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--primary)]">View update <Check size={13}/></span>
+        </button>
+        <button type="button" aria-label="Dismiss notification" onClick={() => setToast(null)} className="grid size-7 shrink-0 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-soft)]"><X size={15}/></button>
+      </div>
+      <div className="h-0.5 bg-[var(--primary-tint)]"><div className="h-full w-full origin-left animate-[toast-progress_9s_linear_forwards] bg-[var(--primary)]"/></div>
+    </div>}
+  </>;
 }
