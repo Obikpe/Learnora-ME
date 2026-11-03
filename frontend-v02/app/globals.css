@@ -185,9 +185,9 @@ img { color: transparent; }
 :where(a,button,input,textarea,select,[tabindex]):focus-visible { scroll-margin-block: 1rem; }
 
 /* Re-skin legacy utility classes to the shared theme tokens. */
-[class~="bg-[#07090c]"], [class~="bg-[#080a0d]"], [class~="bg-[#0b0f14]"],
+[class~="bg-[#07090c]"], [class~="bg-[#080a0d]"], [class~="bg-[#080b0f]"], [class~="bg-[#0b0f14]"],
 [class~="bg-[#10151b]"], [class~="bg-[#090b0e]"], [class~="bg-[#090c10]"],
-[class~="bg-[#0b0f13]"], [class~="bg-[#0c1015]"], [class~="bg-[#0e1319]"],
+[class~="bg-[#0b0f13]"], [class~="bg-[#0c1015]"], [class~="bg-[#0e1319]"], [class~="bg-[#0e141a]"],
 [class~="bg-[#11161d]"], [class~="bg-[#11171e]"], [class~="bg-[#171f28]"],
 [class~="bg-[#151c24]"], [class~="bg-[#171e27]"] { background-color: var(--card) !important; }
 [class*="bg-black/10"], [class*="bg-black/15"], [class*="bg-black/20"],
@@ -195,7 +195,7 @@ img { color: transparent; }
 [class*="border-white"], [class*="divide-white"] { border-color: var(--border) !important; }
 .text-white, .text-slate-100, .text-slate-200 { color: var(--text-heading) !important; }
 .text-slate-300 { color: var(--text-body) !important; }
-.text-slate-400, .text-slate-500, .text-slate-600 { color: var(--text-muted) !important; }
+.text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700 { color: var(--text-muted) !important; }
 [class*="placeholder:text-slate"]::placeholder { color: var(--text-muted); }
 [class*="hover:text-white"]:hover { color: var(--text-heading) !important; }
 [class*="hover:bg-white"]:hover { background-color: var(--primary-tint) !important; }
