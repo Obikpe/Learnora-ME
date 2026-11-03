@@ -166,6 +166,7 @@ export default function MyLearningPage() {
 
   const assignedLearner = Boolean(
     user?.account_type === "cohort" ||
+    user?.role === "witstart" ||
     user?.cohort_id ||
     user?.organisation_role === "learner" ||
     (user?.organisation_memberships || []).some((membership: any) =>
