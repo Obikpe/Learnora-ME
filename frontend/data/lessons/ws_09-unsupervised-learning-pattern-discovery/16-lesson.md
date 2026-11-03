@@ -56,3 +56,11 @@ Assessment rubric: problem framing and provenance 15%; preparation and feature r
 Submit a README with setup instructions, a reproducible notebook or script, a data dictionary, preprocessing record, method comparisons, validation results and a report that separates observation from interpretation. State clearly what the model cannot prove.
 
 **Reflection:** If the result is unstable or not useful, what would you recommend instead? Strong analysts are willing to reject a model when the evidence does not justify its use.
+
+### Project extension: make the result reproducible
+
+Organise the project so another learner can reproduce it. Separate raw data, processed data, notebooks or scripts, figures and the written report. Do not overwrite the raw source. Include setup commands and package versions, and explain how to obtain the dataset legally. If the data cannot be redistributed, document the source and provide a small synthetic example.
+
+The final presentation should show the question, observation unit, feature decisions, method comparison, validation, profile and limitations. A chart needs labelled axes, a legend where relevant and a caption that explains the finding and caveat. A screenshot without interpretation is not an analytical result.
+
+Finish with a recommendation that matches the evidence: proceed to a controlled test, collect better features, monitor a pattern, use a simpler method or conclude that no reliable structure was found.
