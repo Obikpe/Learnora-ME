@@ -67,7 +67,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
       const assignedLearner = Boolean(
         me.account_type === "cohort" || me.role === "witstart" || me.cohort_id ||
         me.organisation_role === "learner" ||
-        memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
+        memberships.some((membership: any) => ["learner", "member"].includes(membership.role) && membership.status === "active")
       );
       if (assignedLearner) {
         setUser(me);
