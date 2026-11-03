@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Compare clustering solutions with silhouette and Davies–Bouldin scores; test stability across random seeds; profile results; and explain why no single metric proves a natural cluster structure.
 
+![Cluster outputs require diagnostics and human validation](/course-assets/ws09/clustering-concepts.svg)
+
 ## 1. Core explanation
 There is no ground-truth label in unsupervised clustering, so validation is more difficult than supervised evaluation. Internal metrics such as silhouette score assess geometric cohesion and separation. Davies-Bouldin and Calinski-Harabasz scores provide other views, each with assumptions and biases.
 
