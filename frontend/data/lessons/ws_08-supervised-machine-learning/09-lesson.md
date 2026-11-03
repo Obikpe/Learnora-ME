@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Explain the sigmoid probability model; fit logistic regression for a binary target; interpret predicted probabilities and coefficients cautiously; and evaluate classification errors.
 
+
+![classification concept diagram](/course-assets/ws08/classification.svg)
+
 ## 1. Core explanation
 Logistic regression is a classification algorithm despite its name. It calculates a weighted sum of features and passes it through the logistic (sigmoid) function to produce a probability between zero and one. A threshold converts the probability into a class prediction. The model is linear in log-odds, not in probability.
 
