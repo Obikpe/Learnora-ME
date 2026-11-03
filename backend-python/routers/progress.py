@@ -103,7 +103,7 @@ def _module_for_quiz(quiz: dict):
     return None
 
 
-def _module_unlock_states(user_id: str, modules: list[dict], lessons: list[dict]):
+def _module_unlock_states(user_id: str, modules: list[dict], lessons: list[dict], quiz_rows: list[dict] | None = None, attempt_rows: list[dict] | None = None):
     """Calculate module locks with bounded queries instead of querying once per module/quiz."""
     ordered = sorted(modules, key=lambda row: int(row.get("order_index") or 0))
     module_ids = [str(row["id"]) for row in ordered if row.get("id")]
@@ -116,35 +116,42 @@ def _module_unlock_states(user_id: str, modules: list[dict], lessons: list[dict]
         if row.get("id") and row.get("module_id")
     }
     lesson_ids = list(module_by_lesson)
-    module_quizzes = (
-        supabase.table("quizzes")
-        .select("id,title,passing_score,module_id,lesson_id")
-        .in_("module_id", module_ids)
-        .eq("is_published", True)
-        .execute()
-    ).data or []
-    lesson_quizzes = []
-    if lesson_ids:
-        lesson_quizzes = (
+    if quiz_rows is None:
+        module_quizzes = (
             supabase.table("quizzes")
             .select("id,title,passing_score,module_id,lesson_id")
-            .in_("lesson_id", lesson_ids)
+            .in_("module_id", module_ids)
             .eq("is_published", True)
             .execute()
         ).data or []
+        lesson_quizzes = []
+        if lesson_ids:
+            lesson_quizzes = (
+                supabase.table("quizzes")
+                .select("id,title,passing_score,module_id,lesson_id")
+                .in_("lesson_id", lesson_ids)
+                .eq("is_published", True)
+                .execute()
+            ).data or []
+        quiz_source = module_quizzes + lesson_quizzes
+    else:
+        quiz_source = quiz_rows
 
-    quiz_by_id = {str(row["id"]): row for row in module_quizzes + lesson_quizzes if row.get("id")}
+    quiz_by_id = {str(row["id"]): row for row in quiz_source if row.get("id")}
     quiz_ids = list(quiz_by_id)
-    attempts = []
-    if quiz_ids:
-        attempts = (
-            supabase.table("quiz_attempts")
-            .select("quiz_id,score,passed")
-            .eq("user_id", user_id)
-            .in_("quiz_id", quiz_ids)
-            .eq("passed", True)
-            .execute()
-        ).data or []
+    if attempt_rows is None:
+        attempts = []
+        if quiz_ids:
+            attempts = (
+                supabase.table("quiz_attempts")
+                .select("quiz_id,score,passed")
+                .eq("user_id", user_id)
+                .in_("quiz_id", quiz_ids)
+                .eq("passed", True)
+                .execute()
+            ).data or []
+    else:
+        attempts = attempt_rows
     passed_ids = {
         str(attempt["quiz_id"])
         for attempt in attempts
@@ -253,7 +260,7 @@ def _course_assessment_summary(user_id: str, course_id: str):
     """Completion gates for published quizzes and manually graded assignments."""
     quizzes = (
         supabase.table("quizzes")
-        .select("id,title,passing_score")
+        .select("id,title,passing_score,module_id,lesson_id")
         .eq("course_id", course_id)
         .eq("is_published", True)
         .execute()
@@ -322,6 +329,8 @@ def _course_assessment_summary(user_id: str, course_id: str):
         "total_assessments": total,
         "completed_assessments": completed,
         "completed": total == completed,
+        "_quiz_rows": quizzes,
+        "_quiz_attempt_rows": attempts,
     }
 
 
@@ -426,11 +435,13 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
 
     total = len(lessons)
     assessment_summary = _course_assessment_summary(user_id, course_id)
+    quiz_rows = assessment_summary.pop("_quiz_rows", [])
+    quiz_attempt_rows = assessment_summary.pop("_quiz_attempt_rows", [])
     total_units = total + assessment_summary["total_assessments"]
     completed_units = completed + assessment_summary["completed_assessments"]
     percent = round((completed_units / total_units) * 100) if total_units else 0
 
-    module_locks, _ = _module_unlock_states(user_id, modules, lessons)
+    module_locks, _ = _module_unlock_states(user_id, modules, lessons, quiz_rows, quiz_attempt_rows)
     module_views = []
     for module in modules:
         locked = bool(module_locks.get(str(module["id"]), False))
