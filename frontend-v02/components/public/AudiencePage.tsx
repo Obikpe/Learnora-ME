@@ -12,6 +12,12 @@ export default function AudiencePage({type}:{type:"learner"|"instructor"|"organi
   const finalHref=type==="organisation"?"/get-started":type==="instructor"?"/tutors":"/courses";
   const finalLabel=type==="organisation"?"Contact Learnora":type==="instructor"?"Meet instructors":"Explore learning";
   return <main className="pt-20">
+    <div className="org-audience-strip"><div className="org-wrap">
+      <a href="/for-learners" aria-current={type === "learner" ? "page" : undefined}>For individuals</a>
+      <a href="/for-organisations">For organisations</a>
+      <a href="/for-instructors" aria-current={type === "instructor" ? "page" : undefined}>For instructors</a>
+      <span>Learning built around the people and work that matter</span>
+    </div></div>
     <section className="border-b border-white/[.1]">
       <div className="mx-auto grid max-w-[82rem] gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.03fr_.97fr] lg:items-center lg:gap-16 lg:px-8 lg:py-24">
         <div>
@@ -19,7 +25,6 @@ export default function AudiencePage({type}:{type:"learner"|"instructor"|"organi
           <h1 className="mt-6 max-w-3xl font-display text-5xl leading-[1.02] tracking-[-.05em] sm:text-6xl lg:text-7xl">{d.title}</h1>
           <p className="mt-7 max-w-xl text-base leading-8 text-slate-300 sm:text-lg">{d.intro}</p>
           <div className="mt-8 flex flex-wrap gap-3"><a href={d.href} className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-[var(--gold)] px-5 text-sm font-bold text-[#17140d] transition-colors hover:bg-[var(--gold-light)]">{d.cta}<ArrowRight size={16}/></a>{d.secondaryHref&&<a href={d.secondaryHref} className="inline-flex min-h-12 items-center gap-2 rounded-lg border border-white/[.15] px-5 text-sm font-semibold text-slate-200 transition-colors hover:border-white/30">{d.secondaryCta}<ArrowRight size={15}/></a>}</div>
-          <p className="mt-5 max-w-lg text-[11px] leading-5 text-slate-600">Learnora is evolving. Features shown as part of the product direction may not all be available to every account today.</p>
         </div>
         <div className="relative">
           <div className="mb-3 flex items-center justify-between border-b border-white/[.12] pb-3 text-[10px] uppercase tracking-[.18em] text-slate-500"><span>Designed around your work</span></div>
