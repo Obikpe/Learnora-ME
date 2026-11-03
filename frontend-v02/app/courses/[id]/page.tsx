@@ -16,10 +16,15 @@ export default function CourseDetail({params}:{params:{id:string}}) {
   const [c,setC]=useState<any>(),[s,setS]=useState<any>(),[freeMode,setFreeMode]=useState(false),[user,setUser]=useState<any>(null),[authResolved,setAuthResolved]=useState(false),[hasOrganisationContext,setHasOrganisationContext]=useState(false),[error,setError]=useState(""),[enrolError,setEnrolError]=useState(""),[enrolling,setEnrolling]=useState(false),[enrolled,setEnrolled]=useState(false);
   const autoEnrolStarted=useRef(false);
   const [showWorkspace,setShowWorkspace]=useState(false),[enrolmentResolved,setEnrolmentResolved]=useState(false);
+  const explicitlyFree=Boolean(c?.settings?.is_free===true||c?.settings?.access_type==="free"||c?.settings?.price===0);
+  const freeLaunchCourse=Boolean(freeMode&&c?.ownership==="learnora"&&!c?.organisation_id);
+  const isFree=freeLaunchCourse||explicitlyFree;
+  const individualLearner=user?.role==="normal"&&user?.account_type==="learner"&&!hasOrganisationContext;
+  const canEnrol=Boolean(user)&&((freeLaunchCourse&&individualLearner)||(explicitlyFree&&["normal","witstart"].includes(user.role)));
   useEffect(()=>{let active=true;setHasOrganisationContext(Boolean(organisationContext()));currentUser().then(me=>{if(active)setUser(me)}).catch(()=>{if(active)setUser(null)}).finally(()=>{if(active)setAuthResolved(true)});Promise.all([course(params.id),structure(params.id),request<any>("/access/mode").catch(()=>({free_access_mode:false}))]).then(([a,b,mode])=>{if(active){setC(a.course||a);setS(b);setFreeMode(Boolean(mode.free_access_mode))}}).catch(x=>{if(active)setError(x.message||"Course could not be loaded.")});return()=>{active=false}},[params.id]);
   async function enrol(){setEnrolError("");if(!user){window.location.assign("/login?next="+encodeURIComponent("/courses/"+encodeURIComponent(params.id)+"?enrol=1"));return;}setEnrolling(true);try{await request<any>("/courses/"+encodeURIComponent(params.id)+"/enrol",{method:"POST"});setEnrolled(true);setShowWorkspace(true)}catch(e:any){setEnrolError(e.message||"Enrolment is not available for this course.")}finally{setEnrolling(false)}}
   useEffect(()=>{if(!authResolved||user||typeof window==="undefined")return;const search=new URLSearchParams(window.location.search);if(search.get("enrol")==="1"){const next="/courses/"+encodeURIComponent(params.id)+"?enrol=1";window.location.replace("/login?next="+encodeURIComponent(next));}},[authResolved,user,params.id]);
-  useEffect(()=>{if(!authResolved||!user||!c)return;let active=true;request<any>("/progress/me").then(result=>{if(!active)return;const existing=(result.courses||[]).some((row:any)=>String(row.course?.id||row.enrolment?.course_id)===String(params.id));setEnrolled(existing);setEnrolmentResolved(true);if(existing){setShowWorkspace(true);return;}if(new URLSearchParams(window.location.search).get("enrol")==="1"&&!autoEnrolStarted.current){autoEnrolStarted.current=true;void enrol();}}).catch(()=>setEnrolmentResolved(true));return()=>{active=false}},[authResolved,user,c,params.id]);
+  useEffect(()=>{if(!authResolved||!user||!c)return;let active=true;request<any>("/progress/me").then(result=>{if(!active)return;const existing=(result.courses||[]).some((row:any)=>String(row.course?.id||row.enrolment?.course_id)===String(params.id));setEnrolled(existing);setEnrolmentResolved(true);if(existing){setShowWorkspace(true);return;}if(canEnrol&&new URLSearchParams(window.location.search).get("enrol")==="1"&&!autoEnrolStarted.current){autoEnrolStarted.current=true;void enrol();}}).catch(()=>setEnrolmentResolved(true));return()=>{active=false}},[authResolved,user,c,params.id,canEnrol]);
   const signedIn=Boolean(user);
   if(showWorkspace&&user)return <CourseWorkspace params={{courseId:params.id}} courseTitle={c?.title}/>;
   if(signedIn&&c&&!enrolmentResolved)return <main className="min-h-screen bg-[var(--bg)] px-5 pt-28"><div className="mx-auto max-w-[82rem]"><Skeleton variant="course" label="Checking your course access"/></div></main>;
@@ -27,14 +32,6 @@ export default function CourseDetail({params}:{params:{id:string}}) {
   if(!authResolved||!c&&!error)return <main className="min-h-screen bg-[var(--bg)] px-5 pt-28"><div className="mx-auto max-w-[82rem]"><Skeleton variant="course" label="Loading course details"/></div></main>;
   if(pageContent)return signedIn?<Shell active="discover">{pageContent}</Shell>:<><PublicNav/>{pageContent}<PublicFooter/></>;
   const modules=s?.modules||s?.structure?.modules||[];
-  const explicitlyFree=c.settings?.is_free===true||c.settings?.access_type==="free"||c.settings?.price===0;
-  const freeLaunchCourse=freeMode&&c.ownership==="learnora"&&!c.organisation_id;
-  const isFree=freeLaunchCourse||explicitlyFree;
-  const individualLearner=user?.role==="normal"&&user?.account_type==="learner"&&!hasOrganisationContext;
-  const canEnrol=Boolean(user)&&(
-    (freeLaunchCourse&&individualLearner)
-    ||(explicitlyFree&&["normal","witstart"].includes(user.role))
-  );
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
   const pageBody=<main className={`mx-auto max-w-[82rem] px-5 pb-24 ${signedIn?"pt-8":"pt-32"} lg:px-8`}>
       <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-600"><a href="/" className="hover:text-slate-300">Home</a><span>/</span><a href="/courses" className="hover:text-slate-300">Courses</a><span>/</span><span className="max-w-[18rem] truncate text-slate-400">{c.title}</span></nav>
