@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Calculate support, confidence and lift for item associations; explain the transaction unit and minimum support; and distinguish co-occurrence from causation.
 
+![Support, confidence and lift describe association](/course-assets/ws09/association-metrics.svg)
+
 ## 1. Core explanation
 Association analysis searches for items that occur together in transactions. Support is the proportion of transactions containing an itemset. Confidence estimates how often B occurs when A occurs. Lift compares that confidence with the baseline frequency of B; lift greater than one indicates co-occurrence above independence under the measure.
 
