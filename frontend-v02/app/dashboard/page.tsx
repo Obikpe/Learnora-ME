@@ -143,6 +143,7 @@ export default function MyLearningPage() {
   useEffect(() => {
     let cancelled = false;
     currentUser().then(async me => {
+      if (cancelled) return;
       if (me.account_type === "cohort") { location.href = "/dashboard/cohort"; return; }
       if (me.role === "organisation_prospect") { location.href = "/organisation-portal"; return; }
       const privileged = (me.organisation_memberships || []).filter((membership: any) => ["owner", "admin"].includes(membership.role));
