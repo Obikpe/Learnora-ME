@@ -13,6 +13,7 @@ import { IMAGES } from "../../lib/constants";
 type PublicCourse = {
   id: string;
   title: string;
+  ownership?: string;
   slug?: string | null;
   short_description?: string | null;
   description?: string | null;
@@ -112,6 +113,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
 
 function CourseCard({ course, index }: { course: PublicCourse; index: number }) {
   const free = course.settings?.is_free === true || course.settings?.access_type === "free";
+  const selfEnrolAvailable = free || course.ownership === "learnora";
   return (
     <article className="landing-course-card">
       <Link href={courseHref(course)} className="landing-course-image" aria-label={"View " + course.title}>
@@ -128,7 +130,7 @@ function CourseCard({ course, index }: { course: PublicCourse; index: number }) 
             : null}
           {course.tracks?.slice(0, 1).map(track => <span key={track.id}><Route size={14}/>{track.name}</span>)}
         </div>
-        <Link className="landing-text-link" href={courseHref(course)}>View course <ArrowRight size={15}/></Link>
+        <Link className="landing-text-link" href={selfEnrolAvailable ? courseHref(course) + "?enrol=1" : courseHref(course)}>{selfEnrolAvailable ? "Enrol for free" : "View course"} <ArrowRight size={15}/></Link>
       </div>
     </article>
   );
