@@ -559,6 +559,34 @@ def _check_course_view_access(
                 ):
                     return
             elif enrolment_org is None:
+                if not is_individual_learner(
+                    getattr(context.user, "role", None),
+                    getattr(context.user, "account_type", None),
+                    None,
+                ):
+                    continue
+                try:
+                    active_learner_memberships = (
+                        supabase.table("organisation_members")
+                        .select("id")
+                        .eq("user_id", str(user_id))
+                        .eq("role", "learner")
+                        .eq("status", "active")
+                        .limit(1)
+                        .execute()
+                    ).data or []
+                    active_cohort_memberships = (
+                        supabase.table("cohort_members")
+                        .select("id")
+                        .eq("user_id", str(user_id))
+                        .eq("status", "active")
+                        .limit(1)
+                        .execute()
+                    ).data or []
+                except Exception:
+                    raise HTTPException(503, "Learner assignment could not be verified.") from None
+                if active_learner_memberships or active_cohort_memberships:
+                    continue
                 return
 
     raise HTTPException(
