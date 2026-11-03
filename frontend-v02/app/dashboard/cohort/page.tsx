@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, CheckCircle2, Clock3, Flame, RefreshCw } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, Flame, RefreshCw } from "lucide-react";
 import Shell from "../../../components/dashboard/Shell";
 import StatCard from "../../../components/dashboard/StatCard";
 import Skeleton from "../../../components/feedback/Skeleton";
