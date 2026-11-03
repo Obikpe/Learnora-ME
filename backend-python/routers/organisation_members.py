@@ -1,6 +1,7 @@
 """Organisation membership API with lifecycle and hard capacity enforcement."""
 from typing import Optional
 from uuid import UUID
+from datetime import datetime, timezone
 import re
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -69,6 +70,51 @@ def _user_by_email(value):
 def _format(m,u):
     return {"membership_id":m["id"],"organisation_id":m["organisation_id"],"user_id":m["user_id"],"role":m["role"],"status":m["status"],"joined_at":m["joined_at"],"user":u}
 
+
+def _sync_assigned_course_enrolments(org_id: str, user_id: str) -> int:
+    """Materialise active organisation-wide assigned courses for a learner.
+
+    This keeps the learner dashboard/progress APIs in step when a learner is
+    added after the organisation assigned its courses.
+    """
+    grants = (
+        supabase.table("course_access")
+        .select("course_id")
+        .eq("organisation_id", str(org_id))
+        .eq("status", "active")
+        .eq("access_type", "assigned")
+        .execute()
+    ).data or []
+    created = 0
+    now = datetime.now(timezone.utc).isoformat()
+    for grant in grants:
+        course_id = str(grant.get("course_id") or "")
+        if not course_id:
+            continue
+        existing = (
+            supabase.table("learnora_enrolments")
+            .select("id")
+            .eq("user_id", str(user_id))
+            .eq("course_id", course_id)
+            .eq("organisation_id", str(org_id))
+            .in_("status", ["active", "completed"])
+            .limit(1)
+            .execute()
+        ).data or []
+        if existing:
+            continue
+        result = supabase.table("learnora_enrolments").insert({
+            "user_id": str(user_id),
+            "course_id": course_id,
+            "organisation_id": str(org_id),
+            "status": "active",
+            "enrolled_at": now,
+            "source_type": "organisation_assignment",
+        }).execute()
+        if result.data:
+            created += 1
+    return created
+
 @router.get("/{organisation_id}/members")
 def list_members(organisation_id:UUID,status:Optional[str]=Query(None),role:Optional[str]=Query(None),context:PermissionContext=Depends(require_permission("organisations.members"))):
     oid=_scope(context,organisation_id); _org(oid)
@@ -110,7 +156,14 @@ def add_member(organisation_id:UUID,payload:AddOrganisationMember,context:Permis
             ensure_org_capacity(oid,"learners" if role=="learner" else "instructors",1)
         r=supabase.table("organisation_members").insert({"organisation_id":oid,"user_id":uid,"role":role,"status":"active"}).execute()
     if not r.data:raise HTTPException(500,"Failed to save organisation membership.")
-    m=r.data[0]; audit(actor_user_id=context.user_id,action="organisation_member_added",resource_type="organisation_member",resource_id=m["id"],organisation_id=oid,metadata={"role":role})
+    m=r.data[0]
+    if role == "learner" and m.get("status") == "active":
+        try:
+            _sync_assigned_course_enrolments(oid, uid)
+        except Exception as exc:
+            print(f"Assigned course enrolment sync failed after member add: {type(exc).__name__}")
+            raise HTTPException(503, "Membership was saved, but assigned course access could not be synchronised. Retry the membership update.") from None
+    audit(actor_user_id=context.user_id,action="organisation_member_added",resource_type="organisation_member",resource_id=m["id"],organisation_id=oid,metadata={"role":role})
     return {"success":True,"member":_format(m,u)}
 
 @router.patch("/{organisation_id}/members/{member_id}")
@@ -137,7 +190,14 @@ def update_member(organisation_id:UUID,member_id:UUID,payload:UpdateOrganisation
         ensure_org_capacity(oid,"learners" if target_role=="learner" else "instructors",1)
     r=supabase.table("organisation_members").update(updates).eq("id",str(member_id)).eq("organisation_id",oid).execute()
     if not r.data:raise HTTPException(500,"Failed to update organisation membership.")
-    updated=r.data[0]; audit(actor_user_id=context.user_id,action="organisation_member_updated",resource_type="organisation_member",resource_id=member_id,organisation_id=oid,metadata={"changes":updates})
+    updated=r.data[0]
+    if target_role == "learner" and target_status == "active":
+        try:
+            _sync_assigned_course_enrolments(oid, str(updated["user_id"]))
+        except Exception as exc:
+            print(f"Assigned course enrolment sync failed after member update: {type(exc).__name__}")
+            raise HTTPException(503, "Membership was updated, but assigned course access could not be synchronised. Retry the membership update.") from None
+    audit(actor_user_id=context.user_id,action="organisation_member_updated",resource_type="organisation_member",resource_id=member_id,organisation_id=oid,metadata={"changes":updates})
     return {"success":True,"member":_format(updated,_user(str(updated["user_id"])))}
 
 @router.delete("/{organisation_id}/members/{member_id}")
