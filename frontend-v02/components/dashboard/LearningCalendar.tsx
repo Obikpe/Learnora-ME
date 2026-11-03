@@ -32,8 +32,8 @@ export default function LearningCalendar({ courses }: { courses: any[] }) {
   const today = new Date();
   const monthActivityCount = Array.from(activityDays).filter(key => key.startsWith(`${year}-${String(monthIndex + 1).padStart(2, "0")}-`)).length;
 
-  return <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
-    <div className="flex items-center justify-between gap-3">
+  return <section className="sc">
+    <div className="cal-h">
       <div className="flex items-center gap-2"><CalendarDays size={17} className="text-[var(--primary)]"/><h2 className="text-sm font-bold text-[var(--text-heading)]">Learning calendar</h2></div>
       <div className="flex items-center gap-1">
         <button type="button" aria-label="Previous month" onClick={() => setMonth(new Date(year, monthIndex - 1, 1))} className="grid size-8 place-items-center rounded-md hover:bg-[var(--bg-soft)]"><ChevronLeft size={16}/></button>
@@ -44,16 +44,16 @@ export default function LearningCalendar({ courses }: { courses: any[] }) {
       <h3 className="text-sm font-semibold text-[var(--text-heading)]">{month.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</h3>
       <span className="text-[11px] text-[var(--text-muted)]">{monthActivityCount} active {monthActivityCount === 1 ? "day" : "days"}</span>
     </div>
-    <div className="mt-4 grid grid-cols-7 gap-y-2 text-center">
-      {["M","T","W","T","F","S","S"].map((label, index) => <span key={label + index} className="pb-1 text-[10px] font-semibold text-[var(--text-muted)]">{label}</span>)}
+    <div className="cal">
+      {["M","T","W","T","F","S","S"].map((label, index) => <span key={label + index} className="cal-weekday">{label}</span>)}
       {cells.map((day, index) => {
         if (!day) return <span key={index} className="h-9"/>;
         const key = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         const active = activityDays.has(key);
         const isToday = today.getFullYear() === year && today.getMonth() === monthIndex && today.getDate() === day;
-        return <span key={key} className="relative grid h-9 place-items-center">
-          <span className={"grid size-8 place-items-center rounded-full text-xs " + (isToday ? "bg-[var(--primary)] font-bold text-[var(--on-primary)]" : active ? "bg-[var(--primary-tint)] font-semibold text-[var(--primary)]" : "text-[var(--text-body)]")}>{day}</span>
-          {active && !isToday && <span className="absolute bottom-0.5 size-1 rounded-full bg-[var(--primary)]"/>}
+        return <span key={key} className="cal-cell">
+          <span className={"cal-day " + (isToday ? "is-today" : active ? "is-active" : "")}>{day}</span>
+          {active && !isToday && <span className="cal-dot"/>}
         </span>;
       })}
     </div>
