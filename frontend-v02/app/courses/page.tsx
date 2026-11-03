@@ -13,7 +13,8 @@ export default function Courses() {
   const [items, setItems] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const [query, setQuery = useState("");
   const [level, setLevel] = useState("all");
   const [track, setTrack] = useState("all");
 
@@ -31,6 +32,11 @@ export default function Courses() {
   }
 
   useEffect(() => { const initialSearch = new URLSearchParams(window.location.search).get("search") || ""; if (initialSearch) setQuery(initialSearch); loadCourses(); }, []);
+  useEffect(() => {
+    if (!loading) { setShowSkeleton(false); return; }
+    const timeout = window.setTimeout(() => setShowSkeleton(true), 180);
+    return () => window.clearTimeout(timeout);
+  }, [loading]);
 
   const levels = useMemo(() => ["all", ...Array.from(new Set(items.map(c => String(c.level || "").trim()).filter(Boolean)))], [items]);
   const tracks = useMemo(() => ["all", ...Array.from(new Set(items.flatMap(c => (Array.isArray(c.tracks) ? c.tracks : []).map((t:any) => String(t.name || "").trim()).filter(Boolean)))).sort((a,b) => a.localeCompare(b))], [items]);
@@ -86,7 +92,7 @@ export default function Courses() {
       </section>
 
       <section className="mt-8" aria-live="polite">
-        {loading ? <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">{Array.from({length:6}).map((_,i)=><div key={i} className="animate-pulse bg-[#10151b]"><div className="h-52 bg-[#171e27]"/><div className="space-y-3 p-5"><div className="h-4 w-2/3 bg-white/[.06]"/><div className="h-3 w-full bg-white/[.04]"/><div className="h-3 w-4/5 bg-white/[.04]"/></div></div>)}</div>
+        {loading ? showSkeleton ? <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">{Array.from({length:6}).map((_,i)=><div key={i} className="animate-pulse bg-[#10151b]"><div className="h-52 bg-[#171e27]"/><div className="space-y-3 p-5"><div className="h-4 w-2/3 bg-white/[.06]"/><div className="h-3 w-full bg-white/[.04]"/><div className="h-3 w-4/5 bg-white/[.04]"/></div></div>)}</div>
         : error ? <div className="border border-white/10 bg-[#10151b] p-8 sm:p-10"><EmptyState title="Courses unavailable" message={error}/><button onClick={loadCourses} className="mt-4 border border-white/15 px-4 py-2.5 text-sm font-semibold hover:border-[#d7ad35]/50">Try again</button></div>
         : filtered.length ? <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map(course => {
