@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Train and evaluate a multiclass classifier; read a multiclass confusion matrix; report per-class precision and recall; and explain macro, micro and weighted averaging.
 
+
+![validation concept diagram](/course-assets/ws08/validation.svg)
+
 ## 1. Core explanation
 Multiclass classification predicts one of more than two mutually exclusive classes. One-vs-rest trains a binary classifier for each class; one-vs-one trains classifiers for pairs. Some algorithms handle multiclass natively. Class probabilities should sum to one when the model provides a normalised multiclass probability distribution.
 
