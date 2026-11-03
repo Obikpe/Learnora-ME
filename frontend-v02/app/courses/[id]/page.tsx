@@ -17,7 +17,8 @@ export default function CourseDetail({params}:{params:{id:string}}) {
   const autoEnrolStarted=useRef(false);
   const [showWorkspace,setShowWorkspace]=useState(false),[enrolmentResolved,setEnrolmentResolved]=useState(false);
   useEffect(()=>{let active=true;setHasOrganisationContext(Boolean(organisationContext()));currentUser().then(me=>{if(active)setUser(me)}).catch(()=>{if(active)setUser(null)}).finally(()=>{if(active)setAuthResolved(true)});Promise.all([course(params.id),structure(params.id),request<any>("/access/mode").catch(()=>({free_access_mode:false}))]).then(([a,b,mode])=>{if(active){setC(a.course||a);setS(b);setFreeMode(Boolean(mode.free_access_mode))}}).catch(x=>{if(active)setError(x.message||"Course could not be loaded.")});return()=>{active=false}},[params.id]);
-  async function enrol(){setEnrolError("");setEnrolling(true);try{await request<any>("/courses/"+encodeURIComponent(params.id)+"/enrol",{method:"POST"});setEnrolled(true);setShowWorkspace(true)}catch(e:any){setEnrolError(e.message||"Enrolment is not available for this course.")}finally{setEnrolling(false)}}
+  async function enrol(){setEnrolError("");if(!user){window.location.assign("/login?next="+encodeURIComponent("/courses/"+encodeURIComponent(params.id)+"?enrol=1"));return;}setEnrolling(true);try{await request<any>("/courses/"+encodeURIComponent(params.id)+"/enrol",{method:"POST"});setEnrolled(true);setShowWorkspace(true)}catch(e:any){setEnrolError(e.message||"Enrolment is not available for this course.")}finally{setEnrolling(false)}}
+  useEffect(()=>{if(!authResolved||user||typeof window==="undefined")return;const params=new URLSearchParams(window.location.search);if(params.get("enrol")==="1"){const next="/courses/"+encodeURIComponent(params.id||"")+"?enrol=1";window.location.replace("/login?next="+encodeURIComponent(next));}},[authResolved,user,params.id]);
   useEffect(()=>{if(!authResolved||!user||!c)return;let active=true;request<any>("/progress/me").then(result=>{if(!active)return;const existing=(result.courses||[]).some((row:any)=>String(row.course?.id||row.enrolment?.course_id)===String(params.id));setEnrolled(existing);setEnrolmentResolved(true);if(existing){setShowWorkspace(true);return;}if(new URLSearchParams(window.location.search).get("enrol")==="1"&&!autoEnrolStarted.current){autoEnrolStarted.current=true;void enrol();}}).catch(()=>setEnrolmentResolved(true));return()=>{active=false}},[authResolved,user,c,params.id]);
   const signedIn=Boolean(user);
   if(showWorkspace&&user)return <CourseWorkspace params={{courseId:params.id}} courseTitle={c?.title}/>;
@@ -74,7 +75,7 @@ export default function CourseDetail({params}:{params:{id:string}}) {
         </div>
       </section>
 
-      <section className="mt-16 border border-white/[.1] bg-[#0d1217] p-6 sm:p-8"><div className="flex items-start gap-4"><LockKeyhole className="mt-1 shrink-0 gold" size={20}/><div><h2 className="text-lg font-semibold">Progress and evidence</h2><p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">Course progress is stored for your account. Completing lessons records activity; skill verification should be based on appropriate assessment or reviewed evidence rather than course completion alone.</p></div></div></section>
+      
     </main>;
   return signedIn?<Shell active="discover">{pageBody}</Shell>:<><PublicNav/>{pageBody}<PublicFooter/></>;
 }
