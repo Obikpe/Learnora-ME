@@ -21,10 +21,10 @@ function sanitizeHtml(value: string) {
       if (!allowedTags.has(tag)) return "";
       if (closing) return ["br","hr"].includes(tag) ? "" : `</${tag}>`;
       if (tag === "img") {
-        const srcMatch = attrs.match(/src\\s*=\\s*(["'])(.*?)\\1/i);
-        const altMatch = attrs.match(/alt\\s*=\\s*(["'])(.*?)\\1/i);
+        const srcMatch = attrs.match(/src\s*=\s*(["'])(.*?)\1/i);
+        const altMatch = attrs.match(/alt\s*=\s*(["'])(.*?)\1/i);
         const src = srcMatch?.[2]?.trim() || "";
-        const safeSrc = /^(https?:\\/\\/|\\/|\\.\\.?\\/)[^\\s"'<>]+$/i.test(src) && !/[\\u0000-\\u001f\\\\]/.test(src) ? src : "";
+        const safeSrc = /^(https?:\/\/|\/|\.\.?\/)[^\s"'<>]+$/i.test(src) && !/[\u0000-\u001f\\]/.test(src) ? src : "";
         if (!safeSrc) return "";
         return `<img src="${escapeHtml(safeSrc)}" alt="${escapeHtml(altMatch?.[2] || "")}" loading="lazy" decoding="async" />`;
       }
@@ -45,11 +45,11 @@ function inlineMarkdown(value: string) {
     code.push(`<code>${content}</code>`);
     return marker;
   });
-  text = text.replace(/!\\[([^\\]]*)\\]\\(([^\\s)]+)\\)/g, (_match, alt: string, src: string) => {
-    const safe = /^(https?:\\/\\/|\\/|\\.\\.?\\/)[^\\s"'<>]+$/i.test(src) && !/[\\u0000-\\u001f\\\\]/.test(src) ? src : "";
+  text = text.replace(/!\[([^\]]*)\]\(([^\s)]+)\)/g, (_match, alt: string, src: string) => {
+    const safe = /^(https?:\/\/|\/|\.\.?\/)[^\s"'<>]+$/i.test(src) && !/[\u0000-\u001f\\]/.test(src) ? src : "";
     return safe ? `<img src="${escapeHtml(safe)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />` : alt;
   });
-  text = text.replace(/\\[([^\\]]+)\\]\\((https?:\\/\\/[^\\s)]+|mailto:[^\\s)]+|\\/[^\\s)]*|#[^\\s)]*)\\)/g, (_match, label: string, href: string) => {
+  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+|\/[^\s)]*|#[^\s)]*)\)/g, (_match, label: string, href: string) => {
     const safe = safeHref(href);
     return safe ? `<a href="${escapeHtml(safe)}" rel="noopener noreferrer">${label}</a>` : label;
   });
