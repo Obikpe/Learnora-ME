@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, BookOpen, Clock3, LockKeyhole, Check, ChevronDown } from "lucide-react";
 import { course, structure } from "../../../lib/api/learning";
 import { request } from "../../../lib/api/client";
-import { currentUser, organisationContext } from "../../../lib/api";
+import { currentUser, getCachedCurrentUser, organisationContext } from "../../../lib/api";
 import PublicNav from "../../../components/public/PublicNav";
 import PublicFooter from "../../../components/public/PublicFooter";
 import Shell from "../../../components/dashboard/Shell";
@@ -13,7 +13,7 @@ import Skeleton from "../../../components/feedback/Skeleton";
 import CourseWorkspace from "../../../components/course/CourseWorkspace";
 
 export default function CourseDetail({params}:{params:{id:string}}) {
-  const [c,setC]=useState<any>(),[s,setS]=useState<any>(),[freeMode,setFreeMode]=useState(false),[user,setUser]=useState<any>(null),[authResolved,setAuthResolved]=useState(false),[hasOrganisationContext,setHasOrganisationContext]=useState(false),[error,setError]=useState(""),[enrolError,setEnrolError]=useState(""),[enrolling,setEnrolling]=useState(false),[enrolled,setEnrolled]=useState(false);
+  const [c,setC]=useState<any>(),[s,setS]=useState<any>(),[structureLoading,setStructureLoading]=useState(true),[freeMode,setFreeMode]=useState(false),[user,setUser]=useState<any>(()=>getCachedCurrentUser()),[authResolved,setAuthResolved]=useState(Boolean(getCachedCurrentUser())),[hasOrganisationContext,setHasOrganisationContext]=useState(false),[error,setError]=useState(""),[enrolError,setEnrolError]=useState(""),[enrolling,setEnrolling]=useState(false),[enrolled,setEnrolled]=useState(false);
   const autoEnrolStarted=useRef(false);
   const [showWorkspace,setShowWorkspace]=useState(false),[enrolmentResolved,setEnrolmentResolved]=useState(false);
   const explicitlyFree=Boolean(c?.settings?.is_free===true||c?.settings?.access_type==="free"||c?.settings?.price===0);
@@ -21,15 +21,14 @@ export default function CourseDetail({params}:{params:{id:string}}) {
   const isFree=freeLaunchCourse||explicitlyFree;
   const individualLearner=user?.role==="normal"&&user?.account_type==="learner"&&!hasOrganisationContext;
   const canEnrol=Boolean(user)&&((freeLaunchCourse&&individualLearner)||(explicitlyFree&&["normal","witstart"].includes(user.role)));
-  useEffect(()=>{let active=true;setHasOrganisationContext(Boolean(organisationContext()));currentUser().then(me=>{if(active)setUser(me)}).catch(()=>{if(active)setUser(null)}).finally(()=>{if(active)setAuthResolved(true)});Promise.all([course(params.id),structure(params.id),request<any>("/access/mode").catch(()=>({free_access_mode:false}))]).then(([a,b,mode])=>{if(active){setC(a.course||a);setS(b);setFreeMode(Boolean(mode.free_access_mode))}}).catch(x=>{if(active)setError(x.message||"Course could not be loaded.")});return()=>{active=false}},[params.id]);
+  useEffect(()=>{let active=true;setHasOrganisationContext(Boolean(organisationContext()));currentUser().then(me=>{if(active)setUser(me)}).catch(()=>{if(active)setUser(null)}).finally(()=>{if(active)setAuthResolved(true)});course(params.id).then(result=>{if(active)setC(result.course||result)}).catch(x=>{if(active)setError(x.message||"Course could not be loaded.")});request<any>("/access/mode").then(mode=>{if(active)setFreeMode(Boolean(mode.free_access_mode))}).catch(()=>{});structure(params.id).then(result=>{if(active)setS(result)}).catch(()=>{}).finally(()=>{if(active)setStructureLoading(false)});return()=>{active=false}},[params.id]);
   async function enrol(){setEnrolError("");if(!user){window.location.assign("/login?next="+encodeURIComponent("/courses/"+encodeURIComponent(params.id)+"?enrol=1"));return;}setEnrolling(true);try{await request<any>("/courses/"+encodeURIComponent(params.id)+"/enrol",{method:"POST"});setEnrolled(true);setShowWorkspace(true)}catch(e:any){setEnrolError(e.message||"Enrolment is not available for this course.")}finally{setEnrolling(false)}}
   useEffect(()=>{if(!authResolved||user||typeof window==="undefined")return;const search=new URLSearchParams(window.location.search);if(search.get("enrol")==="1"){const next="/courses/"+encodeURIComponent(params.id)+"?enrol=1";window.location.replace("/login?next="+encodeURIComponent(next));}},[authResolved,user,params.id]);
   useEffect(()=>{if(!authResolved||!user||!c)return;let active=true;request<any>("/progress/me").then(result=>{if(!active)return;const existing=(result.courses||[]).some((row:any)=>String(row.course?.id||row.enrolment?.course_id)===String(params.id));setEnrolled(existing);setEnrolmentResolved(true);if(existing){setShowWorkspace(true);return;}if(canEnrol&&new URLSearchParams(window.location.search).get("enrol")==="1"&&!autoEnrolStarted.current){autoEnrolStarted.current=true;void enrol();}}).catch(()=>setEnrolmentResolved(true));return()=>{active=false}},[authResolved,user,c,params.id,canEnrol]);
   const signedIn=Boolean(user);
   if(showWorkspace&&user)return <CourseWorkspace params={{courseId:params.id}} courseTitle={c?.title}/>;
-  if(signedIn&&c&&!enrolmentResolved)return <main className="min-h-screen bg-[var(--bg)] px-5 pt-28"><div className="mx-auto max-w-[82rem]"><Skeleton variant="course" label="Checking your course access"/></div></main>;
   const pageContent=error?<main className={`mx-auto max-w-5xl px-5 pb-24 ${signedIn?"pt-12":"pt-36"}`}><EmptyState title="Course unavailable" message={error}/><a href="/courses" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold gold">Back to courses <ArrowRight size={15}/></a></main>:!c?<main className="mx-auto max-w-[82rem] px-5 pb-24 pt-12 lg:px-8"><Skeleton variant="course" label="Loading course details"/></main>:null;
-  if(!authResolved||!c&&!error)return <main className="min-h-screen bg-[var(--bg)] px-5 pt-28"><div className="mx-auto max-w-[82rem]"><Skeleton variant="course" label="Loading course details"/></div></main>;
+  if(!c&&!error)return <main className="min-h-screen bg-[var(--bg)] px-5 pt-28"><div className="mx-auto max-w-[82rem]"><Skeleton variant="course" label="Loading course details"/></div></main>;
   if(pageContent)return signedIn?<Shell active="discover">{pageContent}</Shell>:<><PublicNav/>{pageContent}<PublicFooter/></>;
   const modules=s?.modules||s?.structure?.modules||[];
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
@@ -42,8 +41,8 @@ export default function CourseDetail({params}:{params:{id:string}}) {
           <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-300">{c.description||c.short_description||"Explore the curriculum and course objectives."}</p>
           <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-y border-white/[.1] py-5 text-sm text-slate-400">
             <span className="inline-flex items-center gap-2"><Clock3 size={16} className="text-[var(--gold-light)]"/>{c.estimated_hours?c.estimated_hours+" estimated hours":"Self-paced"}</span>
-            <span className="inline-flex items-center gap-2"><BookOpen size={16} className="text-[var(--gold-light)]"/>{modules.length} modules</span>
-            <span className="inline-flex items-center gap-2"><Check size={16} className="text-[var(--gold-light)]"/>{lessonCount} lessons listed</span>
+            <span className="inline-flex items-center gap-2"><BookOpen size={16} className="text-[var(--gold-light)]"/>{structureLoading?"…":modules.length} modules</span>
+            <span className="inline-flex items-center gap-2"><Check size={16} className="text-[var(--gold-light)]"/>{structureLoading?"…":lessonCount} lessons listed</span>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             <div className="border-l border-[var(--gold)]/60 pl-4"><p className="text-sm font-semibold">Learn with structure</p><p className="mt-2 text-sm leading-6 text-slate-500">Follow the published curriculum in sequence, with clear lesson context.</p></div>
