@@ -71,3 +71,13 @@ Search a small hyperparameter grid for a pipeline. Save the full results table a
 
 ## Lesson summary
 Hyperparameter search is structured model selection. Define a manageable search space, evaluate through leakage-safe cross-validation and consider stability and complexity alongside the highest score.
+
+## 6. Deeper reasoning: search results are conditional on the experiment
+
+A hyperparameter search does not discover the objectively best model. It identifies the best configuration among the candidates you supplied, using the metric and validation folds you selected. If the search space excludes a useful region, the best candidate may still be poor. If the metric does not represent the actual task, the search can efficiently optimise the wrong objective.
+
+Parameter ranges should be informed by how the estimator works. Regularisation strengths and learning rates often vary across orders of magnitude, so logarithmic ranges are more sensible than a handful of evenly spaced values. Parameters can also interact: the best gamma for an SVM may depend on C. A search that changes one setting at a time can miss such interactions, while an overly broad grid can become expensive.
+
+Inspect the full cv_results_ table rather than only best_params_. Look at mean test score, standard deviation, rank, fit time and whether several neighbouring configurations perform similarly. If many settings produce almost identical results, prefer a simpler or faster configuration. If the top result is a single isolated spike, it may be sensitive to the particular folds.
+
+The search must be fitted on training data only. If you have a separate validation set, use it for development and reserve test data for the final estimate. For more extensive tuning on limited data, nested cross-validation can estimate the performance of the tuning procedure itself. The search result is evidence under a defined experiment, not a guarantee about future populations.
