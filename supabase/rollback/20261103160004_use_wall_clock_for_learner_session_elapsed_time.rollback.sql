@@ -1,0 +1,3 @@
+-- Intentionally no-op. The previous version used transaction timestamps
+-- for elapsed time; reverting would reintroduce the issue. Apply a reviewed
+-- replacement before rolling back this wall-clock correction.
