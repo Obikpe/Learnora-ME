@@ -126,12 +126,26 @@ def _enrolment(user_id: str, course_id: str):
         if cohort_account:
             return None
 
-        memberships = (
+        active_memberships = (
             supabase.table("organisation_members")
             .select("organisation_id,role")
             .eq("user_id", user_id)
-            .eq("role", "learner")
             .eq("status", "active")
+            .execute()
+        ).data or []
+        if any(str(row.get("role") or "").lower() in {"owner", "admin", "team_manager"} for row in active_memberships):
+            return None
+        memberships = [
+            row for row in active_memberships
+            if str(row.get("role") or "").lower() == "learner"
+        ]
+
+        cohort_memberships = (
+            supabase.table("cohort_members")
+            .select("id")
+            .eq("user_id", user_id)
+            .eq("status", "active")
+            .limit(1)
             .execute()
         ).data or []
 
@@ -188,7 +202,23 @@ def _enrolment(user_id: str, course_id: str):
         return None
 
     # A learner without an active organisation membership may use only a
-    # global individual enrolment. Tenant- or cohort-scoped rows are rejected.
+    # global individual enrolment. Legacy cohort identities and cohort
+    # members without an active organisation learner membership must use
+    # their assigned cohort access path instead.
+    if cohort_memberships:
+        return None
+    try:
+        identity = (
+            supabase.table("users")
+            .select("role")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        ).data or []
+    except Exception:
+        raise HTTPException(503, "Learner identity could not be verified. Please retry.") from None
+    if not identity or not is_individual_learner(identity[0].get("role"), "learner", None):
+        return None
     return next((
         row for row in enrolments
         if row.get("organisation_id") is None and row.get("cohort_id") is None
