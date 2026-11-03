@@ -493,11 +493,30 @@ Read-only verification confirmed the track-course relationship, published status
 
 ## Learner dashboard redesign — implementation in progress (3 November 2026)
 
-- Dashboard activity tracking schema and backend endpoints have been added on `main`; the new SQL migration is not yet applied to Supabase.
-- Learner session timer uses visible-page heartbeats and a five-minute recent-interaction window. Cohort lesson completion is included. Meaningful learning days are recorded for first-time lesson completion, passed quizzes and assignment submissions; sign-ins alone never extend a streak.
-- Dashboard summary includes active courses, completed lessons, learning time, streak and lesson-weighted overall progress. Continue learning is based on the most recently accessed unfinished lesson.
-- Calendar is a separate dashboard destination and uses recorded learning days, not course enrolment dates.
-- Mobile learner navigation is a left slide-out drawer; desktop horizontal navigation remains. Account actions are separate from learning navigation.
-- Subscription UI is removed from learner navigation and its former route redirects to the dashboard. Billing implementation and database records remain untouched.
-- WitStart-specific dashboard route redirects to the shared dashboard; no learner records are deleted or migrated.
-- Remaining acceptance work: apply and verify the migration in the intended Supabase project, inspect every remaining frontend-v02 route for legacy WitStart/subscription branding, and perform local frontend/backend checks without triggering CI or deployments.
+- Dashboard activity tracking schema and backend endpoints are present on `main`; the learning-time/streak migrations have now been applied to the active Pheonix Supabase project.
+- Learner session tracking uses visible-page heartbeats and a five-minute recent-interaction window. Meaningful learning days are recorded for first-time lesson completion, passed quizzes and assignment submissions; cohort lesson completion is recorded through the cohort progress API. Sign-ins alone never extend a streak.
+- Dashboard summary includes learning time, current and longest streaks, and recent meaningful learning days. The cohort dashboard now displays the same activity metrics. The tracker is mounted for cohort routes as well as the standard learner shell, and existing `witstart` learner-role accounts are eligible for tracking.
+- Active sessions are reused across tabs and protected by a partial unique index. Heartbeat/end accounting is atomic in service-role-only database functions, caps each counted interval at 60 seconds, and uses wall-clock timestamps. Hiding a tab pauses its contribution rather than ending a session shared by another active tab.
+- WitStart learner accounts and cohort memberships remain intact. No account, membership, enrolment, or historical learning record was deleted or migrated.
+- Remaining acceptance work: run local frontend/backend checks and browser acceptance when the local development environment is available. Do not trigger GitHub Actions or Vercel deployments without explicit instruction.
+
+
+## Learning time and streak tracking integration — 3 November 2026
+
+### Database
+- Applied migration 20261103155243_learner_learning_sessions_and_streaks to the active Pheonix Supabase project (gihfupzvdpyrmynqgukz). It creates learning_sessions and learner_learning_days, with RLS enabled, no browser-role table grants, and service-role-only access.
+- Applied migrations 20261103155546_atomic_learner_learning_session_accounting, 20261103155555_fix_atomic_learner_session_elapsed_accounting, and 20261103160004_use_wall_clock_for_learner_session_elapsed_time. These add one-active-session-per-learner uniqueness, serialized session creation, atomic heartbeat/end operations and wall-clock elapsed-time calculation.
+- Database smoke checks ran inside rolled-back transactions: duplicate starts reused one session; active heartbeats counted elapsed seconds; inactive heartbeats/end did not count time; learning-day upserts combined activity types and incremented the daily activity count. No test rows were retained.
+- Existing activity tables were empty immediately after the initial migration. The new tracker begins collecting data from qualifying activity after integration; historical time is not fabricated or backfilled.
+
+### Application integration
+- backend-python/routers/progress.py now calls the atomic session RPCs using the authenticated learner identity and account type. A learner cannot submit another learner's ID to read or update a session.
+- frontend-v02/components/dashboard/LearningSessionTracker.tsx starts/reuses a session, sends 30-second heartbeats, stops counting when the page is hidden or interaction has been idle for five minutes, and pauses rather than ending a session when one tab is hidden. Existing normal, witstart and cohort learner identities are supported; admin/privileged organisation roles are excluded.
+- The standard My Learning dashboard already reads /progress/learning-summary; the cohort dashboard now reads the same authenticated summary and shows total active learning time, current streak, longest streak and recent learning activity.
+- Live learning-summary and session endpoints are excluded from the frontend API response cache so dashboard refreshes do not show stale activity.
+- Existing backend event hooks record first-time individual/cohort lesson completion, passed individual quizzes and individual assignment submissions. Cohort lesson completion is recorded through the scoped cohort progress route. The current cohort learner UI exposes assigned lessons; it does not currently expose cohort quiz or assignment submission routes.
+
+### Preservation and release boundaries
+- Rechecked WitStart membership records after migration: 25 cohort membership rows and 24 linked public.users accounts remain. No WitStart account, membership, enrolment or historical record was deleted.
+- Migration SQL and rollback artefacts are committed under supabase/migrations/ and supabase/rollback/ with the live ledger versions. The rollback for the two function-correction migrations is intentionally a no-op rather than restoring a known-bad elapsed-time implementation.
+- No Vercel deployment, GitHub Actions workflow or CI run was triggered. Frontend builds, Python tests and browser acceptance have not been run in this environment; a focused backend route test file was added but remains unexecuted. Production runtime behaviour is therefore not claimed as fully browser-verified.
