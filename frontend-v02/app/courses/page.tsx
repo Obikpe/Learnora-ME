@@ -34,7 +34,34 @@ export default function Courses() {
     }
   }
 
-  useEffect(() => { let active = true; currentUser().then(() => { if (active) setSignedIn(true); }).catch(() => { if (active) setSignedIn(false); }).finally(() => { if (active) setAuthResolved(true); }); const initialSearch = new URLSearchParams(window.location.search).get("search") || ""; if (initialSearch) setQuery(initialSearch); loadCourses(); return () => { active = false; }; }, []);
+  useEffect(() => {
+    let active = true;
+    const initialSearch = new URLSearchParams(window.location.search).get("search") || "";
+    if (initialSearch) setQuery(initialSearch);
+    currentUser().then(me => {
+      if (!active) return;
+      const memberships = me.organisation_memberships || [];
+      const assignedLearner = Boolean(
+        me.account_type === "cohort" ||
+        me.cohort_id ||
+        me.organisation_role === "learner" ||
+        memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
+      );
+      if (assignedLearner) {
+        window.location.replace(me.account_type === "cohort" ? "/dashboard/cohort" : "/dashboard");
+        return;
+      }
+      setSignedIn(true);
+      void loadCourses();
+    }).catch(() => {
+      if (!active) return;
+      setSignedIn(false);
+      void loadCourses();
+    }).finally(() => {
+      if (active) setAuthResolved(true);
+    });
+    return () => { active = false; };
+  }, []);
   useEffect(() => {
     if (!loading) { setShowSkeleton(false); return; }
     const timeout = window.setTimeout(() => setShowSkeleton(true), 180);
