@@ -54,3 +54,5 @@ button:disabled { cursor: not-allowed; }
 img,video { display:block; max-width:100%; }
 @media (hover:hover) and (pointer:fine) { .interactive-lift { transition:transform 180ms ease,border-color 180ms ease; } .interactive-lift:hover { transform:translateY(-2px); } }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; } }
+
+[contenteditable][data-placeholder]:empty::before { content: attr(data-placeholder); color: var(--subtle); pointer-events: none; }
