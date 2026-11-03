@@ -90,6 +90,24 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("DROP INDEX IF EXISTS public.project_submissions_one_active_per_learner_idx", rollback_sql)
         self.assertIn("DROP INDEX IF EXISTS public.skill_evidence_project_submission_skill_unique_idx", rollback_sql)
 
+    def test_learning_sessions_and_streak_migration_is_server_only_and_reversible(self):
+        migration = ACTIVE_DIR / "20261103120000_learner_learning_sessions_and_streaks.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261103120000_learner_learning_sessions_and_streaks.rollback.sql"
+        self.assertTrue(migration.is_file())
+        self.assertTrue(rollback.is_file())
+        sql = migration.read_text(encoding="utf-8")
+        self.assertIn("CREATE TABLE IF NOT EXISTS public.learning_sessions", sql)
+        self.assertIn("CREATE TABLE IF NOT EXISTS public.learner_learning_days", sql)
+        self.assertIn("ENABLE ROW LEVEL SECURITY", sql)
+        self.assertIn("REVOKE ALL ON public.learning_sessions FROM anon, authenticated", sql)
+        self.assertIn("REVOKE ALL ON public.learner_learning_days FROM anon, authenticated", sql)
+        self.assertIn("TO service_role", sql)
+        rollback_sql = rollback.read_text(encoding="utf-8")
+        self.assertIn("DROP TABLE IF EXISTS public.learner_learning_days", rollback_sql)
+        self.assertIn("DROP TABLE IF EXISTS public.learning_sessions", rollback_sql)
+        self.assertIn("DROP FUNCTION IF EXISTS public.record_learner_learning_day", rollback_sql)
+        self.assertIn("DROP FUNCTION IF EXISTS public.get_learner_learning_seconds", rollback_sql)
+
     def test_account_deletion_migration_preserves_a_restricted_history_record(self):
         migration = ACTIVE_DIR / "20261102130000_learner_account_deletion.sql"
         self.assertTrue(migration.is_file())
