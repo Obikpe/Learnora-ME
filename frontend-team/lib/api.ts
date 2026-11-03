@@ -120,7 +120,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
       throw new ApiRequestError(message, response.status);
     }
     if (cacheKey) storeCached(cacheKey, body, lifetime);
-    else if (method !== "GET") invalidateApiCache();
+    else if (method !== "GET" && !/^\/(ai|notifications|analytics|usage)(\/|$)/.test(path)) invalidateApiCache();
     return body as T;
   })();
 
