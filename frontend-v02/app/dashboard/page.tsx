@@ -121,7 +121,7 @@ export default function MyLearningPage() {
           const onboarding = await request<any>("/learner/onboarding");
           if (!onboarding.completed) { location.href = "/onboarding"; return; }
           const profile = onboarding.profile || onboarding;
-          if (!cancelled) setGoal(profile.goal || profile.preferred_track || "");
+          if (!cancelled) setGoal(profile.goal || profile.career_goal || profile.learning_goal || profile.preferred_track || "");
         } catch {}
       }
       const privileged = (me.organisation_memberships || []).filter((membership: any) => ["owner", "admin"].includes(membership.role));
@@ -138,7 +138,19 @@ export default function MyLearningPage() {
   const inProgress = useMemo(() => courses.filter((row: any) => !(row.completed || row.enrolment?.status === "completed")), [courses]);
   const completed = useMemo(() => courses.filter((row: any) => row.completed || row.enrolment?.status === "completed"), [courses]);
   const enrolledIds = useMemo(() => new Set(courses.map((row: any) => String(row.course?.id || row.enrolment?.course_id || ""))), [courses]);
-  const recommendations = useMemo(() => catalogue.filter((course: any) => course.id && !enrolledIds.has(String(course.id))).slice(0, 3), [catalogue, enrolledIds]);
+  const recommendations = useMemo(() => {
+    const tokens = goal.toLowerCase().split(/[^a-z0-9]+/).filter((token: string) => token.length > 2);
+    return catalogue
+      .filter((course: any) => course.id && !enrolledIds.has(String(course.id)))
+      .map((course: any, index: number) => {
+        const searchable = [course.title, course.short_description, course.description, course.level].join(" ").toLowerCase();
+        const score = tokens.reduce((total: number, token: string) => total + (searchable.includes(token) ? 1 : 0), 0);
+        return { course, score, index };
+      })
+      .sort((a: any, b: any) => b.score - a.score || a.index - b.index)
+      .slice(0, 3)
+      .map((item: any) => item.course);
+  }, [catalogue, enrolledIds, goal]);
   const completedLessons = courses.reduce((sum: number, row: any) => sum + Number(row.completed_lessons || 0), 0);
   const totalLessons = courses.reduce((sum: number, row: any) => sum + Number(row.total_lessons || 0), 0);
   const certificates = credentials?.certificates || [];
@@ -159,7 +171,8 @@ export default function MyLearningPage() {
       <div className="flex min-w-0 items-center gap-4">
         <div className="grid size-14 shrink-0 place-items-center rounded-full bg-[var(--primary-tint)] text-xl font-bold text-[var(--primary)] sm:size-16 sm:text-2xl" aria-hidden="true">{(user.name || user.email || "L").trim().charAt(0).toUpperCase()}</div>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--text-heading)] sm:text-3xl">My Learning{user.name ? ", " + user.name.split(" ")[0] : ""}</h1>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">My Learning</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--text-heading)] sm:text-3xl">Welcome back{user.name ? ", " + user.name.split(" ")[0] : ""}</h1>
           {goal && <p className="mt-1 text-sm text-[var(--text-muted)]">Learning goal: {goal}</p>}
         </div>
       </div>
