@@ -103,6 +103,7 @@ def _require_individual_self_enrolment(user: CurrentUser) -> None:
             supabase.table("organisation_members")
             .select("id")
             .eq("user_id", str(user.id))
+            .eq("role", "learner")
             .eq("status", "active")
             .limit(1)
             .execute()
