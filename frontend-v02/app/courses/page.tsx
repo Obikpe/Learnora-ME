@@ -80,7 +80,7 @@ export default function Courses() {
     IMAGES.learnerPage, IMAGES.instructorPage, IMAGES.organisationPage, IMAGES.login,
   ].forEach(url => usedImages.add(url.split("?")[0]));
 
-  return <>
+  return <div className="min-h-screen">
     <PublicNav />
     <main className="mx-auto max-w-7xl px-5 pb-24 pt-32 lg:px-8">
       <section className="grid gap-10 border-b border-white/[.1] pb-12 lg:grid-cols-[1fr_.6fr] lg:items-end">
@@ -152,5 +152,5 @@ export default function Courses() {
       </section>
     </main>
     <PublicFooter/>
-  </>;
+  </div>;
 }
