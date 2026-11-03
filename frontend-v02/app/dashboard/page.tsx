@@ -194,7 +194,7 @@ export default function Page() {
     {enrolled.length > 1 && <section className="mt-10">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--primary)]">Keep going</p><h2 className="mt-1 text-xl font-bold text-[var(--text-heading)]">Your courses</h2></div>
-        <Link href="/dashboard/learning" className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--primary)]">View learning <ArrowRight size={14}/></Link>
+        
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {enrolled.slice(1, 5).map((row: any) => {
