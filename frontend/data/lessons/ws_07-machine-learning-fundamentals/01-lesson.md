@@ -8,7 +8,7 @@ Imagine an online learning platform wants to identify learners who may not compl
 
 Machine learning (ML) is a way of using examples to learn patterns that can support predictions or decisions. Instead of manually writing every rule, we provide data and a learning procedure. The procedure adjusts a model so that its outputs fit known examples, then we evaluate whether the learned pattern works on cases that were not used to train it.
 
-![Rule-based programming compared with machine learning](./assets/01-rule-based-vs-learning.svg)
+![Rule-based programming compared with machine learning](/course-assets/ws07/01-rule-based-vs-learning.svg)
 
 ## 2. Important vocabulary
 - **Observation / example:** one case in a dataset, such as one learner.
@@ -25,7 +25,7 @@ A feature is not the same as a target. If we want to predict course completion, 
 ## 3. How supervised learning works
 In supervised learning, we provide examples with known answers. The model makes predictions, a loss function measures how wrong those predictions are, and an optimisation algorithm adjusts model parameters to reduce the loss.
 
-![The supervised learning feedback loop](./assets/01-learning-loop.svg)
+![The supervised learning feedback loop](/course-assets/ws07/01-learning-loop.svg)
 
 The process is repeated:
 1. Provide training features.
