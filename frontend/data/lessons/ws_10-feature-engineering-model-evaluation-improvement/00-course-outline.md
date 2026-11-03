@@ -41,3 +41,14 @@ This course is a structured self-study programme for data science learners. It m
 Lessons build on earlier concepts and use consistent datasets and terminology where practical. Python examples should be runnable in VS Code, with imports, expected input structure and package requirements stated. Mathematical ideas should be explained intuitively before notation is introduced. Examples must explain both the code and the meaning of its output. Learners should practise checking assumptions, validating results, identifying limitations and communicating conclusions. Visuals should clarify concepts, processes, model behaviour or analytical findings rather than decorate the notes.
 
 Assessment should include frequent short exercises, independent practice and a final applied project or portfolio artefact. Learners must document their data sources, preprocessing decisions, assumptions, evaluation choices and limitations. No result should be presented as causal or generalisable without appropriate evidence.
+
+
+## Environment setup
+
+Use Python 3.10 or newer in a dedicated VS Code virtual environment. The worked examples use pandas, NumPy, SciPy, Matplotlib and scikit-learn. Install the core packages with:
+
+```bash
+python -m pip install pandas numpy scipy matplotlib 'scikit-learn>=1.2'
+```
+
+The minimum scikit-learn version supports the `OneHotEncoder(sparse_output=...)` argument used in the notes. Activate the virtual environment before running examples. Where a lesson introduces an optional package or a specialised estimator, install it only when that lesson requires it. Record package versions in the project requirements file so the workflow can be reproduced.
