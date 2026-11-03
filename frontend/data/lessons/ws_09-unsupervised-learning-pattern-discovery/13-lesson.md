@@ -55,3 +55,11 @@ For a rule A → B, support is the proportion of transactions containing both A 
 Always report support alongside confidence and lift. A rule can have high confidence because the consequent is common. Association mining can generate thousands of rules, so thresholds should reflect transaction volume and the decision. Check duplicate items, returns, basket definition and time window. Changing the transaction unit from checkout to customer-month changes the measures.
 
 **Practice:** Calculate milk → bread and bread → milk for the example baskets. Pair support is the same in both directions, but confidence differs because the antecedent base rates differ. Explain the asymmetry.
+
+### Worked example: interpret an association rule carefully
+
+Confidence is directional. Bread → butter asks what fraction of bread baskets also contain butter. Butter → bread asks what fraction of butter baskets also contain bread. Their support is identical because both refer to the same item pair, but their confidence values can differ because the antecedent counts differ.
+
+Lift compares confidence with the baseline frequency of the consequent. This helps distinguish elevated co-occurrence from a rule that merely predicts a very common item. Even high lift can be based on very few transactions, so support and sample size remain essential.
+
+Association can be affected by seasonality, promotions, store layout and customer mix. A rule is a useful hypothesis for a merchandising test, not evidence that placing items together will cause higher sales. Use an experiment to evaluate a causal business intervention.
