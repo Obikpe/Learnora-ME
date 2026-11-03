@@ -94,6 +94,15 @@ def _module_for_lesson(lesson_id: str):
     return str(result.data[0]["module_id"])
 
 
+def _module_for_quiz(quiz: dict):
+    """Resolve a quiz's module from its explicit module or lesson association."""
+    if quiz.get("module_id"):
+        return str(quiz["module_id"])
+    if quiz.get("lesson_id"):
+        return _module_for_lesson(str(quiz["lesson_id"]))
+    return None
+
+
 def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool = False):
     """Require a passed >=70% assessment for every earlier module."""
     current = (
@@ -122,11 +131,29 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
     for previous in previous_modules:
         quizzes = (
             supabase.table("quizzes")
-            .select("id,title,passing_score")
+            .select("id,title,passing_score,module_id,lesson_id")
             .eq("module_id", previous["id"])
             .eq("is_published", True)
             .execute()
         ).data or []
+        lesson_rows = (
+            supabase.table("learnora_lessons")
+            .select("id")
+            .eq("module_id", previous["id"])
+            .execute()
+        ).data or []
+        lesson_ids = [row["id"] for row in lesson_rows if row.get("id")]
+        if lesson_ids:
+            lesson_quizzes = (
+                supabase.table("quizzes")
+                .select("id,title,passing_score,module_id,lesson_id")
+                .in_("lesson_id", lesson_ids)
+                .eq("is_published", True)
+                .execute()
+            ).data or []
+            by_id = {str(row["id"]): row for row in quizzes}
+            by_id.update({str(row["id"]): row for row in lesson_quizzes})
+            quizzes = list(by_id.values())
         if not quizzes:
             raise HTTPException(
                 423,
@@ -377,6 +404,19 @@ def course_activities(course_id: str, user: CurrentUser = Depends(get_current_us
         .select("id,lesson_id,module_id,title,description,passing_score,max_attempts")
         .eq("course_id", course_id).eq("is_published", True)
         .order("created_at").execute()).data or []
+    missing_module_lessons = list({
+        str(row["lesson_id"]) for row in quizzes
+        if row.get("lesson_id") and not row.get("module_id")
+    })
+    if missing_module_lessons:
+        lesson_rows = (supabase.table("learnora_lessons")
+            .select("id,module_id")
+            .in_("id", missing_module_lessons)
+            .execute()).data or []
+        module_by_lesson = {str(row["id"]): str(row["module_id"]) for row in lesson_rows}
+        for quiz in quizzes:
+            if not quiz.get("module_id") and quiz.get("lesson_id"):
+                quiz["module_id"] = module_by_lesson.get(str(quiz["lesson_id"]))
     assignments = (supabase.table("assignments")
         .select("id,lesson_id,title,description,instructions,due_date,max_score")
         .eq("course_id", course_id).eq("is_published", True)
@@ -414,8 +454,9 @@ def get_quiz(quiz_id: str, client_session_id: UUID = Query(...), user: CurrentUs
     quiz = result.data[0]
     if not _enrolment(str(user.id), str(quiz["course_id"])):
         raise HTTPException(403, "You are not enrolled in this course.")
-    if quiz.get("module_id"):
-        _assert_module_unlocked(str(user.id), str(quiz["module_id"]))
+    quiz_module_id = _module_for_quiz(quiz)
+    if quiz_module_id:
+        _assert_module_unlocked(str(user.id), quiz_module_id)
     questions = (supabase.table("quiz_questions")
         .select("id,question,question_type,options,points,order_index")
         .eq("quiz_id", quiz_id).order("order_index").execute()).data or []
@@ -452,8 +493,9 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
     quiz = result.data[0]
     if not _enrolment(str(user.id), str(quiz["course_id"])):
         raise HTTPException(403, "You are not enrolled in this course.")
-    if quiz.get("module_id"):
-        _assert_module_unlocked(str(user.id), str(quiz["module_id"]))
+    quiz_module_id = _module_for_quiz(quiz)
+    if quiz_module_id:
+        _assert_module_unlocked(str(user.id), quiz_module_id)
     if not body.session_id:
         raise HTTPException(409, "Open the quiz again before submitting this attempt.")
     try:
