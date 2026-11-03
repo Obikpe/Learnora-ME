@@ -461,6 +461,32 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
     }
 
 
+@router.get("/lessons/{lesson_id}/content")
+def get_lesson_content(
+    lesson_id: str,
+    user: CurrentUser = Depends(get_current_user),
+):
+    lesson_rows = (
+        supabase.table("learnora_lessons")
+        .select("id,module_id,content,course_modules!inner(course_id)")
+        .eq("id", lesson_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    if not lesson_rows:
+        raise HTTPException(404, "Lesson not found.")
+    lesson = lesson_rows[0]
+    course_id = str(lesson["course_modules"]["course_id"])
+    if not _enrolment(str(user.id), course_id):
+        raise HTTPException(403, "You are not enrolled in this course.")
+    _assert_module_unlocked(str(user.id), str(lesson["module_id"]))
+    return {
+        "success": True,
+        "lesson_id": str(lesson["id"]),
+        "content": lesson.get("content") or "",
+    }
+
+
 @router.get("/lessons/{lesson_id}/notes")
 def get_lesson_note(lesson_id: str, user: CurrentUser = Depends(get_current_user)):
     course_id = _course_for_lesson(lesson_id)
@@ -1019,6 +1045,7 @@ def course_progress(
         "progress": _sync_enrolment_completion(
             str(user.id),
             course_id,
+            include_lesson_content=False,
         ),
     }
 
