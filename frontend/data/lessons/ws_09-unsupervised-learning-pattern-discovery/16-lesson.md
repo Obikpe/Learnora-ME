@@ -42,3 +42,15 @@ Apply the method to a dataset. Compare at least two parameter settings or method
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
+
+## Final project specification and marking guide
+
+Choose a dataset with a clear source, licence and data dictionary. Suitable topics include retail, public services, education, sensors or other non-sensitive data. Prefer public or synthetic data for a learning project. Define the observation unit and explain why an unsupervised method suits the question.
+
+The report must include: problem framing and intended use; data source, licence, row meaning and feature definitions; missingness, duplicates and data-quality findings; preprocessing decisions and justification; comparison of at least two methods or materially different settings; validation and stability checks; original-unit profiles or careful anomaly review; visuals with clear captions; and limitations, risks and next steps.
+
+Assessment rubric: problem framing and provenance 15%; preparation and feature reasoning 20%; method selection and implementation 15%; validation and stability 20%; interpretation and communication 15%; reproducibility, ethics and limitations 15%.
+
+Submit a README with setup instructions, a reproducible notebook or script, a data dictionary, preprocessing record, method comparisons, validation results and a report that separates observation from interpretation. State clearly what the model cannot prove.
+
+**Reflection:** If the result is unstable or not useful, what would you recommend instead? Strong analysts are willing to reject a model when the evidence does not justify its use.
