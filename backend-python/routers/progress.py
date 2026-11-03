@@ -137,7 +137,7 @@ def _enrolment(user_id: str, course_id: str):
             return None
         memberships = [
             row for row in active_memberships
-            if str(row.get("role") or "").lower() == "learner"
+            if str(row.get("role") or "").lower() in {"learner", "member"}
         ]
 
         cohort_memberships = (
