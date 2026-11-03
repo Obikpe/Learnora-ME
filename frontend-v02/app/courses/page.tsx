@@ -30,7 +30,7 @@ export default function Courses() {
     }
   }
 
-  useEffect(() => { loadCourses(); }, []);
+  useEffect(() => { const initialSearch = new URLSearchParams(window.location.search).get("search") || ""; if (initialSearch) setQuery(initialSearch); loadCourses(); }, []);
 
   const levels = useMemo(() => ["all", ...Array.from(new Set(items.map(c => String(c.level || "").trim()).filter(Boolean)))], [items]);
   const tracks = useMemo(() => ["all", ...Array.from(new Set(items.flatMap(c => (Array.isArray(c.tracks) ? c.tracks : []).map((t:any) => String(t.name || "").trim()).filter(Boolean)))).sort((a,b) => a.localeCompare(b))], [items]);
