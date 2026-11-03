@@ -6,10 +6,11 @@ import { ArrowRight, BookOpen, Clock3, Search, SlidersHorizontal } from "lucide-
 import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
 import EmptyState from "../../components/feedback/EmptyState";
-import { courses } from "../../lib/api";
+import { courses, currentUser } from "../../lib/api";
+import Shell from "../../components/dashboard/Shell";
 import { IMAGES } from "../../lib/constants";
 
-export default function Courses() {
+export default function Courses() {\n  const [signedIn, setSignedIn] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,7 @@ export default function Courses() {
     }
   }
 
-  useEffect(() => { const initialSearch = new URLSearchParams(window.location.search).get("search") || ""; if (initialSearch) setQuery(initialSearch); loadCourses(); }, []);
+  useEffect(() => { let active = true; currentUser().then(() => { if (active) setSignedIn(true); }).catch(() => { if (active) setSignedIn(false); }); const initialSearch = new URLSearchParams(window.location.search).get("search") || ""; if (initialSearch) setQuery(initialSearch); loadCourses(); return () => { active = false; }; }, []);
   useEffect(() => {
     if (!loading) { setShowSkeleton(false); return; }
     const timeout = window.setTimeout(() => setShowSkeleton(true), 180);
