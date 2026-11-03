@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Explain density-based clustering; configure DBSCAN's eps and min_samples; identify noise points; and describe how scale and density variation affect its results.
 
+![Density-based clustering separates dense structure from isolated observations](/course-assets/ws09/clustering-concepts.svg)
+
 ## 1. Core explanation
 DBSCAN groups points in dense regions and marks isolated points as noise. It uses eps (the neighbourhood radius) and min_samples (the minimum neighbours needed for a core point). Unlike K-means, it does not require a cluster count and can identify non-spherical shapes.
 
