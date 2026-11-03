@@ -75,3 +75,13 @@ Create a baseline model, then compare it with a model using a filter selector in
 
 ## Lesson summary
 Feature selection can reduce noise and complexity, but its value depends on the model, data and deployment context. Selection is part of model fitting and must be validated without exposing held-out targets.
+
+## 7. Deeper reasoning: selection is part of the learning process
+
+Feature selection is often described as a preparation step, but when it uses data values or the target to decide which columns survive, it is learning from the sample. This means it belongs inside the model evaluation procedure. If you calculate feature-target associations using every row, select the top ten columns and only then split the data, information from the future test labels has influenced the selected feature set. The model has indirectly seen part of the test answer.
+
+Selection also depends on the estimator and the intended use. A feature that helps a tree model may not help a linear model in the same way. A variable that is weak by itself may become useful when combined with another feature. Conversely, two highly predictive variables may be redundant. Therefore, selection should be judged by the complete pipeline's held-out performance and stability, not by a score table alone.
+
+There is also a difference between predictive selection and governance-based exclusion. Some variables may be prohibited or inappropriate because of privacy, fairness, legal or operational requirements even if they improve prediction. Other variables may be too costly to collect at scale. These constraints should be considered before searching for the numerically best subset.
+
+When reporting selected features, describe the selection method and its stability. If a feature is selected in every fold, that is stronger evidence of consistency than if it appears in only one fold. It is still not proof that the feature causes the outcome. Selection identifies useful information for a particular model and dataset under a particular validation design.
