@@ -72,3 +72,13 @@ Plot learning curves for a simple and a more complex model. Compare training and
 
 ## Lesson summary
 Bias and variance describe different sources of generalisation error. Use training and validation behaviour, learning curves and sound split checks to diagnose whether a model is too simple, too flexible or trained on unrepresentative data.
+
+## 7. Deeper reasoning: a generalisation gap needs investigation
+
+A large difference between training and validation performance is often described as overfitting, but it is a symptom rather than a complete diagnosis. The gap can be caused by an overly flexible model, a small or unrepresentative sample, distribution differences between partitions, leakage in the training process, inconsistent preprocessing or label noise. Changing model complexity without checking these possibilities may not solve the real issue.
+
+Bias and variance are useful conceptual tools. A model with high bias makes restrictive assumptions and cannot represent the pattern even with more training examples. A model with high variance responds strongly to small changes in the training sample. These sources of error can coexist. Regularisation may reduce variance but increase bias if it becomes too strong.
+
+The tree-depth example is a controlled demonstration: depth limits restrict how many sequential decisions a tree can make. A depth-one tree can make only a simple split, while an unrestricted tree can form detailed partitions. However, the best depth depends on the dataset and the validation design. A deeper tree is not automatically overfit, and a shallow tree is not automatically robust.
+
+When diagnosing, compare training and validation curves, inspect errors and verify the split. If both scores are poor, consider whether features contain enough information, whether the target is noisy or whether the model is too restrictive. If training is strong and validation weak, test regularisation, simpler representations and more representative data. Record one hypothesis and one experiment at a time.
