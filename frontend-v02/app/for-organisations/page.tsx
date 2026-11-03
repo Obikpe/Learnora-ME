@@ -1,1 +1,13 @@
-import PublicNav from"../../components/public/PublicNav";import PublicFooter from"../../components/public/PublicFooter";import AudiencePage from"../../components/public/AudiencePage";export default function Page(){return <><PublicNav/><AudiencePage type="organisation"/><PublicFooter/></>}
+import PublicNav from "../../components/public/PublicNav";
+import PublicFooter from "../../components/public/PublicFooter";
+import OrganisationLandingPage from "../../components/public/OrganisationLandingPage";
+
+export default function ForOrganisationsPage() {
+  return (
+    <>
+      <PublicNav />
+      <OrganisationLandingPage />
+      <PublicFooter />
+    </>
+  );
+}
