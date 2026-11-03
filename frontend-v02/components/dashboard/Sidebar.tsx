@@ -69,7 +69,9 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
         me.organisation_role === "learner" ||
         memberships.some((membership: any) => ["learner", "member"].includes(membership.role) && membership.status === "active")
       ));
-    }).catch(() => {}).finally(() => {
+    }).catch(() => {
+      if (!cancelled) setAssignedLearner(true);
+    }).finally(() => {
       if (!cancelled) setIdentityResolved(true);
     });
 
