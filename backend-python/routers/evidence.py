@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .auth import CurrentUser, get_current_user, supabase
+from .progress import _enrolment
+from services.free_access import is_individual_learner
 
 router = APIRouter(
     prefix="/api/evidence",
@@ -37,17 +39,40 @@ ALLOWED_EVIDENCE_TYPES = {
 
 
 def _enrolled(user_id, course_id):
-    result = (
-        supabase
-        .table("learnora_enrolments")
-        .select("id,status")
-        .eq("user_id", user_id)
-        .eq("course_id", course_id)
-        .in_("status", ["active", "completed"])
-        .limit(1)
-        .execute()
-    )
-    return result.data[0] if result.data else None
+    # Reuse the central scope-aware enrolment resolver. A personal enrolment
+    # must not authorise an organisation/cohort learner's project access.
+    return _enrolment(str(user_id), str(course_id))
+
+
+def _is_assigned_learner(user: CurrentUser) -> bool:
+    if (
+        user.account_type == "cohort"
+        or user.role == "witstart"
+        or getattr(user, "organisation_id", None)
+        or getattr(user, "cohort_id", None)
+    ):
+        return True
+    try:
+        organisation_memberships = (
+            supabase.table("organisation_members")
+            .select("id")
+            .eq("user_id", str(user.id))
+            .eq("role", "learner")
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+        cohort_memberships = (
+            supabase.table("cohort_members")
+            .select("id")
+            .eq("user_id", str(user.id))
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+    except Exception:
+        raise HTTPException(503, "Learner access could not be verified. Please retry.") from None
+    return bool(organisation_memberships or cohort_memberships)
 
 
 @router.get("/me")
@@ -268,27 +293,16 @@ def available_projects(user: CurrentUser = Depends(get_current_user)):
     ).data or []
     course_ids = list({str(row["course_id"]) for row in rows if row.get("course_id")})
     course_map = {}
-    enrolled_ids = set()
+    assigned_learner = _is_assigned_learner(user)
     if course_ids:
         course_rows = (
             supabase.table("learnora_courses")
-            .select("id,title,status")
+            .select("id,title,status,ownership,organisation_id")
             .in_("id", course_ids)
             .eq("status", "published")
-            .eq("ownership", "learnora")
-            .is_("organisation_id", "null")
             .execute()
         ).data or []
         course_map = {str(row["id"]): row for row in course_rows}
-        enrolments = (
-            supabase.table("learnora_enrolments")
-            .select("course_id")
-            .eq("user_id", user.id)
-            .in_("course_id", course_ids)
-            .in_("status", ["active", "completed"])
-            .execute()
-        ).data or []
-        enrolled_ids = {str(row["course_id"]) for row in enrolments}
     skill_ids = list({str(value) for row in rows for value in (row.get("skills") or [])})
     skill_map = {}
     if skill_ids:
@@ -297,7 +311,16 @@ def available_projects(user: CurrentUser = Depends(get_current_user)):
     available = []
     for row in rows:
         course_id = str(row.get("course_id") or "")
-        if course_id and (course_id not in enrolled_ids or course_id not in course_map):
+        if course_id:
+            if course_id not in course_map or not _enrolled(user.id, course_id):
+                continue
+        elif assigned_learner or not is_individual_learner(
+            user.role,
+            user.account_type,
+            getattr(user, "organisation_id", None),
+        ):
+            # Course-less open challenges are part of the individual public
+            # practice catalogue, not organisation/cohort assigned learning.
             continue
         available.append({
             **row,
@@ -424,18 +447,19 @@ def submit_project(
             .limit(1)
             .execute()
         ).data or []
-        if (
-            not course_rows
-            or course_rows[0].get("status") != "published"
-            or course_rows[0].get("ownership") != "learnora"
-            or course_rows[0].get("organisation_id") is not None
-        ):
-            raise HTTPException(409, "This project is not attached to an available global Learnora course.")
+        if not course_rows or course_rows[0].get("status") != "published":
+            raise HTTPException(409, "This project is not attached to a published course.")
         if not _enrolled(user.id, str(course_id)):
             raise HTTPException(
                 403,
-                "You must be enrolled in the course before submitting this project.",
+                "You must have an active assignment or enrolment for this course before submitting this project.",
             )
+    elif _is_assigned_learner(user) or not is_individual_learner(
+        user.role,
+        user.account_type,
+        getattr(user, "organisation_id", None),
+    ):
+        raise HTTPException(403, "Open practice projects are available to individual learner accounts only.")
 
     for field_name in ("repository_url", "live_url", "submission_url"):
         value = getattr(body, field_name)
