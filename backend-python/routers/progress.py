@@ -767,13 +767,145 @@ def my_progress(
     ).data or []
 
     course_ids = list(dict.fromkeys(str(row["course_id"]) for row in enrolments if row.get("course_id")))
+    if not course_ids:
+        return {"success": True, "courses": [], "in_progress_count": 0, "completed_count": 0}
+
     course_rows = (
         supabase.table("learnora_courses")
         .select("id,title,slug,short_description,level,status,ownership,thumbnail_url,estimated_hours")
         .in_("id", course_ids)
         .execute()
-    ).data or [] if course_ids else []
+    ).data or []
     course_map = {str(row["id"]): row for row in course_rows}
+
+    modules = (
+        supabase.table("course_modules")
+        .select("id,course_id,title,order_index,status")
+        .in_("course_id", course_ids)
+        .in_("status", ["published", "archived"])
+        .order("order_index")
+        .execute()
+    ).data or []
+    modules_by_course: dict[str, list[dict]] = {}
+    module_by_id: dict[str, dict] = {}
+    for module in modules:
+        module_id = str(module["id"])
+        module_by_id[module_id] = module
+        modules_by_course.setdefault(str(module["course_id"]), []).append(module)
+
+    module_ids = list(module_by_id)
+    lessons = []
+    if module_ids:
+        lessons = (
+            supabase.table("learnora_lessons")
+            .select("id,module_id,title,order_index,status")
+            .in_("module_id", module_ids)
+            .in_("status", ["published", "archived"])
+            .order("order_index")
+            .execute()
+        ).data or []
+    lessons_by_module: dict[str, list[dict]] = {}
+    lesson_module: dict[str, str] = {}
+    for lesson in lessons:
+        module_id = str(lesson["module_id"])
+        lesson_id = str(lesson["id"])
+        course = course_map.get(str(module_by_id[module_id]["course_id"]), {})
+        if course.get("status") != "archived" and lesson.get("status") != "published":
+            continue
+        lessons_by_module.setdefault(module_id, []).append(lesson)
+        lesson_module[lesson_id] = module_id
+    lesson_ids = list(lesson_module)
+
+    progress_rows = []
+    if lesson_ids:
+        progress_rows = (
+            supabase.table("learnora_lesson_progress")
+            .select("lesson_id,completed,last_accessed_at")
+            .eq("user_id", user.id)
+            .in_("lesson_id", lesson_ids)
+            .execute()
+        ).data or []
+    progress_by_lesson = {
+        str(row["lesson_id"]): row
+        for row in progress_rows
+        if row.get("lesson_id")
+    }
+
+    quizzes = (
+        supabase.table("quizzes")
+        .select("id,course_id,module_id,lesson_id,title,passing_score")
+        .in_("course_id", course_ids)
+        .eq("is_published", True)
+        .execute()
+    ).data or []
+    quiz_ids = [str(row["id"]) for row in quizzes if row.get("id")]
+    quiz_attempts = []
+    if quiz_ids:
+        quiz_attempts = (
+            supabase.table("quiz_attempts")
+            .select("quiz_id,score,passed")
+            .eq("user_id", user.id)
+            .in_("quiz_id", quiz_ids)
+            .eq("passed", True)
+            .execute()
+        ).data or []
+    best_quiz_scores: dict[str, float] = {}
+    for attempt in quiz_attempts:
+        quiz_id = str(attempt.get("quiz_id") or "")
+        if quiz_id:
+            best_quiz_scores[quiz_id] = max(
+                best_quiz_scores.get(quiz_id, 0.0),
+                float(attempt.get("score") or 0),
+            )
+    passed_quiz_ids = {
+        str(quiz["id"])
+        for quiz in quizzes
+        if quiz.get("id")
+        and best_quiz_scores.get(str(quiz["id"]), 0.0) >= effective_passing_score(quiz)
+    }
+    quizzes_by_course: dict[str, list[dict]] = {}
+    quizzes_by_module: dict[str, dict[str, dict]] = {}
+    for quiz in quizzes:
+        course_id = str(quiz.get("course_id") or "")
+        quizzes_by_course.setdefault(course_id, []).append(quiz)
+        module_id = str(quiz.get("module_id") or lesson_module.get(str(quiz.get("lesson_id") or "")) or "")
+        if module_id in module_by_id:
+            quizzes_by_module.setdefault(module_id, {})[str(quiz["id"])] = quiz
+
+    assignments = (
+        supabase.table("assignments")
+        .select("id,course_id,title,max_score")
+        .in_("course_id", course_ids)
+        .eq("is_published", True)
+        .execute()
+    ).data or []
+    assignment_ids = [str(row["id"]) for row in assignments if row.get("id")]
+    submissions = []
+    if assignment_ids:
+        submissions = (
+            supabase.table("assignment_submissions")
+            .select("id,assignment_id,status,score,submitted_at,graded_at")
+            .eq("user_id", user.id)
+            .in_("assignment_id", assignment_ids)
+            .order("submitted_at", desc=True)
+            .execute()
+        ).data or []
+    latest_by_assignment: dict[str, dict] = {}
+    for submission in submissions:
+        assignment_id = str(submission.get("assignment_id") or "")
+        if assignment_id and assignment_id not in latest_by_assignment:
+            latest_by_assignment[assignment_id] = submission
+    assignments_by_course: dict[str, list[dict]] = {}
+    passed_assignment_ids: set[str] = set()
+    for assignment in assignments:
+        course_id = str(assignment.get("course_id") or "")
+        assignments_by_course.setdefault(course_id, []).append(assignment)
+        submission = latest_by_assignment.get(str(assignment.get("id") or ""))
+        if not submission or submission.get("status") != "graded" or not submission.get("graded_at"):
+            continue
+        maximum = float(assignment.get("max_score") or 100)
+        if float(submission.get("score") or 0) >= maximum * 0.7:
+            passed_assignment_ids.add(str(assignment["id"]))
 
     summaries = []
     for enrolment in enrolments:
@@ -781,50 +913,90 @@ def my_progress(
         course = course_map.get(course_id)
         if not course:
             continue
-        summary = _sync_enrolment_completion(
-            str(user.id),
-            course_id,
-            include_archived=course.get("status") == "archived",
-            include_lesson_content=False,
+        course_modules = [
+            module for module in modules_by_course.get(course_id, [])
+            if course.get("status") == "archived" or module.get("status") == "published"
+        ]
+        course_lessons = [
+            lesson
+            for module in course_modules
+            for lesson in lessons_by_module.get(str(module["id"]), [])
+        ]
+        completed_lessons = sum(
+            1 for lesson in course_lessons
+            if (progress_by_lesson.get(str(lesson["id"])) or {}).get("completed")
         )
-        saved_enrolment = summary.get("enrolment") or enrolment
-        completed = bool(saved_enrolment.get("status") == "completed" or summary.get("completed"))
-        next_item = None
-        for module in summary.get("modules") or []:
-            if module.get("locked"):
+        course_quizzes = quizzes_by_course.get(course_id, [])
+        course_assignments = assignments_by_course.get(course_id, [])
+        completed_quizzes = sum(1 for quiz in course_quizzes if str(quiz["id"]) in passed_quiz_ids)
+        completed_assignments = sum(1 for assignment in course_assignments if str(assignment["id"]) in passed_assignment_ids)
+        total_assessments = len(course_quizzes) + len(course_assignments)
+        completed_assessments = completed_quizzes + completed_assignments
+        total_lessons = len(course_lessons)
+        total_units = total_lessons + total_assessments
+        completed_units = completed_lessons + completed_assessments
+        calculated_complete = total_units > 0 and completed_units == total_units
+
+        module_access: dict[str, bool] = {}
+        access_available = True
+        for module in course_modules:
+            module_id = str(module["id"])
+            module_access[module_id] = access_available
+            if not access_available:
                 continue
-            for lesson in module.get("lessons") or []:
-                if not (lesson.get("progress") or {}).get("completed"):
+            module_quiz_rows = list(quizzes_by_module.get(module_id, {}).values())
+            if not module_quiz_rows or any(str(quiz["id"]) not in passed_quiz_ids for quiz in module_quiz_rows):
+                access_available = False
+
+        next_item = None
+        for module in course_modules:
+            if not module_access.get(str(module["id"]), False):
+                continue
+            for lesson in lessons_by_module.get(str(module["id"]), []):
+                if not (progress_by_lesson.get(str(lesson["id"])) or {}).get("completed"):
                     next_item = {
                         "type": "lesson",
-                        "id": str(lesson.get("id")),
+                        "id": str(lesson["id"]),
                         "title": lesson.get("title") or "Continue lesson",
                     }
                     break
             if next_item:
                 break
-        if not next_item and not completed and summary.get("completed_assessments", 0) < summary.get("total_assessments", 0):
+        if not next_item and completed_assessments < total_assessments:
             next_item = {"type": "assessment", "title": "Complete an outstanding assessment"}
 
         last_activity = max(
             (
-                (lesson.get("progress") or {}).get("last_accessed_at")
-                for module in (summary.get("modules") or [])
-                for lesson in (module.get("lessons") or [])
-                if (lesson.get("progress") or {}).get("last_accessed_at")
+                (progress_by_lesson.get(str(lesson["id"])) or {}).get("last_accessed_at")
+                for lesson in course_lessons
+                if (progress_by_lesson.get(str(lesson["id"])) or {}).get("last_accessed_at")
             ),
             default=None,
         )
+        saved_enrolment = enrolment
+        if calculated_complete and enrolment.get("status") == "active":
+            saved = (
+                supabase.table("learnora_enrolments")
+                .update({"status": "completed", "completed_at": datetime.now(timezone.utc).isoformat()})
+                .eq("id", str(enrolment["id"]))
+                .eq("user_id", str(user.id))
+                .eq("status", "active")
+                .execute()
+            ).data or []
+            if saved:
+                saved_enrolment = saved[0]
+
+        completed = bool(saved_enrolment.get("status") == "completed" or calculated_complete)
         summaries.append({
             "enrolment": saved_enrolment,
             "course": course,
             "completed": completed,
-            "progress_percent": 100 if completed else summary.get("progress_percent", 0),
-            "completed_lessons": summary.get("completed_lessons", 0),
-            "total_lessons": summary.get("total_lessons", 0),
-            "tracked_lessons": summary.get("total_lessons", 0),
-            "completed_assessments": summary.get("completed_assessments", 0),
-            "total_assessments": summary.get("total_assessments", 0),
+            "progress_percent": 100 if completed else (round((completed_units / total_units) * 100) if total_units else 0),
+            "completed_lessons": completed_lessons,
+            "total_lessons": total_lessons,
+            "tracked_lessons": total_lessons,
+            "completed_assessments": completed_assessments,
+            "total_assessments": total_assessments,
             "last_activity_at": last_activity,
             "next_item": None if completed else next_item,
         })
