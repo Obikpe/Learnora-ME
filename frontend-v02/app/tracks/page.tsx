@@ -7,6 +7,7 @@ import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
 import EmptyState from "../../components/feedback/EmptyState";
 import { request } from "../../lib/api/client";
+import { currentUser } from "../../lib/api";
 
 export default function TracksPage() {
   const [tracks, setTracks] = useState<any[]>([]);
@@ -17,10 +18,24 @@ export default function TracksPage() {
 
   useEffect(() => {
     let active = true;
-    request<any>("/public/tracks")
+    const load = () => request<any>("/public/tracks")
       .then(result => { if (active) setTracks(result.tracks || []); })
       .catch(e => { if (active) setError(e.message || "Tracks could not be loaded."); })
       .finally(() => { if (active) setLoading(false); });
+    currentUser().then(me => {
+      if (!active) return;
+      const memberships = me.organisation_memberships || [];
+      const assignedLearner = Boolean(
+        me.account_type === "cohort" || me.role === "witstart" || me.cohort_id ||
+        me.organisation_role === "learner" ||
+        memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
+      );
+      if (assignedLearner) {
+        window.location.replace(me.account_type === "cohort" ? "/dashboard/cohort" : "/dashboard");
+        return;
+      }
+      void load();
+    }).catch(() => { if (active) void load(); });
     return () => { active = false; };
   }, []);
 
