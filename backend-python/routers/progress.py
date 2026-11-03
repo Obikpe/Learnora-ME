@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from .auth import CurrentUser, get_current_user, supabase
+from .course_content import _has_active_scoped_course_source, _organisation_has_course_entitlement
 from services.free_access import is_individual_learner
 
 router = APIRouter(
@@ -106,21 +107,103 @@ def _course_for_lesson(lesson_id: str):
 
 
 def _enrolment(user_id: str, course_id: str):
-    result = (
-        supabase
-        .table("learnora_enrolments")
-        .select(
-            "id,user_id,course_id,organisation_id,cohort_id,status,"
-            "enrolled_at,completed_at"
+    """Return only an enrolment valid for the learner's current access scope.
+
+    Cohort identities use the dedicated cohort-learning API. Organisation
+    learners must have an active tenant membership and an active scoped
+    assignment or organisation-wide assigned-course grant. A personal
+    enrolment must never become an organisation learner's access token.
+    """
+    try:
+        cohort_account = (
+            supabase.table("cohort_accounts")
+            .select("id")
+            .eq("id", user_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+        if cohort_account:
+            return None
+
+        cohort_memberships = (
+            supabase.table("cohort_members")
+            .select("id")
+            .eq("user_id", user_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+        if cohort_memberships:
+            return None
+
+        memberships = (
+            supabase.table("organisation_members")
+            .select("organisation_id,role")
+            .eq("user_id", user_id)
+            .eq("role", "learner")
+            .eq("status", "active")
+            .execute()
+        ).data or []
+
+        query = (
+            supabase.table("learnora_enrolments")
+            .select(
+                "id,user_id,course_id,organisation_id,cohort_id,status,"
+                "enrolled_at,completed_at,source_type"
+            )
+            .eq("user_id", user_id)
+            .eq("course_id", course_id)
+            .in_("status", ["active", "completed"])
+            .order("enrolled_at", desc=True)
         )
-        .eq("user_id", user_id)
-        .eq("course_id", course_id)
-        .in_("status", ["active", "completed"])
-        .order("enrolled_at", desc=True)
-        .limit(1)
-        .execute()
-    )
-    return result.data[0] if result.data else None
+        enrolments = query.execute().data or []
+    except Exception as exc:
+        print(f"Course enrolment scope lookup failed: {type(exc).__name__}")
+        raise HTTPException(503, "Course access could not be verified. Please retry.") from None
+
+    if memberships:
+        for membership in memberships:
+            organisation_id = str(membership.get("organisation_id") or "")
+            if not organisation_id:
+                continue
+            for enrolment in enrolments:
+                if str(enrolment.get("organisation_id") or "") != organisation_id:
+                    continue
+                if _has_active_scoped_course_source(user_id, organisation_id, course_id, enrolment):
+                    return enrolment
+                try:
+                    assigned_grant = (
+                        supabase.table("course_access")
+                        .select("id")
+                        .eq("course_id", course_id)
+                        .eq("organisation_id", organisation_id)
+                        .eq("status", "active")
+                        .eq("access_type", "assigned")
+                        .limit(1)
+                        .execute()
+                    ).data or []
+                    active_organisation = (
+                        supabase.table("organisations")
+                        .select("id")
+                        .eq("id", organisation_id)
+                        .eq("is_active", True)
+                        .limit(1)
+                        .execute()
+                    ).data or []
+                except Exception as exc:
+                    print(f"Organisation course grant lookup failed: {type(exc).__name__}")
+                    raise HTTPException(503, "Organisation course access could not be verified. Please retry.") from None
+                if assigned_grant and active_organisation and _organisation_has_course_entitlement(organisation_id):
+                    return enrolment
+        return None
+
+    # A learner without an active organisation membership may use only a
+    # global individual enrolment. Tenant- or cohort-scoped rows are rejected.
+    return next((
+        row for row in enrolments
+        if row.get("organisation_id") is None and row.get("cohort_id") is None
+    ), None)
 
 
 def effective_passing_score(quiz: dict) -> float:
