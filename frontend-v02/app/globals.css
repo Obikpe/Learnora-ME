@@ -237,3 +237,5 @@ html[data-theme="dark"] .text-emerald-200 { color: var(--success) !important; }
 }
 @media (max-width: 640px) { body { font-size: 14px; } }
 @keyframes toast-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+.empty{border:1px dashed var(--border);border-radius:8px;padding:22px 18px;color:var(--text-muted);font-size:13px;line-height:1.7;background:transparent}.empty a{color:var(--primary);font-weight:650;text-decoration:underline;text-underline-offset:3px}.empty a:hover{color:var(--text-heading)}
