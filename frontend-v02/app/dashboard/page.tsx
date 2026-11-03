@@ -83,15 +83,15 @@ export default function MyLearningPage() {
   const [tab, setTab] = useState<Tab>("in-progress");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [certificateError, setCertificateError] = useState(false);
+  const [evidenceError, setEvidenceError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   async function load() {
     setRefreshing(true);
     setError("");
-    const [progressResult, evidenceResult, credentialResult, catalogueResult] = await Promise.allSettled([
+    const [progressResult, catalogueResult] = await Promise.allSettled([
       request<any>("/progress/me"),
-      request<any>("/evidence/me"),
-      request<any>("/credentials/me"),
       request<any>("/public/courses"),
     ]);
     if (progressResult.status === "fulfilled") setLearning(progressResult.value);
@@ -99,8 +99,6 @@ export default function MyLearningPage() {
       setLearning({ courses: [] });
       setError("Your learning records could not be loaded.");
     }
-    setEvidence(evidenceResult.status === "fulfilled" ? evidenceResult.value : { skills: [], evidence: [] });
-    setCredentials(credentialResult.status === "fulfilled" ? credentialResult.value : { certificates: [] });
     if (catalogueResult.status === "fulfilled") {
       const result = catalogueResult.value;
       setCatalogue(Array.isArray(result.courses) ? result.courses : Array.isArray(result.data) ? result.data : []);
@@ -108,6 +106,15 @@ export default function MyLearningPage() {
       setCatalogue([]);
     }
     setLoading(false);
+
+    const [evidenceResult, credentialResult] = await Promise.allSettled([
+      request<any>("/evidence/me"),
+      request<any>("/credentials/me"),
+    ]);
+    setEvidenceError(evidenceResult.status === "rejected");
+    setCertificateError(credentialResult.status === "rejected");
+    setEvidence(evidenceResult.status === "fulfilled" ? evidenceResult.value : { skills: [], evidence: [] });
+    setCredentials(credentialResult.status === "fulfilled" ? credentialResult.value : { certificates: [] });
     setRefreshing(false);
   }
 
@@ -212,11 +219,11 @@ export default function MyLearningPage() {
           : <div className="py-8"><h2 className="text-base font-semibold text-[var(--text-heading)]">No completed courses</h2><p className="mt-2 text-sm text-[var(--text-muted)]">Nothing here yet. <a href="/courses" className="font-semibold text-[var(--primary)] underline">Explore courses</a></p></div>)}
         {tab === "skills" && <section>
           <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Skills</h2>
-          {skills.length ? <div className="grid gap-3 md:grid-cols-2">{skills.map((skill: any) => <article key={skill.skill_id || skill.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-[var(--text-heading)]">{skill.skill_name || skill.name}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">{skill.category || "Skill"}</p></div><span className="text-xs capitalize text-[var(--text-muted)]">{String(skill.status || "not_started").replaceAll("_", " ")}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: Math.max(0, Math.min(100, Number(skill.proficiency) || 0)) + "%" }}/></div><p className="mt-2 text-[11px] text-[var(--text-muted)]">{skill.verified_evidence_count || 0} verified evidence items · {Number(skill.proficiency) || 0}%</p></article>)}</div> : <p className="py-8 text-sm text-[var(--text-muted)]">Nothing here yet.</p>}
+          {evidenceError ? <p className="py-8 text-sm text-[var(--text-muted)]">Skills could not be loaded.</p> : skills.length ? <div className="grid gap-3 md:grid-cols-2">{skills.map((skill: any) => <article key={skill.skill_id || skill.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-[var(--text-heading)]">{skill.skill_name || skill.name}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">{skill.category || "Skill"}</p></div><span className="text-xs capitalize text-[var(--text-muted)]">{String(skill.status || "not_started").replaceAll("_", " ")}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: Math.max(0, Math.min(100, Number(skill.proficiency) || 0)) + "%" }}/></div><p className="mt-2 text-[11px] text-[var(--text-muted)]">{skill.verified_evidence_count || 0} verified evidence items · {Number(skill.proficiency) || 0}%</p></article>)}</div> : <p className="py-8 text-sm text-[var(--text-muted)]">Nothing here yet.</p>}
         </section>}
         {tab === "certificates" && <section>
           <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Certificates</h2>
-          {certificates.length ? <div className="space-y-3">{certificates.map((cert: any) => <article key={cert.id} className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[var(--primary-tint)] text-[var(--primary)]"><Award size={19}/></span><div className="min-w-0 flex-1"><h3 className="truncate text-sm font-semibold text-[var(--text-heading)]">{cert.course_title}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">Issued {dateLabel(cert.issued_at)}</p></div><Link href={cert.verification_url || "/dashboard/certificates"} className="shrink-0 text-xs font-semibold text-[var(--primary)]">View</Link></article>)}</div> : <p className="py-8 text-sm text-[var(--text-muted)]">Nothing here yet.</p>}
+          {certificateError ? <p className="py-8 text-sm text-[var(--text-muted)]">Certificates could not be loaded.</p> : certificates.length ? <div className="space-y-3">{certificates.map((cert: any) => <article key={cert.id} className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[var(--primary-tint)] text-[var(--primary)]"><Award size={19}/></span><div className="min-w-0 flex-1"><h3 className="truncate text-sm font-semibold text-[var(--text-heading)]">{cert.course_title}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">Issued {dateLabel(cert.issued_at)}</p></div><Link href={cert.verification_url || "/dashboard/certificates"} className="shrink-0 text-xs font-semibold text-[var(--primary)]">View</Link></article>)}</div> : <p className="py-8 text-sm text-[var(--text-muted)]">Nothing here yet.</p>}
         </section>}
       </section>
 
@@ -233,7 +240,7 @@ export default function MyLearningPage() {
         </section>
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
           <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-bold text-[var(--text-heading)]">Recent certificates</h2><Award size={17} className="text-[var(--primary)]"/></div>
-          {recentCertificates.length ? <div className="mt-4 space-y-4">{recentCertificates.map((cert: any) => <div key={cert.id} className="flex items-start gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-md bg-[var(--bg-soft)] text-[var(--primary)]"><FileText size={15}/></span><div className="min-w-0"><p className="text-xs font-semibold leading-5 text-[var(--text-heading)]">{cert.course_title}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">{dateLabel(cert.issued_at)}</p></div></div>)}</div> : <p className="mt-3 text-sm text-[var(--text-muted)]">Nothing here yet.</p>}
+          {certificateError ? <p className="mt-3 text-sm text-[var(--text-muted)]">Certificates could not be loaded.</p> : recentCertificates.length ? <div className="mt-4 space-y-4">{recentCertificates.map((cert: any) => <div key={cert.id} className="flex items-start gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-md bg-[var(--bg-soft)] text-[var(--primary)]"><FileText size={15}/></span><div className="min-w-0"><p className="text-xs font-semibold leading-5 text-[var(--text-heading)]">{cert.course_title}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">{dateLabel(cert.issued_at)}</p></div></div>)}</div> : <p className="mt-3 text-sm text-[var(--text-muted)]">Nothing here yet.</p>}
         </section>
       </aside>
     </div>
