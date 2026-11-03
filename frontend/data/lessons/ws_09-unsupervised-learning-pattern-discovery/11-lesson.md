@@ -84,3 +84,15 @@ Apply the method to a dataset. Compare at least two parameter settings or method
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: compare PCA, t-SNE and UMAP
+
+PCA is a linear projection that preserves directions of high global variance. t-SNE and UMAP are nonlinear embedding methods designed primarily to represent neighbourhood relationships in a low-dimensional map. They answer different questions, so their layouts need not agree.
+
+t-SNE converts pairwise similarities into probability distributions and tries to preserve neighbourhood relationships in the map. Perplexity affects the effective neighbourhood scale. Different seeds and perplexities can change the layout. UMAP constructs a weighted neighbourhood graph and optimises a low-dimensional representation. n_neighbors influences local versus broader structure; min_dist influences how tightly points may pack together.
+
+A two-dimensional map can make groups look separated even when separation is weak in the original space. Distances between distant islands, empty gaps and apparent group area should not automatically be interpreted quantitatively. The axes generally have no physical units. Use embeddings for exploration, not proof that natural clusters exist.
+
+Fit PCA as an interpretable baseline, then compare t-SNE or UMAP with documented settings. Repeat with nearby parameter values. Check whether local neighbours remain similar and return to original features for profiling and validation. If labels are used as colours to inspect a map, do not pass them into the unsupervised fitting step.
+
+**Practice:** Create a comparison figure and caption explaining each method's objective. Include a warning that the map is exploratory and does not prove natural clusters.
