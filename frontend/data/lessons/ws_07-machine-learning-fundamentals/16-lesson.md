@@ -1,57 +1,173 @@
-# Lesson 16: A Complete First ML Project
+# Lesson 16: A Complete First Machine Learning Project
 
 ## Learning outcomes
+Complete a small supervised-learning project; frame a prediction problem; inspect and split data; build a preprocessing pipeline; compare a baseline with a candidate model; evaluate errors; and present a reproducible report with limitations.
 
-By the end of this lesson, you should be able to Complete a small supervised-learning project from problem framing to final evaluation; build a leakage-safe pipeline; compare with a baseline; inspect errors; and present reproducible code, findings and limitations.
+## 1. Project brief
+In this capstone, you will build an educational classification model using the breast cancer dataset included with scikit-learn. The dataset contains measurements associated with digitised images of breast masses and a target label. This is an educational exercise only. It is not a diagnostic tool, must not be used for clinical decisions and does not establish that a model is safe for healthcare.
 
-## 1. Concepts and reasoning
-This lesson brings the workflow together using a familiar, small classification problem. A complete project states the decision, target, unit of observation, available features, data source, split method, baseline, candidate model, metric, error analysis and limitations. The notebook or script should be reproducible from a clean environment.
+The project demonstrates a workflow, not a real deployment. Your task is to predict the dataset's provided label using the numeric features, then evaluate the model honestly.
 
-The example uses the breast cancer dataset bundled with scikit-learn. The target is a dataset label, not a diagnosis for a real person. Do not use this educational demonstration for clinical decisions. The model is trained and evaluated on a held-out split. Accuracy is included for demonstration, but a real risk-sensitive task should inspect sensitivity, specificity, confusion matrix, calibration and consequences of errors.
+## 2. Project questions
+- What is one row?
+- What does the target label represent in this bundled dataset?
+- Which features are available?
+- How many examples and features are present?
+- What baseline can we establish?
+- Does a model improve on that baseline?
+- What kinds of mistakes does it make?
+- What are the limits of this evaluation?
 
-The final report should not say merely “the model is accurate”. State the test-set size, metric, baseline comparison and important limitations. A good first project demonstrates a responsible process, not just a high score.
+## 3. Set up the project
+Suggested folder structure:
+```text
+ws07-first-ml-project/
+├── data/                 # only if using an external dataset
+├── notebooks/
+│   └── exploration.ipynb
+├── src/
+│   └── train.py
+├── reports/
+│   └── project-report.md
+├── requirements.txt
+└── README.md
+```
 
-## 2. Worked example
-Run in VS Code in your course virtual environment. Install packages as required: `python -m pip install numpy pandas scikit-learn matplotlib`.
+Install:
+```bash
+python -m pip install numpy pandas matplotlib scikit-learn
+python -m pip freeze > requirements.txt
+```
 
+## 4. Load and inspect the data
 ```python
+import pandas as pd
 from sklearn.datasets import load_breast_cancer
+
+dataset = load_breast_cancer(as_frame=True)
+X = dataset.data
+y = dataset.target
+
+print("Feature shape:", X.shape)
+print("Target shape:", y.shape)
+print(X.head())
+print(X.info())
+print(y.value_counts())
+print(y.value_counts(normalize=True))
+```
+
+X contains the numerical input features; y contains the target labels. Inspect target_names to understand how integer labels map to the dataset's class names. Do not assume that 1 always means the positive condition in every dataset.
+
+## 5. Define a baseline
+A majority-class baseline predicts the most frequent training class. It gives a reference score. A model that does not outperform this baseline in a meaningful way may not be useful.
+
+## 6. Split the data
+```python
 from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+print(X_train.shape, X_test.shape)
+```
+The test set is held back for final evaluation. Do not use it repeatedly to select settings. For a real deployment, the split must represent the intended future population and time period.
+
+## 7. Build baseline and candidate pipelines
+```python
 from sklearn.dummy import DummyClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, confusion_matrix
 
-data = load_breast_cancer(as_frame=True)
-X, y = data.data, data.target
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+baseline = DummyClassifier(strategy="most_frequent")
+baseline.fit(X_train, y_train)
+
+model = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=2000)
 )
-baseline = DummyClassifier(strategy="most_frequent").fit(X_train, y_train)
-model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
 model.fit(X_train, y_train)
-print("Baseline accuracy:", baseline.score(X_test, y_test))
-print("Model accuracy:", model.score(X_test, y_test))
-print(confusion_matrix(y_test, model.predict(X_test)))
-print(classification_report(y_test, model.predict(X_test),
-                            target_names=data.target_names))
 ```
 
-## 3. Interpretation
-State what was learned from training data and what was measured on unseen data. Check whether the metric answers the real decision question. A technically correct output can still be misleading if the target, split or population is wrong.
+The baseline learns the most frequent class in training data. StandardScaler learns means and standard deviations from training data. LogisticRegression learns coefficients to estimate class probabilities. The pipeline ensures that the scaler is fitted only on training rows and reused for test rows.
 
-## 4. Guided practice
-Write a one-page report with: problem definition, dataset and target, split strategy, baseline result, model result, confusion matrix interpretation, at least two limitations and a recommendation about whether further validation is required. Do not describe this educational model as suitable for diagnosis.
+## 8. Evaluate the held-out data
+```python
+from sklearn.metrics import (
+    accuracy_score, confusion_matrix,
+    classification_report, roc_auc_score
+)
 
-## 5. Independent practice
-Apply the lesson to a small dataset. Record the source, unit of observation, target and feature availability. Save your code and a short report that includes evidence, limitations and the next validation step.
+baseline_pred = baseline.predict(X_test)
+predictions = model.predict(X_test)
+probabilities = model.predict_proba(X_test)[:, 1]
 
-## 6. Knowledge check
-1. What assumption is most important in this method?
-2. What is the difference between training performance and generalisation?
-3. How could leakage or sampling bias affect the result?
-4. What would you tell a stakeholder before they use the model?
+print("Baseline accuracy:", accuracy_score(y_test, baseline_pred))
+print("Model accuracy:", accuracy_score(y_test, predictions))
+print("Confusion matrix:\n", confusion_matrix(y_test, predictions))
+print(classification_report(
+    y_test, predictions, target_names=dataset.target_names
+))
+print("ROC-AUC:", roc_auc_score(y_test, probabilities))
+```
 
-## Lesson summary
-A trustworthy ML workflow is reproducible, uses a suitable baseline and evaluation design, and communicates errors and limitations as carefully as headline performance.
+predict() returns class labels. predict_proba() returns estimated class probabilities; [:, 1] selects the estimated probability for class label 1. ROC-AUC measures ranking across thresholds, not clinical usefulness. Always verify which class is represented by label 1 before interpreting it.
+
+## 9. Interpret the confusion matrix
+Use the label order to identify true negatives, false positives, false negatives and true positives. In this dataset, understand the class-name mapping before deciding which error is more serious. In a real medical context, error costs, clinical pathways, prevalence, calibration, external validation and professional oversight would all matter. This classroom model is not suitable for diagnosis.
+
+## 10. Inspect model limitations
+Your report should state:
+- this is a bundled educational dataset, not a representative current clinical sample;
+- a single random split produces one estimate and may vary with the split;
+- there is no external validation in this exercise;
+- performance may change across hospitals, populations, devices and measurement processes;
+- metrics do not establish clinical benefit, fairness or safety;
+- the exercise does not authorise real-world use.
+
+## 11. Final report template
+### Problem and intended use
+State the educational prediction task and clearly exclude clinical use.
+
+### Data
+Describe source, rows, features, target definition and class balance.
+
+### Method
+Describe split, baseline, pipeline, estimator and any settings.
+
+### Results
+Report baseline and model metrics, confusion matrix and test sample size.
+
+### Interpretation
+Explain the errors and what they mean for this limited exercise.
+
+### Limitations
+State at least three limitations and what further evidence would be required.
+
+### Conclusion
+Say whether the candidate improved on the baseline and whether that evidence is enough for deployment. For this educational dataset, the answer should explicitly be no.
+
+## 12. Assessment rubric
+| Area | Evidence | Weight |
+|---|---|---:|
+| Problem framing | Clear unit, target and intended use | 15% |
+| Data understanding | Correct inspection and label interpretation | 15% |
+| Leakage prevention | Correct split and pipeline | 20% |
+| Evaluation | Baseline, suitable metrics and confusion matrix | 20% |
+| Interpretation | Accurate explanation of errors | 15% |
+| Reproducibility and ethics | Requirements, limitations and no clinical claims | 15% |
+
+## Independent extension
+Repeat the project with a different non-sensitive public dataset. Choose a prediction problem with a clear target and appropriate permission. Document the source, prediction time, split strategy, baseline, candidate, metrics and limitations. Do not choose a high-stakes application for an unsupervised beginner project.
+
+## Final knowledge check
+1. Why do we establish a baseline?
+2. Why is scaling inside a pipeline?
+3. What does stratify=y do?
+4. What does the confusion matrix reveal?
+5. Why does a strong test score not prove deployment readiness?
+
+## Course completion
+You have now worked through the foundations of ML, learning paradigms, project workflow, data representation, mathematical ideas, Python tooling, EDA, preprocessing, data splitting, loss functions, generalisation, evaluation and responsible use.
+
+A good beginner ML project is not one that merely produces a high score. It is one where the question is clear, the data is understood, leakage is controlled, the baseline is fair, the evaluation is meaningful and the limitations are honestly communicated.
