@@ -60,3 +60,11 @@ Linkage defines how distance between groups is measured. Single linkage uses the
 A large vertical jump can suggest that relatively distinct groups were forced together at that stage. It is a diagnostic, not proof of natural categories. Hierarchical clustering can be expensive in memory and time for large datasets. Scaling, distance and linkage all affect the tree.
 
 **Practice:** Draw two horizontal cuts and compare the resulting cluster counts. Then change from Ward to average linkage. Explain why the tree changes and which assumptions make one result more defensible for your data.
+
+### Worked example: choose a dendrogram cut
+
+A dendrogram can be cut at several heights, and each cut produces a different number of clusters. A cut just below a large merge may preserve groups that were joined only at a relatively high dissimilarity. A cut much lower may produce many small groups. The correct cut depends on the intended granularity and the evidence in the profiles.
+
+Do not read the horizontal spacing between leaves as a meaningful distance; leaf order is often rearranged for display. Focus on merge heights and the linkage definition. If you use a truncated dendrogram, remember that the display hides some lower-level merge detail.
+
+Hierarchical methods do not require k when building the tree, but the analyst still chooses a cut or cluster count for interpretation. Document that choice and show how conclusions change under a nearby cut.
