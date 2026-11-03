@@ -8,7 +8,7 @@ A model is trained using a sample of data. In practice, it will receive examples
 
 A model that memorises training rows may achieve excellent training performance but fail on new data. A model that is too simple may fail to learn the important patterns at all. Both are problems.
 
-![Underfitting, good fit and overfitting](./assets/13-fit-comparison.svg)
+![Underfitting, good fit and overfitting](/course-assets/ws07/13-fit-comparison.svg)
 
 ## 2. Underfitting
 Underfitting occurs when the model is too simple, poorly specified or insufficiently trained to capture important patterns. It usually performs poorly on both training and validation data.
