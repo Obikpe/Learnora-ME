@@ -50,3 +50,25 @@ Extend the example with another model or evaluation view. Compare candidates usi
 
 ## Lesson summary
 Supervised learning is an evidence-based process: define the target, preserve the prediction timeline, validate fairly, inspect errors and communicate uncertainty.
+
+## 7. Turn the case study into a defensible analysis
+
+An end-to-end project is not a competition to obtain the largest score. It is a documented chain of decisions. Begin by explaining the practical question and why the target is meaningful. Define the observation unit, prediction time and outcome window. Describe where the data came from, who or what it represents, and which populations may be missing. Check whether the target was recorded consistently and whether any feature contains information from after the prediction moment.
+
+Create a baseline before trying a more complex estimator. A baseline reveals how much value the candidate adds beyond a simple reference strategy. Select models and parameters with training and validation data. Keep the final test set separate until the approach is fixed. Choose metrics that reflect the problem: regression errors should be interpreted in target units; classification evaluation should consider class balance, threshold choice and the costs of false positives and false negatives.
+
+## 8. Explain results and limitations
+
+A useful report includes the question, target definition, data description, split design, preprocessing, baseline, model, parameter choices, evaluation results, error analysis and limitations. Include enough detail for another analyst to reproduce the work. Avoid causal language unless the study design supports causal conclusions. A high score on a small or unrepresentative dataset does not guarantee performance on a different population, future period or operational setting.
+
+## 9. Independent project extension
+
+Re-run the project after changing one defensible choice: the split design, feature set, preprocessing, model family or decision threshold. Compare the new result with the original using the same evaluation design. Inspect examples where predictions are wrong and explain what the model appears to struggle with. State what further data or validation would be required before deployment.
+
+## 10. Knowledge check
+
+1. What decision is this model intended to support?
+2. How is the target defined and when is the prediction made?
+3. Why is the baseline necessary?
+4. What does the evaluation metric mean in the original problem's units?
+5. Which limitations prevent you from claiming that the result will generalise everywhere?
