@@ -2,69 +2,158 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Profile cluster assignments using original feature units; compare group sizes, medians and distributions; name segments cautiously; and identify evidence needed before taking action.
+By the end of this lesson, you should be able to profile clusters using original feature values; compare counts, medians, means and distributions; create useful segment summaries and visualisations; name segments cautiously; recognise small-group and fairness risks; and translate findings into testable recommendations.
 
-![Cluster assignments must be interpreted and validated by an analyst](/course-assets/ws09/clustering-concepts.svg)
+![A cluster profile should be grounded in measured features](/course-assets/ws09/clustering-concepts.svg)
 
-## 1. Core explanation
-Cluster profiling describes how groups differ using original feature units. Compare counts, medians, means, distributions and proportions. A profile should answer what distinguishes a segment, how large it is and whether the difference is stable. Use box plots or summary tables to reveal within-cluster variation, not only averages.
+## 1. A cluster label is only the beginning
 
-Cluster labels are arbitrary identifiers. Give a descriptive name only after examining evidence and confirming that the label is useful and not misleading. A segment called high-value customers should be based on a defined value measure, not a guess from a cluster number.
+When a clustering algorithm finishes, it returns labels such as 0, 1 and 2. These are identifiers assigned by the implementation. They do not explain what the groups represent.
 
-Profiles can hide small or internally diverse groups. Report segment sizes and consider privacy when a cluster is tiny. Validate whether segments support a real action and whether that action is fair and appropriate.
+The analyst's next task is **cluster profiling**: describing how the observations in each group differ using the original features. Profiling connects the mathematical output to the real question.
 
-## 2. Worked Python example
-Run in VS Code. Install packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`.
+Suppose a customer dataset contains recency, number of orders and average basket value. A cluster profile might show that one group has a median recency of 8 days, a median of 10 orders in 90 days and a median basket value of ₦420. Another group might have a median recency of 75 days, one order and a median basket of ₦70.
+
+Those measurements support a descriptive statement about purchasing behaviour. They do not automatically prove loyalty, future churn or customer value over a lifetime.
+
+## 2. Begin with group size
+
+Always calculate the number and percentage of observations in each cluster. A group containing 3 records out of 10,000 should not be treated with the same confidence as a group containing 2,000 records.
+
+Small clusters may represent rare but meaningful patterns, data-quality problems, unusual cases or an unstable model artefact. Inspect them. If they contain sensitive information, consider privacy risks before publishing detailed profiles.
 
 ```python
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+result = customers.assign(cluster=labels)
 
-customers = pd.DataFrame({"recency_days": [5,8,12,60,75,90,3,10],
-                          "orders_90d": [12,10,8,2,1,0,14,9],
-                          "avg_basket": [500,420,380,90,70,30,550,400]})
-labels = KMeans(n_clusters=2, n_init=20, random_state=42).fit_predict(
-    StandardScaler().fit_transform(customers))
-print(customers.assign(segment=labels).groupby("segment").agg(
-    size=("recency_days","size"), median_recency=("recency_days","median"),
-    mean_orders=("orders_90d","mean"), mean_basket=("avg_basket","mean")))
+counts = result["cluster"].value_counts().sort_index()
+percentages = result["cluster"].value_counts(normalize=True).sort_index() * 100
+
+summary = pd.DataFrame({
+    "count": counts,
+    "percentage": percentages.round(1)
+})
+print(summary)
 ```
 
-## 3. Interpretation
-Describe the feature representation, model settings and meaning of the output. Validate patterns in original units. Cluster IDs are arbitrary and anomaly flags are not proof of wrongdoing.
+`value_counts` counts how often each label occurs. With `normalize=True`, it returns proportions rather than counts. Multiplying by 100 expresses those proportions as percentages.
 
-## 4. Guided practice
-Name the segments based on their profiles, then challenge your labels. What additional business outcome or longitudinal evidence would show whether segmentation is useful?
+## 3. Compare distributions, not only averages
 
-## 5. Independent practice
-Apply the method to a dataset. Compare at least two parameter settings or methods, profile results and document stability, limitations and possible actions.
+The mean is useful, but it can be distorted by extreme values. The median is the middle value when observations are ordered. The interquartile range describes the middle 50% of values. These measures can reveal differences that an average hides.
 
-## 6. Knowledge check
-1. What structure is the method attempting to discover?
-2. Which assumptions are introduced by the representation or distance?
-3. How will you assess stability and usefulness?
-4. What should not be inferred from the output?
+For example, two customer groups may have the same average spend. One group may have most customers spending around ₦300; the other may contain many low spenders and a few very high spenders. Their means could match even though their distributions differ.
+
+Use:
+- Count and percentage to show group size.
+- Mean to describe arithmetic average.
+- Median to describe the typical middle observation.
+- Standard deviation or IQR to describe spread.
+- Minimum and maximum to inspect extremes, with caution.
+- Proportions to describe categorical features.
+
+```python
+profile = result.groupby("cluster").agg(
+    customers=("recency_days", "size"),
+    mean_recency=("recency_days", "mean"),
+    median_recency=("recency_days", "median"),
+    mean_orders=("orders_90d", "mean"),
+    median_orders=("orders_90d", "median"),
+    median_basket=("average_basket", "median")
+)
+print(profile.round(1))
+```
+
+The `groupby` operation separates rows by cluster label. `agg` calculates multiple summary statistics for selected columns. The output should use original, unscaled values.
+
+## 4. Visualise cluster profiles
+
+A table is precise, but charts can make differences easier to see. Possible visuals include:
+- Box plots for distributions and outliers.
+- Bar charts for group sizes.
+- Heatmaps of standardised cluster profiles.
+- Small multiples for comparing feature distributions.
+- Scatter plots for selected pairs of features.
+
+If you use scaled values in a heatmap, label them clearly. A z-score of 1.2 means the group mean is 1.2 standard deviations above the overall feature mean; it does not mean 1.2 naira or 1.2 orders.
+
+```python
+import matplotlib.pyplot as plt
+
+result.boxplot(column="recency_days", by="cluster")
+plt.title("Recency distribution by cluster")
+plt.suptitle("")
+plt.xlabel("Cluster")
+plt.ylabel("Days since last purchase")
+plt.show()
+```
+
+A box plot shows the median, quartiles and potential extreme values under the plotting convention. Do not remove outliers from the chart simply because they make a group look less tidy. They may be important to the interpretation.
+
+## 5. Name segments with evidence
+
+A useful segment name is short, neutral and directly supported by its profile. Examples:
+- “Frequent recent purchasers”
+- “Low-frequency customers”
+- “Higher basket-value group”
+- “Longer purchase recency”
+
+Avoid judgemental or unsupported names such as “bad customers”, “disloyal customers” or “future churners”. A cluster based on historical purchasing behaviour cannot prove a customer's intentions or future actions.
+
+A good segment description includes:
+1. The number and percentage of observations.
+2. The features that distinguish it.
+3. The amount of variation inside the group.
+4. How stable the group is.
+5. The limitations of the interpretation.
+
+## 6. From profile to action: propose a test, not a certainty
+
+A segment may suggest an action. For example, a group with longer recency and fewer recent orders may be a candidate for a re-engagement experiment. But clustering does not show that a campaign will cause customers to return.
+
+A responsible recommendation might be: “Test a low-cost re-engagement message with a random subset of customers in this segment and compare their return rate with a control group.” This separates the descriptive segmentation from the causal question about campaign effectiveness.
+
+## 7. Fairness, privacy and potential proxies
+
+Features such as location, purchase category or service usage may act as proxies for sensitive characteristics. A cluster can therefore reproduce or amplify unequal treatment even if the model never receives an explicit sensitive field.
+
+Review:
+- Which features were included and why.
+- Whether sensitive information or proxies are present.
+- Whether the proposed action is proportionate.
+- Whether small groups could expose identities.
+- Whether people can be unfairly excluded or targeted.
+- Whether the result is appropriate for the decision being considered.
+
+Unsupervised learning is not automatically neutral. The data, features, distance measure and decisions made from the output all reflect choices.
+
+## 8. Common mistakes
+
+- Naming clusters before examining their profiles.
+- Reporting only means.
+- Ignoring cluster size.
+- Describing historical patterns as future behaviour.
+- Treating a cluster as a fixed identity for a person.
+- Publishing detailed profiles for very small groups.
+- Recommending an intervention without testing its effect.
+
+## 9. Guided practice
+
+Take a two-cluster customer result. Prepare a segment card for each group with count, percentage, median recency, median orders, median basket value and one chart. Give each group a neutral descriptive name. Write one proposed low-risk experiment and one limitation.
+
+## 10. Independent practice
+
+Apply a clustering method to a dataset. Produce a profile table and at least two visuals. Write a one-page interpretation for a non-technical reader, separating measured observations, your interpretation, recommended next step and what the analysis cannot establish.
+
+## 11. Knowledge check
+
+1. Why are cluster IDs not meaningful descriptions?
+2. Why should cluster size be reported?
+3. When is a median more informative than a mean?
+4. What is the difference between a descriptive segment name and an unsupported label?
+5. Why does a cluster not prove future behaviour?
+6. How can small groups create privacy risks?
+7. How could a proposed campaign be evaluated more rigorously?
 
 ## Lesson summary
-Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
 
-## Deeper explanation: turn cluster IDs into defensible profiles
-
-A cluster profile translates a mathematical assignment into evidence people can inspect. Start with size, then compare distributions—not only means. Means can be distorted by skew and extreme values, so medians and interquartile ranges are often useful. Include proportions for categorical variables and show within-cluster spread.
-
-A useful profile answers: how many observations are in the group; which measured features distinguish it from the overall population; how much variation exists inside it; whether the distinction persists across seeds or time periods; and what action, if any, could reasonably be tested.
-
-Avoid turning a descriptive profile into a psychological story. “Customers with fewer recent orders and longer recency” is grounded. “Disloyal customers” is a judgement that may not be supported. Names should be neutral and tied to measurable behaviour.
-
-If a segment suggests a campaign, run an experiment or careful evaluation. Clustering does not establish that a campaign will work. Check fairness because a segment may proxy for sensitive characteristics or create unequal treatment. Small clusters can create re-identification risks; suppress or aggregate small groups where appropriate.
-
-**Practice:** Write a segment card for each cluster: size, neutral name, distinguishing evidence, uncertainty, proposed low-risk test and what the analysis does not prove.
-
-### Worked example: build a segment card
-
-For each cluster, create a small card with the number and percentage of observations, median recency, median frequency, median spend and one or two distribution plots. Compare the group with the overall population. This makes the distinction visible and prevents a name from carrying more meaning than the measurements support.
-
-Use descriptive labels such as “higher recent frequency” rather than judgemental labels such as “loyal” or “poor”. Include a caveat when the group is small or unstable. If the group is intended to guide a campaign, propose a test with a control group rather than assuming the campaign will work.
-
-Segment profiling is not a substitute for fairness review. Consider who may be excluded, whether features proxy for sensitive attributes, and whether the resulting action is proportionate.
+Profiling turns cluster assignments into evidence that people can inspect. Use original feature units, group sizes, robust summaries and clear visuals. Name groups neutrally, acknowledge uncertainty and propose experiments rather than claiming that a cluster proves future behaviour or causes an outcome.
