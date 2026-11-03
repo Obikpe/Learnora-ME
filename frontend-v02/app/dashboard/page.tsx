@@ -79,6 +79,7 @@ export default function MyLearningPage() {
   const [evidence, setEvidence] = useState<any>({ skills: [], evidence: [] });
   const [credentials, setCredentials] = useState<any>({ certificates: [] });
   const [catalogue, setCatalogue] = useState<any[]>([]);
+  const [catalogueLoading, setCatalogueLoading] = useState(false);
   const [goal, setGoal] = useState("");
   const [tab, setTab] = useState<Tab>("in-progress");
   const [loading, setLoading] = useState(true);
@@ -90,22 +91,32 @@ export default function MyLearningPage() {
   async function load() {
     setRefreshing(true);
     setError("");
-    const [progressResult, catalogueResult] = await Promise.allSettled([
+    const progressResult = await Promise.allSettled([
       request<any>("/progress/me"),
-      request<any>("/public/courses"),
     ]);
-    if (progressResult.status === "fulfilled") setLearning(progressResult.value);
+    const progressLoaded = progressResult[0].status === "fulfilled";
+    if (progressLoaded) setLearning(progressResult[0].value);
     else {
       setLearning({ courses: [] });
       setError("Your learning records could not be loaded.");
     }
-    if (catalogueResult.status === "fulfilled") {
-      const result = catalogueResult.value;
-      setCatalogue(Array.isArray(result.courses) ? result.courses : Array.isArray(result.data) ? result.data : []);
+    setLoading(false);
+
+    const hasEnrolments = progressLoaded && (progressResult[0].value.courses || []).length > 0;
+    if (!hasEnrolments && progressLoaded) {
+      setCatalogueLoading(true);
+      try {
+        const result = await request<any>("/public/courses");
+        setCatalogue(Array.isArray(result.courses) ? result.courses : Array.isArray(result.data) ? result.data : []);
+      } catch {
+        setCatalogue([]);
+      } finally {
+        setCatalogueLoading(false);
+      }
     } else {
       setCatalogue([]);
+      setCatalogueLoading(false);
     }
-    setLoading(false);
 
     const [evidenceResult, credentialResult] = await Promise.allSettled([
       request<any>("/evidence/me"),
@@ -212,7 +223,7 @@ export default function MyLearningPage() {
           : courses.length === 0
             ? <section>
                 <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Recommended courses</h2>
-                {recommendations.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{recommendations.map((course: any) => <RecommendedCourseCard key={course.id} course={course}/>)}</div> : <div className="empty">Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</div>}
+                {recommendations.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{recommendations.map((course: any) => <RecommendedCourseCard key={course.id} course={course}/>)}</div> : <div className="empty">{catalogueLoading ? "Finding courses for you…" : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div>}
               </section>
             : <div className="empty">Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</div>)}
         {tab === "completed" && (completed.length
