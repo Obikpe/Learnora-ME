@@ -543,3 +543,17 @@ The backend access audit identified and corrected several paths that could other
 - The public catalogue endpoints intentionally continue to expose only published public course metadata and course structure (titles/descriptions and lesson metadata); they do not return lesson body content, videos, resources or assessment questions. Authenticated content and media routes enforce the assigned-access checks above.
 
 **Preservation and verification boundary:** Existing individual free-launch access, paid billing records, organisation-wide assigned-course grants, scoped cohort/team/individual assignments, and existing WitStart cohort membership records were not deleted or migrated. The changes were committed directly to main. No GitHub Actions, CI, build, test suite, browser acceptance or Vercel deployment was triggered. The backend source was re-fetched after each write for targeted inspection, but runtime behaviour still requires focused automated tests and authenticated API/browser acceptance before release. Do not mark this access boundary fully release-verified yet.
+
+## Shared cohort and organisation learner dashboard — 3 November 2026
+
+The cohort learner experience now uses the same Learnora ME dashboard shell as individual learners rather than a separate visual layout.
+
+- Cohort overview, assigned-course and lesson pages now use the shared Shell, Sidebar and Topbar. They use the existing theme tokens, responsive navigation, account controls and headset support link.
+- Cohort content remains assignment-driven: the dashboard lists only courses returned by the authenticated cohort learner endpoint; course and lesson pages call the learner-specific assignment APIs. No public course catalogue or self-enrolment controls are rendered.
+- The cohort layout remains the single owner of LearningSessionTracker so session accounting persists across nested cohort routes. Shared Shell instances on cohort pages disable their own tracker mount to prevent duplicate tracking.
+- Organisation learners continue through the standard individual learner dashboard and shared components. Their active learner membership marks the account as assigned-only: public course discovery, course search, learning-track discovery, recommendations and the AI course-discovery assistant are not rendered.
+- Public course and track catalogue pages, public track detail pages, dashboard track pages and direct unassigned course-detail routes redirect assigned learners to their appropriate dashboard. A course-detail route is retained only when the authenticated learner has an active scoped enrolment/assignment verified by the backend.
+- Practice projects now use the central scope-aware enrolment resolver. Organisation/cohort learners see course-linked projects only when their course assignment is active; course-less public practice projects remain individual-learner-only. Submission endpoints enforce the same rule.
+- Existing individual learner discovery and self-enrolment remain available. No organisation, cohort, course assignment, enrolment, billing or learner records were deleted or migrated.
+
+**Verification boundary:** Source files were re-fetched after edits and checked for the expected route guards, shared shell usage, responsive navigation restrictions and single cohort tracker mount. No build, test suite, GitHub Actions/CI or Vercel deployment was run. Browser-level mobile and desktop acceptance, and focused backend regression tests for individual, organisation and both cohort account models, remain outstanding.
