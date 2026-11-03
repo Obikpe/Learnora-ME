@@ -1,7 +1,8 @@
 "use client";
 import{useEffect,useMemo,useRef,useState}from"react";
 import Logo from"../brand/Logo";
-import RichContent from"./RichContent";\nimport LessonAIPanel from"./LessonAIPanel";
+import RichContent from"./RichContent";
+import LessonAIPanel from"./LessonAIPanel";
 import EmptyState from"../feedback/EmptyState";
 import Skeleton from"../feedback/Skeleton";
 import{request}from"../../lib/api/client";
