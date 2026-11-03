@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Complete a multiclass classification case study; split with stratification; fit a pipeline; inspect class-wise results; and communicate what the small educational dataset cannot establish.
 
+
+![workflow concept diagram](/course-assets/ws08/workflow.svg)
+
 ## 1. Core explanation
 Build a classification case study around the Wine dataset. Define the target as one of three wine classes, inspect class balance, split with stratification, compare a baseline and candidate, then inspect the confusion matrix and per-class precision and recall. The dataset is educational and small; a high score does not imply performance on commercial wine samples or other populations.
 
