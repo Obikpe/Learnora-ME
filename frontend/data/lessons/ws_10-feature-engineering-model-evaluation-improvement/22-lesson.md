@@ -1,43 +1,85 @@
 # Lesson 22: Model Comparison and Statistical Caution
 
 ## Learning outcomes
+Compare models using identical validation folds; interpret mean and variation; understand uncertainty in metric estimates; recognise practical versus statistical significance; and communicate limitations responsibly.
 
-By the end of this lesson, you should be able to Compare model scores on identical folds; inspect paired differences and variability; distinguish statistical from practical significance; and consider operational cost, fairness and maintainability.
+## 1. Fair comparison requires the same conditions
+Two models should be compared on the same observations, target definition, preprocessing rules, folds and metric. If one model is evaluated on easier folds, its score is not directly comparable. Use the same cross-validation splitter and random seed where appropriate.
 
-## 1. Core explanation
-Model scores vary with sample, split and random seed. A small difference in mean cross-validation score may not be meaningful. Report fold-level variability, sample size and uncertainty. If comparing models on the same folds, their scores are paired; inspect the distribution of differences rather than comparing rounded means alone.
+Record more than the mean score. Include fold-level results, standard deviation, fit time, prediction time, model size and operational constraints. A tiny performance gain may not justify a much more expensive or less interpretable model.
 
-Repeatedly selecting the best among many candidates can produce optimistic estimates. Nested cross-validation can estimate the full selection process, while a final held-out test provides a final check. Neither removes sampling bias or future distribution shift.
+## 2. Why metrics are uncertain
+A test score is calculated from a finite sample. If another representative sample were collected, the score would likely differ. Rare positive cases can make precision and recall especially unstable. A difference of 0.002 between models may be noise rather than a meaningful improvement.
 
-Statistical significance is not the same as practical value. Consider effect size, operational cost, fairness, interpretability and latency. If two models perform similarly, prefer the simpler and more maintainable one unless a clear benefit justifies complexity.
+Fold scores are related because training sets overlap. Their standard deviation is useful as a descriptive stability measure, but should not be treated as a formal confidence interval without appropriate assumptions.
 
-## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
+## 3. Paired comparisons
+When models are evaluated on the same folds, compare their fold-level differences. A paired design reduces some variation because both models face similar validation samples. Statistical tests may be appropriate in some settings, but their assumptions must be checked. Statistical significance does not automatically imply practical value.
 
+![Model comparison process](/course-assets/ws10/model-comparison.svg)
+
+## 4. Worked comparison
 ```python
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 import numpy as np
-scores_a = np.array([.91, .90, .93, .89, .92])
-scores_b = np.array([.92, .91, .92, .90, .93])
-differences = scores_b - scores_a
-print("Mean A:", scores_a.mean(), "Mean B:", scores_b.mean())
-print("Fold differences:", differences)
-print("Mean paired difference:", differences.mean())
+
+X, y = load_breast_cancer(return_X_y=True)
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+models = {
+    "logistic": make_pipeline(
+        StandardScaler(),
+        LogisticRegression(max_iter=3000)
+    ),
+    "random_forest": RandomForestClassifier(
+        n_estimators=300, random_state=42
+    )
+}
+
+scores = {}
+for name, model in models.items():
+    fold_scores = cross_val_score(
+        model, X, y, cv=cv, scoring="roc_auc"
+    )
+    scores[name] = fold_scores
+    print(name, np.round(fold_scores, 3),
+          "mean", round(fold_scores.mean(), 3),
+          "std", round(fold_scores.std(), 3))
+
+print("Paired fold differences:",
+      np.round(scores["random_forest"] - scores["logistic"], 3))
 ```
 
-## 3. Interpretation and safeguards
-State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune thresholds, select features or choose hyperparameters.
+This comparison uses the same folds and metric. Five folds are still only a limited view. The paired differences help show whether one model consistently leads across these partitions, but do not prove that it will always be better.
 
-## 4. Guided practice
-Interpret the paired fold differences. Explain why five folds do not prove a universal performance advantage and why practical cost should influence the choice.
+## 5. Practical model selection
+Choose a model based on the full decision context: performance, stability, calibration, fairness, interpretability, latency, maintenance and cost. A slightly lower-scoring model may be preferable if it is simpler, more reliable and easier to monitor.
 
-## 5. Independent practice
-Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
+## 6. Common mistakes
+- Comparing models on different test samples.
+- Reporting only the best fold.
+- Treating fold standard deviation as a formal confidence interval.
+- Declaring a winner based on a tiny score difference.
+- Ignoring compute and maintenance cost.
+- Confusing statistical significance with business significance.
 
-## 6. Knowledge check
-1. What question does this method answer?
-2. What data leakage risk must be controlled?
-3. How does the metric relate to the decision?
-4. What evidence would make you trust the improvement?
+## Guided practice
+Model A has mean F1 0.91 with standard deviation 0.02; Model B has mean F1 0.915 with standard deviation 0.05. Explain why the evidence may not justify choosing B.
+
+## Independent practice
+Compare three models on identical folds. Report per-fold scores, mean, standard deviation, fit time and a practical recommendation. Include uncertainty and limitations in the report.
+
+## Knowledge check
+1. Why must models use identical folds?
+2. What does fold variation tell you?
+3. Why are fold scores not independent samples?
+4. What is practical significance?
+5. Name two non-metric factors in model choice.
 
 ## Lesson summary
-Reliable model improvement requires controlled experiments, leakage-safe preprocessing, a validation design that matches the data and honest reporting of uncertainty.
+Model comparison is an evidence-based decision, not a contest to find the largest decimal. Keep conditions identical, describe uncertainty and choose a model that is useful and maintainable in practice.

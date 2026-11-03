@@ -1,48 +1,74 @@
 # Lesson 18: Bias-Variance Trade-Off
 
 ## Learning outcomes
+Explain bias and variance intuitively; recognise underfitting and overfitting; interpret training and validation performance together; and describe how model complexity and regularisation affect generalisation.
 
-By the end of this lesson, you should be able to Explain the bias-variance trade-off; compare training and held-out scores across model complexity; diagnose underfitting and overfitting; and propose a controlled improvement.
+## 1. Why training performance is not enough
+A model can perform very well on training data but poorly on unseen observations. It may have memorised accidental details instead of learning stable patterns. Conversely, a model can be so simple that it cannot represent important relationships. Reliable modelling seeks a balance.
 
-## 1. Core explanation
-Bias describes systematic error from assumptions that are too restrictive; variance describes sensitivity to the particular training sample. A simple model may underfit with high bias. A very flexible model may overfit with high variance. The goal is to balance the two so performance generalises.
+**Bias** describes error caused by overly restrictive assumptions or a model that cannot capture the underlying pattern. **Variance** describes sensitivity to the particular sample: a high-variance model changes substantially when trained on a different sample.
 
-Training and validation curves help diagnose the problem. If both errors are high, the model may underfit. If training error is low but validation error is much higher, the model may overfit. More representative training data, regularisation, simpler models and better features can help depending on the cause.
+## 2. Underfitting and overfitting
+Underfitting occurs when the model is too simple, the features are inadequate or the training process has not learned enough. Training and validation performance are both poor.
 
-The bias-variance framework is a conceptual guide, not a complete diagnosis. Label noise, distribution shift, leakage and data quality can also explain poor performance. Change one factor at a time and validate the effect.
+Overfitting occurs when the model captures noise or sample-specific patterns. Training performance is strong but validation performance is noticeably worse.
 
-## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
+The goal is not to minimise training error at any cost. It is to find a model that performs well on unseen data and remains stable.
 
+![Bias variance conceptual diagram](/course-assets/ws10/bias-variance.svg)
+
+## 3. What changes complexity?
+A deeper decision tree can represent more complex boundaries but may fit noise. A high-degree polynomial can model curves but can also oscillate. A large number of features may allow more flexibility. Regularisation constrains parameters. More representative training data can reduce uncertainty, although it does not fix systematic bias or leakage.
+
+## 4. Worked example: decision tree depth
 ```python
-from sklearn.datasets import make_moons
+from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 
-X, y = make_moons(n_samples=500, noise=.25, random_state=3)
-Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=.3,
-                                      random_state=3, stratify=y)
-for depth in [1, 2, 4, 10, None]:
-    m = DecisionTreeClassifier(max_depth=depth, random_state=3).fit(Xtr, ytr)
-    print(depth, accuracy_score(ytr, m.predict(Xtr)),
-          accuracy_score(yte, m.predict(Xte)))
+X, y = load_breast_cancer(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, stratify=y, random_state=42
+)
+
+for depth in [1, 2, 3, 5, 10, None]:
+    model = DecisionTreeClassifier(
+        max_depth=depth, random_state=42
+    )
+    model.fit(X_train, y_train)
+    train_score = accuracy_score(y_train, model.predict(X_train))
+    test_score = accuracy_score(y_test, model.predict(X_test))
+    print(depth, round(train_score, 3), round(test_score, 3))
 ```
 
-## 3. Interpretation and safeguards
-State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune a threshold, select features or choose hyperparameters.
+A shallow tree may underfit; an unrestricted tree may fit the training data extremely closely. The held-out score helps reveal the generalisation gap. Do not choose a depth from one test set repeatedly; use cross-validation for model selection and reserve the test set for final evaluation.
 
-## 4. Guided practice
-Record training and test scores. Identify underfit and overfit candidates. Suggest one change for each and explain why a perfect training score is not the objective.
+## 5. Diagnose rather than guess
+If both training and validation errors are high, consider richer features, a more flexible model, better data or reduced regularisation. If training error is low and validation error is high, consider stronger regularisation, simpler models, more representative data, leakage checks and data-quality issues.
 
-## 5. Independent practice
-Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
+Learning curves can help: they plot training and validation performance as training sample size increases. They can reveal whether more data may help or whether the model is limited by bias.
 
-## 6. Knowledge check
-1. What question does this method answer?
-2. What data leakage risk must be controlled?
-3. How does the metric relate to the decision?
-4. What evidence would make you trust the improvement?
+## 6. Common mistakes
+- Calling every train/validation gap overfitting without checking split quality.
+- Assuming a more complex model is always better.
+- Using test performance to tune complexity repeatedly.
+- Ignoring noisy labels or distribution shift.
+- Treating bias and variance as mutually exclusive causes.
+- Assuming more data automatically fixes a poor feature definition.
+
+## Guided practice
+A model has 98% training accuracy and 72% validation accuracy. List possible explanations and propose checks before changing the model.
+
+## Independent practice
+Plot learning curves for a simple and a more complex model. Compare training and validation scores, describe the gap and recommend a next experiment.
+
+## Knowledge check
+1. What is bias in model learning?
+2. What is variance?
+3. What does underfitting look like?
+4. What does overfitting look like?
+5. Name two ways to reduce variance.
 
 ## Lesson summary
-Reliable model improvement requires controlled experiments, leakage-safe preprocessing, a validation design that matches the data and honest reporting of uncertainty.
+Bias and variance describe different sources of generalisation error. Use training and validation behaviour, learning curves and sound split checks to diagnose whether a model is too simple, too flexible or trained on unrepresentative data.

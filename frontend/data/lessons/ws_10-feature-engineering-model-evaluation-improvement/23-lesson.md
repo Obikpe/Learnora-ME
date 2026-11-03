@@ -1,43 +1,101 @@
 # Lesson 23: Reproducible Model Improvement Workflow
 
 ## Learning outcomes
+Create a baseline-first experiment process; record data and environment versions; organise preprocessing and model code; preserve evaluation boundaries; and communicate a reproducible model improvement decision.
 
-By the end of this lesson, you should be able to Maintain a reproducible experiment log with hypothesis, data version, code version, split seed, parameters and metrics; change one factor at a time; and document rejected as well as successful experiments.
+## 1. Why reproducibility matters
+A model result is useful only if another person can understand how it was produced and, where possible, reproduce it. Reproducibility requires more than saving a notebook. Record the dataset source and version, target definition, feature definitions, split strategy, random seeds, package versions, preprocessing, model settings and metrics.
 
-## 1. Core explanation
-An improvement workflow is a controlled experiment. Start with a baseline and a written hypothesis, change one meaningful factor, evaluate using the same split and metric, and record the result. Examples include adding a feature, changing regularisation, adjusting class weights or using a different model family.
+A reproducible workflow also reduces accidental changes. If the dataset changes, the result may change. If a library changes, an algorithm implementation may change. Versioning makes these differences visible.
 
-Keep experiment records: dataset version, code commit, package versions, split seed, preprocessing, hyperparameters, metric and date. Do not delete failed experiments; they explain decisions. Ensure each candidate is compared on identical evaluation data.
+## 2. Start with a baseline
+A baseline is a simple reference point. For classification, it might be a majority-class predictor or a simple logistic regression. For regression, it might predict the training mean or median. A complex model should demonstrate improvement over a relevant baseline.
 
-The final improvement should be meaningful, reproducible and defensible. If improvement is within normal score variability, report that honestly. Re-run the selected workflow from a clean environment and preserve the untouched test set for final evaluation.
+Define the decision and metric before tuning. Document what counts as an acceptable error and what limitations are known. This prevents selecting metrics after seeing results.
 
-## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
+## 3. Experiment log
+Record one row per experiment:
+- experiment ID and date;
+- dataset version or hash;
+- target and feature set;
+- split and cross-validation configuration;
+- preprocessing and estimator;
+- hyperparameters;
+- metric by fold and summary;
+- runtime;
+- observations and next decision.
 
-```python
-import pandas as pd
-experiments = pd.DataFrame([
-    {"id": "baseline", "change": "Dummy median", "mae": 12.4, "seed": 42},
-    {"id": "e01", "change": "Ridge alpha=1", "mae": 10.8, "seed": 42},
-    {"id": "e02", "change": "Ridge alpha=10", "mae": 11.1, "seed": 42}
-])
-print(experiments.sort_values("mae"))
+Do not overwrite failed experiments. A failed or rejected approach is useful evidence.
+
+![Reproducible workflow](/course-assets/ws10/reproducible-workflow.svg)
+
+## 4. Suggested project structure
+```text
+model-improvement/
+├── README.md
+├── requirements.txt
+├── data/
+│   └── README.md
+├── notebooks/
+│   └── exploration.ipynb
+├── src/
+│   ├── features.py
+│   ├── preprocessing.py
+│   ├── train.py
+│   └── evaluate.py
+└── reports/
+    ├── feature_dictionary.csv
+    ├── experiment_log.csv
+    └── model_evaluation.md
 ```
 
-## 3. Interpretation and safeguards
-State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune thresholds, select features or choose hyperparameters.
+Keep source code separate from exploratory notebooks. Do not commit private data, API keys, passwords or personally identifiable information. Explain how to obtain data legally and safely.
 
-## 4. Guided practice
-Create an experiment log for three model changes. State the hypothesis before each run, use identical validation folds and write a decision note explaining which change to retain.
+## 5. Reproducible Python setup
+Create and activate a virtual environment, then install the required packages. For example:
 
-## 5. Independent practice
-Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
+```bash
+python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+python -m pip install pandas numpy scikit-learn matplotlib
+python -m pip freeze > requirements.txt
+```
 
-## 6. Knowledge check
-1. What question does this method answer?
-2. What data leakage risk must be controlled?
-3. How does the metric relate to the decision?
-4. What evidence would make you trust the improvement?
+The requirements file records installed versions, but a fully reproducible environment may also require Python version, operating system details and external data version. Pin dependencies deliberately for a project rather than copying every unrelated package from a personal environment.
+
+## 6. Controlled improvement cycle
+1. Audit the data and define prediction time.
+2. Create a baseline pipeline.
+3. Establish a split and metric.
+4. Propose one feature or modelling change.
+5. Evaluate using the same folds.
+6. Record results and inspect errors.
+7. Keep, reject or investigate the change.
+8. Select the final workflow.
+9. Evaluate once on the untouched test set.
+10. Document limitations and monitoring needs.
+
+## 7. Common mistakes
+- Saving only the final notebook and losing experiment history.
+- Using different folds for each experiment.
+- Failing to record data versions.
+- Committing credentials or private datasets.
+- Reporting training metrics as final performance.
+- Treating a random seed as a complete reproducibility guarantee.
+
+## Guided practice
+Create an experiment log template for a churn model. Include fields that let another analyst reconstruct the feature and validation choices.
+
+## Independent practice
+Organise a small project using the suggested structure. Write a README with setup instructions, data provenance, target definition, evaluation design and final limitations. Re-run the pipeline from a clean environment.
+
+## Knowledge check
+1. Why is a baseline important?
+2. What information belongs in an experiment log?
+3. Why record the dataset version?
+4. What does requirements.txt capture and what might it miss?
+5. Why should failed experiments be preserved?
 
 ## Lesson summary
-Reliable model improvement requires controlled experiments, leakage-safe preprocessing, a validation design that matches the data and honest reporting of uncertainty.
+Reproducible modelling turns isolated experiments into an auditable process. Preserve data provenance, environment details, feature logic, validation design and experiment decisions so results can be checked and maintained.

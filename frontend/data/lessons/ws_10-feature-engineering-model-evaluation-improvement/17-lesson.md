@@ -1,46 +1,82 @@
 # Lesson 17: Threshold Tuning and Cost-Sensitive Decisions
 
 ## Learning outcomes
+Explain how a classification threshold changes predictions; choose a threshold using validation data; calculate a simple cost function; and distinguish model ranking from operational decision-making.
 
-By the end of this lesson, you should be able to Choose a classification threshold using false-positive and false-negative costs; calculate total decision cost; compare thresholds; and state why threshold selection must use validation data rather than the final test set.
+## 1. A threshold turns scores into actions
+A classifier may return an estimated probability or decision score. A threshold determines which observations are flagged positive. A lower threshold usually increases recall because more cases are flagged, but it may also reduce precision by increasing false positives. A higher threshold usually reduces the number of alerts but can miss more true positives.
 
-## 1. Core explanation
-A classifier's default threshold of 0.5 is a convention, not a law. The best threshold depends on the costs of false positives and false negatives, the prevalence of the positive class and operational capacity. A lower threshold usually finds more positives but creates more false alarms.
+There is no universally correct threshold of 0.5. The threshold should be selected in the context of the decision. A fraud team may prefer to review more transactions if the cost of missed fraud is high. A limited medical follow-up service may need a threshold that balances missed cases against scarce capacity.
 
-Define a cost matrix before tuning. For each threshold, calculate confusion-matrix counts and expected cost. If review capacity is limited, select a threshold that produces a manageable alert volume. Validate the chosen threshold on separate data and monitor it as prevalence changes.
+## 2. Cost-sensitive decisions
+A simple expected cost can be written as:
 
-Threshold tuning does not change the underlying ranking model. It changes how scores become actions. Communicate both the score and the threshold policy. A threshold chosen to maximise F1 may not minimise real business cost.
+`Total cost = FP × cost_FP + FN × cost_FN`
 
-## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
+This is a simplification: real costs may vary by case and include investigation time, customer friction, regulatory consequences and downstream outcomes. Still, it makes an important point: false positives and false negatives may not have equal consequences.
 
+A model with the highest F1 may not minimise operational cost. A threshold that produces too many alerts may be unusable even if recall is high.
+
+![Threshold trade-off](/course-assets/ws10/threshold-tradeoff.svg)
+
+## 3. Tune on validation data
+Use predicted probabilities from a model fitted on training data. Evaluate candidate thresholds on a validation set or out-of-fold predictions. Choose a threshold according to an explicit objective or capacity constraint. Keep the final test set untouched until the threshold and workflow are fixed.
+
+## 4. Worked example
 ```python
 import numpy as np
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, precision_score, recall_score
 
-y = np.array([0, 0, 0, 1, 1, 1, 0, 1, 0, 1])
-p = np.array([.1, .4, .3, .6, .8, .45, .7, .9, .2, .55])
-cost_fp, cost_fn = 1, 5
-for t in [.25, .4, .5, .65, .8]:
-    pred = (p >= t).astype(int)
-    tn, fp, fn, tp = confusion_matrix(y, pred, labels=[0, 1]).ravel()
-    print(t, "FP", fp, "FN", fn, "cost", fp*cost_fp + fn*cost_fn)
+y_true = np.array([1, 0, 0, 1, 0, 1, 0, 0, 1, 0])
+probabilities = np.array([.82, .61, .40, .55, .20, .72, .48, .12, .36, .08])
+
+cost_fp = 2
+cost_fn = 10
+
+for threshold in [0.2, 0.35, 0.5, 0.65, 0.8]:
+    prediction = (probabilities >= threshold).astype(int)
+    tn, fp, fn, tp = confusion_matrix(
+        y_true, prediction, labels=[0, 1]
+    ).ravel()
+    cost = fp * cost_fp + fn * cost_fn
+    print({
+        "threshold": threshold,
+        "precision": round(precision_score(y_true, prediction, zero_division=0), 2),
+        "recall": round(recall_score(y_true, prediction, zero_division=0), 2),
+        "false_positives": fp,
+        "false_negatives": fn,
+        "illustrative_cost": cost
+    })
 ```
 
-## 3. Interpretation and safeguards
-State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune a threshold, select features or choose hyperparameters.
+The costs are invented for teaching. Change them to represent the actual decision context. The threshold with the lowest cost on this tiny sample is not automatically a reliable policy; the estimate is noisy and must be tested on sufficient validation data.
 
-## 4. Guided practice
-Use a cost matrix where a false negative costs five times a false positive. Identify the lowest-cost threshold in this example. Explain why the threshold should be selected on validation data, not final test data.
+## 5. Capacity constraints
+Sometimes the team can review only 200 cases per day. Instead of choosing a threshold solely by a metric, select the top-scoring 200 cases or choose a threshold that respects the review capacity. Monitor how the number of alerts changes over time. If the score distribution shifts, a fixed threshold may produce a very different workload.
 
-## 5. Independent practice
-Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
+## 6. Probability calibration
+Threshold decisions depend on scores. If a model predicts 0.8 for 100 cases, calibration asks whether roughly 80 of those cases are positive over repeated comparable groups. A well-ranked model is not necessarily well-calibrated. Calibration methods should be fitted using training/validation procedures, not the final test set.
 
-## 6. Knowledge check
-1. What question does this method answer?
-2. What data leakage risk must be controlled?
-3. How does the metric relate to the decision?
-4. What evidence would make you trust the improvement?
+## Common mistakes
+- Assuming 0.5 is always the best threshold.
+- Selecting a threshold on test labels.
+- Optimising F1 when the real objective is cost or capacity.
+- Ignoring the number of alerts.
+- Treating uncalibrated scores as reliable probabilities.
+- Changing the threshold without monitoring operational impact.
+
+## Guided practice
+A fraud team estimates a false negative costs ₦50,000 and a false positive costs ₦500 in review time. Explain why recall may be prioritised, then identify why an extremely low threshold could still be harmful.
+
+## Independent practice
+Use validation predictions to compare thresholds. Report precision, recall, confusion matrix, alert volume and a cost calculation. State the assumed costs and show how the preferred threshold changes if those assumptions change.
+
+## Knowledge check
+1. What does lowering a threshold usually do to recall?
+2. Why may the best F1 threshold not minimise business cost?
+3. Which data should be used to select the threshold?
+4. How can review capacity affect threshold choice?
+5. What is calibration?
 
 ## Lesson summary
-Reliable model improvement requires controlled experiments, leakage-safe preprocessing, a validation design that matches the data and honest reporting of uncertainty.
+Threshold selection converts model scores into operational actions. Select it with validation evidence and an explicit cost or capacity objective, then protect the test set for final evaluation.

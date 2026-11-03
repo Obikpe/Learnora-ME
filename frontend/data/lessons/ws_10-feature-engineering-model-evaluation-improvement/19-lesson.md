@@ -1,51 +1,73 @@
 # Lesson 19: Hyperparameter Search
 
 ## Learning outcomes
+Distinguish parameters from hyperparameters; use GridSearchCV; define a meaningful search space; evaluate candidate settings without leakage; and interpret search results critically.
 
-By the end of this lesson, you should be able to Use GridSearchCV to tune hyperparameters; build a search around a leakage-safe pipeline; define a suitable scoring metric and cross-validation splitter; and report the best configuration without test-set tuning.
+## 1. Parameters and hyperparameters
+Model **parameters** are learned from data during fitting. In linear regression, coefficients are parameters. **Hyperparameters** are settings chosen before or around fitting, such as regularisation strength, tree depth, number of neighbours or learning rate.
 
-## 1. Core explanation
-Hyperparameters are settings chosen before or around model fitting, such as tree depth, regularisation strength or number of neighbours. Grid search evaluates a specified set of combinations; random search samples combinations and can explore broad spaces more efficiently when only a few settings strongly affect performance.
+Hyperparameter search evaluates candidate settings using a validation strategy. The best candidate is the one that performs best under the chosen scoring rule and folds, not necessarily the best model for every future dataset.
 
-Use cross-validation on training data to select hyperparameters. Put preprocessing in a Pipeline and address parameter names through pipeline steps. Choose a scoring metric linked to the decision. Record search space, folds, random seed and compute time.
+## 2. Grid search
+GridSearchCV evaluates every combination in a specified parameter grid. It is transparent and useful when the search space is small. Its weakness is combinatorial growth: if five parameters each have ten values, there are 100,000 combinations before cross-validation.
 
-Large searches increase selection bias and compute cost. A search may overfit its validation folds if too many choices are tested. Use a final untouched test set once after selection, and consider nested CV when a robust estimate of the entire selection procedure is required.
+Search spaces should be informed by the algorithm and data. Avoid enormous arbitrary grids. Use sensible ranges, a baseline and a clear scoring metric.
 
-## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
+![Hyperparameter search process](/course-assets/ws10/hyperparameter-search.svg)
 
+## 3. Worked example
 ```python
 from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
-data = load_breast_cancer(as_frame=True)
-Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
-    test_size=.2, random_state=42, stratify=data.target)
-pipe = make_pipeline(StandardScaler(), SVC())
-search = GridSearchCV(pipe, {"svc__C": [.1, 1, 10],
-    "svc__kernel": ["linear", "rbf"]}, cv=StratifiedKFold(5, shuffle=True, random_state=42),
-    scoring="f1", n_jobs=-1)
-search.fit(Xtr, ytr)
-print(search.best_params_, search.best_score_, search.score(Xte, yte))
+X, y = load_breast_cancer(return_X_y=True)
+pipeline = make_pipeline(StandardScaler(), SVC())
+
+param_grid = {
+    "svc__C": [0.1, 1, 10],
+    "svc__kernel": ["linear", "rbf"],
+    "svc__gamma": ["scale", "auto"]
+}
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+search = GridSearchCV(
+    pipeline, param_grid, scoring="f1",
+    cv=cv, n_jobs=-1, refit=True
+)
+search.fit(X, y)
+
+print("Best parameters:", search.best_params_)
+print("Best CV score:", search.best_score_)
+best_model = search.best_estimator_
 ```
 
-## 3. Interpretation and safeguards
-State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune a threshold, select features or choose hyperparameters.
+The double underscore addresses a nested parameter in the pipeline. `refit=True` fits the selected configuration again on all data supplied to `fit`. In a final workflow, supply only the training partition to the search; evaluate `best_model` once on the untouched test partition.
 
-## 4. Guided practice
-Expand the grid with gamma for the RBF kernel. Explain why gamma should not be tuned for a linear kernel and why best_params_ is not itself evidence of test performance.
+## 4. Search results
+Inspect `cv_results_` for mean and standard deviation across folds, fit time and parameter combinations. A tiny difference between two candidates may not be meaningful. Prefer a simpler, cheaper or more stable model when performance is practically equivalent.
 
-## 5. Independent practice
-Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
+## 5. Common mistakes
+- Tuning on the final test set.
+- Searching an enormous grid without a reason.
+- Using a metric that does not reflect the task.
+- Forgetting pipeline parameter prefixes.
+- Ignoring runtime and model complexity.
+- Choosing the maximum mean score without examining fold variation.
 
-## 6. Knowledge check
-1. What question does this method answer?
-2. What data leakage risk must be controlled?
-3. How does the metric relate to the decision?
-4. What evidence would make you trust the improvement?
+## Guided practice
+Create a grid for a decision tree using max_depth, min_samples_leaf and criterion. Explain how each parameter affects complexity.
+
+## Independent practice
+Search a small hyperparameter grid for a pipeline. Save the full results table and compare the top candidates on mean score, variability and training time. Explain why the winner is a reasonable choice.
+
+## Knowledge check
+1. What is the difference between a parameter and hyperparameter?
+2. What does GridSearchCV do?
+3. Why can a grid become expensive?
+4. What does the double underscore mean in a pipeline parameter?
+5. Why inspect fold variation rather than only best_score_?
 
 ## Lesson summary
-Reliable model improvement requires controlled experiments, leakage-safe preprocessing, a validation design that matches the data and honest reporting of uncertainty.
+Hyperparameter search is structured model selection. Define a manageable search space, evaluate through leakage-safe cross-validation and consider stability and complexity alongside the highest score.
