@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Send, Sparkles, X } from "lucide-react";
 import { askAI } from "../../lib/api/ai";
 
 type ChatMessage = { role: "user" | "assistant"; content: string; courses?: any[] };
@@ -51,7 +51,7 @@ export default function LearnerAssistant({ courses, goal }: { courses: any[]; go
   }
 
   return <>
-    {open && <section className="fixed bottom-24 right-4 z-[70] flex h-[min(36rem,calc(100vh-8rem))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl sm:right-6" aria-label="Learnora AI assistant">
+    {open && <section className="fixed right-4 top-[5.25rem] z-[70] flex h-[min(36rem,calc(100vh-7rem))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl sm:right-6" aria-label="Learnora AI assistant">
       <header className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
         <div className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded-full bg-[var(--primary-tint)] text-[var(--primary)]"><Sparkles size={17}/></span><div><h2 className="text-sm font-bold text-[var(--text-heading)]">Learnora assistant</h2><p className="text-[10px] text-[var(--text-muted)]">Course guidance</p></div></div>
         <button type="button" aria-label="Close assistant" onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-lg hover:bg-[var(--bg-soft)]"><X size={17}/></button>
@@ -61,17 +61,18 @@ export default function LearnerAssistant({ courses, goal }: { courses: any[]; go
         {busy && <p className="text-xs text-[var(--text-muted)]">Thinking…</p>}
         {error && <p role="alert" className="text-xs text-[var(--warning)]">{error}</p>}
         {messages.length === 1 && <div className="flex flex-wrap gap-2 pt-1">
+          <button type="button" onClick={() => void send("Plan my week using my enrolled courses and suggest realistic study sessions.")} className="rounded-full border border-[var(--border)] px-3 py-2 text-xs text-[var(--primary)]">Plan my week</button>
+          <button type="button" onClick={() => void send("What should I finish first based on my enrolled courses and progress?")} className="rounded-full border border-[var(--border)] px-3 py-2 text-xs text-[var(--primary)]">What should I finish first?</button>
           <button type="button" onClick={() => void send("Recommend a course for my learning goal.")} className="rounded-full border border-[var(--border)] px-3 py-2 text-xs text-[var(--primary)]">Recommend a course</button>
-          <button type="button" onClick={() => void send("I am not sure what to learn next. Help me choose.")} className="rounded-full border border-[var(--border)] px-3 py-2 text-xs text-[var(--primary)]">Help me choose</button>
         </div>}
       </div>
       <form onSubmit={event => { event.preventDefault(); void send(); }} className="flex items-end gap-2 border-t border-[var(--border)] p-3">
-        <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={2} maxLength={4000} placeholder="Ask about courses or your learning goal…" className="max-h-28 min-h-11 flex-1 resize-none rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text-body)] outline-none focus:border-[var(--primary)]"/>
+        <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={2} maxLength={4000} placeholder="Ask anything…" className="max-h-28 min-h-11 flex-1 resize-none rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text-body)] outline-none focus:border-[var(--primary)]"/>
         <button type="submit" disabled={!draft.trim() || busy} aria-label="Send message" className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--primary)] text-[var(--on-primary)] disabled:opacity-40"><Send size={16}/></button>
       </form>
     </section>}
-    <button type="button" onClick={() => setOpen(value => !value)} aria-label={open ? "Close Learnora assistant" : "Chat with Learnora assistant"} className="fixed bottom-5 right-4 z-[71] grid size-14 place-items-center rounded-full bg-[var(--primary)] text-[var(--on-primary)] shadow-xl transition hover:scale-105 sm:right-6">
-      {open ? <X size={22}/> : <span className="relative"><MessageCircle size={23}/><Sparkles size={12} className="absolute -right-2 -top-2"/></span>}
+    <button id="aib" type="button" onClick={() => setOpen(value => !value)} aria-label={open ? "Close Learnora assistant" : "Open Learnora AI assistant"} aria-expanded={open} className={"grid size-10 place-items-center rounded-lg border border-[var(--border)] transition " + (open ? "bg-[var(--primary-tint)] text-[var(--primary)]" : "bg-[var(--card)] text-[var(--text-body)] hover:bg-[var(--bg-soft)]")}>
+      {open ? <X size={19}/> : <Sparkles size={19}/>}
     </button>
   </>;
 }
