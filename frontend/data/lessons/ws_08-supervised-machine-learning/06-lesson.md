@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Create polynomial features to represent a curved relationship; compare polynomial degrees; explain the risk of excessive complexity; and evaluate generalisation rather than judging only the fitted training curve.
 
+
+![regression concept diagram](/course-assets/ws08/regression.svg)
+
 ## 1. Core explanation
 A straight line cannot represent every relationship. Polynomial regression adds powers of a feature, such as x squared or x cubed, allowing a curved fitted function while remaining linear in the coefficients. The model can represent curvature, but higher degrees increase flexibility and risk overfitting.
 
