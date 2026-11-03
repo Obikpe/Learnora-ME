@@ -6,7 +6,7 @@ Distinguish supervised, unsupervised, semi-supervised and reinforcement learning
 ## 1. Why are there different types?
 Machine learning is a family of methods. The learning setup depends on what information is available and what the system must do. The first question is often: do we have known outcome labels for the examples?
 
-![Machine learning learning paradigms](./assets/02-learning-paradigms.svg)
+![Machine learning learning paradigms](/course-assets/ws07/02-learning-paradigms.svg)
 
 ## 2. Supervised learning
 Supervised learning uses examples with known target values. The algorithm learns a relationship between input features and the target.
@@ -54,7 +54,7 @@ Reinforcement learning studies an agent that interacts with an environment. The 
 - Reward: feedback about the outcome.
 - Policy: a strategy mapping states to actions.
 
-![Reinforcement learning interaction](./assets/02-reinforcement-loop.svg)
+![Reinforcement learning interaction](/course-assets/ws07/02-reinforcement-loop.svg)
 
 A reward is a proxy for what we value. Poor reward design can encourage harmful behaviour even when the agent is optimising exactly as specified.
 
