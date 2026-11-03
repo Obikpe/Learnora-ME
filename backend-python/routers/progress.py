@@ -1126,6 +1126,13 @@ def my_progress(
         .execute()
     ).data or []
 
+    # The dashboard list must apply the same server-side access-scope check
+    # as lesson, quiz, assignment and media endpoints.
+    enrolments = [
+        row for row in enrolments
+        if row.get("course_id") and _enrolment(str(user.id), str(row["course_id"]))
+    ]
+
     course_ids = list(dict.fromkeys(str(row["course_id"]) for row in enrolments if row.get("course_id")))
     if not course_ids:
         return {"success": True, "courses": [], "in_progress_count": 0, "completed_count": 0}
