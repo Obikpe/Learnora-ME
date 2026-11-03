@@ -143,6 +143,7 @@ export default function MyLearningPage() {
   useEffect(() => {
     let cancelled = false;
     currentUser().then(async me => {
+      if (me.account_type === "cohort") { location.href = "/dashboard/cohort"; return; }
       if (me.role === "organisation_prospect") { location.href = "/organisation-portal"; return; }
       const privileged = (me.organisation_memberships || []).filter((membership: any) => ["owner", "admin"].includes(membership.role));
       if (me.organisation_id && ["owner", "admin"].includes(me.organisation_role)) { location.href = "/dashboard/organisation"; return; }
@@ -163,6 +164,14 @@ export default function MyLearningPage() {
     return () => { cancelled = true; };
   }, []);
 
+  const assignedLearner = Boolean(
+    user?.account_type === "cohort" ||
+    user?.cohort_id ||
+    user?.organisation_role === "learner" ||
+    (user?.organisation_memberships || []).some((membership: any) =>
+      membership.role === "learner" && membership.status === "active"
+    )
+  );
   const courses = learning?.courses || [];
   const inProgress = useMemo(() => courses.filter((row: any) => !(row.completed || row.enrolment?.status === "completed")), [courses]);
   const completed = useMemo(() => courses.filter((row: any) => row.completed || row.enrolment?.status === "completed"), [courses]);
@@ -206,7 +215,7 @@ export default function MyLearningPage() {
   const skills = evidence?.skills || [];
   const recentCertificates = certificates.slice(0, 3);
 
-  if (!user || loading) return <Shell active="learning"><Skeleton label="Loading your learning records"/></Shell>;
+  if (!user || loading) return <Shell active="learning" restricted={assignedLearner}><Skeleton label="Loading your learning records"/></Shell>;
 
   const tabs: { id: Tab; label: string; count: number }[] = [
     { id: "in-progress", label: "In Progress", count: inProgress.length },
@@ -215,7 +224,7 @@ export default function MyLearningPage() {
     { id: "certificates", label: "Certificates", count: certificates.length },
   ];
 
-  return <Shell active="learning">
+  return <Shell active="learning" restricted={assignedLearner}>
     <section className="flex flex-wrap items-start justify-between gap-5 pb-6">
       <div className="flex min-w-0 items-center gap-4">
         <div className="grid size-14 shrink-0 place-items-center rounded-full bg-[var(--primary-tint)] text-xl font-bold text-[var(--primary)] sm:size-16 sm:text-2xl" aria-hidden="true">{(user.name || user.email || "L").trim().charAt(0).toUpperCase()}</div>
@@ -227,8 +236,8 @@ export default function MyLearningPage() {
       </div>
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => void load(user)} disabled={refreshing} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-body)] hover:bg-[var(--bg-soft)] disabled:opacity-50"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""}/> Refresh</button>
-        <Link href="/courses" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]">Explore courses <ArrowRight size={14}/></Link>
-        <LearnerAssistant courses={catalogue} goal={goal} learning={courses}/>
+        {!assignedLearner && <Link href="/courses" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]">Explore courses <ArrowRight size={14}/></Link>}
+        {!assignedLearner && <LearnerAssistant courses={catalogue} goal={goal} learning={courses}/ >}
       </div>
     </section>
 
@@ -265,12 +274,12 @@ export default function MyLearningPage() {
           : courses.length === 0
             ? <section>
                 <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Recommended courses</h2>
-                {recommendations.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{recommendations.map((course: any) => <RecommendedCourseCard key={course.id} course={course}/>)}</div> : <div className="empty">{catalogueLoading ? "Finding courses for you…" : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div>}
+                {recommendations.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{recommendations.map((course: any) => <RecommendedCourseCard key={course.id} course={course}/>)}</div> : <div className="empty">{assignedLearner ? "Your organisation has not assigned a course to your account yet. Check back later or contact your learning coordinator." : catalogueLoading ? "Finding courses for you…" : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div>}
               </section>
-            : <div className="empty">Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</div>)}
+            : <div className="empty">{assignedLearner ? "Your assigned courses are complete. Your organisation will provide the next learning activity." : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div>)}
         {tab === "completed" && (completed.length
           ? <div className="space-y-4">{completed.map((row: any) => <CourseCard key={row.enrolment?.id || row.course?.id} row={row} completed/>)}</div>
-          : <div className="py-2"><h2 className="mb-3 text-base font-semibold text-[var(--text-heading)]">No completed courses</h2><div className="empty">Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</div></div>)}
+          : <div className="py-2"><h2 className="mb-3 text-base font-semibold text-[var(--text-heading)]">No completed courses</h2><div className="empty">{assignedLearner ? "You have no completed assigned courses yet." : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div></div>)}
         {tab === "skills" && <section>
           <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Skills</h2>
           {evidenceError ? <p className="py-8 text-sm text-[var(--text-muted)]">Skills could not be loaded.</p> : skills.length ? <div className="grid gap-3 md:grid-cols-2">{skills.map((skill: any) => <article key={skill.skill_id || skill.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-[var(--text-heading)]">{skill.skill_name || skill.name}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">{skill.category || "Skill"}</p></div><span className="text-xs capitalize text-[var(--text-muted)]">{String(skill.status || "not_started").replaceAll("_", " ")}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: Math.max(0, Math.min(100, Number(skill.proficiency) || 0)) + "%" }}/></div><p className="mt-2 text-[11px] text-[var(--text-muted)]">{skill.verified_evidence_count || 0} verified evidence items · {Number(skill.proficiency) || 0}%</p></article>)}</div> : <div className="empty">Nothing here yet.</div>}
