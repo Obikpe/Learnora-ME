@@ -58,3 +58,11 @@ Stability checks rerun the method with different seeds, bootstrap samples or tim
 Domain review is essential. Inspect representative records, cluster sizes, original-unit profiles and whether the distinction supports a useful action. A mathematically separated group may be irrelevant or unfair to use.
 
 **Practice:** Create a validation table containing method, parameters, internal scores, stability, cluster sizes and a domain interpretation. Identify which evidence is strong, weak or missing.
+
+### Worked example: build a validation evidence table
+
+Use one row per experiment and columns for method, distance, preprocessing, parameters, internal scores, cluster sizes, seed stability and profile notes. This makes it possible to compare experiments without relying on memory or choosing the most attractive plot after the fact.
+
+A high silhouette score with unstable assignments is a warning. Stable assignments with no meaningful profile may also be unhelpful. A domain expert's approval is valuable but should not replace quantitative checks; experts can also see patterns that are not supported by the data.
+
+Validation is a collection of evidence. State which checks were performed, which were not possible because labels were unavailable, and what uncertainty remains. Never imply that a single internal score certifies the clusters.
