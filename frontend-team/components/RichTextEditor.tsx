@@ -67,6 +67,5 @@ export default function RichTextEditor({ value, onChange, placeholder = "Write y
       {tools.map(({ label, icon: Icon, run }) => <button key={label} type="button" title={label} aria-label={label} onMouseDown={event => event.preventDefault()} onClick={run} className="grid size-9 place-items-center rounded-md text-slate-400 transition hover:bg-white/[.08] hover:text-white"><Icon size={16}/></button>)}
     </div>
     <div ref={editor} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" data-placeholder={placeholder} onInput={event => onChange(event.currentTarget.innerHTML)} className="min-h-[19rem] max-h-[55vh] overflow-y-auto px-4 py-4 text-sm leading-7 text-slate-200 outline-none [&_h1]:my-4 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:my-4 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:my-3 [&_h3]:text-lg [&_h3]:font-semibold [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-amber-400 [&_blockquote]:pl-4"/>
-    <div className="border-t border-white/[.08] px-4 py-2 text-[10px] text-slate-600">Write normally and use the formatting tools above.</div>
   </div>;
 }
