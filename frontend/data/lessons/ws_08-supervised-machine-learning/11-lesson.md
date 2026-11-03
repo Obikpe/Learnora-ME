@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Read a confusion matrix; calculate accuracy, precision, recall, specificity and F1; explain false positives and false negatives; and select metrics based on error consequences.
 
+
+![classification concept diagram](/course-assets/ws08/classification.svg)
+
 ## 1. Core explanation
 A confusion matrix compares predicted classes with actual classes. For binary classification, true positives (TP) and true negatives (TN) are correct; false positives (FP) are incorrect positive predictions; false negatives (FN) are missed positives. Precision = TP/(TP+FP); recall or sensitivity = TP/(TP+FN); specificity = TN/(TN+FP); F1 is the harmonic mean of precision and recall.
 
