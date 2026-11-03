@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from .auth import log_audit_event, supabase
 from .internal_auth import InternalStaffContext, require_internal_permission
-from .progress import effective_passing_score
+from .progress import effective_passing_score, _sync_enrolment_completion
 
 router = APIRouter(prefix="/api/internal/assessments", tags=["Internal Assessments"])
 def _course(course_id: str) -> dict:
@@ -492,6 +492,10 @@ def grade_assignment_submission(assignment_id: str, submission_id: str, body: Gr
     }).eq("id", submission_id).eq("assignment_id", assignment_id).execute()
     if not saved.data:
         raise HTTPException(500, "Grade could not be saved.")
+    course_progress = _sync_enrolment_completion(
+        str(submission_rows[0]["user_id"]),
+        str(assignment["course_id"]),
+    )
     log_audit_event(
         action="assignment_submission_graded",
         email=staff.email,
@@ -507,4 +511,4 @@ def grade_assignment_submission(assignment_id: str, submission_id: str, body: Gr
             "max_score": maximum,
         },
     )
-    return {"success": True, "submission": saved.data[0]}
+    return {"success": True, "submission": saved.data[0], "course_progress": course_progress}
