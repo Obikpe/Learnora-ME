@@ -89,7 +89,7 @@ export default function Courses() {
         {loading ? <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">{Array.from({length:6}).map((_,i)=><div key={i} className="animate-pulse bg-[#10151b]"><div className="h-52 bg-[#171e27]"/><div className="space-y-3 p-5"><div className="h-4 w-2/3 bg-white/[.06]"/><div className="h-3 w-full bg-white/[.04]"/><div className="h-3 w-4/5 bg-white/[.04]"/></div></div>)}</div>
         : error ? <div className="border border-white/10 bg-[#10151b] p-8 sm:p-10"><EmptyState title="Courses unavailable" message={error}/><button onClick={loadCourses} className="mt-4 border border-white/15 px-4 py-2.5 text-sm font-semibold hover:border-[#d7ad35]/50">Try again</button></div>
         : filtered.length ? <div className="grid gap-px border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((course, i) => {
+          {filtered.map(course => {
             const candidate = typeof course.thumbnail_url === "string" ? course.thumbnail_url.trim() : "";
             const imageKey = candidate ? candidate.split("?")[0] : "";
             const image = imageKey && !usedImages.has(imageKey) ? candidate : "";
