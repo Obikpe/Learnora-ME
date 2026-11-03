@@ -26,7 +26,6 @@ const learnerItems: NavItem[] = [
   { key: "certificates", label: "Certificates", href: "/dashboard/certificates", icon: Award },
   { key: "community", label: "Community", href: "/dashboard/community", icon: MessageCircle },
   { key: "ai", label: "AI tutor", href: "/dashboard/ai", icon: BrainCircuit },
-  { key: "creator", label: "Creator studio", href: "/dashboard/creator", icon: Users },
   { key: "notifications", label: "Notifications", href: "/dashboard/notifications", icon: Bell },
   { key: "subscription", label: "Subscription", href: "/dashboard/subscription", icon: CreditCard },
   { key: "settings", label: "Account settings", href: "/dashboard/settings", icon: Settings },
@@ -81,7 +80,7 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
     ["discover", "learning", "tracks"].includes(item.key)
   );
   const moreItems = extraItems.filter(item => !primaryItems.some(primary => primary.key === item.key));
-  const logout = () => { clearToken(); location.href = "/login"; };
+  const logout = () => { clearToken(); window.location.replace("/"); };
   const isActive = (item: NavItem) => active === item.key || (item.key === "learning" && active === "overview");
   const navLink = (item: NavItem, mobile = false) => {
     const Icon = item.icon;
