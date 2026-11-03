@@ -16,6 +16,7 @@ from .permissions import (
     require_permission,
 )
 from services.ai_profiles import generate
+from services.free_access import is_individual_learner
 
 router = APIRouter(
     prefix="/api/ai",
@@ -77,6 +78,13 @@ def _authorise_feature(
         raise HTTPException(400, "Unsupported AI feature.")
 
     if context.is_platform_admin:
+        return
+
+    if is_individual_learner(
+        getattr(context.user, "role", None),
+        getattr(context.user, "account_type", None),
+        context.organisation_id,
+    ) and feature in {"tutor", "coach", "practice", "project", "summarise"}:
         return
 
     role = (context.organisation_role or "").strip().lower()
