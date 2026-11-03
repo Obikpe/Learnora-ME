@@ -98,3 +98,13 @@ Answer these questions in your own words:
 
 ## Completion standard
 A successful project is not defined by a perfect score. It is defined by a clear prediction task, valid feature timing, reproducible transformations, honest evaluation and a thoughtful explanation of uncertainty. A model that performs slightly less well but is robust, interpretable and operationally feasible may be the better choice.
+
+## 11. How to judge your own project
+
+Before submitting, perform a final review as if you were the analyst who must maintain this model six months from now. Can you explain the prediction moment without ambiguity? Can you identify which fields would be known at that moment? Can another person reproduce the feature calculations? If the dataset is updated, will the same pipeline still work or will category and schema changes need attention?
+
+Review the evidence chain. The baseline should be simple enough to understand. Each candidate improvement should have a reason and a recorded result. The comparison should use the same validation folds and metric. The final test set should have been used only after model selection and threshold choices were complete. If you cannot explain this sequence, your final metric may not represent the workflow you think it does.
+
+Be precise when communicating the result. “The model is 92% accurate” is incomplete. State the evaluation sample, split strategy, metric definition, class prevalence where relevant and any important subgroup limitations. If the project is regression, state the target unit and typical error size. If it is classification, state the positive class and the threshold used for the confusion matrix.
+
+A responsible recommendation may be to deploy a limited pilot, collect more representative data, improve the labels or reject the model. “More evidence is needed” is a valid conclusion when the evaluation is uncertain. The aim of this project is to demonstrate sound modelling judgement, not to force a positive result.
