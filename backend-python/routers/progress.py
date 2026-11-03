@@ -254,6 +254,36 @@ def _course_assessment_summary(user_id: str, course_id: str):
     }
 
 
+def _sync_enrolment_completion(user_id: str, course_id: str, include_archived: bool = False):
+    """Persist verified course completion on the learner's enrolment row."""
+    summary = _course_summary(user_id, course_id, include_archived=include_archived)
+    enrolment = summary.get("enrolment") or {}
+    if summary.get("completed") and enrolment.get("status") == "active":
+        completed_at = datetime.now(timezone.utc).isoformat()
+        saved = (
+            supabase.table("learnora_enrolments")
+            .update({"status": "completed", "completed_at": completed_at})
+            .eq("id", str(enrolment["id"]))
+            .eq("user_id", user_id)
+            .eq("status", "active")
+            .execute()
+        ).data or []
+        if saved:
+            summary["enrolment"] = saved[0]
+        else:
+            latest = (
+                supabase.table("learnora_enrolments")
+                .select("id,status,enrolled_at,completed_at")
+                .eq("id", str(enrolment["id"]))
+                .eq("user_id", user_id)
+                .limit(1)
+                .execute()
+            ).data or []
+            if latest:
+                summary["enrolment"] = {**enrolment, **latest[0]}
+    return summary
+
+
 def _course_summary(user_id: str, course_id: str, include_archived: bool = False):
     enrolment = _enrolment(user_id, course_id)
     if not enrolment:
@@ -566,7 +596,8 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
     }).execute())
     if not inserted.data:
         raise HTTPException(500, "Unable to save quiz attempt.")
-    return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score}
+    course_progress = _sync_enrolment_completion(str(user.id), str(quiz["course_id"]))
+    return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score, "course_progress": course_progress}
 
 
 @router.delete("/quizzes/{quiz_id}/session/{session_id}")
@@ -669,76 +700,73 @@ def my_progress(
         .execute()
     ).data or []
 
-    course_ids = [row["course_id"] for row in enrolments]
-
-    courses = []
-    if course_ids:
-        courses = (
-            supabase
-            .table("learnora_courses")
-            .select(
-                "id,title,slug,short_description,level,status,"
-                "ownership,thumbnail_url,estimated_hours"
-            )
-            .in_("id", course_ids)
-            .execute()
-        ).data or []
-
-    course_map = {
-        str(row["id"]): row
-        for row in courses
-    }
-
-    progress_rows = (
-        supabase
-        .table("learnora_lesson_progress")
-        .select(
-            "lesson_id,progress_percent,completed,"
-            "last_accessed_at"
-        )
-        .eq("user_id", user.id)
+    course_ids = list(dict.fromkeys(str(row["course_id"]) for row in enrolments if row.get("course_id")))
+    course_rows = (
+        supabase.table("learnora_courses")
+        .select("id,title,slug,short_description,level,status,ownership,thumbnail_url,estimated_hours")
+        .in_("id", course_ids)
         .execute()
-    ).data or []
-
-    lesson_ids = [row["lesson_id"] for row in progress_rows]
-
-    lesson_course_map = {}
-    if lesson_ids:
-        lessons = (
-            supabase
-            .table("learnora_lessons")
-            .select(
-                "id,course_modules!inner(course_id)"
-            )
-            .in_("id", lesson_ids)
-            .execute()
-        ).data or []
-
-        lesson_course_map = {
-            str(row["id"]): str(row["course_modules"]["course_id"])
-            for row in lessons
-        }
+    ).data or [] if course_ids else []
+    course_map = {str(row["id"]): row for row in course_rows}
 
     summaries = []
     for enrolment in enrolments:
         course_id = str(enrolment["course_id"])
-        rows = [
-            row
-            for row in progress_rows
-            if lesson_course_map.get(str(row["lesson_id"])) == course_id
-        ]
-        completed = sum(1 for row in rows if row.get("completed"))
+        course = course_map.get(course_id)
+        if not course:
+            continue
+        summary = _sync_enrolment_completion(
+            str(user.id),
+            course_id,
+            include_archived=course.get("status") == "archived",
+        )
+        saved_enrolment = summary.get("enrolment") or enrolment
+        completed = bool(saved_enrolment.get("status") == "completed" or summary.get("completed"))
+        next_item = None
+        for module in summary.get("modules") or []:
+            if module.get("locked"):
+                continue
+            for lesson in module.get("lessons") or []:
+                if not (lesson.get("progress") or {}).get("completed"):
+                    next_item = {
+                        "type": "lesson",
+                        "id": str(lesson.get("id")),
+                        "title": lesson.get("title") or "Continue lesson",
+                    }
+                    break
+            if next_item:
+                break
+        if not next_item and not completed and summary.get("completed_assessments", 0) < summary.get("total_assessments", 0):
+            next_item = {"type": "assessment", "title": "Complete an outstanding assessment"}
 
+        last_activity = max(
+            (
+                (lesson.get("progress") or {}).get("last_accessed_at")
+                for module in (summary.get("modules") or [])
+                for lesson in (module.get("lessons") or [])
+                if (lesson.get("progress") or {}).get("last_accessed_at")
+            ),
+            default=None,
+        )
         summaries.append({
-            "enrolment": enrolment,
-            "course": course_map.get(course_id),
-            "completed_lessons": completed,
-            "tracked_lessons": len(rows),
+            "enrolment": saved_enrolment,
+            "course": course,
+            "completed": completed,
+            "progress_percent": 100 if completed else summary.get("progress_percent", 0),
+            "completed_lessons": summary.get("completed_lessons", 0),
+            "total_lessons": summary.get("total_lessons", 0),
+            "tracked_lessons": summary.get("total_lessons", 0),
+            "completed_assessments": summary.get("completed_assessments", 0),
+            "total_assessments": summary.get("total_assessments", 0),
+            "last_activity_at": last_activity,
+            "next_item": None if completed else next_item,
         })
 
     return {
         "success": True,
         "courses": summaries,
+        "in_progress_count": sum(1 for row in summaries if not row["completed"]),
+        "completed_count": sum(1 for row in summaries if row["completed"]),
     }
 
 
@@ -886,26 +914,7 @@ def update_lesson_progress(
             "Unable to save lesson progress.",
         )
 
-    summary = _course_summary(
-        str(user.id),
-        course_id,
-    )
-
-    if summary["completed"] and enrolment["status"] == "active":
-        completed_at = datetime.now(timezone.utc).isoformat()
-        updated = (
-            supabase
-            .table("learnora_enrolments")
-            .update({
-                "status": "completed",
-                "completed_at": completed_at,
-            })
-            .eq("id", enrolment["id"])
-            .eq("status", "active")
-            .execute()
-        )
-        if updated.data:
-            summary["enrolment"] = updated.data[0]
+    summary = _sync_enrolment_completion(str(user.id), course_id)
 
     return {
         "success": True,
