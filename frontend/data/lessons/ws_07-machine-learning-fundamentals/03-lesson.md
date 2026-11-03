@@ -6,7 +6,7 @@ Describe a complete ML project; explain why problem framing and data understandi
 ## 1. ML is a workflow, not a fit() call
 A common beginner mistake is to load a dataset, call model.fit(), print accuracy and declare success. A reliable project has important stages before and after training. An algorithm cannot rescue an invalid target, contaminated data or an evaluation that does not represent future use.
 
-![End-to-end machine learning workflow](./assets/03-ml-workflow.svg)
+![End-to-end machine learning workflow](/course-assets/ws07/03-ml-workflow.svg)
 
 ## 2. Frame the problem
 Translate a broad request into a testable prediction task. "Use AI to improve student performance" is vague. A clearer question is: "Using information available at the end of week two, estimate whether an enrolled learner will complete the course by its scheduled end date."
@@ -25,7 +25,7 @@ A test set estimates performance on unseen cases. If you use it to choose featur
 
 Random splitting may suit independent rows. Time-dependent tasks need chronological splitting. Repeated records from the same person or device may require group splitting so related records do not appear in both training and test sets.
 
-![Train validation and test split](./assets/03-data-splitting.svg)
+![Train validation and test split](/course-assets/ws07/03-data-splitting.svg)
 
 ## 5. Establish a baseline
 A baseline is a simple reference prediction. For classification, predict the most frequent training class. For regression, predict the training mean or median. A useful business baseline may be the existing human process or a simple rule. A sophisticated model should demonstrate a meaningful improvement.
