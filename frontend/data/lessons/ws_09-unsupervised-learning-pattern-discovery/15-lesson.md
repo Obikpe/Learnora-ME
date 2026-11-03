@@ -4,7 +4,7 @@
 
 By the end of this lesson, you should be able to plan an unsupervised project from question to report; select an appropriate method; create a reproducible workflow; compare models and settings; document data and modelling decisions; communicate uncertainty; and recognise when a simpler analysis is preferable.
 
-![A defensible unsupervised-learning workflow](/course-assets/ws09/clustering-concepts.svg)
+![Teaching diagram: 15](/course-assets/ws09/unsupervised-workflow.svg)
 
 ## 1. Start with a question and a decision context
 
