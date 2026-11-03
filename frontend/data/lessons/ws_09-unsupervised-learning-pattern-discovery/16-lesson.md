@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Deliver a reproducible unsupervised project with data provenance, preprocessing, method comparison, stability checks, profiles or anomaly review, limitations and a justified recommendation.
 
+![A complete unsupervised learning workflow](/course-assets/ws09/clustering-concepts.svg)
+
 ## 1. Core explanation
 The final project applies an unsupervised method to a dataset with a defensible analytical purpose. Choose clustering, dimensionality reduction, anomaly detection or association analysis. Define the observation unit and feature meaning. Explain why an unsupervised method is appropriate and what decision or investigation it supports.
 
