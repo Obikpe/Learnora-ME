@@ -66,7 +66,7 @@ export default function CohortLessonPage() {
   }
 
   return <main className="min-h-screen bg-[#090c10] px-5 py-8 text-slate-100 sm:px-8 lg:px-12">
-    <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 border-b border-white/[.08] pb-6"><Logo/><Link href={"/dashboard/cohort/courses/"+encodeURIComponent(courseId)} className="text-xs text-slate-400 hover:text-[#f2d477]">Course lessons</Link></header>
+    <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 border-b border-white/[.08] pb-6"><Link href="/dashboard/cohort" aria-label="Return to your Learnora dashboard"><Logo/></Link><Link href={"/dashboard/cohort/courses/"+encodeURIComponent(courseId)} className="text-xs text-slate-400 hover:text-[#f2d477]">Course lessons</Link></header>
     <div className="mx-auto max-w-5xl">
       <Link href={"/dashboard/cohort/courses/"+encodeURIComponent(courseId)} className="mt-8 inline-flex items-center gap-2 text-xs text-slate-500 hover:text-slate-200"><ArrowLeft size={14}/> Back to lessons</Link>
       {loading ? <Skeleton variant="course" label="Loading your assigned lesson" /> : error && !lesson ? <div role="alert" className="mt-8 rounded-2xl border border-red-400/20 p-5 text-sm text-red-200">{error}<button onClick={()=>void load()} className="mt-4 block underline">Try again</button></div> : lesson && <>
