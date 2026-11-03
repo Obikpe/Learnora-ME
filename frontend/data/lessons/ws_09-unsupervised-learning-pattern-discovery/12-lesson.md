@@ -43,3 +43,15 @@ Apply the method to a dataset. Compare at least two parameter settings or method
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Stability, interpretation and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: anomaly scores are investigation priorities
+
+An outlier is unusual relative to a statistical summary or distribution. An anomaly detector operationalises unusualness under a particular representation. An extreme value in one feature may be normal when considered alongside other features, while a contextual anomaly may not be globally extreme.
+
+Isolation Forest repeatedly selects a feature and split value at random. Unusual observations tend to be isolated in fewer splits, producing shorter average path lengths. The contamination setting influences the threshold used to label observations as outliers; it is not a measured probability that a record is bad.
+
+Evaluate an alerting workflow by asking how many records are flagged, how many are data errors or legitimate rare events, the cost of missed cases, investigation capacity and whether the alert rate changes as behaviour shifts. If labels exist, evaluate precision and recall at the chosen threshold. Precision is the fraction of alerts that are relevant; recall is the fraction of relevant cases found.
+
+Keep the original record, model version, score, threshold and review outcome. Route flags to a human process. Do not block customers, accuse people or delete data based only on an anomaly score. Monitor drift and investigate process changes before retraining.
+
+**Practice:** Build an alert-review table with score, flag, original feature values, reviewer outcome and follow-up action. Explain why a flagged case is a lead for investigation, not a verdict.
