@@ -61,3 +61,11 @@ Scale meaningful numeric features before using Euclidean distance. A k-distance 
 A point labelled noise is not necessarily erroneous or suspicious. It may be a legitimate rare case, a new behaviour or an artefact of poor scaling. Review original records before taking action.
 
 **Practice:** Run DBSCAN with two eps values and two min_samples values. Record cluster count, noise proportion and profiles. Explain whether the change reflects a meaningful density structure or parameter sensitivity.
+
+### Worked example: diagnose DBSCAN parameters
+
+If eps is too small, very few observations have enough neighbours and many points become noise. If eps is too large, separate dense regions may merge into one cluster. Increasing min_samples makes the definition of a dense region stricter and can increase the noise proportion.
+
+Record the proportion of noise as well as the number of clusters. A result with one giant cluster and 40% noise may be less useful than several coherent groups, but do not optimise only for the number of groups. Inspect the geometry, feature scale and domain plausibility.
+
+DBSCAN's noise label means “not assigned to a density-connected cluster under these parameters”. It does not mean invalid data. For varying densities, investigate alternatives such as HDBSCAN where available, and explain the added assumptions and package dependency.
