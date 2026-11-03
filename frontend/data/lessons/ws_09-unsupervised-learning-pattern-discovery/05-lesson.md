@@ -2,75 +2,140 @@
 
 ## Learning outcomes
 
-By the end of this lesson, you should be able to Use inertia and silhouette score to compare candidate cluster counts; interpret an elbow plot cautiously; and explain why internal metrics cannot establish that clusters are useful business segments.
+By the end of this lesson, you should be able to explain why K must be selected before fitting ordinary K-means; calculate and interpret inertia; use the elbow method and silhouette score; compare candidate solutions using cluster sizes and profiles; and justify a choice without pretending that one score proves the true number of groups.
 
-![K-means repeatedly assigns points and updates centroids](/course-assets/ws09/kmeans-steps.svg)
+![K-means clustering and cluster selection](/course-assets/ws09/kmeans-steps.svg)
 
-## 1. Core explanation
-The k value controls how many groups K-means produces. The elbow method plots within-cluster sum of squares against k. The curve always decreases as k increases, so look for a point where additional clusters give diminishing improvement rather than treating the elbow as a mathematical proof.
+## 1. Why does K need to be chosen?
 
-The silhouette coefficient compares within-cluster cohesion with separation from the nearest other cluster. It ranges from -1 to +1; larger values generally indicate better separation. It can favour simple, well-separated shapes and may not suit every clustering structure. Use several measures and inspect profiles.
+In K-means, K is the number of clusters the algorithm is asked to create. If K=2, it creates two groups. If K=5, it creates five. The algorithm does not know how many customer types, product families or behavioural patterns truly exist. It simply optimises its objective for the K supplied.
 
-Choose k based on the analytical purpose, stability, interpretability and actionability. If every value of k produces weak separation, the data may not contain clear clusters. It is acceptable to conclude that segmentation is not supported.
+Imagine six points arranged in two clearly separated clouds. K=2 may represent them well. If you ask for K=5, K-means still tries to divide the data into five groups. It may split a natural cloud into several smaller pieces. This is not necessarily a software error; it is the consequence of the instruction.
 
-## 2. Worked Python example
-Run in VS Code. Install relevant packages with `python -m pip install numpy pandas matplotlib scipy scikit-learn`. Some scikit-learn dataset loaders may require internet access on first use.
+There is no universal rule that says every dataset has one correct K. Real data may contain overlapping patterns, gradual variation or no meaningful clusters at all. The goal is to find a useful and defensible representation, not to force the data into a story.
+
+## 2. Inertia and the within-cluster sum of squares
+
+Inertia is the sum of squared distances from each observation to the centroid of its assigned cluster. It measures how tightly points sit around their assigned centres under the K-means objective.
+
+As K increases, inertia cannot increase in the ideal optimisation: adding more centres gives the algorithm more flexibility to reduce distances. At the extreme, if every observation receives its own cluster, inertia becomes zero. But one cluster per observation is rarely a useful segmentation.
+
+This creates a trade-off: more clusters generally improve compactness, but they make the solution more complicated and can produce tiny, difficult-to-use groups.
+
+## 3. The elbow method
+
+The elbow method fits K-means for several candidate K values and plots K against inertia. At first, adding clusters may reduce inertia substantially. Later, the improvement may become smaller. The point where the curve begins to flatten is sometimes called the elbow.
+
+The elbow is a visual heuristic, not a mathematical law. Some datasets have a clear bend; others produce a smooth curve with no obvious elbow. Two analysts may reasonably choose different K values, especially if the practical costs of additional segments differ.
+
+A reproducible implementation:
 
 ```python
 import matplotlib.pyplot as plt
-from sklearn.datasets import load_iris
-from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
 
-X = StandardScaler().fit_transform(load_iris().data)
-inertia, silhouettes = [], []
-for k in range(2, 8):
-    model = KMeans(n_clusters=k, n_init=20, random_state=42).fit(X)
-    inertia.append(model.inertia_)
-    silhouettes.append(silhouette_score(X, model.labels_))
-print("k values:", list(range(2, 8)))
-print("Inertia:", inertia)
-print("Silhouette:", silhouettes)
-plt.plot(range(2, 8), inertia, marker="o")
-plt.xlabel("Number of clusters (k)"); plt.ylabel("Within-cluster sum of squares")
+data = pd.DataFrame({
+    "recency": [5, 8, 12, 65, 75, 90, 3, 10, 55, 70, 15, 82],
+    "orders": [12, 10, 8, 2, 1, 0, 14, 9, 7, 2, 11, 1],
+    "basket": [500, 420, 380, 90, 70, 30, 550, 400, 360, 80, 480, 60]
+})
+
+X = StandardScaler().fit_transform(data)
+inertias = []
+
+for k in range(1, 8):
+    model = KMeans(n_clusters=k, n_init=20, random_state=42)
+    model.fit(X)
+    inertias.append(model.inertia_)
+
+plt.plot(range(1, 8), inertias, marker="o")
+plt.xlabel("Number of clusters (K)")
+plt.ylabel("Inertia")
+plt.title("Elbow method")
+plt.xticks(range(1, 8))
 plt.show()
 ```
 
-## 3. Interpretation
-Describe the feature representation, distance or objective, model settings and what the output means. Cluster IDs are arbitrary. An anomaly flag is a prompt for investigation, not proof of misconduct. Validate any discovered pattern in original units and with domain knowledge.
+The loop fits a new model for each candidate K. `inertia_` stores the within-cluster sum of squares for that fitted model. The plot allows you to inspect how much improvement each extra cluster provides.
 
-## 4. Guided practice
-Plot silhouette score against k as a second chart. Compare both views and choose a k, explaining why the choice is a judgement rather than a universal rule.
+## 4. Silhouette score: compare cohesion and separation
 
-## 5. Independent practice
-Choose a dataset and state the purpose of the unsupervised analysis. Compare at least two parameter settings. Profile the resulting groups or flagged cases and document stability, limitations and possible actions.
+The silhouette score evaluates how well each observation fits its own cluster compared with the nearest alternative cluster.
 
-## 6. Knowledge check
-1. What structure is the algorithm attempting to discover?
-2. Which assumptions are introduced by the distance or representation?
-3. How can you tell whether the result is useful rather than merely computable?
-4. What should not be inferred from the output?
+For one observation:
+
+- (a) is its average distance to other observations in its own cluster.
+- (b) is the smallest average distance to observations in another cluster.
+- The silhouette coefficient is ((b-a)/max(a,b)).
+
+The score ranges from -1 to 1. A value close to 1 suggests the observation is much closer to its own cluster than to the nearest alternative. A value around 0 suggests overlapping or boundary placement. A negative value suggests it may be closer to another cluster.
+
+The average silhouette score summarises the observations, but always inspect the distribution by cluster too. A good overall average can hide one weak cluster. The score also depends on the distance metric and geometry; it tends to favour compact, separated groups and should not be treated as a universal quality measure.
+
+```python
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
+
+data = pd.DataFrame({
+    "recency": [5, 8, 12, 65, 75, 90, 3, 10, 55, 70, 15, 82],
+    "orders": [12, 10, 8, 2, 1, 0, 14, 9, 7, 2, 11, 1],
+    "basket": [500, 420, 380, 90, 70, 30, 550, 400, 360, 80, 480, 60]
+})
+X = StandardScaler().fit_transform(data)
+
+for k in range(2, 7):
+    labels = KMeans(n_clusters=k, n_init=20, random_state=42).fit_predict(X)
+    score = silhouette_score(X, labels)
+    print(f"K={k}: silhouette={score:.3f}")
+```
+
+Silhouette score requires at least two clusters and fewer clusters than observations. It can be computationally expensive on very large datasets because pairwise distances are involved. For large datasets, scikit-learn provides a sampling option.
+
+## 5. Compare several kinds of evidence
+
+Do not choose K by taking the largest score and ignoring everything else. Compare:
+
+1. **Elbow behaviour:** does adding another cluster provide a meaningful reduction in inertia?
+2. **Silhouette:** are observations generally closer to their own group than to alternatives?
+3. **Cluster sizes:** are there tiny groups that are difficult to interpret or act on?
+4. **Profiles:** do groups differ on original features in a way that answers the question?
+5. **Stability:** do similar groups appear with different random seeds or samples?
+6. **Usefulness:** can the organisation do something responsible with the segments?
+7. **Complexity:** does the benefit of another cluster justify the extra explanation and maintenance?
+
+A lower K may be preferable when it creates broad, stable, understandable groups. A higher K may be useful when it separates genuinely different behaviours. The decision depends on the purpose.
+
+## 6. Common mistakes
+
+- Choosing K only because a chart has a visually pleasing elbow.
+- Treating the highest silhouette score as proof of the correct K.
+- Ignoring tiny clusters or a cluster with poor silhouette values.
+- Comparing models fitted on differently scaled feature matrices.
+- Changing K repeatedly until a preferred story appears.
+- Forgetting that the data may not contain useful clusters at all.
+
+## 7. Guided practice
+
+Fit K-means for K values 2, 3 and 4 on a small numeric dataset. Record inertia, average silhouette score and each cluster's size. Write a short justification for the K you would investigate further. State one reason you might reject that choice.
+
+## 8. Independent practice
+
+Use a dataset with at least 100 observations. Compare K=2 through K=8. Produce an elbow plot, silhouette comparison and original-unit profile table. Test at least two random seeds. Recommend a candidate K or conclude that the evidence does not support a stable segmentation.
+
+## 9. Knowledge check
+
+1. Why does inertia usually decrease as K increases?
+2. Why is K equal to the number of observations not a useful answer?
+3. What does an elbow indicate, and why is it subjective?
+4. What does a negative silhouette coefficient suggest?
+5. Why should cluster sizes and profiles be inspected alongside scores?
+6. What would you report if no candidate K produced stable, interpretable groups?
 
 ## Lesson summary
-Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
 
-## Deeper explanation: choosing k is a judgement
-
-Inertia is the total within-cluster squared distance. It cannot increase when more centroids are added. At k equal to the number of observations, every observation can become its own cluster and inertia becomes zero. Therefore, selecting the lowest inertia always produces an unhelpful answer.
-
-The elbow method plots inertia against k and looks for a point after which adding clusters gives diminishing improvement. Some datasets have no obvious elbow. Do not force one. The silhouette coefficient compares a point's average distance to its own cluster with its distance to the nearest other cluster. Scores near 1 suggest separation; near 0 suggest overlap; negative values suggest the point may be closer to another cluster.
-
-An average silhouette score can conceal a poorly represented small cluster. Inspect sample-level scores, cluster sizes and profiles. Keep the feature matrix and scaling procedure constant when comparing k values. Also test stability across random seeds or resampled observations.
-
-Choose k only when metrics, stability, interpretability and intended use support the same decision. A slightly better score may not justify a tiny unstable segment with no practical distinction. It is acceptable to conclude that the data does not support a useful segmentation.
-
-**Practice:** Write a selection memo listing candidate k values, inertia, silhouette, cluster sizes, stability and original-unit profiles. Explain the trade-offs or justify declining to select a value.
-
-### Worked example: compare candidate k values
-
-Imagine inertia falls sharply from k=2 to k=3, then only slightly from k=3 to k=4. That bend may support k=3, but check whether all three groups have reasonable sizes and whether their profiles differ in a useful way. If k=3 creates a group containing one observation, investigate whether it is an outlier or data-quality issue.
-
-Silhouette adds another perspective, but it is not an objective truth score. It favours compact, separated groups and can penalise valid structures with different densities or shapes. Compare scores alongside domain interpretation and stability. Do not select k using the highest score alone.
-
-A defensible conclusion might be: “We retained k=3 because the elbow, silhouette distribution, seed stability and original-unit profiles were jointly acceptable. The groups are exploratory and will be tested before operational use.”
+Selecting K is a judgement supported by diagnostics, not a button the algorithm can press for you. Inertia describes compactness; the elbow suggests diminishing returns; silhouette compares within-group cohesion with nearest-group separation. Combine these measures with stability, cluster sizes, profiles, domain knowledge and practical purpose.
