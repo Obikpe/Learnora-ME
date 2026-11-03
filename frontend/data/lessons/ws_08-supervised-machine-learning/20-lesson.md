@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Compare candidate models on identical folds and metrics; report score variability; avoid selecting on the final test set; and consider simplicity, latency, fairness and maintainability alongside score.
 
+
+![validation concept diagram](/course-assets/ws08/validation.svg)
+
 ## 1. Core explanation
 A fair comparison uses the same target definition, observations, split strategy and metric. If one model is evaluated on an easier subset, its score cannot be compared directly. Compare a simple baseline, a transparent model and more complex candidates. Record training time and inference cost when relevant.
 
