@@ -779,7 +779,7 @@ def course_progress(
 ):
     return {
         "success": True,
-        "progress": _course_summary(
+        "progress": _sync_enrolment_completion(
             str(user.id),
             course_id,
         ),
@@ -1004,12 +1004,18 @@ def track_progress(
         if not course:
             continue
         enrolment = enrolment_map.get(course_id)
-        summary = _course_summary(str(user.id), course_id, include_archived=course.get("status") != "published") if enrolment else {
+        summary = _sync_enrolment_completion(
+            str(user.id),
+            course_id,
+            include_archived=course.get("status") != "published",
+        ) if enrolment else {
             "total_lessons": 0,
             "completed_lessons": 0,
             "progress_percent": 0,
             "completed": False,
         }
+        if enrolment:
+            enrolment = summary.get("enrolment") or enrolment
         is_required = link.get("required") is not False
         course_completed = bool(
             enrolment
