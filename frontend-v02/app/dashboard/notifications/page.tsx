@@ -176,7 +176,7 @@ export default function NotificationsPage() {
 
     {loading ? <div className="mt-6 space-y-3" aria-label="Loading notifications">{[0,1,2].map(n => <div key={n} className="h-28 animate-pulse border border-white/[.07] bg-white/[.025]"/> )}</div>
     : visible.length === 0 ? <div className="mt-7 border border-white/[.08] bg-[#0d1218] p-8 sm:p-12">
-        <EmptyState title={filter === "unread" ? "You are all caught up" : "Your inbox is clear"} message={filter === "unread" ? "There are no unread notifications. New relevant course releases and updates will appear here automatically." : "When a course matching your saved track is published, or a course you follow changes, the update will appear here. Nothing has been fabricated to fill this space."}/>
+        <EmptyState title={filter === "unread" ? "You are all caught up" : "Your inbox is clear"} message={filter === "unread" ? "There are no unread notifications. New relevant course releases and updates will appear here automatically." : "When a course matching your saved track is published, or a course you follow changes, updates will appear here."}/>
         <Link href="/courses" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#f2d477] hover:text-white">Explore published courses <ExternalLink size={14}/></Link>
       </div>
     : <div className="mt-6 space-y-2">
