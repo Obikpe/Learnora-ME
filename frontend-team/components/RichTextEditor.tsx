@@ -77,14 +77,11 @@ function toEditorHtml(value: string) {
 
 export default function RichTextEditor({ value, onChange, placeholder = "Write your lesson content…" }: { value: string; onChange: (value: string) => void; placeholder?: string }) {
   const editor = useRef<HTMLDivElement>(null);
-  const initialised = useRef(false);
-
   useEffect(() => {
-    if (!editor.current) return;
+    if (!editor.current || editor.current.contains(document.activeElement)) return;
     const html = toEditorHtml(value);
     if (editor.current.innerHTML !== html) editor.current.innerHTML = html;
-    if (!initialised.current && html !== value) onChange(html);
-    initialised.current = true;
+    if (html !== value) onChange(html);
   }, [value, onChange]);
 
   function command(name: string, argument?: string) {
