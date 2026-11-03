@@ -78,3 +78,13 @@ Fit L1 logistic regression over a grid of C values. Record cross-validation perf
 
 ## Lesson summary
 Embedded selection links feature choice to model fitting. Regularisation and tree importance are useful tools, but their results depend on data, model assumptions and validation design.
+
+## 6. Deeper reasoning: regularisation is a trade-off, not a feature truth detector
+
+Regularisation changes the model's objective by balancing fit to the training data against a penalty on parameter size. It does not inspect the world and determine which variables are inherently important. If two predictors contain almost the same information, L1 may keep one and shrink the other to zero. A different sample could lead it to keep the other. That is why selected-feature stability matters, especially when predictors are strongly correlated.
+
+Scaling is important before coefficient-based regularisation because the penalty acts on coefficient magnitudes. If income is measured in naira and age in years, their raw scales differ substantially. Without appropriate scaling, the penalty may constrain one variable differently simply because of its unit. Put scaling and the regularised estimator in the same pipeline so each fold learns the scale from its own training data.
+
+The value of C in scikit-learn's LogisticRegression is inverse regularisation strength: smaller C means stronger regularisation, while larger C means weaker regularisation. A grid should explore a sensible range, often on a logarithmic scale. Do not assume that the smallest or largest value is best; inspect cross-validation results and the number of non-zero coefficients.
+
+Tree importance requires similar caution. A feature can receive high impurity importance because it offers many possible split points, not because it is a reliable causal driver. Permutation importance can be more directly tied to a chosen score, but correlated features can hide each other's contribution. Explain the method used and avoid describing any importance ranking as proof of causation.
