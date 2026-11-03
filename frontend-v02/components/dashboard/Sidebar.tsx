@@ -64,6 +64,7 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
       setAssignedLearner(Boolean(
         restricted ||
         me.account_type === "cohort" ||
+        me.role === "witstart" ||
         me.cohort_id ||
         me.organisation_role === "learner" ||
         memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
