@@ -1,19 +1,47 @@
 # Lesson 13: Underfitting, Overfitting and Generalisation
 
 ## Learning outcomes
+Distinguish underfitting from overfitting; explain generalisation, bias and variance; compare training and validation performance; understand model complexity and regularisation; and identify practical ways to improve generalisation.
 
-By the end of this lesson, you should be able to Distinguish underfitting from overfitting; explain generalisation, bias and variance; compare training and held-out performance; and identify ways to reduce model complexity or improve evidence.
+## 1. The real goal is performance on new examples
+A model is trained using a sample of data. In practice, it will receive examples it has never seen. **Generalisation** describes how well it performs on data from the population and conditions where it is intended to be used.
 
-## 1. Concepts and reasoning
-Underfitting occurs when a model is too simple to capture the important structure in the data. It performs poorly on both training and unseen data. Overfitting occurs when a model learns noise or accidental details in the training sample. It performs well on training data but poorly on new examples. Generalisation is the ability to perform on data drawn from the intended future population.
+A model that memorises training rows may achieve excellent training performance but fail on new data. A model that is too simple may fail to learn the important patterns at all. Both are problems.
 
-Model complexity can increase training performance while reducing test performance. More features, deeper trees or more flexible functions can lower training error but may increase variance. Regularisation, simpler models, more representative data and careful validation can help. More training data can help when the current sample is limited and representative, but it cannot fix systematic bias in collection.
+![Underfitting, good fit and overfitting](./assets/13-fit-comparison.svg)
 
-The bias-variance trade-off is a useful conceptual framework: high bias often accompanies underfitting; high variance often accompanies overfitting. The objective is not to make the training score perfect. It is to find a model that performs reliably on new data.
+## 2. Underfitting
+Underfitting occurs when the model is too simple, poorly specified or insufficiently trained to capture important patterns. It usually performs poorly on both training and validation data.
 
-## 2. Worked example
-Run in VS Code in your course virtual environment. Install packages as required: `python -m pip install numpy pandas scikit-learn matplotlib`.
+Examples:
+- Fitting a straight line to a strongly curved relationship.
+- Using a decision tree with a depth of one when the data needs more complex splits.
+- Stopping optimisation before the model has learned useful structure.
 
+Possible responses include improving features, using a more flexible model, reducing excessive regularisation or training longer when optimisation has not converged. More complexity is not automatically better.
+
+## 3. Overfitting
+Overfitting occurs when a model learns patterns specific to the training sample, including noise and accidental details. It performs very well on training data but noticeably worse on validation or test data.
+
+A deep decision tree can create many narrow rules that perfectly classify training examples. Some of those rules may reflect random quirks rather than stable patterns.
+
+Possible responses:
+- reduce model complexity;
+- increase regularisation;
+- collect more representative training examples;
+- improve data quality;
+- use cross-validation to select settings;
+- remove leakage and unreliable features;
+- stop training when validation performance no longer improves.
+
+More data helps only when it is relevant and representative. It does not fix systematic sampling bias.
+
+## 4. Bias and variance
+Bias is error associated with assumptions that are too restrictive or systematically miss the pattern. Variance describes sensitivity to the particular training sample. High bias is often associated with underfitting; high variance is often associated with overfitting.
+
+The bias-variance trade-off is a useful way to reason about complexity. Increasing flexibility can reduce bias but may increase variance. The aim is not to eliminate one at any cost; it is to achieve robust performance on new data.
+
+## 5. Demonstrate model complexity with a decision tree
 ```python
 from sklearn.datasets import make_moons
 from sklearn.model_selection import train_test_split
@@ -21,30 +49,52 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
 
 X, y = make_moons(n_samples=500, noise=0.25, random_state=3)
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=3, stratify=y
+X_train, X_valid, y_train, y_valid = train_test_split(
+    X, y, test_size=0.30, random_state=3, stratify=y
 )
+
 for depth in [1, 2, 4, 10, None]:
     model = DecisionTreeClassifier(max_depth=depth, random_state=3)
     model.fit(X_train, y_train)
-    print(depth, accuracy_score(y_train, model.predict(X_train)),
-          accuracy_score(y_test, model.predict(X_test)))
+    train_score = accuracy_score(y_train, model.predict(X_train))
+    valid_score = accuracy_score(y_valid, model.predict(X_valid))
+    print(depth, "train:", round(train_score, 3),
+          "validation:", round(valid_score, 3))
 ```
 
-## 3. Interpretation
-State what was learned from training data and what was measured on unseen data. Check whether the metric answers the real decision question. A technically correct output can still be misleading if the target, split or population is wrong.
+max_depth limits the maximum number of levels in the tree. A depth of 1 is very simple; None allows the tree to grow until another stopping condition applies. Compare training and validation scores. A large gap is a warning sign, not a proof on its own: data size, split variation and metric choice also matter.
 
-## 4. Guided practice
-Run the example and record training and test accuracy for each depth. Identify a depth where the training score is high but test score is lower. Explain why a deeper tree is not automatically a better model.
+## 6. Regularisation
+Regularisation adds a penalty for model complexity or large parameter values. In linear models, L1 regularisation can encourage some coefficients to become exactly zero; L2 regularisation shrinks coefficients toward zero. The regularisation strength is a hyperparameter and should be selected using validation or cross-validation.
 
-## 5. Independent practice
-Apply the lesson to a small dataset. Record the source, unit of observation, target and feature availability. Save your code and a short report that includes evidence, limitations and the next validation step.
+Regularisation does not simply "make the model accurate". Too much can cause underfitting; too little can permit overfitting.
 
-## 6. Knowledge check
-1. What assumption is most important in this method?
-2. What is the difference between training performance and generalisation?
-3. How could leakage or sampling bias affect the result?
-4. What would you tell a stakeholder before they use the model?
+## 7. Learning curves
+A learning curve compares training and validation performance as the amount of training data increases. It can help diagnose whether more data might help or whether the model is too simple. If training and validation scores are both poor and close together, high bias may be present. If training is strong but validation is much worse, high variance may be present.
+
+## 8. Training curves and early stopping
+For iterative models, monitor training and validation loss across epochs or iterations. If training loss keeps falling while validation loss begins rising, the model may be overfitting. Early stopping halts training based on validation behaviour. The validation data must not be the final test set.
+
+## 9. Common mistakes
+- Choosing the model with the highest training score.
+- Assuming a more complex model is always better.
+- Calling every train-validation gap overfitting without checking split quality.
+- Using the test set repeatedly to tune complexity.
+- Believing more data automatically fixes bias or leakage.
+- Applying regularisation without validation.
+
+## Guided practice
+Run the decision-tree example. Create a table of depth, training accuracy and validation accuracy. Identify a setting that underfits and one that may overfit. Explain the evidence and why the selected depth is not universally best.
+
+## Independent practice
+Train at least three models with different complexity settings on one dataset. Compare learning curves or train-validation scores. Recommend one model and state what additional evidence is needed before deployment.
+
+## Knowledge check
+1. What does generalisation mean?
+2. How does underfitting differ from overfitting?
+3. Explain bias and variance.
+4. What does regularisation do?
+5. Why should early stopping use validation rather than test data?
 
 ## Lesson summary
-A trustworthy ML workflow is reproducible, uses a suitable baseline and evaluation design, and communicates errors and limitations as carefully as headline performance.
+The goal is not to memorise training examples. It is to learn stable patterns that remain useful on new data. Complexity, regularisation and validation help manage that balance.
