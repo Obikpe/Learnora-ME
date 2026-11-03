@@ -553,3 +553,31 @@ Read-only verification confirmed the track-course relationship, published status
 - The My Learning “Explore courses” actions use Next.js client-side links to /courses; frontend-v02/app/courses/page.tsx is the catalogue route. The route has no root redirect in the current Next.js config.
 - No billing, Paystack, free-launch or pay-to-unlock behaviour was added or changed.
 - Verification limitation: inspected current source, checked the live Supabase certificate/enrolment schema and records read-only, and inspected Vercel deployment/error metadata. No frontend build, Python tests, CI run, browser acceptance or deployment was run. The current production frontend deployment inspected was still on commit e06994c8c2f5b94545ddf629c3644397a880a4b4; the newer main changes in this section are committed but are not live until a deployment is made. The Vercel Hobby runtime-log window did not include older requests, so the earlier certificate error could not be traced to a specific production request.
+
+## Learner loading performance audit and corrections — 3 November 2026
+
+### Findings
+- The active Supabase project `gihfupzvdpyrmynqgukz` is in `eu-west-3` (Paris). The deployed Vercel backend function for `learnora-backend.vercel.app` was running in `iad1` (US East), creating a cross-region network hop for every database request. The frontend v02 rewrite targets `https://learnora-backend.vercel.app`.
+- The learner progress endpoint previously called the full per-course summary for every enrolment. Each summary loaded modules, lessons, all user lesson-progress rows, assessment records and repeatedly queried previous-module quizzes and attempts. The module lock calculation repeated those database reads for each module.
+- The course workspace progress response included the body of every lesson. Routine video progress writes also recalculated the entire course summary every 15 seconds, even when the learner had not completed a lesson.
+- The course workspace fetched project submissions before the learner opened project work and checked for active quiz sessions even when the current tab had no active quiz.
+- My Learning waited for the course catalogue before showing the dashboard, even when the learner already had enrolments and did not need recommendations.
+- The current database has approximately one course, one module and one lesson; the queried quiz, assignment, assignment-submission, media and note tables had no live rows at audit time. This does not support attributing current delays to large course-table volume.
+- Supabase performance advisors reported 73 unindexed foreign keys, 130 unused indexes and one duplicate index. No blanket index changes were applied: unused-index advice is not proof that an index is harmful, and the course/assessment tables are currently almost empty. Query-specific indexes should be evaluated as real data volume grows.
+- Supabase PostgREST logs contained 359 `Warp server error: Thread killed by timeout manager` messages in the inspected 24-hour window. The returned log metadata did not identify the originating application route, so these are recorded as a separate platform signal, not attributed to a specific Learnora endpoint.
+
+### Changes committed to main
+- The My Learning progress endpoint now batches course, module, lesson, learner-progress, quiz, attempt, assignment and submission reads across all of the learner's enrolments instead of running a full summary once per course.
+- Course summary progress reads are restricted to lesson IDs belonging to that course. Module lock state is computed in memory from batched assessment data; the passed-attempt and configured passing-score checks remain enforced.
+- Course workspace progress responses no longer include all lesson bodies. A new authenticated lesson workspace endpoint returns only the selected lesson's content, notes, media and resources after enrolment and module-access checks. The learner workspace uses this single request when the selected lesson changes.
+- Routine lesson progress saves no longer rebuild the full course summary. Completion is synchronised when a lesson is actually completed; intermediate video progress saves only update the lesson progress record. Video progress writes are now at 30-second intervals, with an additional save on pause and completion.
+- Quiz submission, assignment grading, track progress and course progress reads request compact summaries without lesson bodies.
+- Project submissions are loaded only when project work is opened. The active-quiz-session lookup runs only when the current tab already has an active quiz session.
+- My Learning starts loading its records alongside the learner onboarding check. It displays the dashboard after progress arrives and fetches the public course catalogue only when the learner has no enrolments and recommendations are needed.
+- The root Vercel function configuration now assigns `backend-python/main.py` to `cdg1` (Paris), matching the active Supabase region. This takes effect only after a deployment using the updated root `vercel.json`.
+
+### Release and verification status
+- The Vercel Git integration is disabled in the root and v02 Vercel configuration. A commit does not automatically deploy these changes.
+- At audit time, the `learnora-backend.vercel.app` production deployment was still on commit `e06994c8c2f5b94545ddf629c3644397a880a4b4` in `iad1`; the latest `learnora-me-v02` frontend deployment was also on that older commit. The separate `learnora-backend-v02` project was deployed from the `learnora-platform-foundations` branch, not current `main`. The v02 frontend's configured API target is `learnora-backend.vercel.app`, not the separate backend-v02 project.
+- The code and region configuration are committed to `main`, but no deployment, frontend build, Python test suite, CI workflow or browser acceptance run was triggered. Live speed improvement has therefore not yet been measured.
+- No Supabase migration or production data change was made for this performance work.
