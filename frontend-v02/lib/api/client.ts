@@ -25,6 +25,7 @@ export const setToken = (_v: string) => {
   }
   localStorage.removeItem("phx_token");
   sessionStorage.removeItem("phx_logged_out");
+  localStorage.removeItem("phx_logged_out");
   sessionStorage.setItem("phx_session_epoch", String(Date.now()) + "-" + Math.random().toString(36).slice(2));
   sessionStorage.setItem("phx_token", "cookie-session");
 };
@@ -65,6 +66,7 @@ export const clearToken = () => {
   localStorage.removeItem("phx_token");
   localStorage.removeItem("learnora_organisation_id");
   sessionStorage.setItem("phx_logged_out", "1");
+  localStorage.setItem("phx_logged_out", "1");
   clearOrganisationContext();
   void fetch("/api/auth/logout", { method: "POST", credentials: "same-origin", keepalive: true }).catch(() => {});
 };
@@ -152,6 +154,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
         sessionStorage.removeItem("phx_token");
         sessionStorage.removeItem("phx_session_epoch");
         sessionStorage.setItem("phx_logged_out", "1");
+        localStorage.setItem("phx_logged_out", "1");
       }
       const message = response.status >= 500
         ? "Something went wrong while loading your information. Please try again. If the problem continues, contact Learnora support."
