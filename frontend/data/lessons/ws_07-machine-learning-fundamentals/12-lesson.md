@@ -3,6 +3,8 @@
 ## Learning outcomes
 Explain loss and objective functions; calculate MAE, MSE and log loss; distinguish loss from evaluation metrics; understand residuals and probability penalties; and explain why the chosen loss shapes model behaviour.
 
+![Loss function comparison](/course-assets/ws07/12-loss-functions.svg)
+
 ## 1. What is a loss function?
 A model produces predictions. A loss function measures how undesirable those predictions are compared with known outcomes. Training algorithms adjust model parameters to reduce a chosen objective.
 
