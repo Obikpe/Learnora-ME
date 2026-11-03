@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, BookOpen, CheckCircle2, Clock3, Compass,
@@ -176,7 +177,7 @@ export default function LandingPage() {
   const newestCourses = useMemo(() => courses.slice(0, 8), [courses]);
   const featuredTracks = useMemo(() => tracks.slice(0, 3), [tracks]);
 
-  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = search.trim();
     window.location.href = value ? "/courses?search=" + encodeURIComponent(value) : "/courses";
