@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, LoaderCircle, Save } from "lucide-react";
 import Logo from "../../../../../../../components/brand/Logo";
+import RichContent from "../../../../../../../components/course/RichContent";
 import { request } from "../../../../../../../lib/api/client";
 
 export default function CohortLessonPage() {
@@ -74,7 +75,7 @@ export default function CohortLessonPage() {
         <h1 className="mt-3 max-w-4xl font-display text-4xl leading-tight sm:text-5xl">{lesson.title}</h1>
         {lesson.description&&<p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">{lesson.description}</p>}
         <article className="mt-8 min-h-64 rounded-2xl border border-white/[.08] bg-[#0e1319] p-6 sm:p-9">
-          {lesson.content ? <div className="whitespace-pre-wrap break-words text-sm leading-8 text-slate-300">{typeof lesson.content === "string" ? lesson.content : JSON.stringify(lesson.content, null, 2)}</div> : <div className="py-10 text-center"><p className="font-semibold">Lesson material is not available in text form.</p><p className="mt-2 text-sm leading-6 text-slate-500">Your assigned lesson is accessible, but it does not currently contain readable text content.</p></div>}
+          {lesson.content ? <RichContent content={typeof lesson.content === "string" ? lesson.content : JSON.stringify(lesson.content, null, 2)} /> : <div className="py-10 text-center"><p className="font-semibold">Lesson material is not available in text form.</p><p className="mt-2 text-sm leading-6 text-slate-500">Your assigned lesson is accessible, but it does not currently contain readable text content.</p></div>}
         </article>
         <section className="mt-6 rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="font-semibold">Your progress</h2><p className="mt-1 text-xs leading-5 text-slate-500">Progress is private to your cohort account and assigned lesson.</p></div>{progress.completed&&<span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/20 px-3 py-1.5 text-xs text-emerald-300"><CheckCircle2 size={13}/> Completed</span>}</div>
