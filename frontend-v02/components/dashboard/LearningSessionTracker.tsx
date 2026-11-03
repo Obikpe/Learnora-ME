@@ -107,8 +107,9 @@ export default function LearningSessionTracker() {
       const hasPrivilegedMembership = (me?.organisation_memberships || []).some((membership: any) =>
         membership.status === "active" && ["owner", "admin", "team_manager"].includes(String(membership.role || "").toLowerCase())
       );
+      const learnerRole = ["normal", "witstart"].includes(role);
       eligibleLearner = accountType === "cohort" ||
-        (role === "normal" && !hasPrivilegedMembership && !["owner", "admin", "team_manager"].includes(organisationRole));
+        (accountType === "learner" && learnerRole && !hasPrivilegedMembership && !["owner", "admin", "team_manager"].includes(organisationRole));
       if (eligibleLearner) void start();
     }).catch(() => {});
 
