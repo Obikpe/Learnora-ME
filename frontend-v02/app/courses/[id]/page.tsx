@@ -58,7 +58,7 @@ export default function CourseDetail({params}:{params:{id:string}}) {
       </section>
 
       <section className="mt-20 grid gap-10 lg:grid-cols-[.72fr_1.28fr] lg:gap-16">
-        <div><p className="section-kicker">Course outline</p><h2 className="mt-4 max-w-md font-display text-4xl leading-tight sm:text-5xl">What you will work through.</h2><p className="mt-5 max-w-sm text-sm leading-7 text-slate-500">This outline reflects the published course structure. Missing lessons are not replaced with invented content.</p></div>
+        <div><p className="section-kicker">Course outline</p><h2 className="mt-4 max-w-md font-display text-4xl leading-tight sm:text-5xl">What you will work through.</h2></div>
         <div className="min-w-0">
           {modules.length? <div className="divide-y divide-white/[.1] border-y border-white/[.1]">{modules.map((m:any,i:number)=><details key={m.id} open={i===0} className="group">
             <summary className="flex min-h-20 cursor-pointer list-none items-center justify-between gap-4 py-5 [&::-webkit-details-marker]:hidden"><div className="flex min-w-0 items-start gap-4"><span className="pt-1 text-xs tabular-nums text-[var(--gold-light)]">{String(i+1).padStart(2,"0")}</span><div className="min-w-0"><h3 className="font-semibold text-slate-100">{m.title}</h3>{m.description&&<p className="mt-1 text-sm leading-6 text-slate-500">{m.description}</p>}<p className="mt-2 text-xs text-slate-600">{(m.lessons||[]).length} lessons</p></div></div><ChevronDown size={17} className="shrink-0 text-slate-500 transition-transform group-open:rotate-180"/></summary>
