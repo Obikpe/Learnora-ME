@@ -1,5 +1,5 @@
 /* Learnora ME public landing page — responsive layout */
-.landing-page { color: var(--text-body); }
+.landing-page { padding-top:80px; color: var(--text-body); }
 .landing-wrap { width: min(1180px, calc(100% - 48px)); margin-inline: auto; }
 .landing-audience-strip { background: #14162b; color: #fff; font-size: 12px; }
 .landing-audience-strip .landing-wrap { min-height: 34px; display:flex; align-items:center; gap:28px; overflow-x:auto; white-space:nowrap; }
