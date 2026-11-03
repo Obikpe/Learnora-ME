@@ -58,3 +58,11 @@ A common numeric pipeline is median imputation followed by standardisation. Medi
 For reproducibility, fit transformations as part of a pipeline and reuse the fitted pipeline for future data. Do not independently scale a future dataset using different means and standard deviations. For mixed numeric and categorical data, consider a representation and distance designed for mixed types; one-hot encoding can create many dimensions and alter the meaning of distance.
 
 **Practice:** Build two defensible feature sets for the same analytical question. Compare their results and explain which assumptions changed. If the conclusions change dramatically, report the sensitivity instead of hiding it.
+
+### Worked example: why scaling changes the answer
+
+Consider two measurements: annual spend in naira, ranging from 5,000 to 500,000, and order count, ranging from 1 to 20. Under raw Euclidean distance, a spend difference of 100,000 can dominate a difference of several orders. The algorithm may effectively group customers by spend alone, even if frequency is equally important to the business question.
+
+Standardisation converts each feature into a number of standard deviations from its mean. This reduces the influence of units, but it does not decide the correct business weights. If frequency should matter twice as much as spend, that weighting needs a documented reason and a sensitivity check.
+
+Fit the scaler on the dataset used to establish the representation and preserve it for later scoring. If the mean or standard deviation changes unexpectedly, the coordinates change too. Keep an unscaled copy for profiling and explaining the segments in familiar units.
