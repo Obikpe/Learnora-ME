@@ -81,9 +81,7 @@ export default function Courses() {\n  const [signedIn, setSignedIn] = useState(
     IMAGES.learnerPage, IMAGES.instructorPage, IMAGES.organisationPage, IMAGES.login,
   ].forEach(url => usedImages.add(url.split("?")[0]));
 
-  return <div className="min-h-screen">
-    <PublicNav />
-    <main className="mx-auto max-w-7xl px-5 pb-24 pt-32 lg:px-8">
+  const catalogue = <main className={"mx-auto max-w-7xl px-5 pb-24 " + (signedIn ? "pt-8" : "pt-32") + " lg:px-8"}>
       <section className="grid gap-10 border-b border-white/[.1] pb-12 lg:grid-cols-[1fr_.6fr] lg:items-end">
         <div>
           <p className="section-kicker">The Learnora catalogue</p>
@@ -195,7 +193,6 @@ export default function Courses() {\n  const [signedIn, setSignedIn] = useState(
           />
         )}
       </section>
-    </main>
-    <PublicFooter/>
-  </div>;
+    </main>;
+  return signedIn ? <Shell active="discover">{catalogue}</Shell> : <div className="min-h-screen"><PublicNav/>{catalogue}<PublicFooter/></div>;
 }
