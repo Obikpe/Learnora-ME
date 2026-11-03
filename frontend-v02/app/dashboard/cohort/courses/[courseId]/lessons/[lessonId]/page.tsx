@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Skeleton from "../../../../../../../components/feedback/Skeleton";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, LoaderCircle, Save } from "lucide-react";
-import Logo from "../../../../../../../components/brand/Logo";
+import Shell from "../../../../../../../components/dashboard/Shell";
+import Skeleton from "../../../../../../../components/feedback/Skeleton";
 import RichContent from "../../../../../../../components/course/RichContent";
 import { request } from "../../../../../../../lib/api/client";
 
@@ -24,6 +24,7 @@ export default function CohortLessonPage() {
   async function load() {
     setLoading(true);
     setError("");
+    setNotice("");
     try {
       const [lessonResult, progressResult]: any[] = await Promise.all([
         request("/cohort-learning/me/courses/" + encodeURIComponent(courseId) + "/lessons/" + encodeURIComponent(lessonId)),
@@ -66,26 +67,53 @@ export default function CohortLessonPage() {
     }
   }
 
-  return <main className="min-h-screen bg-[#090c10] px-5 py-8 text-slate-100 sm:px-8 lg:px-12">
-    <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 border-b border-white/[.08] pb-6"><Link href="/dashboard/cohort" aria-label="Return to your Learnora dashboard"><Logo/></Link><Link href={"/dashboard/cohort/courses/"+encodeURIComponent(courseId)} className="text-xs text-slate-400 hover:text-[#f2d477]">Course lessons</Link></header>
-    <div className="mx-auto max-w-5xl">
-      <Link href={"/dashboard/cohort/courses/"+encodeURIComponent(courseId)} className="mt-8 inline-flex items-center gap-2 text-xs text-slate-500 hover:text-slate-200"><ArrowLeft size={14}/> Back to lessons</Link>
-      {loading ? <Skeleton variant="course" label="Loading your assigned lesson" /> : error && !lesson ? <div role="alert" className="mt-8 rounded-2xl border border-red-400/20 p-5 text-sm text-red-200">{error}<button onClick={()=>void load()} className="mt-4 block underline">Try again</button></div> : lesson && <>
-        <p className="mt-8 text-[10px] font-bold uppercase tracking-[.2em] text-[#f2d477]">{lesson.module?.title || "Lesson"}</p>
-        <h1 className="mt-3 max-w-4xl font-display text-4xl leading-tight sm:text-5xl">{lesson.title}</h1>
-        {lesson.description&&<p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">{lesson.description}</p>}
-        <article className="mt-8 min-h-64 rounded-2xl border border-white/[.08] bg-[#0e1319] p-6 sm:p-9">
-          {lesson.content ? <RichContent content={typeof lesson.content === "string" ? lesson.content : JSON.stringify(lesson.content, null, 2)} /> : <div className="py-10 text-center"><p className="font-semibold">Lesson material is not available in text form.</p><p className="mt-2 text-sm leading-6 text-slate-500">Your assigned lesson is accessible, but it does not currently contain readable text content.</p></div>}
-        </article>
-        <section className="mt-6 rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-7">
-          <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="font-semibold">Your progress</h2><p className="mt-1 text-xs leading-5 text-slate-500">Progress is private to your cohort account and assigned lesson.</p></div>{progress.completed&&<span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/20 px-3 py-1.5 text-xs text-emerald-300"><CheckCircle2 size={13}/> Completed</span>}</div>
-          <label className="mt-6 block text-xs text-slate-400">Completion: <strong className="text-slate-100">{percent}%</strong><input aria-label="Lesson completion percentage" type="range" min="0" max="100" step="5" value={percent} onChange={e=>setPercent(Number(e.target.value))} className="mt-3 w-full accent-[#d7ad35]"/></label>
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/[.08]"><div className="h-full rounded-full bg-[#d7ad35] transition-all" style={{width:percent+"%"}}/></div>
-          {error&&<p role="alert" className="mt-4 text-sm text-red-200">{error}</p>}
-          {notice&&<p role="status" className="mt-4 text-sm text-emerald-300">{notice}</p>}
-          <div className="mt-6 flex flex-wrap gap-3"><button disabled={saving} onClick={()=>void saveProgress(false)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold hover:border-[#d7ad35]/30 disabled:opacity-50">{saving?<LoaderCircle className="animate-spin" size={15}/>:<Save size={15}/>} Save progress</button><button disabled={saving} onClick={()=>void saveProgress(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black disabled:opacity-50"><CheckCircle2 size={15}/> Mark complete</button></div>
-        </section>
-      </>}
+  if (loading) return <Shell active="learning" restricted role="assigned"><Skeleton variant="course" label="Loading your assigned lesson"/></Shell>;
+
+  return <Shell active="learning" restricted role="assigned">
+    <div className="mb-6">
+      <Link href={"/dashboard/cohort/courses/" + encodeURIComponent(courseId)} className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--primary)]"><ArrowLeft size={14}/> Back to course lessons</Link>
     </div>
-  </main>;
+
+    {error && !lesson ? <section role="alert" className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+      <h1 className="text-lg font-bold text-[var(--text-heading)]">Lesson unavailable</h1>
+      <p className="mt-2 text-sm text-[var(--text-muted)]">{error}</p>
+      <button type="button" onClick={() => void load()} className="mt-4 text-sm font-semibold text-[var(--primary)]">Try again</button>
+    </section> : lesson && <>
+      <section className="border-b border-[var(--border)] pb-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">{lesson.module?.title || "Assigned lesson"}</p>
+        <h1 className="mt-2 max-w-4xl text-2xl font-bold tracking-tight text-[var(--text-heading)] sm:text-3xl">{lesson.title}</h1>
+        {lesson.description && <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--text-muted)]">{lesson.description}</p>}
+      </section>
+
+      <article className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-8">
+        {lesson.content
+          ? <RichContent content={typeof lesson.content === "string" ? lesson.content : JSON.stringify(lesson.content, null, 2)}/>
+          : <div className="py-10 text-center">
+              <p className="font-semibold text-[var(--text-heading)]">Lesson material is not available in text form.</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Your assigned lesson is accessible, but it does not currently contain readable text content.</p>
+            </div>}
+      </article>
+
+      <section className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div><h2 className="font-semibold text-[var(--text-heading)]">Your progress</h2><p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">Progress is saved against your cohort account and this assigned lesson.</p></div>
+          {progress.completed && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--success-tint)] px-3 py-1.5 text-xs font-semibold text-[var(--success)]"><CheckCircle2 size={13}/> Completed</span>}
+        </div>
+        <label className="mt-6 block text-xs text-[var(--text-muted)]">Completion: <strong className="text-[var(--text-heading)]">{percent}%</strong>
+          <input aria-label="Lesson completion percentage" type="range" min="0" max="100" step="5" value={percent} onChange={event => setPercent(Number(event.target.value))} className="mt-3 w-full accent-[var(--primary)]"/>
+        </label>
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)] transition-all" style={{ width: percent + "%" }}/></div>
+        {error && <p role="alert" className="mt-4 text-sm text-[var(--warning)]">{error}</p>}
+        {notice && <p role="status" className="mt-4 text-sm text-[var(--success)]">{notice}</p>}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button type="button" disabled={saving} onClick={() => void saveProgress(false)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--border)] px-4 py-3 text-sm font-semibold text-[var(--text-body)] hover:bg-[var(--bg-soft)] disabled:opacity-50">
+            {saving ? <LoaderCircle className="animate-spin" size={15}/> : <Save size={15}/>} Save progress
+          </button>
+          <button type="button" disabled={saving} onClick={() => void saveProgress(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50">
+            <CheckCircle2 size={15}/> Mark complete
+          </button>
+        </div>
+      </section>
+    </>}
+  </Shell>;
 }
