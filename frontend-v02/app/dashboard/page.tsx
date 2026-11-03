@@ -185,7 +185,7 @@ export default function MyLearningPage() {
       </div>
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => void load()} disabled={refreshing} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-body)] hover:bg-[var(--bg-soft)] disabled:opacity-50"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""}/> Refresh</button>
-        <a href="/courses" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]">Explore courses <ArrowRight size={14}/></a>
+        <Link href="/courses" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]">Explore courses <ArrowRight size={14}/></Link>
       </div>
     </section>
 
@@ -211,12 +211,12 @@ export default function MyLearningPage() {
           : courses.length === 0
             ? <section>
                 <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Recommended courses</h2>
-                {recommendations.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{recommendations.map((course: any) => <RecommendedCourseCard key={course.id} course={course}/>)}</div> : <p className="py-5 text-sm text-[var(--text-muted)]">Nothing here yet. <a href="/courses" className="font-semibold text-[var(--primary)] underline">Explore courses</a></p>}
+                {recommendations.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{recommendations.map((course: any) => <RecommendedCourseCard key={course.id} course={course}/>)}</div> : <p className="py-5 text-sm text-[var(--text-muted)]">Nothing here yet. <Link href="/courses" className="font-semibold text-[var(--primary)] underline">Explore courses</Link></p>}
               </section>
-            : <p className="py-8 text-sm text-[var(--text-muted)]">No courses in progress. <a href="/courses" className="font-semibold text-[var(--primary)] underline">Explore courses</a></p>)}
+            : <p className="py-8 text-sm text-[var(--text-muted)]">No courses in progress. <Link href="/courses" className="font-semibold text-[var(--primary)] underline">Explore courses</Link></p>)}
         {tab === "completed" && (completed.length
           ? <div className="space-y-4">{completed.map((row: any) => <CourseCard key={row.enrolment?.id || row.course?.id} row={row} completed/>)}</div>
-          : <div className="py-8"><h2 className="text-base font-semibold text-[var(--text-heading)]">No completed courses</h2><p className="mt-2 text-sm text-[var(--text-muted)]">Nothing here yet. <a href="/courses" className="font-semibold text-[var(--primary)] underline">Explore courses</a></p></div>)}
+          : <div className="py-8"><h2 className="text-base font-semibold text-[var(--text-heading)]">No completed courses</h2><p className="mt-2 text-sm text-[var(--text-muted)]">Nothing here yet. <Link href="/courses" className="font-semibold text-[var(--primary)] underline">Explore courses</Link></p></div>)}
         {tab === "skills" && <section>
           <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Skills</h2>
           {evidenceError ? <p className="py-8 text-sm text-[var(--text-muted)]">Skills could not be loaded.</p> : skills.length ? <div className="grid gap-3 md:grid-cols-2">{skills.map((skill: any) => <article key={skill.skill_id || skill.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-[var(--text-heading)]">{skill.skill_name || skill.name}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">{skill.category || "Skill"}</p></div><span className="text-xs capitalize text-[var(--text-muted)]">{String(skill.status || "not_started").replaceAll("_", " ")}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: Math.max(0, Math.min(100, Number(skill.proficiency) || 0)) + "%" }}/></div><p className="mt-2 text-[11px] text-[var(--text-muted)]">{skill.verified_evidence_count || 0} verified evidence items · {Number(skill.proficiency) || 0}%</p></article>)}</div> : <p className="py-8 text-sm text-[var(--text-muted)]">Nothing here yet.</p>}
