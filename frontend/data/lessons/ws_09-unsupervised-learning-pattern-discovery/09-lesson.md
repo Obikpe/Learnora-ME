@@ -58,3 +58,11 @@ PCA is commonly calculated using singular value decomposition. Standardising fir
 Component weights (loadings) show how original variables contribute to a component. Large absolute weights indicate stronger contribution, but the sign is relative: multiplying an entire component by -1 gives an equivalent direction. Do not interpret positive as good and negative as bad.
 
 **Practice:** Plot two correlated original features and their PCA coordinates. Explain why component axes are not original measurement units and why compression can lose useful distinctions.
+
+### Worked example: inspect component loadings
+
+Suppose the first principal component gives large positive weights to annual spend and order frequency. It may represent an overall purchasing-activity direction. If recency has a large negative weight, the component may contrast frequent/high-spend activity with longer time since purchase, depending on the feature coding and sign convention.
+
+The sign of a component is arbitrary. A software library could return all weights with the opposite sign and the mathematical solution would be equivalent. Focus on which variables contribute strongly together and how observations score along the component.
+
+PCA does not automatically produce interpretable business factors. Check correlations, loadings and original records. If a component combines unrelated variables in a way that cannot be explained, do not invent a label merely to make the report sound polished.
