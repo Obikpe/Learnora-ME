@@ -10,14 +10,14 @@ function escapeHtml(value: string) {
 function inline(value: string) {
   let text = escapeHtml(value);
   const code: string[] = [];
-  text = text.replace(/`([^`]+)`/g, (_match, content: string) => {
-    const marker = `%%CODE${code.length}%%`;
+  text = text.replace(/\x60([^\x60]+)\x60/g, (_match, content: string) => {
+    const marker = "%%CODE" + code.length + "%%";
     code.push("<code>" + content + "</code>");
     return marker;
   });
-  text = text.replace(/[([^]]+)]((https?:\/\/[^\s)]+|mailto:[^\s)]+))/g, (_match, label: string, href: string) => "<a href=\"" + escapeHtml(href) + "\">" + label + "</a>");
-  text = text.replace(/**(.+?)**/g, "<strong>$1</strong>").replace(/__(.+?)__/g, "<strong>$1</strong>");
-  text = text.replace(/(^|[^*])*([^*\n]+)*(?!*)/g, "$1<em>$2</em>").replace(/(^|[^_])_([^_\n]+)_(?!_)/g, "$1<em>$2</em>");
+  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g, (_match, label: string, href: string) => "<a href=\"" + escapeHtml(href) + "\">" + label + "</a>");
+  text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/__(.+?)__/g, "<strong>$1</strong>");
+  text = text.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>").replace(/(^|[^_])_([^_\n]+)_(?!_)/g, "$1<em>$2</em>");
   return text.replace(/%%CODE(\d+)%%/g, (_match, index: string) => code[Number(index)] || "");
 }
 
@@ -44,7 +44,7 @@ function sanitiseEditorHtml(value: string) {
 
 function toEditorHtml(value: string) {
   const raw = String(value || "").trim();
-  if (!raw) return "<p></p>";
+  if (!raw) return "";
   if (/<\s*(p|div|h[1-6]|ul|ol|li|strong|b|em|i|u|blockquote|pre|code|a|br|hr)\b/i.test(raw)) return sanitiseEditorHtml(raw);
   const lines = raw.replace(/\r\n?/g, "\n").split("\n");
   const html: string[] = [];
@@ -59,7 +59,7 @@ function toEditorHtml(value: string) {
   const flushQuote = () => { if (quote.length) html.push("<blockquote>" + quote.map(item => "<p>" + inline(item) + "</p>").join("") + "</blockquote>"); quote = []; };
   const flushCode = () => { if (inCode) html.push("<pre><code>" + escapeHtml(code.join("\n")) + "</code></pre>"); code = []; inCode = false; };
   for (const line of lines) {
-    if (/^\s*```/.test(line)) { flushParagraph(); flushList(); flushQuote(); if (inCode) flushCode(); else inCode = true; continue; }
+    if (/^\s*\x60{3}/.test(line)) { flushParagraph(); flushList(); flushQuote(); if (inCode) flushCode(); else inCode = true; continue; }
     if (inCode) { code.push(line); continue; }
     const heading = line.match(/^\s{0,3}(#{1,6})\s+(.+)$/);
     const bullet = line.match(/^\s*[-*+]\s+(.+)$/);
@@ -72,11 +72,12 @@ function toEditorHtml(value: string) {
     flushList(); flushQuote(); paragraph.push(line);
   }
   flushParagraph(); flushList(); flushQuote(); flushCode();
-  return html.join("") || "<p></p>";
+  return html.join("");
 }
 
 export default function RichTextEditor({ value, onChange, placeholder = "Write your lesson content…" }: { value: string; onChange: (value: string) => void; placeholder?: string }) {
   const editor = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!editor.current || editor.current.contains(document.activeElement)) return;
     const html = toEditorHtml(value);
