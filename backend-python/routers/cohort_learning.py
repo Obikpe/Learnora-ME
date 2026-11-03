@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from routers.auth import CurrentUser, get_current_user, supabase
 from routers.permissions import PermissionContext, require_permission
+from routers.progress import _record_learning_day
 from services.audit import audit
 
 router = APIRouter(tags=["Cohort learning"])
@@ -694,7 +695,16 @@ def update_my_cohort_lesson_progress(
     if not allowed.data:
         raise HTTPException(403, "This lesson has not been assigned to you.")
 
-    completed = bool(body.completed or body.progress_percent == 100)
+    existing = (
+        supabase.table("cohort_account_lesson_progress")
+        .select("completed")
+        .eq("cohort_account_id", str(account["id"]))
+        .eq("lesson_id", lesson_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    was_completed = bool(existing and existing[0].get("completed"))
+    completed = bool(body.completed or body.progress_percent == 100 or was_completed)
     progress_percent = 100 if completed else body.progress_percent
     now = datetime.now(timezone.utc).isoformat()
     payload = {
@@ -717,6 +727,8 @@ def update_my_cohort_lesson_progress(
         raise HTTPException(409, "Progress could not be saved. Please retry.")
     if not result.data:
         raise HTTPException(500, "Progress could not be saved.")
+    if completed and not was_completed:
+        _record_learning_day(user, "lesson_completed")
     return {"success": True, "progress": result.data[0]}
 
 

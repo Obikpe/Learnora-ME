@@ -5,12 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   BookOpen, Compass, Target, FolderKanban, Sparkles, FileCheck2, Award,
-  MessageCircle, BrainCircuit, Bell, Settings, LayoutDashboard, LogOut,
-  Users, Building2, Activity, ShieldCheck, CircleDollarSign, Layers3,
-  LineChart, LockKeyhole, CreditCard, Menu, X, ChevronDown, Route,
-  Search, GraduationCap
+  MessageCircle, BrainCircuit, LayoutDashboard, Users, Building2,
+  Activity, ShieldCheck, CircleDollarSign, Layers3, LineChart, LockKeyhole, Settings,
+  Menu, X, ChevronDown, Route, Search, GraduationCap, CalendarDays
 } from "lucide-react";
-import { clearToken, currentUser } from "../../lib/api";
+import { currentUser } from "../../lib/api";
 
 type NavItem = { key: string; label: string; href: string; icon: any };
 
@@ -26,9 +25,7 @@ const learnerItems: NavItem[] = [
   { key: "certificates", label: "Certificates", href: "/dashboard/certificates", icon: Award },
   { key: "community", label: "Community", href: "/dashboard/community", icon: MessageCircle },
   { key: "ai", label: "AI tutor", href: "/dashboard/ai", icon: BrainCircuit },
-  { key: "notifications", label: "Notifications", href: "/dashboard/notifications", icon: Bell },
-  { key: "subscription", label: "Subscription", href: "/dashboard/subscription", icon: CreditCard },
-  { key: "settings", label: "Account settings", href: "/dashboard/settings", icon: Settings },
+  { key: "calendar", label: "Learning calendar", href: "/dashboard/calendar", icon: CalendarDays },
 ];
 const adminItems: NavItem[] = [
   { key: "overview", label: "Overview", href: "/dashboard/admin/overview", icon: LayoutDashboard },
@@ -52,8 +49,6 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [canTeach, setCanTeach] = useState(false);
-  const [isCohortAccount, setIsCohortAccount] = useState(false);
-  const [isFreeAccess, setIsFreeAccess] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -63,15 +58,12 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
       setCanTeach((me.organisation_memberships || []).some((membership: any) =>
         membership.role === "instructor" && membership.status === "active"
       ));
-      setIsCohortAccount(me.account_type === "cohort");
-      setIsFreeAccess(me.access_state === "free" && me.course_access === true);
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
   const items = (admin ? adminItems : learnerItems).filter(item =>
-    !(hideTutor && item.key === "ai") &&
-    !((isCohortAccount || isFreeAccess) && item.key === "subscription")
+    !(hideTutor && item.key === "ai")
   );
   const extraItems = canTeach && !admin
     ? [...items, { key: "instructor", label: "Teaching", href: "/dashboard/instructor", icon: GraduationCap }]
@@ -80,7 +72,7 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
     ["discover", "learning", "tracks"].includes(item.key)
   );
   const moreItems = extraItems.filter(item => !primaryItems.some(primary => primary.key === item.key));
-  const logout = () => { clearToken(); window.location.replace("/"); };
+  const mobileItems = extraItems.filter(item => !["notifications", "settings"].includes(item.key));
   const isActive = (item: NavItem) => active === item.key || (item.key === "learning" && active === "overview");
   const navLink = (item: NavItem, mobile = false) => {
     const Icon = item.icon;
@@ -101,8 +93,13 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
   }
 
   return <div className="flex min-w-0 flex-1 items-center gap-5">
+    <div className="flex shrink-0 items-center xl:hidden">
+      <button type="button" onClick={() => setMobileOpen(value => !value)} aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen}
+        className="grid size-10 place-items-center rounded-lg border border-[var(--border)] text-[var(--text-body)] hover:bg-[var(--bg-soft)]">
+        {mobileOpen ? <X size={19}/> : <Menu size={19}/>}
+      </button>
+    </div>
     <Link href={admin ? "/dashboard/admin/overview" : "/dashboard"} className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight text-[var(--text-heading)]" aria-label="Learnora ME home">
-      <span className="grid size-8 place-items-center rounded-lg bg-[var(--primary)] text-sm font-bold text-[var(--on-primary)]">L</span>
       <span>Learnora <span className="text-[var(--primary)]">ME</span></span>
     </Link>
 
@@ -114,7 +111,6 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
         </summary>
         <div className="absolute left-0 top-full z-50 mt-2 max-h-[min(70vh,34rem)] w-64 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl">
           {moreItems.map(item => navLink(item, true))}
-          <button type="button" onClick={logout} className="mt-1 flex w-full items-center gap-2 rounded-lg border-t border-[var(--border)] px-3 py-3 text-left text-sm text-[var(--text-muted)] hover:bg-[var(--bg-soft)] hover:text-[var(--error)]"><LogOut size={16}/>Sign out</button>
         </div>
       </details>}
     </nav>
@@ -125,23 +121,24 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
         placeholder="What do you want to learn?" className="min-w-0 w-full bg-transparent text-xs text-[var(--text-body)] outline-none placeholder:text-[var(--text-muted)]"/>
     </form>
 
-    <div className="ml-auto flex items-center gap-2 xl:hidden">
-      <button type="button" onClick={() => setMobileOpen(value => !value)} aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen}
-        className="grid size-10 place-items-center rounded-lg border border-[var(--border)] text-[var(--text-body)] hover:bg-[var(--bg-soft)]">
-        {mobileOpen ? <X size={19}/> : <Menu size={19}/>}
-      </button>
-    </div>
 
-    {mobileOpen && <div className="absolute inset-x-0 top-full z-50 max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-b border-[var(--border)] bg-[var(--card)] p-4 shadow-xl xl:hidden">
-      <form onSubmit={submitSearch} role="search" className="mb-3 flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] px-3 py-2">
-        <Search size={16} className="text-[var(--text-muted)]"/>
-        <input aria-label="Search courses" value={search} onChange={event => setSearch(event.target.value)} placeholder="What do you want to learn?" className="w-full bg-transparent py-1 text-sm outline-none"/>
-        <button type="submit" className="text-xs font-semibold text-[var(--primary)]">Search</button>
-      </form>
-      <nav aria-label="Mobile navigation" className="grid gap-1">
-        {extraItems.map(item => navLink(item, true))}
-        <button type="button" onClick={logout} className="mt-2 flex min-h-11 w-full items-center gap-2 border-t border-[var(--border)] px-3 pt-3 text-left text-sm text-[var(--text-muted)] hover:text-[var(--error)]"><LogOut size={16}/>Sign out</button>
-      </nav>
+
+    {mobileOpen && <div className="fixed inset-0 z-[80] xl:hidden">
+      <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/45"/>
+      <section role="dialog" aria-modal="true" aria-label="Learning navigation" className="absolute inset-y-0 left-0 flex w-[min(21rem,88vw)] flex-col border-r border-[var(--border)] bg-[var(--card)] p-4 shadow-2xl">
+        <div className="mb-5 flex items-center justify-between border-b border-[var(--border)] pb-4">
+          <span className="font-bold text-[var(--text-heading)]">Learnora <span className="text-[var(--primary)]">ME</span></span>
+          <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="grid size-9 place-items-center rounded-lg hover:bg-[var(--bg-soft)]"><X size={18}/></button>
+        </div>
+        <form onSubmit={submitSearch} role="search" className="mb-4 flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] px-3 py-2">
+          <Search size={16} className="text-[var(--text-muted)]"/>
+          <input aria-label="Search courses" value={search} onChange={event => setSearch(event.target.value)} placeholder="What do you want to learn?" className="w-full bg-transparent py-1 text-sm outline-none"/>
+          <button type="submit" className="text-xs font-semibold text-[var(--primary)]">Search</button>
+        </form>
+        <nav aria-label="Learning destinations" className="flex-1 space-y-1 overflow-y-auto">
+          {mobileItems.map(item => navLink(item, true))}
+        </nav>
+      </section>
     </div>}
   </div>;
 }

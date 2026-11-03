@@ -90,7 +90,7 @@ export default function AccountSettings({ user }: { user: any }) {
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-red-200">Delete account</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Request permanent removal of your Learnora sign-in and account access. We will email a secure confirmation link to {user?.email || "your registered email address"}. Your account is not deleted until you confirm from that email.</p>
-          <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-500">Your learning records will be retained in a restricted history record. Any active recurring subscription must be successfully cancelled before deletion can be completed.</p>
+          <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-500">Your learning records will be retained in a restricted history record in accordance with the platform’s retention policy.</p>
           {deleteError && <p role="alert" className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.05] p-3 text-sm text-red-200">{deleteError}</p>}
           {deleteNotice && <p role="status" className="mt-4 rounded-xl border border-emerald-400/20 bg-emerald-400/[.05] p-3 text-sm text-emerald-200">{deleteNotice}</p>}
           <button type="button" onClick={() => {setShowDelete(true);setDeleteError("");setDeleteText("");}} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-400/30 px-4 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-400/10"><Trash2 size={15}/>Request account deletion</button>

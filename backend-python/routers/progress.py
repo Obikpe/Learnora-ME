@@ -5,6 +5,7 @@ All writes are scoped to the authenticated learner and an actual enrolment.
 """
 
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Any, Optional
 from uuid import UUID
 
@@ -24,6 +25,14 @@ class LessonProgressIn(BaseModel):
     progress_percent: int = Field(default=0, ge=0, le=100)
     completed: bool = False
     last_position_seconds: int = Field(default=0, ge=0)
+
+
+class LearningSessionStartIn(BaseModel):
+    timezone: str = Field(default="Africa/Lagos", min_length=1, max_length=64)
+
+
+class LearningSessionHeartbeatIn(BaseModel):
+    active: bool = False
 
 
 class LessonNoteIn(BaseModel):
@@ -511,6 +520,173 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
     }
 
 
+def _learning_account_type(user: CurrentUser) -> str:
+    return "cohort" if getattr(user, "account_type", "") == "cohort" else "individual"
+
+
+def _validated_timezone(value: str | None) -> str:
+    candidate = (value or "Africa/Lagos").strip()
+    try:
+        ZoneInfo(candidate)
+        return candidate
+    except (ZoneInfoNotFoundError, ValueError):
+        return "Africa/Lagos"
+
+
+def _record_learning_day(user: CurrentUser, activity_type: str) -> None:
+    """Record only server-verified learning events; never trust a browser date."""
+    account_type = _learning_account_type(user)
+    timezone_name = "Africa/Lagos"
+    try:
+        sessions = (
+            supabase.table("learning_sessions")
+            .select("timezone")
+            .eq("learner_id", str(user.id))
+            .eq("account_type", account_type)
+            .order("started_at", desc=True)
+            .limit(1)
+            .execute()
+        ).data or []
+        if sessions:
+            timezone_name = _validated_timezone(sessions[0].get("timezone"))
+        now = datetime.now(timezone.utc)
+        activity_date = now.astimezone(ZoneInfo(timezone_name)).date().isoformat()
+        supabase.rpc("record_learner_learning_day", {
+            "p_learner_id": str(user.id),
+            "p_account_type": account_type,
+            "p_activity_date": activity_date,
+            "p_timezone": timezone_name,
+            "p_activity_type": activity_type,
+            "p_activity_at": now.isoformat(),
+        }).execute()
+    except Exception as exc:
+        # Tracking failure must never prevent a learner from completing learning.
+        print(f"Learning-day record failed: {type(exc).__name__}")
+
+
+@router.post("/learning-sessions/start", status_code=201)
+def start_learning_session(body: LearningSessionStartIn, user: CurrentUser = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    account_type = _learning_account_type(user)
+    timezone_name = _validated_timezone(body.timezone)
+    stale_before = (now - timedelta(minutes=3)).isoformat()
+    try:
+        supabase.table("learning_sessions").update({
+            "status": "interrupted",
+            "ended_at": stale_before,
+        }).eq("learner_id", str(user.id)).eq("account_type", account_type).eq("status", "active").lt("last_heartbeat_at", stale_before).execute()
+        inserted = supabase.table("learning_sessions").insert({
+            "learner_id": str(user.id),
+            "account_type": account_type,
+            "started_at": now.isoformat(),
+            "last_heartbeat_at": now.isoformat(),
+            "timezone": timezone_name,
+            "status": "active",
+            "active_seconds": 0,
+        }).execute()
+        if not inserted.data:
+            raise RuntimeError("Session insert returned no row")
+        return {"success": True, "session": inserted.data[0]}
+    except Exception as exc:
+        print(f"Learning session start failed: {type(exc).__name__}")
+        raise HTTPException(503, "Learning-time tracking is temporarily unavailable.") from None
+
+
+@router.post("/learning-sessions/{session_id}/heartbeat")
+def heartbeat_learning_session(session_id: UUID, body: LearningSessionHeartbeatIn, user: CurrentUser = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    account_type = _learning_account_type(user)
+    rows = (supabase.table("learning_sessions")
+        .select("id,last_heartbeat_at,status")
+        .eq("id", str(session_id)).eq("learner_id", str(user.id))
+        .eq("account_type", account_type).eq("status", "active").limit(1).execute()).data or []
+    if not rows:
+        raise HTTPException(404, "Learning session not found.")
+    try:
+        previous = datetime.fromisoformat(str(rows[0]["last_heartbeat_at"]).replace("Z", "+00:00"))
+        elapsed = max(0, min(60, int((now - previous).total_seconds()))) if body.active else 0
+        current = (supabase.table("learning_sessions").select("active_seconds")
+            .eq("id", str(session_id)).eq("learner_id", str(user.id)).eq("account_type", account_type).eq("status", "active").limit(1).execute()).data or []
+        total = int(current[0].get("active_seconds") or 0) if current else 0
+        supabase.table("learning_sessions").update({
+            "last_heartbeat_at": now.isoformat(),
+            "active_seconds": total + elapsed,
+        }).eq("id", str(session_id)).eq("learner_id", str(user.id)).eq("account_type", account_type).eq("status", "active").execute()
+        return {"success": True, "counted_seconds": elapsed}
+    except Exception as exc:
+        print(f"Learning session heartbeat failed: {type(exc).__name__}")
+        raise HTTPException(503, "Learning-time tracking is temporarily unavailable.") from None
+
+
+@router.post("/learning-sessions/{session_id}/end")
+def end_learning_session(session_id: UUID, body: LearningSessionHeartbeatIn, user: CurrentUser = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    account_type = _learning_account_type(user)
+    rows = (supabase.table("learning_sessions")
+        .select("id,last_heartbeat_at,active_seconds,status")
+        .eq("id", str(session_id)).eq("learner_id", str(user.id))
+        .eq("account_type", account_type).eq("status", "active").limit(1).execute()).data or []
+    if not rows:
+        return {"success": True, "already_ended": True}
+    try:
+        previous = datetime.fromisoformat(str(rows[0]["last_heartbeat_at"]).replace("Z", "+00:00"))
+        elapsed = max(0, min(60, int((now - previous).total_seconds()))) if body.active else 0
+        supabase.table("learning_sessions").update({
+            "last_heartbeat_at": now.isoformat(),
+            "ended_at": now.isoformat(),
+            "active_seconds": int(rows[0].get("active_seconds") or 0) + elapsed,
+            "status": "ended",
+        }).eq("id", str(session_id)).eq("learner_id", str(user.id)).eq("account_type", account_type).eq("status", "active").execute()
+        return {"success": True, "counted_seconds": elapsed}
+    except Exception as exc:
+        print(f"Learning session end failed: {type(exc).__name__}")
+        raise HTTPException(503, "Learning-time tracking is temporarily unavailable.") from None
+
+
+@router.get("/learning-summary")
+def learning_summary(timezone_name: str = Query(default="Africa/Lagos", alias="timezone"), user: CurrentUser = Depends(get_current_user)):
+    timezone_name = _validated_timezone(timezone_name)
+    account_type = _learning_account_type(user)
+    seconds_result = supabase.rpc("get_learner_learning_seconds", {
+        "p_learner_id": str(user.id),
+        "p_account_type": account_type,
+    }).execute()
+    seconds_data = getattr(seconds_result, "data", 0)
+    if isinstance(seconds_data, list) and seconds_data:
+        seconds_data = next(iter(seconds_data[0].values())) if isinstance(seconds_data[0], dict) else seconds_data[0]
+    if isinstance(seconds_data, dict):
+        seconds_data = next(iter(seconds_data.values()), 0)
+    total_learning_seconds = max(0, int(seconds_data or 0))
+    days = (supabase.table("learner_learning_days")
+        .select("activity_date,activity_count,activity_types,last_activity_at")
+        .eq("learner_id", str(user.id)).eq("account_type", account_type)
+        .order("activity_date", desc=True).execute()).data or []
+    day_values = {str(row["activity_date"]) for row in days if row.get("activity_date")}
+    today = datetime.now(ZoneInfo(timezone_name)).date()
+    anchor = today if today.isoformat() in day_values else today - timedelta(days=1)
+    streak = 0
+    cursor = anchor
+    while cursor.isoformat() in day_values:
+        streak += 1
+        cursor -= timedelta(days=1)
+    longest = 0
+    run = 0
+    previous = None
+    for value in sorted(day_values):
+        current = datetime.fromisoformat(value).date()
+        run = run + 1 if previous and current == previous + timedelta(days=1) else 1
+        longest = max(longest, run)
+        previous = current
+    return {
+        "success": True,
+        "learning_time_seconds": total_learning_seconds,
+        "current_streak": streak,
+        "longest_streak": longest,
+        "learning_days": days,
+        "timezone": timezone_name,
+    }
+
+
 @router.get("/lessons/{lesson_id}/content")
 def get_lesson_content(
     lesson_id: str,
@@ -764,6 +940,8 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
     }).execute())
     if not inserted.data:
         raise HTTPException(500, "Unable to save quiz attempt.")
+    if passed:
+        _record_learning_day(user, "quiz_passed")
     course_progress = _sync_enrolment_completion(str(user.id), str(quiz["course_id"]), include_lesson_content=False)
     return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score, "course_progress": course_progress}
 
@@ -848,6 +1026,7 @@ def submit_assignment(assignment_id: str, body: AssignmentSubmissionIn, user: Cu
     }).execute())
     if not inserted.data:
         raise HTTPException(500, "Unable to save assignment submission.")
+    _record_learning_day(user, "assignment_submitted")
     return {"success": True, "submission": inserted.data[0]}
 
 
@@ -1111,11 +1290,36 @@ def my_progress(
             "completed_assessments": completed_assessments,
             "total_assessments": total_assessments,
             "last_activity_at": last_activity,
+            "last_accessed_item": next((
+                {
+                    "id": str(lesson["id"]),
+                    "title": lesson.get("title") or "Continue lesson",
+                    "course_id": course_id,
+                    "course_title": course.get("title") or "Your course",
+                    "last_accessed_at": (progress_by_lesson.get(str(lesson["id"])) or {}).get("last_accessed_at"),
+                }
+                for lesson in sorted(
+                    course_lessons,
+                    key=lambda item: (progress_by_lesson.get(str(item["id"])) or {}).get("last_accessed_at") or "",
+                    reverse=True,
+                )
+                if not (progress_by_lesson.get(str(lesson["id"])) or {}).get("completed")
+                and module_access.get(str(lesson_module.get(str(lesson["id"]) or "")), False)
+                and (progress_by_lesson.get(str(lesson["id"])) or {}).get("last_accessed_at")
+            ), None),
             "next_item": None if completed else next_item,
         })
 
+    recent_unfinished = [
+        row["last_accessed_item"]
+        for row in summaries
+        if row.get("last_accessed_item")
+    ]
+    recent_unfinished.sort(key=lambda row: row.get("last_accessed_at") or "", reverse=True)
+
     return {
         "success": True,
+        "last_accessed_item": recent_unfinished[0] if recent_unfinished else None,
         "courses": summaries,
         "in_progress_count": sum(1 for row in summaries if not row["completed"]),
         "completed_count": sum(1 for row in summaries if row["completed"]),
@@ -1221,17 +1425,20 @@ def update_lesson_progress(
         body.completed
         or body.progress_percent >= 100
     )
-    percent = 100 if completed else body.progress_percent
 
     existing = (
         supabase
         .table("learnora_lesson_progress")
-        .select("id,first_started_at")
+        .select("id,first_started_at,completed,completed_at")
         .eq("user_id", user.id)
         .eq("lesson_id", lesson_id)
         .limit(1)
         .execute()
     )
+
+    was_completed = bool(existing.data and existing.data[0].get("completed"))
+    completed = completed or was_completed
+    percent = 100 if completed else body.progress_percent
 
     payload = {
         "user_id": user.id,
@@ -1241,7 +1448,7 @@ def update_lesson_progress(
         "completed": completed,
         "last_position_seconds": body.last_position_seconds,
         "last_accessed_at": now,
-        "completed_at": now if completed else None,
+        "completed_at": (existing.data[0].get("completed_at") if was_completed else now) if completed else None,
     }
 
     if not existing.data:
@@ -1267,6 +1474,8 @@ def update_lesson_progress(
             "Unable to save lesson progress.",
         )
 
+    if completed and not was_completed:
+        _record_learning_day(user, "lesson_completed")
     summary = _sync_enrolment_completion(str(user.id), course_id, include_lesson_content=False) if completed else None
 
     return {

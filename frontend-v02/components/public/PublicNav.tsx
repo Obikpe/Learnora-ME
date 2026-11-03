@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronDown, Menu, X, Sun, Moon, LifeBuoy } from "lucide-react";
+import { ArrowRight, ChevronDown, Menu, X, Sun, Moon, Headset } from "lucide-react";
 import Logo from "../brand/Logo";
 
 const audiences = [
@@ -69,7 +69,7 @@ export default function PublicNav() {
 
         <div className="hidden items-center gap-3 lg:flex">
           <button type="button" onClick={toggleTheme} aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]">{theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}</button>
-          <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Contact Learnora support" title="Contact support" className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]"><LifeBuoy size={17}/></a>
+          <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Customer support" title="Customer support" className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]"><Headset size={17}/></a>
           <a href="/login" className="rounded-lg px-2 py-3 text-sm text-slate-300 transition-colors hover:text-white">Sign in</a>
           <a href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]">Get started <ArrowRight size={15}/></a>
         </div>
@@ -87,7 +87,7 @@ export default function PublicNav() {
           {audiences.map(item => <a key={item.href} href={item.href} onClick={close} className="rounded-lg px-3 py-3 hover:bg-white/[.04]"><span className="block text-sm font-semibold">{item.title}</span><span className="mt-1 block text-xs text-slate-500">{item.detail}</span></a>)}
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[.08] pt-4">
             <button type="button" onClick={toggleTheme} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/[.14] px-3 text-sm text-slate-300">{theme === "light" ? <Moon size={16}/> : <Sun size={16}/>} {theme === "light" ? "Dark theme" : "Light theme"}</button>
-            <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" onClick={close} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/[.14] px-3 text-sm text-slate-300"><LifeBuoy size={16}/> Support</a>
+            <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" onClick={close} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/[.14] px-3 text-sm text-slate-300"><Headset size={16}/> Support</a>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <a href="/login" onClick={close} className="grid min-h-12 place-items-center rounded-lg border border-white/[.14] text-sm font-semibold">Sign in</a>

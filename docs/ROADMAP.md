@@ -489,3 +489,15 @@ Seeded and verified the first published global Learnora learning track and cours
 - The lesson covers data vs information vs insight, organisational uses, descriptive/diagnostic/predictive/prescriptive analytics, the analytics workflow, analyst responsibilities, an applied example, key points and reflection questions.
 
 Read-only verification confirmed the track-course relationship, published statuses, exactly one module and one lesson for this new course, and one published global course/track in the catalogue. The existing 201 draft courses and the pre-existing Data Analytics Foundations course/module/lesson were left untouched. The public discovery API source exposes `GET /api/public/courses`, `GET /api/public/courses/{course_id}`, `GET /api/public/courses/{course_id}/structure`, `GET /api/public/tracks` and `GET /api/public/tracks/{track_id}`; these routes are registered in `backend-python/main.py`. A live HTTP request to the deployed Vercel API could not be completed from this environment, so production browser/API availability is not claimed as independently tested.
+
+
+## Learner dashboard redesign — implementation in progress (3 November 2026)
+
+- Dashboard activity tracking schema and backend endpoints have been added on `main`; the new SQL migration is not yet applied to Supabase.
+- Learner session timer uses visible-page heartbeats and a five-minute recent-interaction window. Cohort lesson completion is included. Meaningful learning days are recorded for first-time lesson completion, passed quizzes and assignment submissions; sign-ins alone never extend a streak.
+- Dashboard summary includes active courses, completed lessons, learning time, streak and lesson-weighted overall progress. Continue learning is based on the most recently accessed unfinished lesson.
+- Calendar is a separate dashboard destination and uses recorded learning days, not course enrolment dates.
+- Mobile learner navigation is a left slide-out drawer; desktop horizontal navigation remains. Account actions are separate from learning navigation.
+- Subscription UI is removed from learner navigation and its former route redirects to the dashboard. Billing implementation and database records remain untouched.
+- WitStart-specific dashboard route redirects to the shared dashboard; no learner records are deleted or migrated.
+- Remaining acceptance work: apply and verify the migration in the intended Supabase project, inspect every remaining frontend-v02 route for legacy WitStart/subscription branding, and perform local frontend/backend checks without triggering CI or deployments.

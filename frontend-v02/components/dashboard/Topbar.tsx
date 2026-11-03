@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, Check, X, Sun, Moon, LifeBuoy, CircleUserRound } from "lucide-react";
+import { Bell, Check, X, Sun, Moon, Headset, CircleUserRound, ChevronDown, LogOut } from "lucide-react";
+import { clearToken } from "../../lib/api";
 import { request } from "../../lib/api/client";
 
 type NoticePreview = {
@@ -26,6 +27,7 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
   const [unread, setUnread] = useState(0);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [toast, setToast] = useState<ToastNotice | null>(null);
+  const [accountOpen, setAccountOpen] = useState(false);
   const lastSeenIds = useRef<Set<string> | null>(null);
   const browserSeenIds = useRef<Set<string> | null>(null);
   const inFlight = useRef(false);
@@ -165,7 +167,7 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
 
   return <>
     <div className="flex shrink-0 items-center gap-2">
-      {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Contact Learnora support" title="Help and support" className={actionClass}><LifeBuoy size={17}/></a>}
+      {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Customer support" title="Customer support" className={actionClass}><Headset size={17}/></a>}
       <button type="button" onClick={toggleTheme}
         aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
         title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className={actionClass}>
@@ -175,7 +177,13 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
         <Bell size={17}/>
         {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
       </Link>}
-      {!admin && <Link href="/dashboard/settings" aria-label="Account settings" title="Account settings" className={actionClass}><CircleUserRound size={18}/></Link>}
+      <div className="relative">
+        <button type="button" onClick={() => setAccountOpen(value => !value)} aria-expanded={accountOpen} aria-label="Account and profile menu" title="Account and profile" className={actionClass}><CircleUserRound size={18}/></button>
+        {accountOpen && <div className="absolute right-0 top-full z-[75] mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl">
+          <Link href={admin ? "/dashboard/admin/settings" : "/dashboard/settings"} onClick={() => setAccountOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm text-[var(--text-body)] hover:bg-[var(--bg-soft)]">{admin ? "Admin settings" : "Account settings"}</Link>
+          <button type="button" onClick={() => { setAccountOpen(false); clearToken(); window.location.replace("/"); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-body)] hover:bg-[var(--bg-soft)]"><LogOut size={15}/>Sign out</button>
+        </div>}
+      </div>
     </div>
 
     {toast && !admin && <div role="status" aria-live="polite" className="fixed right-4 top-20 z-[70] w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">

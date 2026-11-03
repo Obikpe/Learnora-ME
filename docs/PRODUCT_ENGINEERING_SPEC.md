@@ -490,3 +490,17 @@ The AI tutor is not available inside any active quiz. The tutor launcher, chat i
 ### 14.8 Immediate acceptance milestone and Phase 6
 
 The next milestone is limited to live Pheonix Supabase schema/migration/RLS/grant verification and browser-based acceptance of the phase 1–5 learner/Teams workflows, including the quiz tutor-visibility restriction above. Once both are accepted and any live migration has separate approval, proceed directly to Phase 6: track completion feedback, optional rating/comment, explicit public consent, moderation, duplicate prevention and privacy-safe display. No unrelated feature phase is to be inserted.
+
+
+## Learner dashboard activity tracking (3 November 2026)
+
+The learner dashboard uses lesson-weighted progress across active enrolments. Session time and meaningful learning-day streaks are separate metrics.
+
+- `learning_sessions` stores authenticated browser sessions, last heartbeat, active seconds, timezone and closure status. The frontend sends a heartbeat every 30 seconds and only counts time while the page is visible and recent learner interaction has occurred (five-minute inactivity threshold). A stale session is reconciled on the next start; page exit/logout attempts a keepalive close.
+- `learner_learning_days` stores one unique row per learner account type and local activity date. A server-side RPC upserts only first-time lesson completions, passed quizzes and submitted assignments. Login, dashboard views and course opens do not qualify.
+- Individual and cohort account types are separate in both tables because cohort identities are held outside `public.users`.
+- Streak is calculated from consecutive activity dates. If today has no qualifying event yet, the displayed streak remains anchored to yesterday. Longest streak is derived from the full stored history.
+- Time is conservative: hidden tabs and sessions without recent interaction do not accrue time. It is not a measure of video playback duration.
+- The SQL migration `supabase/migrations/20261103120000_learner_learning_sessions_and_streaks.sql` is prepared but must be applied and verified separately before persisted values are available. Historical days are not backfilled because the previous records do not consistently retain the learner timezone or equivalent cohort completion timestamps; streak history begins with verified events after migration. No production migration is executed by a GitHub commit.
+- The browser timezone is validated against IANA timezone data. Invalid or missing timezone values fall back to `Africa/Lagos`.
+- Learning-time and streak values are not fabricated. If tracking is unavailable, the UI indicates that rather than inventing a number.

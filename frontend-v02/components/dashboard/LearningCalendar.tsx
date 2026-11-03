@@ -9,17 +9,17 @@ function localDateKey(value: string) {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
 }
 
-export default function LearningCalendar({ courses }: { courses: any[] }) {
+export default function LearningCalendar({ courses = [], activityDates = [] }: { courses?: any[]; activityDates?: string[] }) {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const activityDays = useMemo(() => {
-    const keys = new Set<string>();
+    const keys = new Set<string>(activityDates.map(value => value.slice(0, 10)));
     for (const row of courses) {
       for (const value of [row.enrolment?.enrolled_at, row.last_activity_at, row.enrolment?.completed_at]) {
         if (value) keys.add(localDateKey(value));
       }
     }
     return keys;
-  }, [courses]);
+  }, [courses, activityDates]);
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
   const firstWeekday = (new Date(year, monthIndex, 1).getDay() + 6) % 7;

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   },
   description: "A connected learning experience for learners, instructors and organisations. Learn useful skills, practise, build real work and keep evidence of your progress.",
   applicationName: "Learnora ME",
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
   openGraph: {
     type: "website",
     siteName: "Learnora ME",

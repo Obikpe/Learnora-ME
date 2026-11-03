@@ -7,7 +7,6 @@ import { currentUser, getCachedCurrentUser } from "../../lib/api";
 import { request } from "../../lib/api/client";
 import Shell from "../../components/dashboard/Shell";
 import Skeleton from "../../components/feedback/Skeleton";
-import LearningCalendar from "../../components/dashboard/LearningCalendar";
 import LearnerAssistant from "../../components/dashboard/LearnerAssistant";
 
 type Tab = "in-progress" | "completed" | "skills" | "certificates";
@@ -76,6 +75,8 @@ function RecommendedCourseCard({ course }: { course: any }) {
 export default function MyLearningPage() {
   const [user, setUser] = useState<any>(() => getCachedCurrentUser());
   const [learning, setLearning] = useState<any>(null);
+  const [activitySummary, setActivitySummary] = useState<any>(null);
+  const [learningPlan, setLearningPlan] = useState<any>(null);
   const [evidence, setEvidence] = useState<any>({ skills: [], evidence: [] });
   const [credentials, setCredentials] = useState<any>({ certificates: [] });
   const [catalogue, setCatalogue] = useState<any[]>([]);
@@ -88,15 +89,20 @@ export default function MyLearningPage() {
   const [evidenceError, setEvidenceError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  async function load() {
+  async function load(me?: any) {
     setRefreshing(true);
     setError("");
+    const timezone = typeof Intl !== "undefined" ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos") : "Africa/Lagos";
     const progressResult = await Promise.allSettled([
       request<any>("/progress/me"),
+      request<any>("/progress/learning-summary?timezone=" + encodeURIComponent(timezone)),
+      request<any>("/learner/learning-plan"),
     ]);
     const progressResponse = progressResult[0];
     const progressLoaded = progressResponse.status === "fulfilled";
     const progressData = progressResponse.status === "fulfilled" ? progressResponse.value : null;
+    setActivitySummary(progressResult[1].status === "fulfilled" ? progressResult[1].value : null);
+    setLearningPlan(progressResult[2].status === "fulfilled" ? progressResult[2].value?.plan || null : null);
 
     if (progressData) {
       setLearning(progressData);
@@ -106,8 +112,9 @@ export default function MyLearningPage() {
     }
     setLoading(false);
 
-    const hasEnrolments = Boolean(progressData && (progressData.courses || []).length > 0);
-    if (!hasEnrolments && progressLoaded) {
+    const hasOrganisationMembership = (me?.organisation_memberships || []).some((membership:any) => membership.status === "active");
+    const allowPublicRecommendations = !me?.organisation_id && !me?.cohort_id && me?.account_type !== "cohort" && !hasOrganisationMembership;
+    if (progressLoaded && allowPublicRecommendations) {
       setCatalogueLoading(true);
       try {
         const result = await request<any>("/public/courses");
@@ -137,13 +144,12 @@ export default function MyLearningPage() {
     let cancelled = false;
     currentUser().then(async me => {
       if (me.role === "organisation_prospect") { location.href = "/organisation-portal"; return; }
-      if (me.role === "witstart") { location.href = "/dashboard/witstart"; return; }
       const privileged = (me.organisation_memberships || []).filter((membership: any) => ["owner", "admin"].includes(membership.role));
       if (me.organisation_id && ["owner", "admin"].includes(me.organisation_role)) { location.href = "/dashboard/organisation"; return; }
       if (privileged.length) { location.href = "/dashboard/organisation" + (privileged.length > 1 && !me.organisation_id ? "?choose=1" : ""); return; }
       if (cancelled) return;
       setUser(me);
-      const dashboardLoad = load();
+      const dashboardLoad = load(me);
       if (me.role === "normal") {
         try {
           const onboarding = await request<any>("/learner/onboarding");
@@ -176,6 +182,26 @@ export default function MyLearningPage() {
   }, [catalogue, enrolledIds, goal]);
   const completedLessons = courses.reduce((sum: number, row: any) => sum + Number(row.completed_lessons || 0), 0);
   const totalLessons = courses.reduce((sum: number, row: any) => sum + Number(row.total_lessons || 0), 0);
+  const activeCourseLessons = inProgress.reduce((sum:number, row:any) => sum + Number(row.total_lessons || 0), 0);
+  const activeCompletedLessons = inProgress.reduce((sum:number, row:any) => sum + Number(row.completed_lessons || 0), 0);
+  const overallProgress = activeCourseLessons ? Math.round((activeCompletedLessons / activeCourseLessons) * 100) : 0;
+  const learningSeconds = Number(activitySummary?.learning_time_seconds || 0);
+  const learningTimeLabel = activitySummary ? (learningSeconds >= 3600
+    ? Math.floor(learningSeconds / 3600) + "h " + Math.floor((learningSeconds % 3600) / 60) + "m"
+    : learningSeconds >= 60 ? Math.floor(learningSeconds / 60) + "m" : learningSeconds + "s") : "Not available";
+  const recentLearningDays = activitySummary?.learning_days || [];
+  const lastAccessed = learning?.last_accessed_item || null;
+  const continueItem = lastAccessed || (() => {
+    const row = inProgress.find((item:any) => item.next_item?.id);
+    return row ? {
+      id: row.next_item.id,
+      title: row.next_item.title,
+      course_id: row.course?.id || row.enrolment?.course_id,
+      course_title: row.course?.title || "Your course",
+    } : null;
+  })();
+  const dailyGoalMinutes = learningPlan?.weekly_time_minutes ? Math.ceil(Number(learningPlan.weekly_time_minutes) / 7) : null;
+  const dailyGoalText = continueItem?.title || learningPlan?.plan_data?.weeks?.[0]?.guidance?.focus || "";
   const certificates = credentials?.certificates || [];
   const skills = evidence?.skills || [];
   const recentCertificates = certificates.slice(0, 3);
@@ -200,7 +226,7 @@ export default function MyLearningPage() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => void load()} disabled={refreshing} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-body)] hover:bg-[var(--bg-soft)] disabled:opacity-50"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""}/> Refresh</button>
+        <button type="button" onClick={() => void load(user)} disabled={refreshing} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-body)] hover:bg-[var(--bg-soft)] disabled:opacity-50"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""}/> Refresh</button>
         <Link href="/courses" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]">Explore courses <ArrowRight size={14}/></Link>
         <LearnerAssistant courses={catalogue} goal={goal} learning={courses}/>
       </div>
@@ -208,11 +234,16 @@ export default function MyLearningPage() {
 
     {error && <p role="alert" className="mb-5 text-sm text-[var(--warning)]">{error}</p>}
 
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Learning summary">
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Enrolled courses</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{courses.length}</p></div>
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">In progress</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{inProgress.length}</p></div>
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Completed</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--success)]">{completed.length}</p></div>
+    <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Learning summary">
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Active courses</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{inProgress.length}</p></div>
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Lessons completed</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{completedLessons}<span className="ml-1 text-sm font-medium text-[var(--text-muted)]">/ {totalLessons}</span></p></div>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning time</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learningTimeLabel}</p></div>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning streak</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{activitySummary ? activitySummary.current_streak + " days" : "—"}</p></div>
+    </section>
+    <section className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className="mb-2 flex items-center justify-between gap-3"><h2 className="text-sm font-semibold text-[var(--text-heading)]">Overall learning progress</h2><span className="text-sm font-bold tabular-nums text-[var(--text-heading)]">{totalLessons ? overallProgress + "%" : "—"}</span></div>
+      <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{width: overallProgress + "%"}}/></div>
+      <p className="mt-2 text-xs text-[var(--text-muted)]">{totalLessons ? "Lesson-weighted progress across your active courses (" + activeCourseLessons + " lessons)." : "Your progress will appear when you have active courses."}</p>
     </section>
 
     <div className="mt-7 flex gap-6 overflow-x-auto border-b border-[var(--border)]" role="tablist" aria-label="My learning sections">
@@ -221,6 +252,12 @@ export default function MyLearningPage() {
       </button>)}
     </div>
 
+    {continueItem && <section className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">Continue learning</p><h2 className="mt-1 text-lg font-bold text-[var(--text-heading)]">{continueItem.title}</h2><p className="mt-1 text-xs text-[var(--text-muted)]">{continueItem.course_title}</p></div>
+        <Link href={"/courses/" + encodeURIComponent(continueItem.course_id)} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-[var(--on-primary)]">Continue <ArrowRight size={14}/></Link>
+      </div>
+    </section>}
     <div className="mt-6 grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_19rem]">
       <section className="min-w-0" role="tabpanel">
         {tab === "in-progress" && (inProgress.length
@@ -245,11 +282,28 @@ export default function MyLearningPage() {
       </section>
 
       <aside className="space-y-4">
-        <LearningCalendar courses={courses}/>
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
-          <div className="flex items-center gap-2"><Clock3 size={17} className="text-[var(--primary)]"/><h2 className="text-sm font-bold text-[var(--text-heading)]">Activity</h2></div>
+          <h2 className="text-sm font-bold text-[var(--text-heading)]">Today’s learning goal</h2>
+          {dailyGoalText ? <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{dailyGoalText}</p> : <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Choose your next assigned lesson or create a learning plan to set a clear focus for today.</p>}
+          {dailyGoalMinutes ? <p className="mt-2 text-xs text-[var(--text-muted)]">Suggested daily share: {dailyGoalMinutes} minutes, based on your saved weekly plan.</p> : null}
+          <Link href="/dashboard/learning-plan" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--primary)]">View learning plan <ArrowRight size={13}/></Link>
+        </section>
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <div className="flex items-center justify-between gap-2"><h2 className="text-sm font-bold text-[var(--text-heading)]">Recent learning activity</h2><Link href="/dashboard/calendar" className="text-xs font-semibold text-[var(--primary)]">Calendar</Link></div>
+          {recentLearningDays.length ? <div className="mt-4 space-y-3">{recentLearningDays.slice(0,5).map((day:any) => <div key={day.activity_date} className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-[var(--text-heading)]">{new Date(day.activity_date + "T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">{(day.activity_types || []).map((type:string) => type.replaceAll("_"," ")).join(" · ")}</p></div><span className="text-[11px] tabular-nums text-[var(--text-muted)]">{day.activity_count} activity</span></div>)}</div> : <p className="mt-3 text-sm text-[var(--text-muted)]">Completed lessons, passed quizzes and submitted assignments will appear here.</p>}
+        </section>
+        {recommendations.length > 0 && <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <h2 className="text-sm font-bold text-[var(--text-heading)]">Recommended for you</h2>
+          <div className="mt-4 space-y-3">{recommendations.map((course:any) => <div key={course.id} className="flex items-start gap-3 border-b border-[var(--border)] pb-3 last:border-0 last:pb-0">
+            {course.thumbnail_url ? <img src={course.thumbnail_url} alt="" className="size-14 shrink-0 rounded-lg object-cover"/> : <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-[var(--bg-soft)] text-[var(--primary)]"><BookOpen size={19}/></span>}
+            <div className="min-w-0"><p className="text-xs font-semibold leading-5 text-[var(--text-heading)]">{course.title}</p><p className="mt-1 line-clamp-2 text-[11px] leading-4 text-[var(--text-muted)]">{course.short_description || course.description || "Explore this course."}</p><Link href={"/courses/" + encodeURIComponent(course.id)} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--primary)]">View course <ArrowRight size={12}/></Link></div>
+          </div>)}</div>
+        </section>}
+
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
+          <div className="flex items-center gap-2"><Clock3 size={17} className="text-[var(--primary)]"/><h2 className="text-sm font-bold text-[var(--text-heading)]">Learning snapshot</h2></div>
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{inProgress.length}</p><p className="mt-1 text-xs text-[var(--text-muted)]">In progress</p></div>
+            <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{activitySummary ? activitySummary.longest_streak : "—"}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Longest streak</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--success)]">{completed.length}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Completed</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{completedLessons}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Lessons completed</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{certificates.length}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Certificates</p></div>
