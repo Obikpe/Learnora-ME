@@ -21,17 +21,16 @@ export const metadata: Metadata = {
     title: "Learnora ME — Learn. Practise. Build. Prove.",
     description: "Connect learning with practice, projects, feedback and skills evidence.",
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f5f7fb",
+  themeColor: "#ffffff",
   colorScheme: "light dark",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <html lang="en" data-theme="light"><body>{children}</body></html>;
+  // No explicit theme is set here: CSS follows the operating-system preference
+  // until the learner chooses a theme in the dashboard.
+  return <html lang="en"><body>{children}</body></html>;
 }
