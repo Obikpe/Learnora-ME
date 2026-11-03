@@ -23,13 +23,13 @@ export default function LearnerAssistant({ courses, goal }: { courses: any[]; go
     setError("");
     setMessages(current => [...current, { role: "user", content: message }]);
     setBusy(true);
-    const catalogue = courses.slice(0, 30).map(course => [
+    const catalogue = courses.slice(0, 15).map(course => [
       `ID: ${course.id}`,
       `Course: ${course.title}`,
       course.level ? `Level: ${course.level}` : "",
       course.estimated_hours ? `Duration: ${course.estimated_hours} hours` : "",
-      course.short_description || course.description || "",
-      Array.isArray(course.settings?.topics) && course.settings.topics.length ? `Topics: ${course.settings.topics.join(", ")}` : "",
+      String(course.short_description || course.description || "").slice(0, 180),
+      Array.isArray(course.settings?.topics) && course.settings.topics.length ? `Topics: ${course.settings.topics.slice(0, 5).join(", ")}` : "",
     ].filter(Boolean).join(" | ")).join("\n");
     const prompt = [
       goal ? `Learner's stated goal: ${goal}` : "",
