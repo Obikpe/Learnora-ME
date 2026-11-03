@@ -83,3 +83,13 @@ Compare three models on identical folds. Report per-fold scores, mean, standard 
 
 ## Lesson summary
 Model comparison is an evidence-based decision, not a contest to find the largest decimal. Keep conditions identical, describe uncertainty and choose a model that is useful and maintainable in practice.
+
+## 6. Deeper reasoning: model choice should reflect uncertainty and use
+
+Suppose two models have very similar average scores. The difference may be smaller than the variation caused by the sample, folds or random initialisation. In that situation, choosing the model with the third decimal place advantage can create false precision. Examine fold-level differences, rerun stochastic estimators with controlled seeds and consider whether the improvement is large enough to change the actual decision.
+
+A paired comparison is useful because both models are tested on the same folds. If Model B scores slightly higher on every fold, that is different evidence from a result where it wins one fold by a large amount and loses the others. Still, five fold differences do not create five independent studies: training sets overlap and the observations are reused. Statistical tests should be selected with those dependencies in mind.
+
+Practical significance asks whether the improvement matters. A 0.5% increase in recall may be valuable if it identifies many additional high-risk cases at an acceptable review cost. It may be irrelevant if it adds thousands of false alarms. A model that is slower, harder to explain or more expensive to maintain may not be worth a marginal score increase.
+
+Your recommendation should state what the evidence supports and what it does not. Avoid claiming that one model is universally superior. A more defensible statement is that, under the chosen data version, split strategy and metric, one workflow performed more consistently and met the operational constraints. This is a clear, auditable conclusion.
