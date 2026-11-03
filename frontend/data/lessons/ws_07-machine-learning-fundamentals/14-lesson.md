@@ -17,7 +17,7 @@ A confusion matrix compares actual classes with predicted classes. For binary cl
 - False positive (FP): actual negative, predicted positive.
 - False negative (FN): actual positive, predicted negative.
 
-![Confusion matrix](./assets/14-confusion-matrix.svg)
+![Confusion matrix](/course-assets/ws07/14-confusion-matrix.svg)
 
 A false positive and a false negative can have very different consequences. In a fraud screening workflow, false positives may inconvenience legitimate customers; false negatives may allow fraud to go undetected.
 
