@@ -103,11 +103,103 @@ def _module_for_quiz(quiz: dict):
     return None
 
 
+def _module_unlock_states(user_id: str, modules: list[dict], lessons: list[dict]):
+    """Calculate module locks with bounded queries instead of querying once per module/quiz."""
+    ordered = sorted(modules, key=lambda row: int(row.get("order_index") or 0))
+    module_ids = [str(row["id"]) for row in ordered if row.get("id")]
+    if not module_ids:
+        return {}, {}
+
+    module_by_lesson = {
+        str(row["id"]): str(row["module_id"])
+        for row in lessons
+        if row.get("id") and row.get("module_id")
+    }
+    lesson_ids = list(module_by_lesson)
+    module_quizzes = (
+        supabase.table("quizzes")
+        .select("id,title,passing_score,module_id,lesson_id")
+        .in_("module_id", module_ids)
+        .eq("is_published", True)
+        .execute()
+    ).data or []
+    lesson_quizzes = []
+    if lesson_ids:
+        lesson_quizzes = (
+            supabase.table("quizzes")
+            .select("id,title,passing_score,module_id,lesson_id")
+            .in_("lesson_id", lesson_ids)
+            .eq("is_published", True)
+            .execute()
+        ).data or []
+
+    quiz_by_id = {str(row["id"]): row for row in module_quizzes + lesson_quizzes if row.get("id")}
+    quiz_ids = list(quiz_by_id)
+    attempts = []
+    if quiz_ids:
+        attempts = (
+            supabase.table("quiz_attempts")
+            .select("quiz_id,score,passed")
+            .eq("user_id", user_id)
+            .in_("quiz_id", quiz_ids)
+            .eq("passed", True)
+            .execute()
+        ).data or []
+    passed_ids = {
+        str(attempt["quiz_id"])
+        for attempt in attempts
+        if attempt.get("quiz_id")
+    }
+
+    quizzes_by_module: dict[str, dict[str, dict]] = {}
+    valid_modules = set(module_ids)
+    for quiz in quiz_by_id.values():
+        module_id = str(quiz.get("module_id") or module_by_lesson.get(str(quiz.get("lesson_id") or "")) or "")
+        if module_id in valid_modules:
+            quizzes_by_module.setdefault(module_id, {})[str(quiz["id"])] = quiz
+
+    locked: dict[str, bool] = {}
+    blocked_by: dict[str, dict] = {}
+    access_available = True
+    blocker = None
+    for module in ordered:
+        module_id = str(module["id"])
+        locked[module_id] = not access_available
+        if not access_available and blocker:
+            blocked_by[module_id] = blocker
+            continue
+        quizzes = list(quizzes_by_module.get(module_id, {}).values())
+        if not quizzes:
+            access_available = False
+            blocker = {"module": module, "reason": "missing_quiz", "threshold": None}
+            continue
+        failed = next(
+            (
+                quiz for quiz in quizzes
+                if str(quiz["id"]) not in passed_ids
+                or not any(
+                    str(attempt.get("quiz_id")) == str(quiz["id"])
+                    and float(attempt.get("score") or 0) >= effective_passing_score(quiz)
+                    for attempt in attempts
+                )
+            ),
+            None,
+        )
+        if failed:
+            access_available = False
+            blocker = {
+                "module": module,
+                "reason": "failed_quiz",
+                "threshold": effective_passing_score(failed),
+            }
+    return locked, blocked_by
+
+
 def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool = False):
     """Require a passed >=70% assessment for every earlier module."""
     current = (
         supabase.table("course_modules")
-        .select("id,course_id,order_index")
+        .select("id,course_id,title,order_index,status")
         .eq("id", module_id)
         .limit(1)
         .execute()
@@ -117,7 +209,7 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
     module = current[0]
     previous_query = (
         supabase.table("course_modules")
-        .select("id,title,order_index")
+        .select("id,title,order_index,status")
         .eq("course_id", module["course_id"])
         .lt("order_index", module["order_index"])
     )
@@ -127,55 +219,34 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
         else previous_query.eq("status", "published")
     )
     previous_modules = previous_query.order("order_index").execute().data or []
+    if not previous_modules:
+        return
 
-    for previous in previous_modules:
-        quizzes = (
-            supabase.table("quizzes")
-            .select("id,title,passing_score,module_id,lesson_id")
-            .eq("module_id", previous["id"])
-            .eq("is_published", True)
-            .execute()
-        ).data or []
-        lesson_rows = (
-            supabase.table("learnora_lessons")
-            .select("id")
-            .eq("module_id", previous["id"])
-            .execute()
-        ).data or []
-        lesson_ids = [row["id"] for row in lesson_rows if row.get("id")]
-        if lesson_ids:
-            lesson_quizzes = (
-                supabase.table("quizzes")
-                .select("id,title,passing_score,module_id,lesson_id")
-                .in_("lesson_id", lesson_ids)
-                .eq("is_published", True)
-                .execute()
-            ).data or []
-            by_id = {str(row["id"]): row for row in quizzes}
-            by_id.update({str(row["id"]): row for row in lesson_quizzes})
-            quizzes = list(by_id.values())
-        if not quizzes:
-            raise HTTPException(
-                423,
-                f'Complete the published assessment for "{previous.get("title") or "the previous module"}" before moving on. The module is not unlocked because it has no published quiz yet.',
-            )
-        for quiz in quizzes:
-            threshold = effective_passing_score(quiz)
-            attempts = (
-                supabase.table("quiz_attempts")
-                .select("id,score,passed")
-                .eq("quiz_id", quiz["id"])
-                .eq("user_id", user_id)
-                .eq("passed", True)
-                .gte("score", threshold)
-                .limit(1)
-                .execute()
-            ).data or []
-            if not attempts:
-                raise HTTPException(
-                    423,
-                    f'Pass the assessment for "{previous.get("title") or "the previous module"}" with at least {threshold:g}% to unlock the next module.',
-                )
+    previous_ids = [str(row["id"]) for row in previous_modules]
+    lessons = (
+        supabase.table("learnora_lessons")
+        .select("id,module_id")
+        .in_("module_id", previous_ids)
+        .execute()
+    ).data or []
+    ordered = previous_modules + [module]
+    locked, blocked_by = _module_unlock_states(user_id, ordered, lessons)
+    if not locked.get(str(module_id)):
+        return
+
+    blocker = blocked_by.get(str(module_id)) or {}
+    previous = blocker.get("module") or previous_modules[-1]
+    title = previous.get("title") or "the previous module"
+    if blocker.get("reason") == "missing_quiz":
+        raise HTTPException(
+            423,
+            f'Complete the published assessment for "{title}" before moving on. The module is not unlocked because it has no published quiz yet.',
+        )
+    threshold = float(blocker.get("threshold") or 70)
+    raise HTTPException(
+        423,
+        f'Pass the assessment for "{title}" with at least {threshold:g}% to unlock the next module.',
+    )
 
 
 def _course_assessment_summary(user_id: str, course_id: str):
@@ -326,17 +397,21 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
         )
         lessons = lesson_query.order("order_index").execute().data or []
 
-    progress = (
-        supabase
-        .table("learnora_lesson_progress")
-        .select(
-            "lesson_id,progress_percent,completed,"
-            "last_position_seconds,first_started_at,"
-            "last_accessed_at,completed_at"
-        )
-        .eq("user_id", user_id)
-        .execute()
-    ).data or []
+    lesson_ids = [str(row["id"]) for row in lessons if row.get("id")]
+    progress = []
+    if lesson_ids:
+        progress = (
+            supabase
+            .table("learnora_lesson_progress")
+            .select(
+                "lesson_id,progress_percent,completed,"
+                "last_position_seconds,first_started_at,"
+                "last_accessed_at,completed_at"
+            )
+            .eq("user_id", user_id)
+            .in_("lesson_id", lesson_ids)
+            .execute()
+        ).data or []
 
     progress_map = {
         str(row["lesson_id"]): row
@@ -355,20 +430,10 @@ def _course_summary(user_id: str, course_id: str, include_archived: bool = False
     completed_units = completed + assessment_summary["completed_assessments"]
     percent = round((completed_units / total_units) * 100) if total_units else 0
 
+    module_locks, _ = _module_unlock_states(user_id, modules, lessons)
     module_views = []
     for module in modules:
-        locked = False
-        try:
-            _assert_module_unlocked(
-                user_id,
-                str(module["id"]),
-                include_archived=include_archived,
-            )
-        except HTTPException as exc:
-            if exc.status_code in (409, 423):
-                locked = True
-            else:
-                raise
+        locked = bool(module_locks.get(str(module["id"]), False))
         module_lessons = []
         for lesson in lessons:
             if str(lesson["module_id"]) != str(module["id"]):
