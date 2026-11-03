@@ -52,3 +52,15 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: choosing k is a judgement
+
+Inertia is the total within-cluster squared distance. It cannot increase when more centroids are added. At k equal to the number of observations, every observation can become its own cluster and inertia becomes zero. Therefore, selecting the lowest inertia always produces an unhelpful answer.
+
+The elbow method plots inertia against k and looks for a point after which adding clusters gives diminishing improvement. Some datasets have no obvious elbow. Do not force one. The silhouette coefficient compares a point's average distance to its own cluster with its distance to the nearest other cluster. Scores near 1 suggest separation; near 0 suggest overlap; negative values suggest the point may be closer to another cluster.
+
+An average silhouette score can conceal a poorly represented small cluster. Inspect sample-level scores, cluster sizes and profiles. Keep the feature matrix and scaling procedure constant when comparing k values. Also test stability across random seeds or resampled observations.
+
+Choose k only when metrics, stability, interpretability and intended use support the same decision. A slightly better score may not justify a tiny unstable segment with no practical distinction. It is acceptable to conclude that the data does not support a useful segmentation.
+
+**Practice:** Write a selection memo listing candidate k values, inertia, silhouette, cluster sizes, stability and original-unit profiles. Explain the trade-offs or justify declining to select a value.
