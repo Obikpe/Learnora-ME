@@ -47,3 +47,15 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: what K-means optimises
+
+K-means minimises the total squared distance between each observation and the centroid of its assigned cluster. A centroid is the mean feature vector of the observations assigned to that group. The algorithm alternates between assigning each point to its nearest centroid and recomputing each centroid from its assigned points.
+
+Each assignment/update cycle does not increase the objective, but the algorithm can settle at a local solution. Different starting centroids can lead to different results. The n_init setting runs several initialisations and retains the best objective found; a fixed random_state makes the experiment reproducible.
+
+K-means requires the analyst to choose k. It works best when groups are roughly compact and similarly scaled under Euclidean geometry. It is sensitive to outliers because means can be pulled by extreme values. It also assigns every observation, even one far from all centroids. It is not designed for arbitrary-shaped groups or mixed data without an appropriate representation.
+
+Centroids after standardisation are expressed in standard-deviation units. They help compare relative positions but are not suitable for explaining a business segment in original units. Use the assignments to profile the original data with means, medians and distributions.
+
+**Practice:** Fit K-means with one initialisation and several random seeds, then repeat with multiple initialisations. Record inertia and cluster profiles. Explain why more initialisations improve the search but do not prove that groups are real or useful.
