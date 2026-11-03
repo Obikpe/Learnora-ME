@@ -77,3 +77,13 @@ Implement random stratified, group and chronological splits on suitable example 
 
 ## Lesson summary
 A valid metric depends on a valid split. Choose partitions according to how future predictions will be made, and protect held-out data from every fitting and selection step.
+
+## 6. Deeper reasoning: a test set represents a future use case
+
+A test set is useful only to the extent that it resembles the observations on which the model will be used. Randomly reserving 20% of rows does not guarantee that. If records are clustered by person, store or hospital, a random split may distribute the same underlying entity across partitions. If the intended use is predicting future months, random shuffling can allow later observations to help train a model that is evaluated on earlier ones.
+
+Think carefully about the generalisation question. Are you predicting another transaction from a customer already seen? Predicting a completely new customer? Predicting next month's demand for existing stores? Predicting demand in a new region? These are different tasks and may require different splits. A good validation design reproduces the information boundary the model will face.
+
+Stratification is helpful when the target classes are imbalanced, but it only attempts to preserve class proportions. It does not preserve time order and does not keep groups together. Group splitting can result in a less balanced target distribution because entire entities must move together. That may make the estimate noisier, but it is more honest if the deployment task involves unseen entities.
+
+Document the split date, group identifier and random seed where applicable. Check the resulting partitions directly: inspect date ranges, class counts, group overlap and duplicate records. A split function returning indices is not proof that the split is appropriate. The analyst remains responsible for verifying the boundary.
