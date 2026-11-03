@@ -6,7 +6,7 @@ import { askAI } from "../../lib/api/ai";
 
 type ChatMessage = { role: "user" | "assistant"; content: string; courses?: any[] };
 
-export default function LearnerAssistant({ courses, goal }: { courses: any[]; goal?: string }) {
+export default function LearnerAssistant({ courses, goal, learning = [] }: { courses: any[]; goal?: string; learning?: any[] }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -31,9 +31,16 @@ export default function LearnerAssistant({ courses, goal }: { courses: any[]; go
       String(course.short_description || course.description || "").slice(0, 180),
       Array.isArray(course.settings?.topics) && course.settings.topics.length ? `Topics: ${course.settings.topics.slice(0, 5).join(", ")}` : "",
     ].filter(Boolean).join(" | ")).join("\n");
+    const currentLearning = learning.map(row => [
+      `Course: ${row.course?.title || "Untitled course"}`,
+      `Progress: ${Math.max(0, Math.min(100, Number(row.progress_percent) || 0))}%`,
+      row.completed || row.enrolment?.status === "completed" ? "Status: completed" : "Status: in progress",
+      row.next_item?.title ? `Next item: ${row.next_item.title}` : "",
+    ].filter(Boolean).join(" | ")).join("\n");
     const prompt = [
       goal ? `Learner's stated goal: ${goal}` : "",
-      "Use only the published course catalogue below when recommending Learnora courses. Never invent a course title, course ID, duration, level or availability. If no listed course fits, say so and ask a useful follow-up question.",
+      currentLearning ? `Current enrolled learning:\n${currentLearning}` : "The learner has no current course enrolments.",
+      "Use only the published course catalogue below when recommending Learnora courses. Never invent a course title, course ID, duration, level or availability. Use the current enrolled learning data when planning a week or prioritising what to finish. If no listed course fits, say so and ask a useful follow-up question.",
       catalogue ? `Published course catalogue:\n${catalogue}` : "The published course catalogue is currently empty.",
       `Learner's message: ${message}`,
     ].filter(Boolean).join("\n\n");
