@@ -631,7 +631,7 @@ def assign_course_to_organisation(organisation_id: str, body: dict, context: Per
     else:
         access_row = access[0]
 
-    learners = (supabase.table("organisation_members").select("user_id").eq("organisation_id", organisation_id).eq("role", "learner").eq("status", "active").execute()).data or []
+    learners = (supabase.table("organisation_members").select("user_id").eq("organisation_id", organisation_id).in_("role", ["learner", "member"]).eq("status", "active").execute()).data or []
     created = 0
     for learner in learners:
         existing_enrolment = (supabase.table("learnora_enrolments").select("id").eq("user_id", learner["user_id"]).eq("course_id", course_id).eq("organisation_id", organisation_id).in_("status", ["active", "completed"]).limit(1).execute()).data
