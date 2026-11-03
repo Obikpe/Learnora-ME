@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 import re
 import secrets
+from html import escape as html_escape
+from html.parser import HTMLParser
 from .auth import supabase
 from .internal_auth import InternalStaffContext, require_internal_permission
 from pydantic import BaseModel, Field
@@ -327,7 +329,7 @@ class LessonWrite(BaseModel):
     description: Optional[str] = None
     order_index: Optional[int] = Field(None, ge=0)
     lesson_type: Optional[Literal["video", "article", "text", "practice", "quiz", "assignment", "project", "mixed"]] = None
-    content: Optional[str] = None
+    content: Optional[str] = Field(None, max_length=100000)
     duration_minutes: Optional[int] = Field(None, ge=0)
     is_preview: Optional[bool] = None
     status: Optional[Literal["draft", "published", "archived"]] = None
@@ -416,6 +418,8 @@ def update_module(module_id: str, payload: ModuleWrite, staff: InternalStaffCont
     data = payload.model_dump(exclude_unset=True)
     if "title" in data and data["title"]:
         data["title"] = data["title"].strip()
+    if "content" in data:
+        data["content"] = _sanitise_lesson_content(data["content"])
     if not data:
         raise HTTPException(status_code=400, detail="No changes supplied.")
     row = supabase.table("course_modules").update(data).eq("id", module_id).execute()
@@ -428,7 +432,7 @@ def create_lesson(module_id: str, payload: LessonWrite, staff: InternalStaffCont
     if not payload.title:
         raise HTTPException(status_code=400, detail="title is required")
     _course_for_module(module_id)
-    row = supabase.table("learnora_lessons").insert({"module_id": module_id, "title": payload.title.strip(), "slug": payload.slug, "description": payload.description, "order_index": payload.order_index or 0, "lesson_type": payload.lesson_type or "mixed", "content": payload.content, "duration_minutes": payload.duration_minutes, "is_preview": payload.is_preview or False, "status": payload.status or "draft"}).execute()
+    row = supabase.table("learnora_lessons").insert({"module_id": module_id, "title": payload.title.strip(), "slug": payload.slug, "description": payload.description, "order_index": payload.order_index or 0, "lesson_type": payload.lesson_type or "mixed", "content": _sanitise_lesson_content(payload.content), "duration_minutes": payload.duration_minutes, "is_preview": payload.is_preview or False, "status": payload.status or "draft"}).execute()
     if not row.data:
         raise HTTPException(status_code=500, detail="Lesson creation returned no record.")
     return {"success": True, "lesson": row.data[0]}
