@@ -243,7 +243,7 @@ export default function MyLearningPage() {
     <section className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
       <div className="mb-2 flex items-center justify-between gap-3"><h2 className="text-sm font-semibold text-[var(--text-heading)]">Overall learning progress</h2><span className="text-sm font-bold tabular-nums text-[var(--text-heading)]">{totalLessons ? overallProgress + "%" : "—"}</span></div>
       <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{width: overallProgress + "%"}}/></div>
-      <p className="mt-2 text-xs text-[var(--text-muted)]">{totalLessons ? "Lesson-weighted progress across your active courses (" + activeCourseLessons + " lessons)." : "Your progress will appear when you have active courses."}</p>
+      <p className="mt-2 text-xs text-[var(--text-muted)]">{activeCourseLessons ? "Lesson-weighted progress across your active courses (" + activeCourseLessons + " lessons)." : "Your progress will appear when you have active courses."}</p>
     </section>
 
     <div className="mt-7 flex gap-6 overflow-x-auto border-b border-[var(--border)]" role="tablist" aria-label="My learning sections">
