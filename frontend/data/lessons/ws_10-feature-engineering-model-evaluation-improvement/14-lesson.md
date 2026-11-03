@@ -76,3 +76,13 @@ Train a regression model and report MAE, RMSE and R² on the same held-out set. 
 
 ## Lesson summary
 Regression metrics describe different aspects of prediction error. Select them according to the consequences of mistakes, explain their units and inspect residual patterns rather than relying on a single headline number.
+
+## 8. Deeper reasoning: inspect the shape of regression errors
+
+A single average metric can hide systematic errors. Residuals are actual minus predicted values. If residuals are mostly positive for expensive houses, the model is underpredicting that segment. If errors grow as predicted values increase, the model may have scale-dependent error. If residuals show a curve against predictions, a linear model may be missing a non-linear relationship. If residuals cluster by region, the model may lack location information or the data may be collected differently across regions.
+
+MAE and RMSE respond differently to extreme misses. Imagine nine predictions are wrong by 2 units and one is wrong by 30 units. MAE treats each absolute miss linearly; RMSE gives the 30-unit error much more influence because the error is squared before averaging. This is not a flaw in RMSE. It reflects a different preference about the consequences of large errors. If a single very late delivery is operationally much worse than several small timing errors, RMSE may reveal a risk that MAE softens.
+
+R-squared can be negative on test data because the model may perform worse than predicting the training-derived mean baseline. It can also be high when the model has systematic bias in a way that is not obvious from the score. Do not use R² alone to decide whether a model is operationally acceptable.
+
+Always report the target unit. An MAE of 5 means little without knowing whether the target is minutes, kilograms, naira or thousands of naira. If the target was transformed during modelling, calculate evaluation metrics in the original business unit where possible.
