@@ -1,47 +1,80 @@
 # Lesson 10: Embedded Feature Selection
 
 ## Learning outcomes
+Explain how regularisation can select features; interpret L1, L2 and Elastic Net penalties; understand tree-based importance limitations; and compare embedded selection with a baseline.
 
-By the end of this lesson, you should be able to Explain Lasso as an embedded sparse-selection method; fit coefficients with scaled features; count non-zero coefficients; and explain why selected features are not automatically causal or universally important.
+## 1. Selection during model fitting
+Embedded methods select or rank features as part of estimating the model. They are often more efficient than testing every possible subset, and the selection is tied to the estimator's objective.
 
-## 1. Core explanation
-Embedded methods perform selection as part of model fitting. Lasso can shrink some coefficients exactly to zero. Tree-based models can rank variables by split contribution, although impurity importance has known biases. Elastic Net combines L1 and L2 penalties and can be more stable when predictors are correlated.
+A common family uses regularisation: a penalty discourages overly large coefficients. This can reduce overfitting and, in some cases, shrink coefficients to exactly zero.
 
-Embedded selection is model-dependent. A feature not selected by a linear model may still matter to a tree or neural network. Correlated features may substitute for one another. Do not interpret a zero coefficient as proof that a variable has no real-world relationship with the outcome.
+## 2. L1, L2 and Elastic Net
+**L1 regularisation (Lasso)** adds a penalty based on the sum of absolute coefficient values. It can set some coefficients to zero, creating a sparse model. With strongly correlated features, it may select one and discard another somewhat arbitrarily.
 
-Tune regularisation or model settings using cross-validation and report selection stability. Keep all selection inside the training workflow. If the purpose is causal explanation rather than prediction, predictive feature selection is not a causal variable-selection strategy.
+**L2 regularisation (Ridge)** penalises the sum of squared coefficients. It generally shrinks coefficients towards zero but does not usually make them exactly zero. It can be useful when many correlated features each contribute some signal.
 
-## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas scikit-learn`.
+**Elastic Net** combines L1 and L2 penalties. It can provide sparsity while behaving more stably with groups of correlated variables.
 
+The regularisation strength controls the trade-off. Stronger regularisation can simplify the model but may underfit. The best value must be selected using training-only validation.
+
+## 3. Tree-based importance
+Decision trees and ensembles can rank features using measures such as impurity reduction. These importances can be useful diagnostics, but they have limitations. Impurity-based importance can favour high-cardinality features and distribute importance unpredictably among correlated features. Importance does not prove causation and may not be stable across samples.
+
+Permutation importance measures how much a chosen evaluation score changes when a feature is shuffled. It should be calculated on held-out data or validation folds, not used to repeatedly optimise against the final test set. Correlated features can mask one another because the model may rely on another correlated variable.
+
+![Regularisation concept](/course-assets/ws10/regularisation.svg)
+
+## 4. Worked example: L1 logistic regression
 ```python
-from sklearn.datasets import load_diabetes
-from sklearn.linear_model import Lasso
-from sklearn.preprocessing import StandardScaler
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
-data = load_diabetes(as_frame=True)
-pipe = make_pipeline(StandardScaler(), Lasso(alpha=.08, max_iter=20000))
-pipe.fit(data.data, data.target)
-coef = pipe.named_steps["lasso"].coef_
-print("Non-zero coefficients:", (coef != 0).sum(), "of", len(coef))
-print(list(zip(data.feature_names, coef.round(3))))
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+model = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(
+        penalty="l1",
+        solver="liblinear",
+        C=0.1,
+        max_iter=5000
+    )
+)
+model.fit(X, y)
+
+coefficients = model.named_steps["logisticregression"].coef_[0]
+selected = X.columns[coefficients != 0]
+print("Non-zero features:", selected.tolist())
+print("Count:", len(selected))
 ```
 
-## 3. Interpretation and safeguards
-State when each feature is available, how it was derived and whether it can be calculated consistently at prediction time. Fit all learned transformations on training data only. Compare performance using the same validation design and check that transformations do not remove meaningful information.
+For this estimator, smaller C means stronger regularisation. A coefficient equal to zero indicates that the fitted L1 model does not use that feature in its linear decision function. It does not prove the variable is irrelevant in every model or population. Compare several C values through cross-validation.
 
-## 4. Guided practice
-Change alpha and observe how the number of non-zero coefficients changes. Explain the trade-off between sparsity, predictive performance and stability.
+## 5. A fair comparison
+Compare a model without selection, an L1 model and a tree-based model using the same outer folds and metric. Examine selected-feature stability, calibration and subgroup performance as well as headline score. If a feature is retained only in one fold, its role may be unstable.
 
-## 5. Independent practice
-Create a small feature-engineering workflow for a dataset. Include a data dictionary, transformation rationale, pipeline and validation plan. Identify one transformation you decided not to use and explain why.
+## Common mistakes
+- Comparing coefficient magnitudes before scaling.
+- Treating a zero coefficient as proof of no relationship.
+- Assuming tree importance is unbiased.
+- Selecting C using the final test set.
+- Ignoring correlated predictors.
+- Calling feature importance a causal explanation.
 
-## 6. Knowledge check
-1. What information does this transformation add?
-2. Could it leak information from after the prediction time?
-3. Does it need to be fitted on training data?
-4. How will you test its value and stability?
+## Guided practice
+Explain why L1 may choose one of two highly correlated income measures. Describe what L2 might do differently.
+
+## Independent practice
+Fit L1 logistic regression over a grid of C values. Record cross-validation performance and the number of non-zero coefficients. Identify whether the same features are selected across folds.
+
+## Knowledge check
+1. Which penalty can set coefficients exactly to zero?
+2. What is the main difference between L1 and L2?
+3. What does C control in scikit-learn logistic regression?
+4. Why can impurity-based importance be misleading?
+5. Why is selection stability worth reporting?
 
 ## Lesson summary
-Feature engineering should create meaningful, available and reproducible inputs. Every transformation must be justified and validated within a leakage-safe workflow.
+Embedded selection links feature choice to model fitting. Regularisation and tree importance are useful tools, but their results depend on data, model assumptions and validation design.

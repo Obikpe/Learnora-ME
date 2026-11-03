@@ -1,50 +1,77 @@
 # Lesson 8: Feature Selection Fundamentals
 
 ## Learning outcomes
+Explain why feature selection is used; distinguish selection from extraction; identify redundancy and irrelevant inputs; and describe how selection can affect performance, cost and interpretability.
 
-By the end of this lesson, you should be able to Explain filter, wrapper and embedded feature selection; fit SelectKBest inside a pipeline; compare selected variables with a baseline; and avoid choosing features using test data.
+## 1. What feature selection does
+Feature selection chooses a subset of the original input variables. It does not create a new representation; it decides which existing columns should be retained. This differs from dimensionality reduction, which transforms original variables into new components.
 
-## 1. Core explanation
-Feature selection reduces the input set to variables that contribute useful information for the task. It can improve interpretability, reduce noise, lower training cost and help prevent overfitting. It is not the same as feature extraction: selection keeps original variables, while extraction creates new representations such as PCA components.
+A dataset may contain hundreds of columns. Some are irrelevant, some repeat information, some are unreliable and some may only be available after the prediction moment. Removing unsuitable variables can reduce noise, simplify the model, lower data-collection cost and make explanations easier.
 
-Selection must be performed using training data only. If you rank features using the full dataset and then split, information from the test set influences model construction. Use a Pipeline and cross-validation to evaluate selection. The chosen features may change across folds, especially with correlated predictors or small datasets.
+More features are not always better. Irrelevant variables can make distance calculations less meaningful, increase variance and create more opportunities for leakage or data-quality problems. However, removing a useful feature can also reduce predictive power. Selection is an empirical and domain-informed decision.
 
-A feature with weak individual association may still be useful through interactions. Conversely, a highly associated feature may be redundant or leaked. Combine statistical evidence, domain knowledge, stability and predictive validation.
+## 2. Three broad families
+**Filter methods** score features using statistical properties before fitting a particular model. Examples include correlation, mutual information and chi-square tests. They are often fast but may miss combinations that matter only jointly.
 
-## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas scikit-learn`.
+**Wrapper methods** evaluate subsets by repeatedly training a model. Recursive Feature Elimination is an example. They can capture model-specific usefulness but may be computationally expensive and prone to overfitting if selection is not nested within validation.
 
+**Embedded methods** perform selection during model fitting. L1-regularised linear models can shrink some coefficients to zero; tree-based models can provide importance measures. These depend on model assumptions and are not universal measures of feature value.
+
+## 3. Correlation is not a complete selector
+Two features can be highly correlated and carry overlapping information. Removing one may simplify a model. But low pairwise correlation with the target does not prove a feature is useless: it may have a non-linear or interaction effect. Correlation also does not imply causation.
+
+Feature selection should be performed using training data only. If you use the target to calculate scores, the selection step must be repeated inside each training fold. Selecting once on the full dataset leaks information from validation and test targets.
+
+![Feature selection families](/course-assets/ws10/feature-selection.svg)
+
+## 4. Worked example: a filter method
 ```python
-from sklearn.datasets import load_breast_cancer
-from sklearn.feature_selection import SelectKBest, f_classif
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
+import pandas as pd
+from sklearn.feature_selection import SelectKBest, mutual_info_classif
 
-data = load_breast_cancer(as_frame=True)
-Xtr, Xte, ytr, yte = train_test_split(data.data, data.target,
-    test_size=.2, random_state=42, stratify=data.target)
-pipe = make_pipeline(SelectKBest(f_classif, k=10),
-                     StandardScaler(), LogisticRegression(max_iter=2000))
-pipe.fit(Xtr, ytr)
-print("Test accuracy:", pipe.score(Xte, yte))
+data = pd.DataFrame({
+    "age": [22, 25, 31, 35, 42, 48, 55, 61, 29, 51],
+    "visits": [1, 2, 3, 5, 4, 7, 8, 9, 2, 6],
+    "noise": [8, 1, 7, 2, 9, 3, 6, 4, 5, 10],
+    "renewed": [0, 0, 0, 1, 0, 1, 1, 1, 0, 1]
+})
+X = data.drop(columns="renewed")
+y = data["renewed"]
+
+selector = SelectKBest(
+    score_func=mutual_info_classif,
+    k=2
+)
+selected = selector.fit_transform(X, y)
+print("Selected columns:", X.columns[selector.get_support()].tolist())
+print("Scores:", selector.scores_)
 ```
 
-## 3. Interpretation and safeguards
-State when each feature is available, how it was derived and whether it can be calculated consistently at prediction time. Fit all learned transformations on training data only. Compare performance using the same validation design and check that transformations do not remove meaningful information.
+This small example illustrates the API only. In a real workflow, put the selector inside a pipeline and evaluate it with cross-validation. Mutual information can detect some non-linear dependence, but its estimate depends on sample size and settings. A high score is association, not proof of causation.
 
-## 4. Guided practice
-Change k to 5, 10 and 20 using cross-validation on training data. Explain why selecting features before the split can leak test information.
+## 5. Selection and the modelling objective
+A feature may improve a score but be expensive to collect, sensitive, unstable or unavailable for some users. A production decision should consider predictive performance, latency, cost, fairness, privacy, reliability and explainability. Keep a record of selected features and why they were retained.
 
-## 5. Independent practice
-Create a small feature-engineering workflow for a dataset. Include a data dictionary, transformation rationale, pipeline and validation plan. Identify one transformation you decided not to use and explain why.
+## Common mistakes
+- Selecting features on the full dataset before splitting.
+- Treating correlation as proof of usefulness or uselessness.
+- Assuming feature importance is causal.
+- Keeping only the top-ranked features without testing interactions.
+- Ignoring data collection cost and availability.
+- Reporting selection results from one split as universal truth.
 
-## 6. Knowledge check
-1. What information does this transformation add?
-2. Could it leak information from after the prediction time?
-3. Does it need to be fitted on training data?
-4. How will you test its value and stability?
+## Guided practice
+A churn dataset contains account age, total logins, last login date, customer ID, support tickets, cancellation date and monthly fee. Identify features that may be useful, redundant, identifier-like or leakage-prone.
+
+## Independent practice
+Create a baseline model, then compare it with a model using a filter selector inside a pipeline. Use identical cross-validation folds. Report the selected features and the stability of selection across folds.
+
+## Knowledge check
+1. How does feature selection differ from dimensionality reduction?
+2. What is the main advantage of a filter method?
+3. Why can a low correlation score be misleading?
+4. Why must target-informed selection be inside cross-validation?
+5. Name two non-accuracy considerations when selecting features.
 
 ## Lesson summary
-Feature engineering should create meaningful, available and reproducible inputs. Every transformation must be justified and validated within a leakage-safe workflow.
+Feature selection can reduce noise and complexity, but its value depends on the model, data and deployment context. Selection is part of model fitting and must be validated without exposing held-out targets.

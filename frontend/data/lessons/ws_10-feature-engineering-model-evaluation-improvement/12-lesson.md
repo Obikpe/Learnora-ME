@@ -1,45 +1,79 @@
-# Lesson 12: Train/Validation/Test Strategy
+# Lesson 12: Train, Validation and Test Strategy
 
 ## Learning outcomes
+Distinguish training, validation and test data; choose a split strategy based on the data-generating process; explain stratification and group/time splitting; and protect the final test set from repeated model decisions.
 
-By the end of this lesson, you should be able to Choose train, validation and test roles; design stratified, grouped or time-aware splits; keep a final test set untouched; and explain the risk of repeated test-set decisions.
+## 1. Why split data?
+A model can memorise patterns in its training data. The real question is how well it performs on observations it has not used to fit its parameters. A holdout set provides evidence about generalisation, provided the split resembles the intended deployment scenario.
 
-## 1. Core explanation
-The training set fits model parameters. Validation data or cross-validation supports model and hyperparameter selection. The test set estimates final performance on unseen data and must remain untouched until the choices are fixed. Repeatedly checking test performance turns the test set into another validation set and creates optimism.
+The **training set** is used to fit model parameters and learned preprocessing. The **validation set** supports model selection and tuning. The **test set** is reserved for a final estimate after decisions are complete. In cross-validation, the validation role is repeated across folds.
 
-Random splitting is suitable only when observations are independent and future data resembles the sample. Use group-aware splitting when a person, account or device has repeated records. Use time-ordered splitting when predicting future outcomes. Stratify classification splits when preserving class proportions is appropriate.
+Not every project needs three permanent partitions. With limited data, cross-validation may provide a better use of observations. The key principle remains: do not repeatedly optimise decisions against the same data and then present its score as an unbiased final estimate.
 
-Document the split unit, dates, random seed and proportions. If the real deployment setting is new customers, the test must represent new customers. If deployment is next month's demand, the test should represent a later time period.
+## 2. Choose a split that matches deployment
+**Random split:** useful when observations are approximately independent and identically distributed.
 
-## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
+**Stratified split:** preserves approximate class proportions for classification. It does not solve group leakage or time leakage.
 
+**Group split:** keeps all rows from a group, such as a customer or patient, in one partition. Use it when the goal is generalisation to unseen groups.
+
+**Time split:** trains on earlier observations and evaluates on later observations. Use it when predicting future periods.
+
+![Data splitting strategies](/course-assets/ws10/splitting-strategies.svg)
+
+## 3. Worked example
 ```python
-from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split
-
-data = load_breast_cancer(as_frame=True)
-X_train, X_test, y_train, y_test = train_test_split(
-    data.data, data.target, test_size=.2, random_state=42, stratify=data.target
+import pandas as pd
+from sklearn.model_selection import (
+    train_test_split, GroupShuffleSplit, TimeSeriesSplit
 )
-print(X_train.shape, X_test.shape)
-print(y_train.mean(), y_test.mean())
+
+# Stratified random split for independent classification rows
+X = pd.DataFrame({"value": range(20)})
+y = pd.Series([0] * 12 + [1] * 8)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+print(y_train.value_counts(normalize=True))
+print(y_test.value_counts(normalize=True))
+
+# Group split: keep each customer in one partition
+groups = pd.Series([1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10])
+group_split = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)
+train_idx, test_idx = next(group_split.split(X, y, groups))
+print("Group overlap:", set(groups.iloc[train_idx]) & set(groups.iloc[test_idx]))
+
+# TimeSeriesSplit creates expanding historical training windows
+time_cv = TimeSeriesSplit(n_splits=3)
+for train_idx, test_idx in time_cv.split(X):
+    print("Train ends:", train_idx[-1], "test starts:", test_idx[0])
 ```
 
-## 3. Interpretation and safeguards
-State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune a threshold, select features or choose hyperparameters.
+Stratification preserves class proportions but not time order. GroupShuffleSplit preserves groups but does not necessarily preserve class balance. TimeSeriesSplit respects chronology, but you must still consider whether the gap between training and test windows is sufficient to prevent overlapping labels or look-ahead features.
 
-## 4. Guided practice
-Describe a repeated-customer dataset. Design a split that prevents the same customer appearing in training and test. Explain how your choice changes the question the test score answers.
+## 4. How much data belongs in each partition?
+There is no universal 70/15/15 rule. The correct allocation depends on dataset size, class balance, number of groups, time horizon and uncertainty you can tolerate. A very small test set produces a noisy metric. A large test set leaves less data for learning. Explain your choice.
 
-## 5. Independent practice
-Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
+## 5. Common mistakes
+- Using a random split for a forecasting problem.
+- Stratifying repeated customer records but allowing the same customer in both sets.
+- Tuning repeatedly on the final test set.
+- Splitting after feature selection or preprocessing.
+- Ignoring class imbalance.
+- Forgetting that a test score has sampling uncertainty.
 
-## 6. Knowledge check
-1. What question does this method answer?
-2. What data leakage risk must be controlled?
-3. How does the metric relate to the decision?
-4. What evidence would make you trust the improvement?
+## Guided practice
+For each scenario choose a split: predicting next month's demand, predicting churn for existing customers, classifying independent product images, predicting outcomes for new hospitals. Explain the unit of separation.
+
+## Independent practice
+Implement random stratified, group and chronological splits on suitable example data. Verify class proportions, group overlap and date ordering. Write a paragraph explaining which split best reflects the intended use of your chosen dataset.
+
+## Knowledge check
+1. What is the role of the training set?
+2. Why should the final test set be protected?
+3. What does stratification preserve?
+4. When is group splitting required?
+5. Why is a chronological split important for future prediction?
 
 ## Lesson summary
-Reliable model improvement requires controlled experiments, leakage-safe preprocessing, a validation design that matches the data and honest reporting of uncertainty.
+A valid metric depends on a valid split. Choose partitions according to how future predictions will be made, and protect held-out data from every fitting and selection step.

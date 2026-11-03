@@ -1,45 +1,78 @@
 # Lesson 14: Regression Evaluation Metrics
 
 ## Learning outcomes
+Explain MAE, MSE, RMSE and R-squared; calculate and interpret regression metrics; recognise the effect of outliers and target scale; and select metrics based on the business cost of errors.
 
-By the end of this lesson, you should be able to Calculate MAE, MSE, RMSE and R-squared; interpret their units and penalties; inspect residuals; and choose regression metrics based on the actual decision.
+## 1. What is a regression error?
+Regression predicts a numeric value, such as house price, delivery time or monthly sales. For each observation, the error or residual is the actual value minus the prediction. A metric summarises errors across observations.
 
-## 1. Core explanation
-MAE is the average absolute error and is easy to interpret in target units. MSE squares residuals and penalises large errors; RMSE returns to target units. R-squared compares model squared error with a mean-prediction reference and can be negative on test data. MAPE expresses percentage error but behaves badly when actual values are zero or near zero.
+No single metric describes every aspect of model quality. Choose metrics that reflect the decision and explain their units. A model that predicts delivery time within ten minutes may be useful for one operation but unacceptable for another.
 
-Metric choice reflects the decision. If large errors are especially harmful, RMSE may be more informative than MAE. If errors are interpreted in the original unit, MAE and RMSE are useful. If underprediction and overprediction have different costs, use an appropriate asymmetric loss or report both directions.
+## 2. Mean Absolute Error (MAE)
+MAE is the average absolute difference between actual and predicted values:
 
-Always compare on the same rows and scale. Inspect residual plots and error by segment. A single average can hide systematic errors for high-value customers or long delivery routes.
+`MAE = mean(|actual - predicted|)`
 
-## 2. Worked Python example
-Run in VS Code using the course virtual environment. Install required packages with `python -m pip install numpy pandas scipy matplotlib scikit-learn`.
+If MAE is 8 minutes, the average absolute prediction error is 8 minutes. MAE is easy to explain and less sensitive to large errors than squared-error metrics.
 
+## 3. Mean Squared Error and RMSE
+MSE averages squared errors. Squaring gives larger errors much more influence. Its units are squared, so it is less intuitive to communicate.
+
+RMSE is the square root of MSE and returns to the target's units. It penalises large errors more strongly than MAE. When large mistakes are especially costly, RMSE may be informative.
+
+## 4. R-squared
+R² compares the model's squared error with a baseline that predicts the mean target. A value of 1 indicates perfect predictions; 0 indicates performance equivalent to the mean baseline under the standard definition; negative values indicate worse performance than that baseline on the evaluation data. R² is not the percentage of predictions that are correct and does not establish causation.
+
+![Regression metric comparison](/course-assets/ws10/regression-metrics.svg)
+
+## 5. Worked example
 ```python
+from sklearn.metrics import (
+    mean_absolute_error, mean_squared_error, r2_score
+)
 import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-actual = np.array([100, 120, 130, 150, 180])
-pred = np.array([105, 115, 140, 145, 220])
-print("MAE", mean_absolute_error(actual, pred))
-print("RMSE", mean_squared_error(actual, pred)**.5)
-print("R2", r2_score(actual, pred))
-print("Residuals", actual - pred)
+actual = np.array([100, 120, 130, 150, 200])
+predicted = np.array([110, 118, 125, 160, 170])
+
+mae = mean_absolute_error(actual, predicted)
+mse = mean_squared_error(actual, predicted)
+rmse = np.sqrt(mse)
+r2 = r2_score(actual, predicted)
+
+print("MAE:", round(mae, 2))
+print("MSE:", round(mse, 2))
+print("RMSE:", round(rmse, 2))
+print("R-squared:", round(r2, 3))
 ```
 
-## 3. Interpretation and safeguards
-State the metric, split design and assumptions. Keep preprocessing and feature selection inside the training workflow. Do not use the final test set to tune a threshold, select features or choose hyperparameters.
+Interpret the metrics together. MAE describes average absolute error. RMSE increases the influence of the large miss on the final observation. R² compares the residual variation with a mean-prediction baseline. None tells you whether errors are systematically too high or too low, so inspect residuals.
 
-## 4. Guided practice
-Compare two candidate prediction arrays. Select a primary metric for a delivery-time model and explain whether late predictions or early predictions are more costly.
+## 6. Percentage metrics and caveats
+Mean Absolute Percentage Error (MAPE) divides absolute error by the actual value. It becomes undefined at zero and can become enormous when actual values are close to zero. It can also behave asymmetrically. Use it only when percentage error is meaningful and the target values support it.
 
-## 5. Independent practice
-Apply the method to a dataset you understand. Record a baseline, define a hypothesis before each change and keep an experiment log. Explain whether any improvement is stable and practically important.
+For targets with different scales across groups, consider whether absolute or relative errors are more useful. For intermittent demand with many zeros, MAE, RMSE or specialised metrics may be more appropriate than MAPE.
 
-## 6. Knowledge check
-1. What question does this method answer?
-2. What data leakage risk must be controlled?
-3. How does the metric relate to the decision?
-4. What evidence would make you trust the improvement?
+## 7. Common mistakes
+- Comparing RMSE values across different target units without adjustment.
+- Treating R² as accuracy.
+- Using MAPE when actual values can be zero.
+- Reporting only one metric.
+- Ignoring systematic residual patterns.
+- Choosing a metric after seeing which one makes the model look best.
+
+## Guided practice
+A delivery model has MAE of 12 minutes and RMSE of 28 minutes. Explain what the gap might suggest about occasional large errors. Describe one operational question that MAE alone cannot answer.
+
+## Independent practice
+Train a regression model and report MAE, RMSE and R² on the same held-out set. Plot residuals against predictions and inspect errors by a meaningful subgroup.
+
+## Knowledge check
+1. What does MAE measure?
+2. Why does RMSE penalise large errors more?
+3. What does a negative R² mean?
+4. Why can MAPE fail when actual values are zero?
+5. Why should residuals be inspected?
 
 ## Lesson summary
-Reliable model improvement requires controlled experiments, leakage-safe preprocessing, a validation design that matches the data and honest reporting of uncertainty.
+Regression metrics describe different aspects of prediction error. Select them according to the consequences of mistakes, explain their units and inspect residual patterns rather than relying on a single headline number.

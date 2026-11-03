@@ -1,53 +1,74 @@
 # Lesson 9: Filter and Wrapper Feature Selection
 
 ## Learning outcomes
+Use variance and statistical filters appropriately; distinguish mutual information and chi-square selection; understand recursive feature elimination; and compare selection strategies without contaminating validation data.
 
-By the end of this lesson, you should be able to Compare filter scores with Recursive Feature Elimination; fit selection only on training data; interpret the selected feature set; and assess selection stability across samples.
+## 1. Filter methods in more detail
+Filter methods evaluate features using a score independent of the final estimator. They are usually faster than wrapper methods and can be useful as an initial screening step. Their limitation is that a feature's score is often calculated one column at a time, so interactions may be missed.
 
-## 1. Core explanation
-Filter methods score features using statistical properties before fitting a model. Examples include correlation, chi-square and ANOVA F-tests. They are fast but may miss interactions and can be sensitive to assumptions. Chi-square requires non-negative feature values; do not apply it blindly to standardised negative values.
+A **variance threshold** removes features with little or no variation. A constant column cannot distinguish observations. However, low variance does not automatically mean useless: a rare indicator can be highly informative in a specific problem.
 
-Wrapper methods evaluate feature subsets by repeatedly training a model. Recursive Feature Elimination removes less useful features iteratively. Wrappers can capture model-specific interactions but are computationally expensive and may overfit if selection is not nested inside validation.
+**Correlation filtering** can identify highly redundant numeric features. Choose a threshold as a diagnostic, not a law. Correlation may be linear and pairwise, so it can miss non-linear or conditional relationships.
 
-Use feature selection within cross-validation. If you tune the number of features and evaluate on the same folds without nesting, the score can be optimistic. Consider stability: if a feature is selected in only one of many folds, its role may be uncertain.
+**Chi-square selection** measures dependence between non-negative features and a categorical target. It is often used for count or frequency features, and inputs must meet its non-negativity requirement.
 
-## 2. Worked Python example
-Run in VS Code with the course virtual environment. Install packages with `python -m pip install numpy pandas scikit-learn`.
+**Mutual information** measures how much knowing a feature reduces uncertainty about the target. It can detect non-linear dependence, but estimates can be noisy with small datasets.
 
+## 2. Wrapper methods
+A wrapper evaluates a subset by fitting a model and measuring performance. Recursive Feature Elimination (RFE) repeatedly fits an estimator, ranks features and removes the least important ones until the requested number remains. RFECV adds cross-validation to estimate a suitable number of features.
+
+Wrapper methods can be computationally expensive because many models are fitted. Their performance estimate can be optimistic if feature selection and hyperparameter tuning are not properly nested. The outer validation loop must evaluate the complete selection process.
+
+![Filter and wrapper selection](/course-assets/ws10/filter-wrapper-selection.svg)
+
+## 3. Worked example: RFE
 ```python
 from sklearn.datasets import load_breast_cancer
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
-data = load_breast_cancer(as_frame=True)
-X_train, X_test, y_train, y_test = train_test_split(
-    data.data, data.target, test_size=0.2, random_state=42, stratify=data.target
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+
+selector = RFE(
+    estimator=LogisticRegression(max_iter=5000),
+    n_features_to_select=10,
+    step=1
 )
-selector = RFE(LogisticRegression(max_iter=3000), n_features_to_select=8)
-pipe = make_pipeline(StandardScaler(), selector)
-pipe.fit(X_train, y_train)
-selected = data.feature_names[selector.support_]
-print("Selected features:", list(selected))
-print("Held-out accuracy:", pipe.score(X_test, y_test))
+pipeline = make_pipeline(StandardScaler(), selector)
+pipeline.fit(X, y)
+
+support = pipeline.named_steps["rfe"].get_support()
+print("Selected:", X.columns[support].tolist())
+print("Ranking:", pipeline.named_steps["rfe"].ranking_)
 ```
 
-## 3. Interpretation and safeguards
-State when each feature is available, how it was derived and whether it can be calculated consistently at prediction time. Fit all learned transformations on training data only. Compare performance using the same validation design and check that transformations do not remove meaningful information.
+RFE needs an estimator that exposes feature coefficients or importance. Logistic regression supplies coefficients, but scaling is important because coefficient magnitudes depend on feature scale. The example fits the selector on all supplied data for demonstration; use a train/test split and cross-validation in a real evaluation.
 
-## 4. Guided practice
-Compare filter selection with RFE. Record computation time and selected variables. Explain why the selection result depends on the estimator and dataset sample.
+## 4. Use nested evaluation when needed
+If you select features and tune a model using the same cross-validation results that you report as final performance, you may overfit the validation process. Nested cross-validation uses an inner loop for selection/tuning and an outer loop to estimate the full procedure. It is more expensive, but useful when data is limited and many choices are being compared.
 
-## 5. Independent practice
-Create a small feature-engineering workflow for a dataset. Include a data dictionary, transformation rationale, pipeline and validation plan. Identify one transformation you decided not to use and explain why.
+## 5. Common mistakes
+- Applying chi-square to negative or standardised values.
+- Removing every low-variance feature without considering rare-event meaning.
+- Assuming RFE is cheap on thousands of columns.
+- Selecting features once before cross-validation.
+- Comparing methods on different folds.
+- Treating selected features as causal drivers.
 
-## 6. Knowledge check
-1. What information does this transformation add?
-2. Could it leak information from after the prediction time?
-3. Does it need to be fitted on training data?
-4. How will you test its value and stability?
+## Guided practice
+For a text dataset represented by word counts, decide whether chi-square or mutual information may be appropriate. Explain what must be checked before applying chi-square.
+
+## Independent practice
+Compare SelectKBest with mutual information and RFECV on a classification dataset. Put selection inside the evaluation process, record runtime and selected-feature stability, and discuss the trade-off between performance and simplicity.
+
+## Knowledge check
+1. What does a variance threshold remove?
+2. What type of input does chi-square selection expect?
+3. What does mutual information measure?
+4. How does RFE choose which feature to remove?
+5. Why might nested cross-validation be required?
 
 ## Lesson summary
-Feature engineering should create meaningful, available and reproducible inputs. Every transformation must be justified and validated within a leakage-safe workflow.
+Filter methods provide efficient screening, while wrapper methods evaluate subsets through model fitting. Both must be embedded in a sound validation design; neither produces a universally correct feature list.
