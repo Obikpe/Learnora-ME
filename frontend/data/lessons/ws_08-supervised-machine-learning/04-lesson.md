@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Fit a simple linear regression model; interpret slope and intercept in context; make predictions; visualise fitted values; and discuss linearity, outliers and the limits of extrapolation.
 
+
+![regression concept diagram](/course-assets/ws08/regression.svg)
+
 ## 1. Core explanation
 Simple linear regression models a numeric target y using one feature x: predicted y = intercept + slope × x. The slope estimates the expected change in the target for a one-unit increase in x under the fitted linear relationship. The intercept is the predicted target when x is zero; it may have no practical meaning if zero is outside the observed range.
 
