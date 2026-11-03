@@ -27,7 +27,7 @@ Different fairness criteria answer different questions. For example:
 
 These criteria can conflict, especially when underlying base rates differ. There is no universal fairness score that resolves every context. Start with the decision, affected people, harms and applicable law.
 
-![Responsible ML review cycle](./assets/15-responsible-ml.svg)
+![Responsible ML review cycle](/course-assets/ws07/15-responsible-ml.svg)
 
 ## 4. Evaluate group performance carefully
 A model may have high overall accuracy but perform poorly for a smaller group. Where lawful, appropriate and supported by sufficient sample sizes, compare relevant metrics across groups. Include uncertainty and avoid drawing conclusions from tiny samples.
