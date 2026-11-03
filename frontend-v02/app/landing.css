@@ -193,3 +193,9 @@
 /* Public sections keep typography on the shared page surface rather than dark panels. */
 .landing-page .landing-image-band h2,.landing-page .landing-career-inner h2 { color:var(--text-heading); }
 .landing-page .landing-image-band .landing-kicker,.landing-page .landing-career-inner .landing-kicker { color:var(--primary); }
+
+/* Image captions and labels no longer use dark text panels. */
+.landing-image-caption { color:var(--text-heading); }
+.landing-image-caption span { color:var(--primary); }
+.landing-image-caption strong { color:var(--text-heading); }
+.landing-image-label { background:var(--card); color:var(--text-heading); border:1px solid var(--border); }
