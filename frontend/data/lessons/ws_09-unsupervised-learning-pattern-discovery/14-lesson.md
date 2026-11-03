@@ -4,6 +4,8 @@
 
 By the end of this lesson, you should be able to Profile cluster assignments using original feature units; compare group sizes, medians and distributions; name segments cautiously; and identify evidence needed before taking action.
 
+![Cluster assignments must be interpreted and validated by an analyst](/course-assets/ws09/clustering-concepts.svg)
+
 ## 1. Core explanation
 Cluster profiling describes how groups differ using original feature units. Compare counts, medians, means, distributions and proportions. A profile should answer what distinguishes a segment, how large it is and whether the difference is stable. Use box plots or summary tables to reveal within-cluster variation, not only averages.
 
