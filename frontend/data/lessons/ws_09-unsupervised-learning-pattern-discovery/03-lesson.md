@@ -11,7 +11,7 @@ By the end of this lesson, you should be able to:
 - Choose a measure that matches the data type and analytical question.
 - Recognise the effects of feature scaling, irrelevant dimensions and high dimensionality.
 
-![Illustration of observations and their distances](/course-assets/ws09/clustering-concepts.svg)
+![Teaching diagram: 03](/course-assets/ws09/distance-metrics.svg)
 
 ## 1. What does it mean for two observations to be similar?
 
