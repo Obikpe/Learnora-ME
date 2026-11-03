@@ -526,7 +526,7 @@ Read-only verification confirmed the track-course relationship, published status
 
 ## Learner experience corrections — 3 November 2026
 
-- Restored the My Learning calendar with month navigation. Calendar markers are derived only from persisted enrolment, lesson activity and course-completion timestamps.
+- Restored the My Learning calendar with month navigation. Calendar markers are derived only from persisted enrolment, per-course last-activity and course-completion timestamps; the current progress API does not expose a complete day-by-day activity log.
 - When a learner has no enrolments, the In Progress view recommends up to three published catalogue courses, excluding courses already on the learner's record. Available recommendations are ranked against the learner's saved learning goal when one exists.
 - Restored a floating learner AI assistant. It uses the existing AI coach endpoint and passes the current published catalogue and saved learning goal as context. Matched course recommendations link to their real course pages. The AI permission check now recognises individual learner accounts for learner-facing features; organisation permission and assessment restrictions remain in place.
 - Replaced the My Learning black empty-state cards with plain text states. Completed courses use the heading "No completed courses" and the text link "Nothing here yet. Explore courses". Certificate retrieval no longer displays the generic temporary-unavailability message.
