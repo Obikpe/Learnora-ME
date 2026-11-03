@@ -4,7 +4,7 @@
 
 By the end of this lesson, you should be able to explain explained variance and cumulative explained variance; interpret PCA loadings and component scores; choose a defensible number of components; read a scree plot; reconstruct data conceptually; and explain the limitations of using a fixed variance threshold.
 
-![PCA components and retained information](/course-assets/ws09/pca-rotation.svg)
+![Teaching diagram: 10](/course-assets/ws09/pca-variance.svg)
 
 ## 1. PCA gives components; how much information do they retain?
 
