@@ -59,3 +59,11 @@ Retaining more components preserves more variance but reduces compression. Retai
 Use loadings to describe which original variables vary together. Remember that component signs are arbitrary: reversing every sign in one component gives an equivalent solution. Inspect transformed observations and compare conclusions with original variables. A component can be mathematically clear but difficult to explain to stakeholders.
 
 **Practice:** Report the variance ratio for each component, cumulative variance for the first two, and the number needed to cross a chosen threshold. Explain what is lost and why the chosen dimension count suits the task.
+
+### Worked example: decide how many components to retain
+
+Fit PCA without restricting the number of components, then inspect individual and cumulative explained variance. Plot the cumulative curve and identify where additional components contribute little. This is a compression decision: fewer dimensions make later modelling and visualisation simpler, but discarded components may contain useful variation.
+
+If the purpose is a two-dimensional visualisation, two components may be appropriate even when they explain a modest fraction of total variance. If the purpose is to compress features before another model, test the downstream task separately. Unsupervised variance retention does not guarantee predictive usefulness.
+
+Report the number of components, cumulative variance retained and the reason for selecting that count. Do not state that a threshold such as 90% is universally correct.
