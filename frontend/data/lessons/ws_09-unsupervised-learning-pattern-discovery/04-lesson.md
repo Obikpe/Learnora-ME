@@ -61,3 +61,11 @@ K-means requires the analyst to choose k. It works best when groups are roughly 
 Centroids after standardisation are expressed in standard-deviation units. They help compare relative positions but are not suitable for explaining a business segment in original units. Use the assignments to profile the original data with means, medians and distributions.
 
 **Practice:** Fit K-means with one initialisation and several random seeds, then repeat with multiple initialisations. Record inertia and cluster profiles. Explain why more initialisations improve the search but do not prove that groups are real or useful.
+
+### Worked example: interpret cluster assignments
+
+After fitting the model, attach the predicted labels to the original table. Count observations in each group, then calculate means and medians in the original units. Compare distributions, not just a single summary statistic. If one group has a much larger spread, its average may describe no typical member particularly well.
+
+A centroid is a mathematical average, not necessarily a real observation. It can represent a point between customers that does not exist in the dataset. To understand the group, inspect observations near the centroid and observations far from it. The former are representative; the latter may reveal a poor fit or unusual cases.
+
+If the same analysis will assign new customers later, save the entire fitted preprocessing-and-clustering pipeline. New observations must be transformed in exactly the same way before assigning their nearest centroid.
