@@ -200,6 +200,7 @@ img { color: transparent; }
 [class*="hover:text-white"]:hover { color: var(--text-heading) !important; }
 [class*="hover:bg-white"]:hover { background-color: var(--primary-tint) !important; }
 [class*="bg-[#d7ad35]"], [class*="bg-[#d5b15b]"], [class*="bg-[var(--gold)]"] { background-color: var(--primary) !important; }
+[class*="hover:bg-[var(--gold-light)]"]:hover { background-color: var(--primary-hover) !important; }
 [class*="text-[#f2d477]"] { color: var(--primary) !important; }
 [class*="text-black"], [class*="text-[#16140f]"], [class*="text-[#17140d]"] { color: var(--on-primary) !important; }
 [class*="border-[#d7ad35]"], [class*="border-[#d5b15b]"] { border-color: var(--primary) !important; }
