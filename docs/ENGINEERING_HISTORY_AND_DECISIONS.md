@@ -581,3 +581,32 @@ Read-only verification confirmed the track-course relationship, published status
 - At audit time, the `learnora-backend.vercel.app` production deployment was still on commit `e06994c8c2f5b94545ddf629c3644397a880a4b4` in `iad1`; the latest `learnora-me-v02` frontend deployment was also on that older commit. The separate `learnora-backend-v02` project was deployed from the `learnora-platform-foundations` branch, not current `main`. The v02 frontend's configured API target is `learnora-backend.vercel.app`, not the separate backend-v02 project.
 - The code and region configuration are committed to `main`, but no deployment, frontend build, Python test suite, CI workflow or browser acceptance run was triggered. Live speed improvement has therefore not yet been measured.
 - No Supabase migration or production data change was made for this performance work.
+
+## Frontend v02 full source audit and corrections — 3 November 2026
+
+### Scope
+- Reviewed the complete tracked `frontend-v02/` tree on `main`: 107 files across App Router pages, shared components, API clients, utilities, CSS, TypeScript configuration, Next.js configuration, package metadata and Vercel headers.
+- No Vercel deployment was created or triggered during this audit. No GitHub Actions workflow or CI run was triggered.
+
+### Confirmed issues corrected
+- Fixed the course catalogue state declaration that caused the reported Next.js parse error: `const [query, setQuery = useState("")` is now a valid `useState` destructuring declaration. Simplified the catalogue's derived level/track/filter expressions and image-set initialization to make the TSX easier to parse and maintain.
+- Added the missing `RichContent` import in `components/course/CourseWorkspace.tsx`. The component was rendered by the course player but was not imported, which would have produced a subsequent compile failure after the catalogue syntax error was removed.
+- Corrected the course workspace so AI tutor entry points remain hidden while a quiz session is active or being recovered. A failed quiz-session close no longer clears the local quiz lock and exposes tutor access while the backend session may still be active.
+- Updated the lesson rich-content URL sanitizer to reject protocol-relative external URLs and control characters/backslashes, in addition to disallowed URL schemes.
+- Updated the frontend Vercel Content Security Policy to explicitly permit the YouTube/Vimeo iframe providers used by the course player and HTTPS/blob media sources used for signed lesson video playback. Previously, the restrictive default policy could block those legitimate player sources.
+- Corrected certificate verification links in both the Certificates and Portfolio pages to use Learnora's local `/verify-certificate/{certificate_number}` route instead of relying on an optional `verification_url` field not guaranteed by the certificate record.
+- Corrected Creator Studio status handling: creator accounts with status `active` were allowed through the data-loading branch but were subsequently shown the unapproved state. Both checks now accept `approved` and `active`.
+- Reset the course auto-enrol guard when the dynamic course ID changes, so a previous course's auto-enrol attempt does not suppress an enrolment intent for the next course during client-side navigation.
+- Corrected `.env.example` to document `API_PROXY_TARGET`, the environment variable actually read by `next.config.mjs`; the previous `NEXT_PUBLIC_API_URL` example was unused.
+- Aligned the landing-page audience navigation order with the learner, instructor and organisation pages, and marked the active organisation audience link with `aria-current`.
+
+### Review observations
+- The v02 admin route layout intentionally redirects `/dashboard/admin/*` to the separate Learnora Teams sign-in. The local admin page files remain in the tree but are not the active admin surface under that layout; this was not changed.
+- The root `vercel.json` backend function region is separate from the frontend project's build-machine region. A Vercel build log showing `iad1` identifies where that build ran; it does not by itself establish the runtime region of the frontend or backend function.
+- The frontend API client uses same-origin `/api/*` requests and the Next.js rewrite in `next.config.mjs`; production defaults to `https://learnora-backend.vercel.app`. The previous env example did not match that configuration and has been corrected.
+- No new database migration or production data mutation was needed for these frontend corrections.
+
+### Verification status
+- Confirmed the reported malformed state declaration is corrected on `main`.
+- Re-fetched the modified course workspace, catalogue page, CSP, certificate pages, Creator Studio page, course detail page, rich-content utility and environment example from `main` after editing.
+- These are source-level corrections only. No local TypeScript compiler, dependency install, Next.js production build, browser acceptance test, CI workflow or Vercel deployment was run. The frontend is therefore not yet certified build-clean; the next build should be attempted only after the remaining local/source checks are complete and with the user's deployment cap in mind.
