@@ -520,3 +520,12 @@ Read-only verification confirmed the track-course relationship, published status
 - Rechecked WitStart membership records after migration: 25 cohort membership rows and 24 linked public.users accounts remain. No WitStart account, membership, enrolment or historical record was deleted.
 - Migration SQL and rollback artefacts are committed under supabase/migrations/ and supabase/rollback/ with the live ledger versions. The rollback for the two function-correction migrations is intentionally a no-op rather than restoring a known-bad elapsed-time implementation.
 - No Vercel deployment, GitHub Actions workflow or CI run was triggered. Frontend builds, Python tests and browser acceptance have not been run in this environment; a focused backend route test file was added but remains unexecuted. Production runtime behaviour is therefore not claimed as fully browser-verified.
+
+## Authentication loading and assigned-learner redirect correction — 3 November 2026
+
+- Removed the full-page skeleton replacement from the standard learner login screen. The login form now remains visible while authentication runs; the submit button carries the inline “Signing in…” state and authentication errors remain on the form.
+- Applied the same no-full-page-skeleton behaviour to cohort username login and added an inline submit state. Registration already used inline button feedback and did not have a login-style skeleton replacement, so its existing dashboard skeleton behaviour is unchanged.
+- Hardened the standard login redirect: a `next` path is honoured only after `/auth/me` has successfully resolved and the account is an individual normal learner with no cohort or organisation assignment. Organisation/cohort/WitStart-linked learners ignore course-originated `next` paths and are sent to their normal dashboard entry instead. This prevents the sign-in callback itself from returning an assigned learner to a public course/enrolment intent.
+- This is a frontend redirect safeguard, not a replacement for backend course-enrolment and course-content permission checks. Direct URL/API access must continue to be enforced server-side.
+- No cohort or organisation dashboard pages were changed in this step. The agreed shared-dashboard implementation remains the next workstream: reuse the individual learner Shell, Sidebar, Topbar and dashboard experience, while filtering destinations and data to assigned cohort/organisation learning only.
+- No deployment, GitHub Actions run or CI test was triggered. Browser/build verification remains outstanding.
