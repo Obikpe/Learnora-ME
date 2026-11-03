@@ -96,7 +96,7 @@ export default function Courses() {
             if (image) usedImages.add(imageKey);
             return <Link key={course.id} href={"/courses/" + course.id} className="group min-w-0 bg-[#0b0f14] transition-colors hover:bg-[#10151b]">
               <div className="relative h-52 overflow-hidden bg-[#151c24]">
-                {image ? <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"/> : <div className="flex h-full items-end justify-between p-5"><span className="font-display text-6xl text-white/10">{String(i+1).padStart(2,"0")}</span><span className="text-xs uppercase tracking-[.18em] text-[#f2d477]">Learnora / Course</span></div>}
+                {image ? <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"/> : <div className="flex h-full items-end justify-between p-5"><BookOpen size={42} className="text-white/30"/><span className="text-xs uppercase tracking-[.18em] text-[#f2d477]">Learnora / Course</span></div>}
                 <span className="absolute left-4 top-4 border border-white/15 bg-[#080a0d] px-3 py-1.5 text-[10px] uppercase tracking-[.15em] text-slate-200">{course.level || "All levels"}</span>
                 {Array.isArray(course.tracks)&&course.tracks.length>0&&<span className="absolute bottom-4 left-4 max-w-[85%] truncate border border-[#d7ad35]/35 bg-[#080a0d]/90 px-3 py-1.5 text-[10px] uppercase tracking-[.12em] text-[#f2d477]">{course.tracks.slice(0,2).map((t:any)=>t.name).join(" · ")}</span>}
               </div>
