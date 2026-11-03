@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MessageCircle, Send, Sparkles, X } from "lucide-react";
 import { askAI } from "../../lib/api/ai";
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type ChatMessage = { role: "user" | "assistant"; content: string; courses?: any[] };
 
 export default function LearnerAssistant({ courses, goal }: { courses: any[]; goal?: string }) {
   const [open, setOpen] = useState(false);
@@ -40,7 +40,9 @@ export default function LearnerAssistant({ courses, goal }: { courses: any[]; go
     try {
       const result = await askAI(prompt, "coach", conversationId);
       setConversationId(result.conversation_id || conversationId);
-      setMessages(current => [...current, { role: "assistant", content: result.content || result.message || "I couldn't generate a response just now." }]);
+      const response = result.content || result.message || "I couldn't generate a response just now.";
+      const matches = courses.slice(0, 15).filter(course => course.title && response.toLowerCase().includes(String(course.title).toLowerCase())).slice(0, 3);
+      setMessages(current => [...current, { role: "assistant", content: response, courses: matches }]);
     } catch (e: any) {
       setError(e?.message || "The assistant could not respond. Try again.");
     } finally {
@@ -55,7 +57,7 @@ export default function LearnerAssistant({ courses, goal }: { courses: any[]; go
         <button type="button" aria-label="Close assistant" onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-lg hover:bg-[var(--bg-soft)]"><X size={17}/></button>
       </header>
       <div className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
-        {messages.map((message, index) => <div key={index} className={"max-w-[90%] rounded-xl px-3 py-2.5 text-sm leading-6 " + (message.role === "user" ? "ml-auto bg-[var(--primary)] text-[var(--on-primary)]" : "bg-[var(--bg-soft)] text-[var(--text-body)]")}>{message.content}</div>)}
+        {messages.map((message, index) => <div key={index} className={"max-w-[90%] rounded-xl px-3 py-2.5 text-sm leading-6 " + (message.role === "user" ? "ml-auto bg-[var(--primary)] text-[var(--on-primary)]" : "bg-[var(--bg-soft)] text-[var(--text-body)]")}>{message.content}{message.courses?.map(course => { const free = course.settings?.is_free === true || course.settings?.access_type === "free"; const href = "/courses/" + encodeURIComponent(course.id) + (free ? "?enrol=1" : ""); return <a key={course.id} href={href} className="mt-2 block font-semibold text-[var(--primary)] underline">{course.title} <span aria-hidden="true">→</span></a>; })}</div>)}
         {busy && <p className="text-xs text-[var(--text-muted)]">Thinking…</p>}
         {error && <p role="alert" className="text-xs text-[var(--warning)]">{error}</p>}
         {messages.length === 1 && <div className="flex flex-wrap gap-2 pt-1">
