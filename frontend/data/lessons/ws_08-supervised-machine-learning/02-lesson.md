@@ -4,6 +4,9 @@
 
 By the end of this lesson, you should be able to Distinguish regression targets from binary and multiclass classification targets; identify target data types; and explain how the target definition determines the modelling task and evaluation metrics.
 
+
+![workflow concept diagram](/course-assets/ws08/workflow.svg)
+
 ## 1. Core explanation
 A regression target is a numeric quantity where distances between values matter, such as price or delivery duration. A classification target is a category, such as approved/declined or fraud/not fraud. Binary classification has two classes; multiclass classification has more than two. Multi-label classification allows more than one label per observation.
 
