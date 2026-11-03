@@ -47,3 +47,13 @@ Choose a dataset and state the purpose of the unsupervised analysis. Compare at 
 
 ## Lesson summary
 Unsupervised algorithms find patterns according to mathematical definitions. Human interpretation, stability checks and practical validation determine whether those patterns deserve to be used.
+
+## Deeper explanation: explained variance is a trade-off
+
+The explained variance ratio reports the fraction of total variance captured by a component. The cumulative ratio adds the fractions from the first component through the selected component count. If the first two components explain 70%, the two-dimensional representation retains 70% of total variance under PCA's definition. It does not mean 70% of meaning, predictive accuracy or all information is retained.
+
+Retaining more components preserves more variance but reduces compression. Retaining fewer makes the representation smaller but can discard useful distinctions. A 90% threshold is a heuristic, not a universal requirement. Select a dimension count based on the use case and inspect what the omitted components contain.
+
+Use loadings to describe which original variables vary together. Remember that component signs are arbitrary: reversing every sign in one component gives an equivalent solution. Inspect transformed observations and compare conclusions with original variables. A component can be mathematically clear but difficult to explain to stakeholders.
+
+**Practice:** Report the variance ratio for each component, cumulative variance for the first two, and the number needed to cross a chosen threshold. Explain what is lost and why the chosen dimension count suits the task.
