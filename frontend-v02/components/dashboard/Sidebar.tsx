@@ -50,6 +50,7 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [canTeach, setCanTeach] = useState(false);
   const [assignedLearner, setAssignedLearner] = useState(restricted || role === "assigned");
+  const [identityResolved, setIdentityResolved] = useState(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -67,12 +68,14 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
         me.organisation_role === "learner" ||
         memberships.some((membership: any) => membership.role === "learner" && membership.status === "active")
       ));
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => {
+      if (!cancelled) setIdentityResolved(true);
+    });
 
     return () => { cancelled = true; };
-  }, []);
+  }, [restricted, role]);
 
-  const isRestrictedLearner = restricted || assignedLearner || role === "assigned";
+  const isRestrictedLearner = restricted || assignedLearner || role === "assigned" || !identityResolved;
   const items = (admin ? adminItems : learnerItems).filter(item =>
     !(hideTutor && item.key === "ai") &&
     !(isRestrictedLearner && ["discover", "tracks"].includes(item.key))
@@ -131,7 +134,7 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
       <Search size={16} className="shrink-0 text-[var(--text-muted)]"/>
       <input aria-label="Search courses" name="search" value={search} onChange={event => setSearch(event.target.value)}
         placeholder="What do you want to learn?" className="min-w-0 w-full bg-transparent text-xs text-[var(--text-body)] outline-none placeholder:text-[var(--text-muted)]"/>
-    </form>}}
+    </form>}
 
 
 
