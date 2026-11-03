@@ -15,7 +15,7 @@ export default function AudiencePage({type}:{type:"learner"|"instructor"|"organi
     <div className="org-audience-strip"><div className="org-wrap">
       <a href="/for-learners" aria-current={type === "learner" ? "page" : undefined}>For individuals</a>
       <a href="/for-instructors" aria-current={type === "instructor" ? "page" : undefined}>For instructors</a>
-      <a href="/for-organisations">For organisations</a>
+      <a href="/for-organisations" aria-current={type === "organisation" ? "page" : undefined}>For organisations</a>
     </div></div>
     <section className="border-b border-white/[.1]">
       <div className="mx-auto grid max-w-[82rem] gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.03fr_.97fr] lg:items-center lg:gap-16 lg:px-8 lg:py-24">
