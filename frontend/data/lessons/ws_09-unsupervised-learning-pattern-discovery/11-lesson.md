@@ -91,7 +91,7 @@ UMAP is often faster than t-SNE on larger datasets and can support transforming 
 UMAP is commonly installed separately:
 
 ```bash
-python -m pip install umap-learn
+python -m pip install numpy pandas matplotlib 'scikit-learn>=1.2' umap-learn
 ```
 
 ```python
