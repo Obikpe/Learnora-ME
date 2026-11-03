@@ -4,7 +4,7 @@ import { useState } from "react";
 import { X, Send, Sparkles, BookOpen } from "lucide-react";
 import { askAI } from "../../lib/api/ai";
 
-type Props = { courseId: string; lessonId: string; lessonTitle: string; notes: string; lessonContent: string; video?: any; };
+type Props = { courseId: string; lessonId: string; lessonTitle: string; notes: string; lessonContent: string; video?: any; onClose: () => void; };
 
 function transcriptText(video: any) {
   const value = video?.transcript_text || video?.transcript || video?.captions_text || video?.captions || "";
@@ -13,7 +13,7 @@ function transcriptText(video: any) {
   return "";
 }
 
-export default function LessonAIPanel({ courseId, lessonId, lessonTitle, notes, lessonContent, video }: Props) {
+export default function LessonAIPanel({ courseId, lessonId, lessonTitle, notes, lessonContent, video, onClose }: Props) {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
   const [conversationId, setConversationId] = useState<string>();
@@ -45,7 +45,7 @@ export default function LessonAIPanel({ courseId, lessonId, lessonTitle, notes, 
   return <div className="fixed inset-y-0 right-0 z-[90] flex w-full max-w-[390px] flex-col border-l border-[var(--border)] bg-[var(--card)] shadow-2xl">
     <header className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-4">
       <div className="flex min-w-0 items-center gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--primary-tint)] text-[var(--primary)]"><Sparkles size={18}/></span><div className="min-w-0"><h2 className="text-sm font-bold text-[var(--text-heading)]">Ask about this lesson</h2><p className="truncate text-[11px] text-[var(--text-muted)]">{lessonTitle}</p></div></div>
-      <button type="button" onClick={() => window.dispatchEvent(new Event("learnora-close-lesson-ai"))} aria-label="Close AI assistant" className="grid size-9 place-items-center rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-soft)]"><X size={17}/></button>
+      <button type="button" onClick={onClose} aria-label="Close AI assistant" className="grid size-9 place-items-center rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-soft)]"><X size={17}/></button>
     </header>
     <div className="flex items-start gap-2 border-b border-[var(--border)] bg-[var(--bg-soft)] px-4 py-3 text-[11px] leading-5 text-[var(--text-muted)]"><BookOpen size={14} className="mt-0.5 shrink-0 text-[var(--primary)]"/>Lesson notes and published lesson material are included. Video transcript is included when available in the lesson media record.</div>
     <div className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
