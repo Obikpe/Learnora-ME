@@ -25,6 +25,7 @@ export default function Login() {
       const requestedNext = new URLSearchParams(window.location.search).get("next") || "";
       const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "";
       const assignedLearner = Boolean(
+        me.account_type === "cohort" ||
         me.cohort_id ||
         me.organisation_id ||
         me.organisation_role ||
