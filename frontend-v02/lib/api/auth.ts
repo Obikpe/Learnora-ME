@@ -24,7 +24,7 @@ function restoreCachedUser(token: string) {
 
 function activeToken() {
   if (typeof window === "undefined") return "";
-  if (sessionStorage.getItem("phx_logged_out") === "1") return "";
+  if (sessionStorage.getItem("phx_logged_out") === "1" || localStorage.getItem("phx_logged_out") === "1") return "";
   const stored = sessionStorage.getItem("phx_token") || "";
   if (stored && stored !== "cookie-session") sessionStorage.removeItem("phx_token");
   return "cookie-session:" + (sessionStorage.getItem("phx_session_epoch") || "implicit");
