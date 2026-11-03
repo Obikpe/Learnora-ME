@@ -18,11 +18,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     });
     void validate();
     const onPageShow = () => {
-      if (sessionStorage.getItem("phx_logged_out") === "1") window.location.replace("/");
+      if (sessionStorage.getItem("phx_logged_out") === "1" || localStorage.getItem("phx_logged_out") === "1") window.location.replace("/");
       else void validate();
     };
     window.addEventListener("pageshow", onPageShow);
-    return () => { active = false; window.removeEventListener("pageshow", onPageShow); };
+    const onStorage = (event: StorageEvent) => { if (event.key === "phx_logged_out" && event.newValue === "1") window.location.replace("/"); };
+    window.addEventListener("storage", onStorage);
+    return () => { active = false; window.removeEventListener("pageshow", onPageShow); window.removeEventListener("storage", onStorage); };
   }, [pathname]);
   if (!authorised) return <main className="min-h-screen bg-[var(--bg)] p-6"><div className="mx-auto max-w-5xl pt-12"><Skeleton label="Checking your Learnora session"/></div></main>;
   return children;
