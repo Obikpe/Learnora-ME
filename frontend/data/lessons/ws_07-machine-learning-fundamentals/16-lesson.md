@@ -3,6 +3,8 @@
 ## Learning outcomes
 Complete a small supervised-learning project; frame a prediction problem; inspect and split data; build a preprocessing pipeline; compare a baseline with a candidate model; evaluate errors; and present a reproducible report with limitations.
 
+![End-to-end machine-learning project](/course-assets/ws07/16-project-workflow.svg)
+
 ## 1. Project brief
 In this capstone, you will build an educational classification model using the breast cancer dataset included with scikit-learn. The dataset contains measurements associated with digitised images of breast masses and a target label. This is an educational exercise only. It is not a diagnostic tool, must not be used for clinical decisions and does not establish that a model is safe for healthcare.
 
