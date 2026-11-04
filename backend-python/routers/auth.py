@@ -1786,6 +1786,41 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
             )
             if organisation.data and organisation.data[0].get("is_active"):
                 return str(membership["organisation_id"]), str(membership["role"])
+
+        # Legacy WitStart/cohort learners are represented by public.users +
+        # cohort_members rather than organisation_members. Resolve their
+        # organisation from the active cohort so scoped assignment checks can
+        # authorise their existing cohort course enrolments.
+        cohort_memberships = (
+            supabase.table("cohort_members")
+            .select("cohort_id")
+            .eq("user_id", user_id)
+            .eq("status", "active")
+            .limit(10)
+            .execute()
+        ).data or []
+        cohort_ids = list({str(row["cohort_id"]) for row in cohort_memberships if row.get("cohort_id")})
+        if cohort_ids:
+            cohorts = (
+                supabase.table("cohorts")
+                .select("id,organisation_id,status")
+                .in_("id", cohort_ids)
+                .in_("status", ["draft", "upcoming", "active", "ending"])
+                .execute()
+            ).data or []
+            for cohort in cohorts:
+                organisation_id = str(cohort.get("organisation_id") or "")
+                if not organisation_id:
+                    continue
+                organisation = (
+                    supabase.table("organisations")
+                    .select("id,is_active")
+                    .eq("id", organisation_id)
+                    .limit(1)
+                    .execute()
+                ).data or []
+                if organisation and organisation[0].get("is_active"):
+                    return organisation_id, "learner"
         return None, None
     except Exception as exc:
         if free_access_mode_enabled() and fail_closed:
@@ -3631,6 +3666,21 @@ def me(
     # A single default organisation is safe to infer. If the user belongs to
     # multiple organisations, return the memberships but do not silently pick one.
     single_membership = memberships[0] if len(memberships) == 1 else None
+    cohort_id = user.cohort_id
+    if not cohort_id and user.account_type != "cohort" and user.id:
+        try:
+            cohort_memberships = (
+                supabase.table("cohort_members")
+                .select("cohort_id")
+                .eq("user_id", str(user.id))
+                .eq("status", "active")
+                .limit(1)
+                .execute()
+            ).data or []
+            cohort_id = str(cohort_memberships[0]["cohort_id"]) if cohort_memberships else None
+        except Exception as exc:
+            print("Current-user cohort membership lookup failed:", exc)
+            raise HTTPException(503, "Your cohort membership could not be verified. Please retry.") from None
     return {
         "status": "success",
         "id": user.id,
@@ -3644,8 +3694,9 @@ def me(
         "course_access": user.course_access,
         "trial_ends_at": user.trial_ends_at,
         "expires_at": user.expires_at,
-        "organisation_id": single_membership.get("organisation_id") if single_membership else None,
-        "organisation_role": single_membership.get("role") if single_membership else None,
+        "organisation_id": single_membership.get("organisation_id") if single_membership else user.organisation_id,
+        "organisation_role": single_membership.get("role") if single_membership else user.organisation_role,
+        "cohort_id": cohort_id,
         "organisation_memberships": memberships,
         "allowed": allowed_for(
             user.role,
