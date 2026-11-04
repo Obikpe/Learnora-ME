@@ -63,13 +63,16 @@ class FakeSupabase:
         return FakeQuery(name, self.rows.get(name, []))
 
 
-def context(organisation_id="org-a", user_id="user-1", platform_admin=False, role="admin"):
+def context(organisation_id="org-a", user_id="user-1", platform_admin=False, role="admin", account_type="learner", user_role=None):
     return SimpleNamespace(
         organisation_id=organisation_id,
         user_id=user_id,
         is_platform_admin=platform_admin,
         organisation_role=role,
-        user=SimpleNamespace(role="normal" if role == "learner" else role),
+        user=SimpleNamespace(
+            role=user_role or ("normal" if role == "learner" else role),
+            account_type=account_type,
+        ),
     )
 
 
@@ -241,7 +244,54 @@ class CourseContentAccessTests(unittest.TestCase):
             "user_id": "user-1", "organisation_id": None, "status": "active",
         }])
         with patch.object(course_content, "supabase", db):
-            course_content._check_course_view_access(context(None), course)
+            course_content._check_course_view_access(context(None, role="learner"), course)
+
+    def test_individual_free_launch_catalogue_access_is_preserved(self):
+        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None, "status": "published"}
+        with patch.object(course_content, "free_access_mode_enabled", return_value=True), \\
+             patch.object(course_content, "supabase", FakeSupabase()):
+            course_content._check_course_view_access(context(None, role="learner"), course)
+
+    def test_new_cohort_account_cannot_use_generic_course_content_endpoint(self):
+        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        with patch.object(course_content, "supabase", FakeSupabase()):
+            with self.assertRaises(HTTPException) as raised:
+                course_content._check_course_view_access(
+                    context("org-a", role="cohort_learner", account_type="cohort"),
+                    course,
+                )
+        self.assertEqual(raised.exception.status_code, 403)
+
+    def test_legacy_cohort_member_cannot_use_organisation_wide_grant_without_cohort_assignment(self):
+        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        db = FakeSupabase(
+            course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "assigned"}],
+            enrolments=[{"id": "enrolment-1", "course_id": "course-1", "user_id": "user-1", "organisation_id": "org-a", "cohort_id": "cohort-a", "status": "active", "source_type": "cohort_assignment"}],
+            cohort_members=[{"id": "member-1", "user_id": "user-1", "cohort_id": "cohort-a", "status": "active"}],
+            cohorts=[{"id": "cohort-a", "organisation_id": "org-a", "status": "active"}],
+        )
+        with patch.object(course_content, "supabase", db), patch.object(course_content, "_organisation_has_course_entitlement", return_value=True):
+            with self.assertRaises(HTTPException) as raised:
+                course_content._check_course_view_access(
+                    context("org-a", role="learner", user_role="witstart"),
+                    course,
+                )
+        self.assertEqual(raised.exception.status_code, 403)
+
+    def test_legacy_cohort_member_can_read_only_course_assigned_to_their_cohort(self):
+        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        db = FakeSupabase(
+            course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "assigned"}],
+            enrolments=[{"id": "enrolment-1", "course_id": "course-1", "user_id": "user-1", "organisation_id": "org-a", "cohort_id": "cohort-a", "status": "active", "source_type": "cohort_assignment"}],
+            cohort_members=[{"id": "member-1", "user_id": "user-1", "cohort_id": "cohort-a", "status": "active"}],
+            cohorts=[{"id": "cohort-a", "organisation_id": "org-a", "status": "active"}],
+            cohort_course_assignments=[{"id": "assignment-1", "cohort_id": "cohort-a", "course_id": "course-1", "status": "active"}],
+        )
+        with patch.object(course_content, "supabase", db), patch.object(course_content, "_organisation_has_course_entitlement", return_value=True):
+            course_content._check_course_view_access(
+                context("org-a", role="learner", user_role="witstart"),
+                course,
+            )
 
     def test_platform_admin_can_read_course_without_tenant_grant(self):
         course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
