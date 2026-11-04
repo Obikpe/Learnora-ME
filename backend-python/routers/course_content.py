@@ -304,12 +304,6 @@ def _has_active_scoped_course_source(user_id: str, organisation_id: str, course_
         .limit(1)
         .execute()
     ).data or []
-    if not learner_membership or not _organisation_has_course_entitlement(organisation_id):
-        return False
-
-    if str(enrolment.get("source_type") or "").strip().lower() == "individual_assignment":
-        return True
-
     cohort_memberships = (
         supabase.table("cohort_members")
         .select("cohort_id")
@@ -317,6 +311,15 @@ def _has_active_scoped_course_source(user_id: str, organisation_id: str, course_
         .eq("status", "active")
         .execute()
     ).data or []
+    # A legacy cohort membership is itself a scoped learner relationship.
+    # It must still resolve to an active cohort in this organisation below.
+    if not learner_membership and not cohort_memberships:
+        return False
+    if not _organisation_has_course_entitlement(organisation_id):
+        return False
+
+    if str(enrolment.get("source_type") or "").strip().lower() == "individual_assignment":
+        return bool(learner_membership)
     cohort_ids = list({str(row["cohort_id"]) for row in cohort_memberships if row.get("cohort_id")})
     if cohort_ids:
         valid_cohorts = (
