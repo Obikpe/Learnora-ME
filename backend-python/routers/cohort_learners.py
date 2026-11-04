@@ -31,6 +31,10 @@ from routers.auth import (
     _clear_failures,
     _get_client_ip,
     _send_email,
+    _find_admin,
+    _find_user,
+    _find_cohort_accounts_by_email,
+    norm_email,
     check_password_rules,
     hash_password,
     verify_password,
@@ -380,7 +384,32 @@ def create_cohort_learner(
     if body.date_of_birth >= date.today():
         raise HTTPException(400, "Date of birth must be in the past.")
     encrypted_dob = _encrypt_date_of_birth(body.date_of_birth)
-    email = str(body.email).strip().lower()
+    email = norm_email(str(body.email))
+
+    # A cohort provisioning request must not create a second identity for an
+    # email already used by an individual, platform administrator or another
+    # cohort. Existing records are retained; conflicting identities fail closed.
+    if _find_user(email) or _find_admin(email):
+        raise HTTPException(
+            409,
+            "This email already belongs to a Learnora account. The organisation cannot create a second account for it.",
+        )
+
+    reserved_accounts = _find_cohort_accounts_by_email(email)
+    other_cohort_accounts = [
+        row for row in reserved_accounts
+        if str(row.get("cohort_id")) != str(cohort_id)
+    ]
+    same_cohort_accounts = [
+        row for row in reserved_accounts
+        if str(row.get("cohort_id")) == str(cohort_id)
+    ]
+    if other_cohort_accounts or len(same_cohort_accounts) > 1:
+        raise HTTPException(
+            409,
+            "This email is already reserved by another organisation or cohort account. One email can have only one managed account.",
+        )
+
     track_option = (
         supabase.table("cohort_track_options")
         .select("id,status")
@@ -394,15 +423,16 @@ def create_cohort_learner(
         raise HTTPException(400, "Choose a track already enabled for this cohort.")
 
     now = datetime.now(timezone.utc)
+    existing_id = same_cohort_accounts[0]["id"] if same_cohort_accounts else None
     existing_result = (
         supabase.table("cohort_accounts")
         .select("*")
+        .eq("id", existing_id)
         .eq("cohort_id", cohort_id)
-        .eq("email", email)
         .limit(1)
         .execute()
-    )
-    existing = existing_result.data[0] if existing_result.data else None
+    ) if existing_id else None
+    existing = existing_result.data[0] if existing_result and existing_result.data else None
     membership_result = (
         supabase.table("cohort_members")
         .select("id,track_id,status,cohort_account_id")
