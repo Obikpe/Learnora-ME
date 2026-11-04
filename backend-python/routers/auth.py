@@ -1518,6 +1518,27 @@ def get_current_user(
         if not account_result.data or account_result.data[0].get("status") != "active":
             raise HTTPException(status_code=403, detail="Cohort account is inactive")
         cohort_account = account_result.data[0]
+        cohort_email = norm_email(str(cohort_account.get("email") or ""))
+        email_accounts = _find_cohort_accounts_by_email(cohort_email)
+        if (
+            len(email_accounts) != 1
+            or str(email_accounts[0].get("id")) != cohort_account_id
+            or _find_user(cohort_email)
+            or _find_admin(cohort_email)
+        ):
+            log_security_event(
+                action="conflicting_email_account_contexts",
+                email=cohort_email,
+                metadata={
+                    "account_type": "cohort",
+                    "cohort_account_id": cohort_account_id,
+                    "cohort_account_count": len(email_accounts),
+                },
+            )
+            raise HTTPException(
+                status_code=409,
+                detail="This email has conflicting account records. Contact Learnora support before continuing.",
+            )
         membership_result = (
             supabase.table("cohort_members")
             .select("id,track_id,status")
@@ -1576,6 +1597,24 @@ def get_current_user(
     token_account_type = payload.get(
         "account_type"
     )
+
+    cohort_accounts = _find_cohort_accounts_by_email(email)
+    admin = _find_admin(email)
+    user = _find_user(email)
+    if (admin and user) or (cohort_accounts and (admin or user)):
+        log_security_event(
+            action="conflicting_email_account_contexts",
+            email=email,
+            metadata={
+                "has_admin": bool(admin),
+                "has_individual_user": bool(user),
+                "cohort_account_count": len(cohort_accounts),
+            },
+        )
+        raise HTTPException(
+            status_code=409,
+            detail="This email has conflicting account records. Contact Learnora support before continuing.",
+        )
 
     # ---------------------------------------------------------------
     # ADMIN ACCOUNT
@@ -1660,8 +1699,6 @@ def get_current_user(
     # ---------------------------------------------------------------
     # LEARNER ACCOUNT
     # ---------------------------------------------------------------
-
-    user = _find_user(email)
 
     if not user:
 
