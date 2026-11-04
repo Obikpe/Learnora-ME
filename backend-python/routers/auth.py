@@ -1821,44 +1821,36 @@ def get_current_user(
 
 
 def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tuple[str | None, str | None]:
-    """Resolve exactly one active organisation boundary for an account.
+    """Resolve the single retained organisation boundary for an account.
 
-    Legacy cohort membership is included because some historical learners are
-    represented by public.users + cohort_members rather than a dedicated
-    cohort_accounts identity. Multiple active organisation boundaries are
-    ambiguous and must never be silently resolved by query ordering.
+    Membership records reserve an account context even when a cohort has ended
+    or a membership is suspended. Suspension removes learning access; it does
+    not silently convert an organisation account into an individual account.
     """
     try:
         memberships = (
             supabase.table("organisation_members")
             .select("organisation_id,role")
             .eq("user_id", user_id)
-            .eq("status", "active")
             .order("joined_at", desc=True)
             .execute()
         ).data or []
 
-        active_contexts: list[tuple[str, str]] = []
+        contexts: list[tuple[str, str]] = []
         for membership in memberships:
             organisation_id = str(membership.get("organisation_id") or "")
-            if not organisation_id:
-                continue
-            organisation = (
-                supabase.table("organisations")
-                .select("id,is_active")
-                .eq("id", organisation_id)
-                .limit(1)
-                .execute()
-            )
-            if organisation.data and organisation.data[0].get("is_active"):
-                active_contexts.append((organisation_id, str(membership.get("role") or "")))
+            if organisation_id:
+                contexts.append((organisation_id, str(membership.get("role") or "")))
 
+        # Legacy organisation learners may be represented only by a
+        # public.users + cohort_members relationship. Any retained cohort
+        # membership continues to reserve the organisation account context;
+        # cohort status controls learning access, not identity ownership.
         cohort_memberships = (
             supabase.table("cohort_members")
             .select("cohort_id")
             .eq("user_id", user_id)
-            .eq("status", "active")
-            .limit(100)
+            .limit(1000)
             .execute()
         ).data or []
         cohort_ids = list({
@@ -1869,26 +1861,16 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
         if cohort_ids:
             cohorts = (
                 supabase.table("cohorts")
-                .select("id,organisation_id,status")
+                .select("id,organisation_id")
                 .in_("id", cohort_ids)
-                .in_("status", ["draft", "upcoming", "active", "ending"])
                 .execute()
             ).data or []
             for cohort in cohorts:
                 organisation_id = str(cohort.get("organisation_id") or "")
-                if not organisation_id:
-                    continue
-                organisation = (
-                    supabase.table("organisations")
-                    .select("id,is_active")
-                    .eq("id", organisation_id)
-                    .limit(1)
-                    .execute()
-                ).data or []
-                if organisation and organisation[0].get("is_active"):
-                    active_contexts.append((organisation_id, "learner"))
+                if organisation_id:
+                    contexts.append((organisation_id, "learner"))
 
-        organisation_ids = {item[0] for item in active_contexts}
+        organisation_ids = {item[0] for item in contexts}
         if len(organisation_ids) > 1:
             log_security_event(
                 action="multiple_active_organisation_contexts",
@@ -1901,7 +1883,7 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
                 raise HTTPException(
                     status_code=409,
                     detail=(
-                        "This account is linked to more than one active organisation. "
+                        "This account is linked to more than one organisation. "
                         "Contact Learnora support to resolve the account before continuing."
                     ),
                 )
@@ -1910,9 +1892,35 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
         if not organisation_ids:
             return None, None
 
+        role_groups = {
+            "learner" if role in {"learner", "member"}
+            else "admin" if role in {"owner", "admin"}
+            else role
+            for _, role in contexts
+            if role
+        }
+        if len(role_groups) > 1:
+            log_security_event(
+                action="multiple_active_organisation_roles",
+                metadata={
+                    "user_id": user_id,
+                    "organisation_id": next(iter(organisation_ids)),
+                    "role_groups": sorted(role_groups),
+                },
+            )
+            if fail_closed:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "This account has conflicting organisation roles. "
+                        "Contact Learnora support to resolve the account before continuing."
+                    ),
+                )
+            return None, None
+
         organisation_id = next(iter(organisation_ids))
         membership_role = next(
-            (role for oid, role in active_contexts if oid == organisation_id and role),
+            (role for oid, role in contexts if oid == organisation_id and role),
             None,
         )
         return organisation_id, membership_role or "learner"
