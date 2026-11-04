@@ -142,12 +142,22 @@ def _enrolment(user_id: str, course_id: str):
 
         cohort_memberships = (
             supabase.table("cohort_members")
-            .select("id")
+            .select("id,cohort_id")
             .eq("user_id", user_id)
             .eq("status", "active")
+            .limit(10)
+            .execute()
+        ).data or []
+        identity = (
+            supabase.table("users")
+            .select("role")
+            .eq("id", user_id)
             .limit(1)
             .execute()
         ).data or []
+        legacy_cohort_learner = bool(cohort_memberships) or bool(
+            identity and str(identity[0].get("role") or "").strip().lower() == "witstart"
+        )
 
         query = (
             supabase.table("learnora_enrolments")
@@ -164,6 +174,21 @@ def _enrolment(user_id: str, course_id: str):
     except Exception as exc:
         print(f"Course enrolment scope lookup failed: {type(exc).__name__}")
         raise HTTPException(503, "Course access could not be verified. Please retry.") from None
+
+    if legacy_cohort_learner:
+        # Legacy cohort learners are backed by public.users + cohort_members.
+        # Their organisation-wide course grants must not bypass the cohort's
+        # explicit course assignment.
+        for membership in memberships:
+            organisation_id = str(membership.get("organisation_id") or "")
+            if not organisation_id:
+                continue
+            for enrolment in enrolments:
+                if str(enrolment.get("organisation_id") or "") != organisation_id:
+                    continue
+                if _has_active_scoped_course_source(user_id, organisation_id, course_id, enrolment):
+                    return enrolment
+        return None
 
     if memberships:
         for membership in memberships:
@@ -207,16 +232,6 @@ def _enrolment(user_id: str, course_id: str):
     # their assigned cohort access path instead.
     if cohort_memberships:
         return None
-    try:
-        identity = (
-            supabase.table("users")
-            .select("role")
-            .eq("id", user_id)
-            .limit(1)
-            .execute()
-        ).data or []
-    except Exception:
-        raise HTTPException(503, "Learner identity could not be verified. Please retry.") from None
     if not identity or not is_individual_learner(identity[0].get("role"), "learner", None):
         return None
     return next((
