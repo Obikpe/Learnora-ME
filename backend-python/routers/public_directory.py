@@ -4,14 +4,31 @@ Only approved creator accounts are listed. Organisations must explicitly opt
 in through settings.public_directory=true; active status alone is not consent
 to be discoverable.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from urllib.parse import urlparse
 from uuid import UUID
 
-from .auth import supabase
-from services.free_access import free_access_mode_enabled
+from .auth import get_optional_current_user, supabase
+from services.free_access import free_access_mode_enabled, is_individual_learner
 
 router = APIRouter(prefix="/api/public", tags=["Public discovery"])
+
+
+def _guard_public_discovery(user) -> None:
+    """Anonymous visitors and individual learners may browse the public catalogue.
+
+    A signed-in organisation/cohort, creator or staff account must use its own
+    workspace rather than the public learner discovery surface.
+    """
+    if user is not None and not is_individual_learner(
+        user.role,
+        user.account_type,
+        getattr(user, "organisation_id", None),
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Public discovery is available to individual Learnora learners. Use your assigned workspace to access organisation learning.",
+        )
 
 
 def _is_public_course(course: dict, organisation_map: dict, creator_map: dict) -> bool:
@@ -226,7 +243,8 @@ def _public_track_payload(track: dict) -> dict:
 
 
 @router.get("/tracks")
-def public_tracks():
+def public_tracks(user=Depends(get_optional_current_user)):
+    _guard_public_discovery(user)
     tracks = (
         supabase.table("learnora_learning_paths")
         .select("id,name,slug,description,status,owner_user_id,organisation_id,created_at")
@@ -278,12 +296,14 @@ def public_tracks():
 
 
 @router.get("/tracks/{track_id}")
-def public_track(track_id: str):
+def public_track(track_id: str, user=Depends(get_optional_current_user)):
+    _guard_public_discovery(user)
     track = _global_track_lookup(track_id)
     return {"success": True, "track": _public_track_payload(track)}
 
 @router.get("/courses")
-def public_courses():
+def public_courses(user=Depends(get_optional_current_user)):
+    _guard_public_discovery(user)
     result = (
         supabase.table("learnora_courses")
         .select("id,organisation_id,creator_id,title,slug,short_description,description,level,status,ownership,thumbnail_url,estimated_hours,settings,created_at")
@@ -313,7 +333,8 @@ def public_courses():
 
 
 @router.get("/courses/{course_id}")
-def public_course(course_id: str):
+def public_course(course_id: str, user=Depends(get_optional_current_user)):
+    _guard_public_discovery(user)
     course = _public_course_lookup(course_id)
     payload = _public_course_payload(course)
     if course.get("ownership") == "learnora" and not course.get("organisation_id"):
@@ -322,7 +343,8 @@ def public_course(course_id: str):
 
 
 @router.get("/courses/{course_id}/structure")
-def public_course_structure(course_id: str):
+def public_course_structure(course_id: str, user=Depends(get_optional_current_user)):
+    _guard_public_discovery(user)
     course = _public_course_lookup(course_id)
     modules = (
         supabase.table("course_modules")
@@ -351,7 +373,8 @@ def public_course_structure(course_id: str):
 
 
 @router.get("/tutors")
-def public_tutors():
+def public_tutors(user=Depends(get_optional_current_user)):
+    _guard_public_discovery(user)
     result = (
         supabase
         .table("learnora_creator_accounts")
@@ -392,7 +415,8 @@ def public_tutors():
 
 
 @router.get("/organisations")
-def public_organisations():
+def public_organisations(user=Depends(get_optional_current_user)):
+    _guard_public_discovery(user)
     result = (
         supabase
         .table("organisations")
