@@ -1472,6 +1472,18 @@ def _resolve_learner_access(
 # AUTH DEPENDENCY
 # ---------------------------------------------------------------------------
 
+def get_optional_current_user(
+    creds: Optional[
+        HTTPAuthorizationCredentials
+    ] = Depends(bearer),
+    request: Request = None,
+) -> Optional[CurrentUser]:
+    """Resolve a session when one is present, while allowing anonymous discovery."""
+    if not _request_auth_token(request, creds):
+        return None
+    return get_current_user(creds, request)
+
+
 def get_current_user(
     creds: Optional[
         HTTPAuthorizationCredentials
