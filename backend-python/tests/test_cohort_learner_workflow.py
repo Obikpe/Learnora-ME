@@ -111,6 +111,9 @@ class CohortLearnerTests(unittest.TestCase):
         with patch.object(cohort_learners, "supabase", fake), \
              patch.object(cohort_learners, "_cohort_rate_limited", return_value=False), \
              patch.object(cohort_learners, "_cohort_clear_failures"), \
+             patch.object(cohort_learners, "_find_user", return_value=None), \
+             patch.object(cohort_learners, "_find_admin", return_value=None), \
+             patch.object(cohort_learners, "_find_cohort_accounts_by_email", return_value=[{"id": account["id"], "cohort_id": account["cohort_id"]}]), \
              patch.object(cohort_learners, "verify_password", return_value=(True, False)):
             response = cohort_learners.login_cohort_account(payload, request)
         decoded = jwt.decode(response["access_token"], cohort_learners.JWT_SECRET, algorithms=[cohort_learners.ALGORITHM])
