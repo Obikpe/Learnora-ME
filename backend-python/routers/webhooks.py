@@ -13,12 +13,12 @@ from datetime import datetime, timezone
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 
-from routers.auth import supabase
+from routers.auth import LEGACY_ASSIGNED_LEARNER_ROLE, supabase
 
 router = APIRouter()
 log = logging.getLogger("paystack_webhooks")
 PAYSTACK_BASE = "https://api.paystack.co"
-LEARNER_ROLES = {"normal", "witstart"}
+LEARNER_ROLES = {"normal", LEGACY_ASSIGNED_LEARNER_ROLE}
 
 
 def _subscription_details(data: dict) -> dict:
