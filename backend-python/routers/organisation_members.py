@@ -157,7 +157,7 @@ def add_member(organisation_id:UUID,payload:AddOrganisationMember,context:Permis
         r=supabase.table("organisation_members").insert({"organisation_id":oid,"user_id":uid,"role":role,"status":"active"}).execute()
     if not r.data:raise HTTPException(500,"Failed to save organisation membership.")
     m=r.data[0]
-    if role == "learner" and m.get("status") == "active":
+    if role in {"learner", "member"} and m.get("status") == "active":
         try:
             _sync_assigned_course_enrolments(oid, uid)
         except Exception as exc:
@@ -191,7 +191,7 @@ def update_member(organisation_id:UUID,member_id:UUID,payload:UpdateOrganisation
     r=supabase.table("organisation_members").update(updates).eq("id",str(member_id)).eq("organisation_id",oid).execute()
     if not r.data:raise HTTPException(500,"Failed to update organisation membership.")
     updated=r.data[0]
-    if target_role == "learner" and target_status == "active":
+    if target_role in {"learner", "member"} and target_status == "active":
         try:
             _sync_assigned_course_enrolments(oid, str(updated["user_id"]))
         except Exception as exc:
