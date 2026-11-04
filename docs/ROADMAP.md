@@ -572,3 +572,37 @@ A second source-level audit found and corrected two cohort-scope gaps.
 - Added regression coverage for individual free-launch content and enrolment, individual global progress, organisation self-enrolment denial, both cohort account models, legacy cohort course-assignment isolation, and the newer cohort lesson assignment boundary.
 
 **Verification result:** Current `main` source was re-fetched after the changes. Automated source assertions passed for the individual enrolment/content path, both cohort models, organisation membership restrictions, direct course/track route guards, and the cohort-specific lesson endpoints. The new/updated Python unit tests have been committed but were not executed in this session. No GitHub Actions/CI, deployment, or production data mutation was performed. Therefore this is a source-level verification, not a runtime or browser acceptance sign-off.
+
+## Individual learner launch priority — 4 November 2026
+
+This is the immediate execution focus and supersedes any interpretation that all Learnora Teams, organisation, cohort, independent tutor or creator workflows must be completed before Learnora ME can serve normal individual learners.
+
+### Primary outcome
+
+Make the normal individual learner journey reliable end to end in `frontend-v02/`:
+
+- Register with a canonical email, verify the address and recover/resend verification.
+- Sign in only after email verification; establish and verify the HttpOnly browser session before redirecting.
+- Sign out cleanly; handle expired/revoked/invalid sessions without leaving stale authenticated dashboard state.
+- Complete optional learner onboarding and load the learner's real profile.
+- Discover published global Learnora courses/tracks, view details, enrol and enter course workspaces.
+- See actual enrolments, resume learning, track progress, lesson completion, learning time/streak, activity, evidence, projects, skills and certificates in My Learning.
+- Complete lessons, media, notes, quizzes, assignments and submissions with server-verified access and correct completion rules.
+- Provide clear loading, empty, retry and error states on mobile and desktop.
+
+### Work order
+
+1. Complete the source inventory and access-path reconciliation for authentication, registration, account lifecycle, course discovery/enrolment, progress, content/media, AI, evidence, credentials and the dashboard.
+2. Correct backend email identity checks, login resolution and session-state handling without changing existing learner records.
+3. Add safe provisioning guards so new individual registration cannot claim an email reserved by an existing cohort/organisation account, and new cohort provisioning cannot create another account for an email already in use. Historical duplicates must fail closed for the affected path; do not auto-merge, delete or migrate them.
+4. Verify the normal learner access path from public catalogue through enrolment, course content, progress, assessment and completion. Keep organisation/cohort-specific access checks intact.
+5. Correct Learnora ME login/registration/verification/recovery flows and the authenticated learner dashboard together.
+6. Add focused regression coverage for the affected identity, session, course and dashboard contracts. Avoid broad CI runs; no GitHub Actions or Vercel deployment unless separately authorised.
+7. Record remaining runtime/browser/live-schema acceptance gaps honestly.
+
+### Deferred, retained architecture
+
+Organisation account invitations and release, organisation/cohort administration, tutor resource assignment and analytics, independent tutor onboarding/creator workspaces, creator finance, and the full cross-table identity registry/migration remain future work. Preserve their existing source, schema, data and trust boundaries. Do not build these workflows in the individual learner launch pass.
+
+The one-email/one-account-context rule remains the target. Because the live schema has separate `users`, `admins` and `cohort_accounts` identity sources and historical cohort records must be preserved, application guards are an interim safety measure only. A globally race-safe uniqueness guarantee requires a separately reviewed additive identity-reservation migration and a conflict-resolution plan; do not claim that guarantee until the migration is safely applied and verified.
+
