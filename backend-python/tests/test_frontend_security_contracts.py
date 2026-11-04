@@ -52,6 +52,13 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('"/login?next="', layout)
         self.assertNotIn('window.location.replace("/")', layout)
 
+    def test_individual_dashboard_sections_do_not_expose_assigned_account_discovery(self):
+        page = (ROOT / "frontend-v02" / "app" / "dashboard" / "[section]" / "page.tsx").read_text(encoding="utf-8")
+        self.assertIn("const assignedOnly=Boolean(", page)
+        self.assertIn('location.href=me.account_type==="cohort"?"/dashboard/cohort":"/dashboard"', page)
+        self.assertIn('me.account_type!=="learner"||me.role!=="normal"', page)
+        self.assertIn('memberships.some((membership:any)=>membership.status==="active")', page)
+
     def test_ai_tutor_is_hidden_and_unavailable_during_active_quizzes(self):
         player = (ROOT / "frontend-v02" / "app" / "dashboard" / "learning" / "[courseId]" / "page.tsx").read_text(encoding="utf-8")
         shell = (ROOT / "frontend-v02" / "components" / "dashboard" / "Shell.tsx").read_text(encoding="utf-8")
