@@ -45,7 +45,9 @@ export default function Courses() {
         me.account_type === "cohort" ||
         me.role === "witstart" ||
         me.cohort_id ||
+        me.organisation_id ||
         me.organisation_role === "learner" ||
+        me.organisation_role === "member" ||
         memberships.some((membership: any) => ["learner", "member"].includes(membership.role) && membership.status === "active")
       );
       if (assignedLearner) {
