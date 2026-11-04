@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from .auth import CurrentUser, get_current_user, supabase
+from .public_directory import _is_public_course, _public_course_payload
 from services.free_access import is_individual_learner
 
 router = APIRouter(prefix="/api/learner", tags=["Learner onboarding"])
@@ -52,7 +53,38 @@ def recommendations(user: CurrentUser = Depends(get_current_user)):
     profile = _profile(str(user.id))
     enrolments = supabase.table("learnora_enrolments").select("course_id,status").eq("user_id", str(user.id)).in_("status", ["active","completed"]).execute().data or []
     enrolled_ids = {str(x.get("course_id")) for x in enrolments}
-    courses = supabase.table("learnora_courses").select("id,title,slug,short_description,description,level,thumbnail_url,estimated_hours,ownership").eq("status","published").limit(200).execute().data or []
+    course_rows = (
+        supabase.table("learnora_courses")
+        .select("id,organisation_id,creator_id,title,slug,short_description,description,level,status,ownership,thumbnail_url,estimated_hours,settings")
+        .eq("status", "published")
+        .limit(500)
+        .execute()
+    ).data or []
+    organisation_ids = list({str(row["organisation_id"]) for row in course_rows if row.get("organisation_id")})
+    creator_ids = list({str(row["creator_id"]) for row in course_rows if row.get("creator_id")})
+    organisation_map = {}
+    creator_map = {}
+    if organisation_ids:
+        organisations = (
+            supabase.table("organisations")
+            .select("id,is_active,settings")
+            .in_("id", organisation_ids)
+            .execute()
+        ).data or []
+        organisation_map = {str(row["id"]): row for row in organisations}
+    if creator_ids:
+        creators = (
+            supabase.table("learnora_creator_accounts")
+            .select("id,status")
+            .in_("id", creator_ids)
+            .execute()
+        ).data or []
+        creator_map = {str(row["id"]): row for row in creators}
+    courses = [
+        _public_course_payload(row)
+        for row in course_rows
+        if _is_public_course(row, organisation_map, creator_map)
+    ]
     interests = [x.lower() for x in (profile or {}).get("interests", [])]
     track = ((profile or {}).get("preferred_track") or "").lower()
     goal = ((profile or {}).get("goal") or "").lower()
