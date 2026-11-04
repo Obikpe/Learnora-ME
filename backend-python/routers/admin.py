@@ -18,6 +18,7 @@ from .auth import (
     CurrentUser,
     hash_password,
     norm_email,
+    _find_cohort_accounts_by_email,
     check_password_rules,
     require_super_admin,
     require_learnora_admin,
@@ -194,6 +195,16 @@ def _ensure_email_is_available(
         raise HTTPException(
             status_code=400,
             detail="A learner with this email already exists",
+        )
+
+
+    if _find_cohort_accounts_by_email(email):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "This email is reserved for an organisation-managed account. "
+                "The organisation must release it before an individual account can be created."
+            ),
         )
 
 
