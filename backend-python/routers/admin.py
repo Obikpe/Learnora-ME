@@ -19,6 +19,7 @@ from .auth import (
     hash_password,
     norm_email,
     _find_cohort_accounts_by_email,
+    _escape_ilike_literal,
     check_password_rules,
     require_super_admin,
     require_learnora_admin,
@@ -167,7 +168,7 @@ def _ensure_email_is_available(
         supabase
         .table("admins")
         .select("id")
-        .eq("email", email)
+        .ilike("email", _escape_ilike_literal(email))
     )
 
     if exclude_admin_id is not None:
