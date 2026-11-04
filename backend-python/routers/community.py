@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException
-from routers.auth import require_active, CurrentUser, get_current_user, supabase
+from routers.auth import LEGACY_ASSIGNED_LEARNER_ROLE, require_active, CurrentUser, get_current_user, supabase
 
 router = APIRouter()
 
@@ -29,7 +29,7 @@ class DiscussionStatusUpdate(BaseModel):
 
 
 def _ensure_community_user(user: CurrentUser):
-    if user.role not in {"normal", "witstart"}:
+    if user.role not in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE}:
         raise HTTPException(403, "This account cannot access the learner community.")
 
 
