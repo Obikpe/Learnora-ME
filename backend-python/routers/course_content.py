@@ -21,7 +21,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from .auth import supabase
+from .auth import LEGACY_ASSIGNED_LEARNER_ROLE, supabase
 from services.notification_service import notify_course_updated
 from .permissions import (
     PermissionContext,
@@ -418,7 +418,7 @@ def _check_course_view_access(
             ]
         except Exception:
             raise HTTPException(503, "Cohort assignment could not be verified.") from None
-    legacy_cohort_learner = legacy_role == "witstart" or bool(all_legacy_cohort_memberships)
+    legacy_cohort_learner = legacy_role == LEGACY_ASSIGNED_LEARNER_ROLE or bool(all_legacy_cohort_memberships)
 
     course_id = str(course.get("id") or "")
     ownership = str(course.get("ownership") or "").strip().lower()
@@ -434,7 +434,7 @@ def _check_course_view_access(
                 raise HTTPException(403, "You do not have access to this course.")
             role = (context.organisation_role or "").strip().lower()
             legacy_role = str(getattr(context.user, "role", "") or "").strip().lower()
-            if role not in {"learner"} and legacy_role not in {"normal", "witstart", "learner"}:
+            if role not in {"learner"} and legacy_role not in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}:
                 return
             grant = (
                 supabase.table("course_access")
