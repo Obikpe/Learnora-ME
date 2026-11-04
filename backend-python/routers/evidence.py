@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from .auth import CurrentUser, get_current_user, supabase
+from .auth import CurrentUser, LEGACY_ASSIGNED_LEARNER_ROLE, get_current_user, supabase
 from .progress import _enrolment
 from services.free_access import is_individual_learner
 
@@ -47,7 +47,7 @@ def _enrolled(user_id, course_id):
 def _is_assigned_learner(user: CurrentUser) -> bool:
     if (
         user.account_type == "cohort"
-        or user.role == "witstart"
+        or user.role == LEGACY_ASSIGNED_LEARNER_ROLE
         or getattr(user, "organisation_id", None)
         or getattr(user, "cohort_id", None)
     ):
