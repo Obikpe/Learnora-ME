@@ -1,8 +1,10 @@
-"""Cohort-specific learner provisioning, track assignment and authentication.
+"""Legacy cohort learner provisioning, track assignment and authentication.
 
-Cohort identities are deliberately separate from public.users: one email may
-have a distinct account for each cohort without weakening normal Learnora's
-unique-email constraint.
+Cohort credentials remain a compatibility identity source for existing
+records. New provisioning enforces one canonical email across individual,
+administrator and cohort accounts. The long-term model attaches cohort
+memberships to one organisation-managed identity rather than creating a
+separate login account for every cohort.
 """
 import os
 import hashlib
