@@ -65,7 +65,7 @@ export default function TrackDetailPage({params}:{params:{id:string}}) {
       if (!active) return;
       const memberships = me.organisation_memberships || [];
       const assignedLearner = Boolean(
-        me.account_type === "cohort" || me.role === "witstart" || me.cohort_id ||
+        me.account_type === "cohort" || me.role === "witstart" || me.cohort_id || me.organisation_id || me.organisation_role === "member" ||
         me.organisation_role === "learner" ||
         memberships.some((membership: any) => ["learner", "member"].includes(membership.role) && membership.status === "active")
       );
