@@ -7,7 +7,7 @@ Example:
 
     Learnora-owned course
             │
-            ├── Witstart Academy
+            ├── Organisation A
             ├── Organisation B
             └── Organisation C
 
