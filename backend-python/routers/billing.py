@@ -24,6 +24,7 @@ from pydantic import BaseModel
 
 from .auth import (
     CurrentUser,
+    LEGACY_ASSIGNED_LEARNER_ROLE,
     allowed_for,
     get_current_user,
     make_token,
@@ -334,7 +335,7 @@ def verify_payment(body: VerifyPaymentRequest):
 
     role = user.get("role") or "normal"
 
-    if role not in ("normal", "witstart"):
+    if role not in ("normal", LEGACY_ASSIGNED_LEARNER_ROLE):
         raise HTTPException(
             status_code=403,
             detail=(
@@ -651,7 +652,7 @@ def verify_payment(body: VerifyPaymentRequest):
 def _require_billing_learner(user: CurrentUser) -> None:
     # Cohort, organisation, creator and internal staff identities never manage
     # individual learner recurring billing through this endpoint.
-    if user.role not in ("normal", "witstart") or not user.id or user.account_type != "learner":
+    if user.role not in ("normal", LEGACY_ASSIGNED_LEARNER_ROLE) or not user.id or user.account_type != "learner":
         raise HTTPException(
             status_code=403,
             detail="Only individual Learnora learner accounts can manage this subscription.",
