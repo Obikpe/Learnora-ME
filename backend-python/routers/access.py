@@ -1,5 +1,5 @@
 """Authoritative access endpoints used by future learner clients."""
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter,Depends,HTTPException
 from .auth import CurrentUser,get_current_user
 from services.access import resolve_course_access
 from services.free_access import free_access_mode_enabled, is_individual_learner
@@ -14,6 +14,8 @@ def access_mode():
 @router.get("/courses/{course_id}")
 def course_access(course_id:str,user:CurrentUser=Depends(get_current_user)):
     organisation_id=getattr(user,"organisation_id",None)
+    if user.account_type == "cohort" or (not organisation_id and not is_individual_learner(user.role, user.account_type, None)):
+        raise HTTPException(403, "This access endpoint is available to individual learners and active organisation workspaces.")
     result=resolve_course_access(
         user.id,
         course_id,
