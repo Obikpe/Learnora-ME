@@ -1522,9 +1522,10 @@ def get_current_user(
             detail="Invalid or expired token",
         )
 
-    # Cohort learners authenticate against cohort_accounts, not public.users.
-    # This branch keeps cohort identities isolated from Learnora's global
-    # email-unique account model and revalidates account/membership state per request.
+    # Existing cohort accounts remain a separate compatibility source until the
+    # identity migration is implemented. The email guards below ensure a
+    # cohort credential cannot coexist with an individual/admin identity or
+    # another cohort credential for the same canonical email.
     if payload.get("account_type") == "cohort":
         cohort_account_id = str(payload.get("cohort_account_id") or payload.get("sub") or "")
         if not cohort_account_id:
