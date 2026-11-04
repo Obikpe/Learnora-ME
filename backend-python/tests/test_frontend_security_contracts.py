@@ -26,6 +26,23 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('sessionStorage.getItem("phx_session_epoch") || "implicit"', auth)
         self.assertIn('const BASE=""', client)
 
+    def test_login_requires_server_verified_cookie_session_before_redirect(self):
+        login = (ROOT / "frontend-v02" / "app" / "login" / "page.tsx").read_text(encoding="utf-8")
+        self.assertIn("me=await currentUser()", login)
+        self.assertIn("clearToken()", login)
+        self.assertNotIn("verifiedMe||result", login)
+        self.assertIn('me.role === "normal" && me.account_type === "learner"', login)
+
+    def test_dashboard_preserves_last_successful_data_on_transient_failure(self):
+        dashboard = (ROOT / "frontend-v02" / "app" / "dashboard" / "page.tsx").read_text(encoding="utf-8")
+        client = (ROOT / "frontend-v02" / "lib" / "api" / "client.ts").read_text(encoding="utf-8")
+        self.assertIn("failure?.status === 401", dashboard)
+        self.assertIn("if (!learning)", dashboard)
+        self.assertIn("Try again", dashboard)
+        self.assertIn("error.status = response.status", client)
+        self.assertIn("if (progressResult[1].status === \"fulfilled\") setActivitySummary", dashboard)
+        self.assertIn("if (evidenceResult.status === \"fulfilled\") setEvidence", dashboard)
+
     def test_ai_tutor_is_hidden_and_unavailable_during_active_quizzes(self):
         player = (ROOT / "frontend-v02" / "app" / "dashboard" / "learning" / "[courseId]" / "page.tsx").read_text(encoding="utf-8")
         shell = (ROOT / "frontend-v02" / "components" / "dashboard" / "Shell.tsx").read_text(encoding="utf-8")
