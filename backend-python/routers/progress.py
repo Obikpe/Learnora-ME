@@ -12,7 +12,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from .auth import CurrentUser, get_current_user, supabase
+from .auth import CurrentUser, LEGACY_ASSIGNED_LEARNER_ROLE, get_current_user, supabase
 from .course_content import _has_active_scoped_course_source, _organisation_has_course_entitlement
 from services.free_access import is_individual_learner
 
@@ -162,7 +162,7 @@ def _enrolment(user_id: str, course_id: str):
             .execute()
         ).data or []
         legacy_cohort_learner = bool(all_cohort_memberships) or bool(
-            identity and str(identity[0].get("role") or "").strip().lower() == "witstart"
+            identity and str(identity[0].get("role") or "").strip().lower() == LEGACY_ASSIGNED_LEARNER_ROLE
         )
 
         query = (
