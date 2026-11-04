@@ -303,6 +303,28 @@ The read-only source inspection was extended to the relevant Supabase schema bas
 
 These findings make the global email uniqueness and account-release work a schema-level prerequisite. An application-only pre-check cannot close races between individual registration and organisation/cohort provisioning.
 
+### 7.9 Active versus legacy application surfaces and remaining source work
+
+The repository README and root Vercel configuration identify the active implementation surfaces:
+- `frontend-v02/` is Learnora ME.
+- `frontend-team/` is Learnora Teams.
+- `backend-python/` is the FastAPI backend.
+- Root `vercel.json` routes `/api/*` to `backend-python/main.py` and has deployment automation disabled.
+- `backend-python-v0/` and `frontend/` are legacy trees, not the documented source of truth for current application work. They still contain legacy role implementations and must not be mistaken for active routes; retain them unless a separate archival/removal decision is made.
+- `frontend-team/` is an active application and must be included in any permission/auth contract review even though its current login page does not contain the retired product-specific learner role.
+
+Additional source findings:
+- `backend-python/routers/public_directory.py` explicitly filters public courses by ownership and organisation public-catalogue settings. It must remain a separate public discovery path and must never expose private organisation-owned courses through public track or course results.
+- `backend-python/services/free_access.py` intentionally limits free-launch eligibility to individual learners. Preserve that boundary; organisation/cohort accounts, creators, tutors and staff must not become eligible merely because their role strings are normalised during this work.
+- `backend-python/routers/creator_finance.py` and `creator.py` use creator account ownership and payout permissions. These are independent-tutor/creator surfaces and must not be merged into organisation tutor membership.
+- `backend-python/routers/organisation_teams.py` and the Teams UI use organisation membership and team-member relationships. They need the same one-organisation identity invariant as cohorts.
+- The active organisation dashboard currently fetches public catalogue data for organisation configuration and exposes organisation-wide course assignment plus per-learner course/lesson/tutor assignment. Both need redesign: private organisation-created content must be selectable inside the tenant, and track configuration must supply the normal learner course list.
+- `backend-python/routers/course_content.py` has legacy role fallback branches and a distinct cohort-account branch. This is a high-risk consolidation point because multiple course, lesson and content endpoints call its shared access guard.
+- The active permissions module still includes legacy role constants alongside platform and organisation roles. The empty `backend-python/routers/learnora_permissions.py` is not an implementation of the permission system.
+- The current instructor assignment workspace filters assignments by tutor ID and derives organisation IDs from memberships, but the test fixture permits the same identity to have memberships in two organisations. The new model must enforce a single organisation boundary before the assignment query, then filter to assigned tracks/courses for every report/data endpoint.
+
+**Remaining before implementation:** the current pass has inspected the identity-critical backend, organisation/cohort/course services, active frontend login/registration and organisation/cohort dashboards, Teams entry points, targeted security tests, relevant migration DDL and the schema baseline. It has not yet inspected every one of the 462 identity-/organisation-/cohort-/course-related source, test, configuration and document paths identified by the repository-tree filter. Continue that targeted inventory (including all auth callers, course/content/media/AI/report routes and affected tests), then reconcile the live schema read-only. The GitHub code-search endpoint was unavailable in this connector context, so no claim of a successful repository-wide text search is made.
+
 ## 8. Target data model and migration direction
 
 The final schema must enforce a globally unique canonical email identity and one account class. The exact DDL is deferred until the current live schema and all relevant migration dependencies have been reconciled.
