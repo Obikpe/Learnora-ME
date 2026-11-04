@@ -1,5 +1,6 @@
 """Focused unit tests for cohort learner authentication and validation."""
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -53,6 +54,14 @@ class FakeSupabase:
 
 
 class CohortLearnerTests(unittest.TestCase):
+    def test_provisioning_rejects_individual_and_other_cohort_email_identities(self):
+        source = (Path(__file__).resolve().parents[1] / "routers" / "cohort_learners.py").read_text(encoding="utf-8")
+        provision = source.split("def create_cohort_learner(", 1)[1].split('@router.post("/api/organisations/{organisation_id}/cohorts/{cohort_id}/learners/{account_id}/resend-activation")', 1)[0]
+        self.assertIn("_find_user(email) or _find_admin(email)", provision)
+        self.assertIn("_find_cohort_accounts_by_email(email)", provision)
+        self.assertIn("other_cohort_accounts", provision)
+        self.assertIn("len(same_cohort_accounts) > 1", provision)
+
     def test_slug_is_normalised(self):
         self.assertEqual(cohort_learners._slug("  Web Development & Data  "), "web-development-data")
 
