@@ -15,7 +15,7 @@ os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
 from fastapi import HTTPException
 
-from routers import course_content
+from routers import course_content, progress
 
 
 class FakeQuery:
@@ -36,6 +36,9 @@ class FakeQuery:
 
     def in_(self, key, values):
         self.filters[key] = set(str(value) for value in values)
+        return self
+
+    def order(self, *_args, **_kwargs):
         return self
 
     def execute(self):
@@ -292,6 +295,59 @@ class CourseContentAccessTests(unittest.TestCase):
                 context("org-a", role="learner", user_role="witstart"),
                 course,
             )
+
+    def test_legacy_cohort_progress_requires_the_cohort_course_assignment(self):
+        db = FakeSupabase(
+            organisations=[{"id": "org-a", "is_active": True}],
+            cohort_accounts=[],
+            organisation_members=[],
+            cohort_members=[{"id": "member-1", "user_id": "user-1", "cohort_id": "cohort-a", "status": "active"}],
+            cohorts=[{"id": "cohort-a", "organisation_id": "org-a", "status": "active"}],
+            users=[{"id": "user-1", "role": "witstart"}],
+            learnora_enrolments=[{
+                "id": "enrolment-1", "user_id": "user-1", "course_id": "course-1",
+                "organisation_id": "org-a", "cohort_id": "cohort-a", "status": "active",
+                "source_type": "cohort_assignment",
+            }],
+        )
+        with patch.object(progress, "supabase", db), patch.object(progress, "_has_active_scoped_course_source", return_value=True):
+            result = progress._enrolment("user-1", "course-1")
+        self.assertEqual(result["id"], "enrolment-1")
+
+    def test_legacy_cohort_progress_does_not_inherit_an_unassigned_org_course(self):
+        db = FakeSupabase(
+            organisations=[{"id": "org-a", "is_active": True}],
+            course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "assigned"}],
+            cohort_accounts=[],
+            organisation_members=[],
+            cohort_members=[{"id": "member-1", "user_id": "user-1", "cohort_id": "cohort-a", "status": "active"}],
+            cohorts=[{"id": "cohort-a", "organisation_id": "org-a", "status": "active"}],
+            users=[{"id": "user-1", "role": "witstart"}],
+            learnora_enrolments=[{
+                "id": "enrolment-1", "user_id": "user-1", "course_id": "course-1",
+                "organisation_id": "org-a", "cohort_id": "cohort-a", "status": "active",
+                "source_type": "cohort_assignment",
+            }],
+        )
+        with patch.object(progress, "supabase", db), patch.object(progress, "_has_active_scoped_course_source", return_value=False):
+            result = progress._enrolment("user-1", "course-1")
+        self.assertIsNone(result)
+
+    def test_individual_learner_progress_keeps_global_enrolment_access(self):
+        db = FakeSupabase(
+            cohort_accounts=[],
+            organisation_members=[],
+            cohort_members=[],
+            users=[{"id": "user-1", "role": "normal"}],
+            learnora_enrolments=[{
+                "id": "enrolment-1", "user_id": "user-1", "course_id": "course-1",
+                "organisation_id": None, "cohort_id": None, "status": "active",
+                "source_type": "self_enrolment",
+            }],
+        )
+        with patch.object(progress, "supabase", db):
+            result = progress._enrolment("user-1", "course-1")
+        self.assertEqual(result["id"], "enrolment-1")
 
     def test_platform_admin_can_read_course_without_tenant_grant(self):
         course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
