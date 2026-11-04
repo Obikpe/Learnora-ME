@@ -5,6 +5,7 @@ The active Learnora platform-admin table is the authority for global roles.
 """
 import os
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 os.environ.setdefault("APP_ENV", "development")
@@ -29,6 +30,17 @@ def user(role="super_admin", account_type="admin", user_id="admin-123"):
 
 
 class PlatformAdminAuthorityTests(unittest.TestCase):
+    def test_retired_product_admin_role_is_not_an_active_authority(self):
+        root = Path(__file__).resolve().parents[1]
+        auth = (root / "routers" / "auth.py").read_text(encoding="utf-8")
+        permissions = (root / "routers" / "permissions.py").read_text(encoding="utf-8")
+        admin = (root / "routers" / "admin.py").read_text(encoding="utf-8")
+        admin_roles = auth.split("ADMIN_ROLES = {", 1)[1].split("}", 1)[0]
+        legacy_admin_roles = permissions.split("LEGACY_ADMIN_ROLES = {", 1)[1].split("}", 1)[0]
+        self.assertNotIn("witstart_admin", admin_roles)
+        self.assertNotIn("witstart_admin", legacy_admin_roles)
+        self.assertNotIn("witstart", admin.lower())
+
     @patch("routers.permissions._get_admin_organisation_access", return_value=[])
     @patch("routers.permissions._get_platform_roles", return_value=[])
     def test_legacy_super_admin_role_does_not_grant_global_authority(
