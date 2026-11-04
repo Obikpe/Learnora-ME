@@ -16,6 +16,14 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn("DELETION_TOKEN_TTL_MINUTES = 60", source)
         self.assertIn("ConfirmDeletionRequest", source)
 
+    def test_organisation_and_cohort_members_must_be_released_before_self_deletion(self):
+        source = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
+        guard = source.split("def _require_individual_learner(", 1)[1].split("@router.post(\"/request-deletion\")", 1)[0]
+        self.assertIn('table("organisation_members")', guard)
+        self.assertIn('table("cohort_members")', guard)
+        self.assertIn('if (', guard)
+        self.assertIn("organisation must release the account", guard)
+
     def test_active_recurring_subscriptions_are_cancelled_before_deletion(self):
         source = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
         cancel_at = source.index("billing.cancel_learner_subscription(learner)")
