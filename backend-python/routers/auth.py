@@ -1661,6 +1661,8 @@ def get_current_user(
     # LEARNER ACCOUNT
     # ---------------------------------------------------------------
 
+    user = _find_user(email)
+
     if not user:
 
         raise HTTPException(
@@ -1724,7 +1726,7 @@ def get_current_user(
         )
 
     organisation_id, organisation_role = (
-        _active_organisation_context(str(user["id"]), fail_closed=role == "normal")
+        _active_organisation_context(str(user["id"]), fail_closed=role in {"normal", "witstart"})
         if role != "organisation_prospect"
         else (None, None)
     )
@@ -2276,10 +2278,6 @@ def login(
     # ---------------------------------------------------------------
     # LEARNER
     # ---------------------------------------------------------------
-
-    user = _find_user(
-        email
-    )
 
     if not user:
 
