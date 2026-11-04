@@ -31,7 +31,7 @@ export default function Page({params}:{params:{section:string}}){
   if(me.role==="organisation_prospect"){location.href="/organisation-portal";return;}
   if(me.organisation_id&&["owner","admin"].includes(me.organisation_role)){location.href="/dashboard/organisation";return;}
   const memberships=me.organisation_memberships||[];
-  const assignedOnly=Boolean(me.account_type==="cohort"||me.role==="witstart"||me.cohort_id||me.organisation_id||me.organisation_role||memberships.some((membership:any)=>membership.status==="active"));
+  const assignedOnly=Boolean(me.account_type==="cohort"||(me.account_type==="learner"&&me.role!=="normal")||me.cohort_id||me.organisation_id||me.organisation_role||memberships.some((membership:any)=>membership.status==="active"));
   if(assignedOnly){location.href=me.account_type==="cohort"?"/dashboard/cohort":"/dashboard";return;}
   if(me.account_type!=="learner"||me.role!=="normal"){location.href="/dashboard";return;}
   setU(me);
