@@ -22,6 +22,44 @@ def _require_individual_learner(user: auth.CurrentUser) -> None:
             detail="Account deletion is available for individual learner accounts. Contact Learnora support for assistance.",
         )
 
+    try:
+        active_organisation_memberships = (
+            auth.supabase.table("organisation_members")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+        active_cohort_memberships = (
+            auth.supabase.table("cohort_members")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="Organisation access could not be verified. Please try again before requesting account deletion.",
+        ) from None
+
+    if (
+        user.organisation_id
+        or user.organisation_role
+        or active_organisation_memberships
+        or active_cohort_memberships
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "This account is managed by an organisation or cohort. "
+                "The organisation must release the account before it can be deleted "
+                "and used to create an independent Learnora account."
+            ),
+        )
+
 
 @router.post("/request-deletion")
 def request_account_deletion(
