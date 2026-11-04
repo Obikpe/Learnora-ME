@@ -8,6 +8,32 @@
 
 ---
 
+## Immediate implementation scope — 4 November 2026
+
+The account and tenant architecture above is the long-term contract, not a request to finish the entire multi-tenant product in this pass.
+
+**The current implementation priority is the normal individual Learnora learner journey in Learnora ME (`frontend-v02/`).** The product must become usable end-to-end for an individual learner first:
+
+1. Registration, email verification, resend verification, sign-in, sign-out, password recovery/reset and change-password.
+2. Reliable HttpOnly-cookie session establishment, revalidation, expiry handling and safe redirects.
+3. Learner onboarding and profile data.
+4. Public published-course and global-track discovery, detail, enrolment and course access.
+5. The My Learning dashboard: actual enrolled courses, resume/continue learning, course and track progress, learning time/streak, activity, evidence, projects, skills and certificates.
+6. Lesson content/media, notes, quizzes, assignments, submissions and completion rules already in scope.
+7. Correct loading, empty, retry and error states; responsive desktop/mobile behaviour.
+
+### Explicitly deferred
+
+Do not attempt to complete the organisation portal, organisation invitations, organisation account release UI, organisation admin/cohort management, track-scoped tutor workspaces, independent tutor onboarding/creator tools, creator finance/payouts, or the full cross-identity migration now. Keep their existing code/schema and the documented future architecture intact; do not delete or weaken their boundaries.
+
+For this pass, make only the compatibility and security changes needed to ensure that normal individual learner registration/sign-in cannot accidentally create or authenticate a second identity where a reserved organisation/cohort identity already exists. Preserve existing cohort accounts and progress. Do not convert or migrate historical cohort identities as part of the individual learner release.
+
+Learnora Teams is not the focus of this learner-flow implementation. Its internal staff/platform-admin trust boundary must remain unaffected.
+
+### Delivery rule
+
+Implement the individual learner path as one coherent vertical slice across backend authentication, account provisioning guards, individual course/progress access and the Learnora ME frontend. Review cohort/organisation/creator paths where they share those services, but change them only when required to prevent a regression or preserve a future-safe contract. Do not build the deferred workflows merely because the architecture describes them.
+
 ## 1. Decisions and non-negotiable rules
 
 1. **One email address represents one account identity and one account context at a time.** The same email must never authenticate as an individual learner in one flow and an organisation learner in another, nor as separate cohort accounts in different cohorts.
