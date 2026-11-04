@@ -44,7 +44,7 @@ export default function Login() {
       );
       // Course links must never turn sign-in into an enrolment or access grant
       // for learners whose learning is controlled by a cohort or organisation.
-      if (verifiedMe && me.role === "normal" && !assignedLearner && safeNext) {
+      if (me.role === "normal" && me.account_type === "learner" && !assignedLearner && safeNext) {
         clearOrganisationContext();
         router.push(safeNext);
         return;
