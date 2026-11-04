@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import Logo from "../../components/brand/Logo";
 import { IMAGES } from "../../lib/constants";
 import Toast from "../../components/feedback/Toast";
-import { login,setToken,currentUser,organisationContext,setOrganisationContext,clearOrganisationContext } from "../../lib/api";
+import { login,setToken,currentUser,organisationContext,setOrganisationContext,clearOrganisationContext,clearToken } from "../../lib/api";
 
 export default function Login() {
   const [email,setEmail]=useState(""),[password,setPassword]=useState(""),[error,setError]=useState(""),[busy,setBusy]=useState(false),[showPassword,setShowPassword]=useState(false);
@@ -14,12 +14,22 @@ export default function Login() {
   async function submit(e:any) {
     e.preventDefault();setError("");setBusy(true);
     try {
-      const result:any=await login(email,password);setToken(result.token||result.access_token);
-      if(result.account_type==="admin"){if(["super_admin","staff_admin"].includes(result.role)){clearOrganisationContext();router.push("https://teamslearnora.vercel.app/login");return;}setError("This administrator account is not configured for learner sign-in. Please contact your organisation administrator.");return;}
-      const verifiedMe:any=await currentUser().catch(()=>null);
-      const me:any=verifiedMe||result;
+      const result:any=await login(email,password);setToken(result.token||result.access_token||"cookie-session");
+      let me:any;
+      try {
+        // Never trust the login response alone as proof that the browser
+        // received and can use the HttpOnly session cookie.
+        me=await currentUser();
+      } catch {
+        clearToken();
+        throw new Error("Your sign-in could not be confirmed. Please try again.");
+      }
+      if(me.account_type==="admin"){if(["super_admin","staff_admin"].includes(me.role)){clearOrganisationContext();router.push("https://teamslearnora.vercel.app/login");return;}clearToken();setError("This administrator account is not configured for learner sign-in. Please contact your organisation administrator.");return;}
       const memberships=me.organisation_memberships||[];
-      const privileged=memberships.filter((m:any)=>["owner","admin"].includes(m.role));
+      const activeMemberships=memberships.filter((membership:any)=>membership.status==="active");
+      const organisationIds=Array.from(new Set(activeMemberships.map((membership:any)=>String(membership.organisation_id||"")).filter(Boolean)));
+      if(organisationIds.length>1){clearToken();throw new Error("This account is linked to more than one active organisation. Contact Learnora support to resolve the account before continuing.");}
+      const privileged=activeMemberships.filter((m:any)=>["owner","admin"].includes(m.role));
       const savedId=organisationContext();
       const selected=(me.organisation_id?memberships.find((m:any)=>String(m.organisation_id)===String(me.organisation_id)):null)||(savedId?memberships.find((m:any)=>String(m.organisation_id)===String(savedId)&&["owner","admin"].includes(m.role)):null)||(privileged.length===1?privileged[0]:null);
       const requestedNext = new URLSearchParams(window.location.search).get("next") || "";
@@ -30,7 +40,7 @@ export default function Login() {
         me.organisation_id ||
         me.organisation_role ||
         me.role === "witstart" ||
-        memberships.some((membership:any) => ["learner", "member"].includes(membership.role))
+        activeMemberships.length > 0
       );
       // Course links must never turn sign-in into an enrolment or access grant
       // for learners whose learning is controlled by a cohort or organisation.
