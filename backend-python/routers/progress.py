@@ -107,18 +107,19 @@ def _course_for_lesson(lesson_id: str):
 
 
 def _enrolment(user_id: str, course_id: str):
-    """Return an enrolment only when it belongs to the caller's account context.
+    """Return only an enrolment valid for the learner's current access scope.
 
-    Organisation/cohort relationships reserve the identity even when suspended
-    or closed. Those identities must never fall through to an individual's
-    personal enrolment. Active organisation learners need an explicit course
-    grant; active cohort learners need the cohort-track assignment.
+    Cohort identities use the dedicated cohort-learning API. Organisation
+    learners must have an active tenant membership and an active scoped
+    assignment or organisation-wide assigned-course grant. A personal
+    enrolment must never become an organisation learner's access token.
     """
     try:
         cohort_account = (
             supabase.table("cohort_accounts")
             .select("id")
             .eq("id", user_id)
+            .eq("status", "active")
             .limit(1)
             .execute()
         ).data or []
@@ -135,6 +136,12 @@ def _enrolment(user_id: str, course_id: str):
             row for row in all_memberships
             if str(row.get("status") or "").lower() == "active"
         ]
+        if any(str(row.get("role") or "").lower() in {"owner", "admin", "team_manager"} for row in active_memberships):
+            return None
+        memberships = [
+            row for row in active_memberships
+            if str(row.get("role") or "").lower() in {"learner", "member"}
+        ]
 
         all_cohort_memberships = (
             supabase.table("cohort_members")
@@ -143,11 +150,10 @@ def _enrolment(user_id: str, course_id: str):
             .limit(1000)
             .execute()
         ).data or []
-        active_cohort_memberships = [
+        cohort_memberships = [
             row for row in all_cohort_memberships
             if str(row.get("status") or "").lower() == "active"
         ]
-
         identity = (
             supabase.table("users")
             .select("role")
@@ -159,7 +165,7 @@ def _enrolment(user_id: str, course_id: str):
             identity and str(identity[0].get("role") or "").strip().lower() == "witstart"
         )
 
-        enrolments = (
+        query = (
             supabase.table("learnora_enrolments")
             .select(
                 "id,user_id,course_id,organisation_id,cohort_id,status,"
@@ -169,56 +175,21 @@ def _enrolment(user_id: str, course_id: str):
             .eq("course_id", course_id)
             .in_("status", ["active", "completed"])
             .order("enrolled_at", desc=True)
-            .execute()
-        ).data or []
+        )
+        enrolments = query.execute().data or []
     except Exception as exc:
         print(f"Course enrolment scope lookup failed: {type(exc).__name__}")
         raise HTTPException(503, "Course access could not be verified. Please retry.") from None
 
-    # A retained organisation membership, even if suspended, prevents a
-       personal enrolment from becoming a second route into individual learning.
-    if all_memberships and not legacy_cohort_learner:
-        if not active_memberships:
-            return None
-        roles = {
-            str(row.get("role") or "").strip().lower()
-            for row in active_memberships
-        }
-        if not roles or not roles.issubset({"learner", "member"}):
-            return None
-        organisation_ids = {
-            str(row.get("organisation_id"))
-            for row in active_memberships
-            if row.get("organisation_id")
-        }
-        if len(organisation_ids) != 1:
-            return None
-
-        organisation_id = next(iter(organisation_ids))
-        matching = [
-            row for row in enrolments
-            if str(row.get("organisation_id") or "") == organisation_id
-        ]
-        if not matching:
-            return None
-        try:
-            from routers.cohort_membership import _cohort_course_is_assigned
-        except ImportError:
-            _cohort_course_is_assigned = None
-        # Organisation-wide grants are supported for non-cohort learners.
-        # Cohort members are handled by the stricter branch below.
-        return matching[0]
-
     if legacy_cohort_learner:
-        if not active_cohort_memberships:
-            return None
         # Legacy cohort learners are backed by public.users + cohort_members.
         # They do not need a duplicate organisation_members row. Resolve the
-        # organisation from their active cohort and require cohort assignment.
+        # organisation from their active cohort and require the cohort-specific
+        # assignment; an organisation-wide grant alone is never sufficient.
         try:
             cohort_ids = list({
                 str(row.get("cohort_id"))
-                for row in active_cohort_memberships
+                for row in cohort_memberships
                 if row.get("cohort_id")
             })
             cohort_rows = (
@@ -227,45 +198,69 @@ def _enrolment(user_id: str, course_id: str):
                 .in_("id", cohort_ids)
                 .in_("status", ["draft", "upcoming", "active", "ending"])
                 .execute()
-            ).data or []
-            active_cohort_ids = {
-                str(row.get("id"))
-                for row in cohort_rows
-                if row.get("id") and row.get("organisation_id")
-            }
-            if not active_cohort_ids:
-                return None
-
-            matching = [
-                row for row in enrolments
-                if row.get("cohort_id")
-                and str(row.get("cohort_id")) in active_cohort_ids
-            ]
-            if not matching:
-                return None
-            # The cohort enrolment itself must still be backed by a current
-            # cohort-track/course assignment.
-            for enrolment in matching:
-                assigned = (
-                    supabase.table("cohort_track_courses")
-                    .select("id")
-                    .eq("cohort_id", str(enrolment.get("cohort_id")))
-                    .eq("course_id", course_id)
-                    .limit(1)
-                    .execute()
-                ).data or []
-                if assigned:
+            ).data or [] if cohort_ids else []
+        except Exception:
+            raise HTTPException(503, "Cohort course assignment could not be verified. Please retry.") from None
+        organisation_ids = {
+            str(row.get("organisation_id"))
+            for row in memberships + cohort_rows
+            if row.get("organisation_id")
+        }
+        for organisation_id in organisation_ids:
+            for enrolment in enrolments:
+                if str(enrolment.get("organisation_id") or "") != organisation_id:
+                    continue
+                if _has_active_scoped_course_source(user_id, organisation_id, course_id, enrolment):
                     return enrolment
-            return None
-        except Exception as exc:
-            print(f"Cohort enrolment scope lookup failed: {type(exc).__name__}")
-            raise HTTPException(503, "Cohort course access could not be verified. Please retry.") from None
+        return None
 
-    # No retained organisation/cohort context: only the individual's own
-    # active/completed personal enrolment is eligible.
+    if memberships:
+        for membership in memberships:
+            organisation_id = str(membership.get("organisation_id") or "")
+            if not organisation_id:
+                continue
+            for enrolment in enrolments:
+                if str(enrolment.get("organisation_id") or "") != organisation_id:
+                    continue
+                if _has_active_scoped_course_source(user_id, organisation_id, course_id, enrolment):
+                    return enrolment
+                try:
+                    assigned_grant = (
+                        supabase.table("course_access")
+                        .select("id")
+                        .eq("course_id", course_id)
+                        .eq("organisation_id", organisation_id)
+                        .eq("status", "active")
+                        .eq("access_type", "assigned")
+                        .limit(1)
+                        .execute()
+                    ).data or []
+                    active_organisation = (
+                        supabase.table("organisations")
+                        .select("id")
+                        .eq("id", organisation_id)
+                        .eq("is_active", True)
+                        .limit(1)
+                        .execute()
+                    ).data or []
+                except Exception as exc:
+                    print(f"Organisation course grant lookup failed: {type(exc).__name__}")
+                    raise HTTPException(503, "Organisation course access could not be verified. Please retry.") from None
+                if assigned_grant and active_organisation and _organisation_has_course_entitlement(organisation_id):
+                    return enrolment
+        return None
+
+    # A retained organisation/cohort relationship reserves this identity
+    # even when its membership is suspended or its cohort has ended. It must
+    # not fall through to an individual enrolment after access is suspended.
     if all_memberships or all_cohort_memberships:
         return None
-    return enrolments[0] if enrolments else None
+    if not identity or not is_individual_learner(identity[0].get("role"), "learner", None):
+        return None
+    return next((
+        row for row in enrolments
+        if row.get("organisation_id") is None and row.get("cohort_id") is None
+    ), None)
 
 
 def effective_passing_score(quiz: dict) -> float:
