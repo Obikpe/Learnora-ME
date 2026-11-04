@@ -1,16 +1,34 @@
 """Public catalogue access-mode labelling tests."""
 import os
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
+from fastapi import HTTPException
 from routers import public_directory
 
 
 class PublicDirectoryAccessModeTests(unittest.TestCase):
+    def test_public_discovery_is_available_to_anonymous_and_individual_learners_only(self):
+        public_directory._guard_public_discovery(None)
+        public_directory._guard_public_discovery(SimpleNamespace(
+            role="normal", account_type="learner", organisation_id=None,
+        ))
+        with self.assertRaises(HTTPException) as raised:
+            public_directory._guard_public_discovery(SimpleNamespace(
+                role="normal", account_type="learner", organisation_id="org-1",
+            ))
+        self.assertEqual(raised.exception.status_code, 403)
+        with self.assertRaises(HTTPException) as cohort:
+            public_directory._guard_public_discovery(SimpleNamespace(
+                role="cohort_learner", account_type="cohort", organisation_id="org-1",
+            ))
+        self.assertEqual(cohort.exception.status_code, 403)
+
     def test_free_launch_labels_only_global_learnora_courses_as_free(self):
         global_course = {"id": "global-1", "ownership": "learnora", "organisation_id": None, "settings": {}}
         tenant_course = {"id": "tenant-1", "ownership": "learnora", "organisation_id": "org-1", "settings": {}}
