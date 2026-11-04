@@ -65,6 +65,8 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
         restricted ||
         me.account_type === "cohort" ||
         me.role === "witstart" ||
+        me.organisation_id ||
+        me.organisation_role === "member" ||
         me.cohort_id ||
         me.organisation_role === "learner" ||
         memberships.some((membership: any) => ["learner", "member"].includes(membership.role) && membership.status === "active")
