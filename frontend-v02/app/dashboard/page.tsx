@@ -265,15 +265,15 @@ export default function MyLearningPage() {
     {error && <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--warning)]/25 bg-[var(--warning)]/[.05] px-4 py-3 text-sm text-[var(--warning)]"><span>{error}</span><button type="button" onClick={() => void load(user)} disabled={refreshing} className="inline-flex min-h-9 items-center rounded-lg border border-[var(--border)] px-3 text-xs font-semibold text-[var(--text-heading)] disabled:opacity-50">{refreshing ? "Retrying…" : "Try again"}</button></div>}
 
     <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Learning summary">
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Active courses</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{inProgress.length}</p></div>
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Lessons completed</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{completedLessons}<span className="ml-1 text-sm font-medium text-[var(--text-muted)]">/ {totalLessons}</span></p></div>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Active courses</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learning ? inProgress.length : "—"}</p></div>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Lessons completed</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learning ? completedLessons : "—"}<span className="ml-1 text-sm font-medium text-[var(--text-muted)]">/ {learning ? totalLessons : "—"}</span></p></div>
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning time</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learningTimeLabel}</p></div>
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning streak</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{activitySummary ? activitySummary.current_streak + " days" : "—"}</p></div>
     </section>
     <section className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <div className="mb-2 flex items-center justify-between gap-3"><h2 className="text-sm font-semibold text-[var(--text-heading)]">Overall learning progress</h2><span className="text-sm font-bold tabular-nums text-[var(--text-heading)]">{totalLessons ? overallProgress + "%" : "—"}</span></div>
+      <div className="mb-2 flex items-center justify-between gap-3"><h2 className="text-sm font-semibold text-[var(--text-heading)]">Overall learning progress</h2><span className="text-sm font-bold tabular-nums text-[var(--text-heading)]">{learning && totalLessons ? overallProgress + "%" : "—"}</span></div>
       <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{width: overallProgress + "%"}}/></div>
-      <p className="mt-2 text-xs text-[var(--text-muted)]">{activeCourseLessons ? "Lesson-weighted progress across your active courses (" + activeCourseLessons + " lessons)." : "Your progress will appear when you have active courses."}</p>
+      <p className="mt-2 text-xs text-[var(--text-muted)]">{!learning ? "Learning data is unavailable until your records load." : activeCourseLessons ? "Lesson-weighted progress across your active courses (" + activeCourseLessons + " lessons)." : "Your progress will appear when you have active courses."}</p>
     </section>
 
     <div className="mt-7 flex gap-6 overflow-x-auto border-b border-[var(--border)]" role="tablist" aria-label="My learning sections">
@@ -300,7 +300,9 @@ export default function MyLearningPage() {
                 {recommendations.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{recommendations.map((course: any) => <RecommendedCourseCard key={course.id} course={course}/>)}</div> : <div className="empty">{assignedLearner ? "Your organisation has not assigned a course to your account yet. Check back later or contact your learning coordinator." : catalogueLoading ? "Finding courses for you…" : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div>}
               </section>
             : <div className="empty">{assignedLearner ? "Your assigned courses are complete. Your organisation will provide the next learning activity." : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div>)}
-        {tab === "completed" && (completed.length
+        {tab === "completed" && (!learning
+          ? <div className="empty">Your learning records are unavailable right now. Use “Try again” above to reload them.</div>
+          : completed.length
           ? <div className="space-y-4">{completed.map((row: any) => <CourseCard key={row.enrolment?.id || row.course?.id} row={row} completed/>)}</div>
           : <div className="py-2"><h2 className="mb-3 text-base font-semibold text-[var(--text-heading)]">No completed courses</h2><div className="empty">{assignedLearner ? "You have no completed assigned courses yet." : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div></div>)}
         {tab === "skills" && <section>
