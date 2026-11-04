@@ -113,7 +113,17 @@ export default function MyLearningPage() {
     setLoading(false);
 
     const hasOrganisationMembership = (me?.organisation_memberships || []).some((membership:any) => membership.status === "active");
-    const allowPublicRecommendations = !me?.organisation_id && !me?.cohort_id && me?.account_type !== "cohort" && !hasOrganisationMembership;
+    const assignedOnlyAccount = Boolean(
+      me?.account_type === "cohort" ||
+      me?.role === "witstart" ||
+      me?.cohort_id ||
+      me?.organisation_id ||
+      me?.organisation_role ||
+      (me?.organisation_memberships || []).some((membership:any) =>
+        ["learner", "member"].includes(membership.role) && membership.status === "active"
+      )
+    );
+    const allowPublicRecommendations = !assignedOnlyAccount && !hasOrganisationMembership;
     if (progressLoaded && allowPublicRecommendations) {
       setCatalogueLoading(true);
       try {
