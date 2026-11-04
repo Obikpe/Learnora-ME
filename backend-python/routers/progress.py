@@ -177,12 +177,30 @@ def _enrolment(user_id: str, course_id: str):
 
     if legacy_cohort_learner:
         # Legacy cohort learners are backed by public.users + cohort_members.
-        # Their organisation-wide course grants must not bypass the cohort's
-        # explicit course assignment.
-        for membership in memberships:
-            organisation_id = str(membership.get("organisation_id") or "")
-            if not organisation_id:
-                continue
+        # They do not need a duplicate organisation_members row. Resolve the
+        # organisation from their active cohort and require the cohort-specific
+        # assignment; an organisation-wide grant alone is never sufficient.
+        try:
+            cohort_ids = list({
+                str(row.get("cohort_id"))
+                for row in cohort_memberships
+                if row.get("cohort_id")
+            })
+            cohort_rows = (
+                supabase.table("cohorts")
+                .select("id,organisation_id,status")
+                .in_("id", cohort_ids)
+                .in_("status", ["draft", "upcoming", "active", "ending"])
+                .execute()
+            ).data or [] if cohort_ids else []
+        except Exception:
+            raise HTTPException(503, "Cohort course assignment could not be verified. Please retry.") from None
+        organisation_ids = {
+            str(row.get("organisation_id"))
+            for row in memberships + cohort_rows
+            if row.get("organisation_id")
+        }
+        for organisation_id in organisation_ids:
             for enrolment in enrolments:
                 if str(enrolment.get("organisation_id") or "") != organisation_id:
                     continue
