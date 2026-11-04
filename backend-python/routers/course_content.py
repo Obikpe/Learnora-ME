@@ -402,18 +402,23 @@ def _check_course_view_access(
         raise HTTPException(403, "Cohort learners must access assigned content through their cohort learning workspace.")
 
     legacy_cohort_memberships = []
+    all_legacy_cohort_memberships = []
     if user_id:
         try:
-            legacy_cohort_memberships = (
+            all_legacy_cohort_memberships = (
                 supabase.table("cohort_members")
-                .select("cohort_id")
+                .select("cohort_id,status")
                 .eq("user_id", user_id)
-                .eq("status", "active")
+                .limit(1000)
                 .execute()
             ).data or []
+            legacy_cohort_memberships = [
+                row for row in all_legacy_cohort_memberships
+                if str(row.get("status") or "").lower() == "active"
+            ]
         except Exception:
             raise HTTPException(503, "Cohort assignment could not be verified.") from None
-    legacy_cohort_learner = legacy_role == "witstart" or bool(legacy_cohort_memberships)
+    legacy_cohort_learner = legacy_role == "witstart" or bool(all_legacy_cohort_memberships)
 
     course_id = str(course.get("id") or "")
     ownership = str(course.get("ownership") or "").strip().lower()
