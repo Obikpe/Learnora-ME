@@ -15,7 +15,7 @@ os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
 from fastapi import HTTPException
 
-from routers import course_content, progress
+from routers import course_content, courses, progress
 
 
 class FakeQuery:
@@ -348,6 +348,35 @@ class CourseContentAccessTests(unittest.TestCase):
         with patch.object(progress, "supabase", db):
             result = progress._enrolment("user-1", "course-1")
         self.assertEqual(result["id"], "enrolment-1")
+
+    def test_individual_learner_remains_eligible_for_public_self_enrolment(self):
+        user = SimpleNamespace(id="user-1", role="normal", account_type="learner", organisation_id=None)
+        with patch.object(courses, "supabase", FakeSupabase()):
+            courses._require_individual_self_enrolment(user)
+
+    def test_organisation_learner_cannot_self_enrol_even_with_individual_role(self):
+        user = SimpleNamespace(id="user-1", role="normal", account_type="learner", organisation_id=None)
+        db = FakeSupabase(organisation_members=[{
+            "id": "member-1", "user_id": "user-1", "role": "learner", "status": "active",
+        }])
+        with patch.object(courses, "supabase", db):
+            with self.assertRaises(HTTPException) as raised:
+                courses._require_individual_self_enrolment(user)
+        self.assertEqual(raised.exception.status_code, 403)
+
+    def test_legacy_cohort_learner_cannot_self_enrol_in_public_courses(self):
+        user = SimpleNamespace(id="user-1", role="witstart", account_type="learner", organisation_id=None)
+        with patch.object(courses, "supabase", FakeSupabase()):
+            with self.assertRaises(HTTPException) as raised:
+                courses._require_individual_self_enrolment(user)
+        self.assertEqual(raised.exception.status_code, 403)
+
+    def test_new_cohort_account_cannot_self_enrol_in_public_courses(self):
+        user = SimpleNamespace(id="cohort-account-1", role="cohort_learner", account_type="cohort", organisation_id="org-a")
+        with patch.object(courses, "supabase", FakeSupabase()):
+            with self.assertRaises(HTTPException) as raised:
+                courses._require_individual_self_enrolment(user)
+        self.assertEqual(raised.exception.status_code, 403)
 
     def test_platform_admin_can_read_course_without_tenant_grant(self):
         course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
