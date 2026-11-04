@@ -181,6 +181,9 @@ def _enrolment(user_id: str, course_id: str):
         print(f"Course enrolment scope lookup failed: {type(exc).__name__}")
         raise HTTPException(503, "Course access could not be verified. Please retry.") from None
 
+    if all_memberships and not active_memberships:
+        return None
+
     if legacy_cohort_learner:
         # Legacy cohort learners are backed by public.users + cohort_members.
         # They do not need a duplicate organisation_members row. Resolve the
