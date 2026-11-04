@@ -43,7 +43,7 @@ export default function Courses() {
       const memberships = me.organisation_memberships || [];
       const assignedLearner = Boolean(
         me.account_type === "cohort" ||
-        me.role === "witstart" ||
+        (me.account_type === "learner" && me.role !== "normal") ||
         me.cohort_id ||
         me.organisation_id ||
         me.organisation_role === "learner" ||
