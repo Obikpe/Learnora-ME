@@ -76,6 +76,14 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         self.assertIn('if fail_closed:', resolver)
         self.assertIn('fail_closed=role in {"normal", "witstart"}', source)
 
+    def test_optional_public_session_only_downgrades_expired_auth_to_anonymous(self):
+        source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
+        optional = source.split("def get_optional_current_user(", 1)[1].split("def get_current_user(", 1)[0]
+        self.assertIn("if not _request_auth_token(request, creds):", optional)
+        self.assertIn("if exc.status_code == 401:", optional)
+        self.assertIn("return None", optional)
+        self.assertIn("raise", optional)
+
     def test_email_lookup_helper_escapes_all_pattern_wildcards(self):
         source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
         self.assertGreaterEqual(source.count("_escape_ilike_literal(email)"), 3)
