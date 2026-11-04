@@ -559,3 +559,16 @@ The cohort learner experience now uses the same Learnora ME dashboard shell as i
 - Existing individual learner discovery and self-enrolment remain available. No organisation, cohort, course assignment, enrolment, billing or learner records were deleted or migrated.
 
 **Verification boundary:** Source files were re-fetched after edits and checked for the expected route guards, shared shell usage, responsive navigation restrictions and single cohort tracker mount. No build, test suite, GitHub Actions/CI or Vercel deployment was run. Browser-level mobile and desktop acceptance, and focused backend regression tests for individual, organisation and both cohort account models, remain outstanding.
+
+## Assigned-learning access verification follow-up — 4 November 2026
+
+A second source-level audit found and corrected two cohort-scope gaps.
+
+- Generic course-content endpoints now reject the newer dedicated `account_type="cohort"` identity. Those accounts must use the cohort-learning endpoints, which validate the active cohort account, active cohort membership, exact assigned course, exact assigned lesson and course/lesson relationship.
+- Legacy WitStart learners represented by `public.users` plus `cohort_members.user_id` retain their existing cohort-assignment workflow. Authentication now resolves their organisation from the active cohort when they have no duplicate `organisation_members` row. Progress and course-content checks require an active `cohort_course_assignments` record for that learner's cohort; an organisation-wide grant alone cannot substitute for it.
+- Legacy cohort progress resolves the organisation through the active cohort and can therefore continue to load its existing organisation-scoped `learnora_enrolments`. The helper still validates the cohort and course assignment before returning progress.
+- The shared learner dashboard now suppresses public recommendations for WitStart, dedicated cohort, organisation-scoped and active organisation learner/member identities. Course and track discovery redirects also recognise organisation context and the legacy member role.
+- Organisation-wide assigned-course synchronisation now runs for both current `learner` and legacy `member` membership roles.
+- Added regression coverage for individual free-launch content and enrolment, individual global progress, organisation self-enrolment denial, both cohort account models, legacy cohort course-assignment isolation, and the newer cohort lesson assignment boundary.
+
+**Verification result:** Current `main` source was re-fetched after the changes. Automated source assertions passed for the individual enrolment/content path, both cohort models, organisation membership restrictions, direct course/track route guards, and the cohort-specific lesson endpoints. The new/updated Python unit tests have been committed but were not executed in this session. No GitHub Actions/CI, deployment, or production data mutation was performed. Therefore this is a source-level verification, not a runtime or browser acceptance sign-off.
