@@ -67,8 +67,11 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
     def test_organisation_context_resolution_fails_closed_on_multiple_tenants(self):
         source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
         resolver = source.split("def _active_organisation_context(", 1)[1].split("# AUTHORIZATION DEPENDENCIES", 1)[0]
-        self.assertIn('organisation_ids = {item[0] for item in active_contexts}', resolver)
+        self.assertIn('organisation_ids = {item[0] for item in contexts}', resolver)
         self.assertIn('if len(organisation_ids) > 1:', resolver)
+        self.assertIn('role_groups = {', resolver)
+        self.assertIn('.select("cohort_id")', resolver)
+        self.assertNotIn('.eq("status", "active")', resolver)
         self.assertIn('status_code=409', resolver)
         self.assertIn('if fail_closed:', resolver)
         self.assertIn('fail_closed=role in {"normal", "witstart"}', source)
