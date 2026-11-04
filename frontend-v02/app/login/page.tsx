@@ -25,15 +25,23 @@ export default function Login() {
         throw new Error("Your sign-in could not be confirmed. Please try again.");
       }
       if(me.account_type==="admin"){if(["super_admin","staff_admin"].includes(me.role)){clearOrganisationContext();router.push("https://teamslearnora.vercel.app/login");return;}clearToken();setError("This administrator account is not configured for learner sign-in. Please contact your organisation administrator.");return;}
+      if(me.account_type==="cohort"){clearOrganisationContext();router.push("/dashboard/cohort");return;}
       const memberships=me.organisation_memberships||[];
       const activeMemberships=memberships.filter((membership:any)=>membership.status==="active");
       const organisationIds=Array.from(new Set(activeMemberships.map((membership:any)=>String(membership.organisation_id||"")).filter(Boolean)));
       if(organisationIds.length>1){clearToken();throw new Error("This account is linked to more than one active organisation. Contact Learnora support to resolve the account before continuing.");}
-      const privileged=activeMemberships.filter((m:any)=>["owner","admin"].includes(m.role));
+      const privilegedMembership=activeMemberships.find((m:any)=>["owner","admin"].includes(m.role));
+      const privileged=privilegedMembership?[privilegedMembership]:[];
       const savedId=organisationContext();
-      const selected=(me.organisation_id?memberships.find((m:any)=>String(m.organisation_id)===String(me.organisation_id)):null)||(savedId?memberships.find((m:any)=>String(m.organisation_id)===String(savedId)&&["owner","admin"].includes(m.role)):null)||(privileged.length===1?privileged[0]:null);
+      const selected=(me.organisation_id?(activeMemberships.find((m:any)=>String(m.organisation_id)===String(me.organisation_id)&&["owner","admin"].includes(m.role))||activeMemberships.find((m:any)=>String(m.organisation_id)===String(me.organisation_id))):null)||(savedId?activeMemberships.find((m:any)=>String(m.organisation_id)===String(savedId)&&["owner","admin"].includes(m.role)):null)||(privileged.length===1?privileged[0]:null);
       const requestedNext = new URLSearchParams(window.location.search).get("next") || "";
-      const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "";
+      let safeNext = "";
+      if (requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\")) {
+        try {
+          const nextUrl = new URL(requestedNext, window.location.origin);
+          if (nextUrl.origin === window.location.origin) safeNext = nextUrl.pathname + nextUrl.search + nextUrl.hash;
+        } catch {}
+      }
       const assignedLearner = Boolean(
         me.account_type === "cohort" ||
         me.cohort_id ||
