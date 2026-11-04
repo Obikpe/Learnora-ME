@@ -3,14 +3,13 @@ Learnora authentication and user management.
 
 Account architecture
 --------------------
-Learners are stored in public.users:
-    - normal
-    - witstart
+Individual learners are stored in public.users with the normal learner role.
+Legacy cohort-assigned rows remain readable through a compatibility role mapping;
+new organisation/cohort provisioning is guarded by the exclusive email policy.
 
-Administrators are stored in public.admins:
+Platform administrators are stored in public.admins:
     - super_admin
     - staff_admin
-    - witstart_admin
 
 Authentication is JWT based, but the JWT is never treated as the final
 authority for account state. The database is checked on every authenticated
