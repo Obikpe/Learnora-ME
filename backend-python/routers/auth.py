@@ -1481,7 +1481,16 @@ def get_optional_current_user(
     """Resolve a session when one is present, while allowing anonymous discovery."""
     if not _request_auth_token(request, creds):
         return None
-    return get_current_user(creds, request)
+    try:
+        return get_current_user(creds, request)
+    except HTTPException as exc:
+        # Public catalogue pages remain browseable after a stale/expired
+        # browser session. Valid managed sessions are still explicitly denied
+        # by the public discovery guard; account conflicts and service errors
+        # are not silently downgraded to anonymous access.
+        if exc.status_code == 401:
+            return None
+        raise
 
 
 def get_current_user(
