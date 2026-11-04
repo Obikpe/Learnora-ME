@@ -286,6 +286,23 @@ The audit located product/engineering documentation in `docs/`, migration plans 
 - This audit is not yet a complete line-by-line review of every one of the 4,629 repository entries. The full implementation cleanup must continue with a repository-wide literal/symbol search, then inspect every matching active source file and every affected test before code changes.
 - No tests, builds, deployments, CI workflows, SQL migrations or database operations were run as part of this documentation pass.
 
+### 7.8 Additional schema and lifecycle findings
+
+The read-only source inspection was extended to the relevant Supabase schema baseline and migration files:
+
+- `supabase/baselines/active-pheonix-public-schema.sql` records a separate `cohort_accounts` table. Its email is scoped by a unique `(cohort_id, email)` constraint, with only a non-unique lower-email lookup index. This permits the same canonical email in more than one cohort and does not provide a global identity reservation.
+- The same baseline shows `cohort_members` can point to either `user_id` or `cohort_account_id`, and the learning evidence table `cohort_account_lesson_progress` is keyed to the cohort account. This is the historical split that the future migration must reconcile without losing progress.
+- `supabase/migrations/20261021112845_cohort_account_track_assignment.sql` explicitly creates cohort-specific credentials and unique email only within each cohort. It also establishes track-scoped course mappings and immutable cohort track assignment.
+- `supabase/migrations/20261021113310_allow_cohort_only_membership.sql` deliberately allows cohort-only identities, while the legacy-user path requires an active learner organisation membership. This is a valid historical compatibility rule but not the final one-identity model.
+- `supabase/migrations/20261102130000_learner_account_deletion.sql` implements deletion for users whose role is `normal`. It blocks deletion of an active organisation owner, suspends active organisation memberships and team memberships, anonymises the email and clears credentials. It is **not** an organisation-account release workflow: it does not require an organisation release approval, does not cover `cohort_accounts`, and its function does not explicitly deactivate `cohort_members` rows for the user. This must be reconciled before the new release flow can safely reuse or replace it.
+- The current baseline includes both `cohort_track_courses` (track-level configuration) and `cohort_member_course_assignments` / `cohort_member_lesson_assignments` (per-learner exceptions). The normal product flow should derive learner course access from the track mapping; any legacy individual assignment rows must be inventoried and preserved before the per-learner UI/path is retired.
+- The baseline includes `learnora_creator_accounts`, creator ownership and finance tables, so independent creator identity and creator commercial data must be handled separately from organisation tutor membership.
+- `supabase/legacy_migrations/002_learnora_v1_foundation.sql` and `003_learnora_identity_bridge.sql` document the historical organisation bridge and cohort membership for the former pilot. These files are historical and must remain untouched.
+- `docs/PRODUCT_ENGINEERING_SPEC.md` currently describes cohort-specific identities as intentionally distinct from `public.users`; that statement is superseded by this architecture. The roadmap and engineering history also retain historical role and migration notes; update current-state guidance without erasing the audit trail.
+- The legacy `backend-python-v0/` and `frontend/` trees still contain product-specific role and route implementations. The current `backend-python/` and `frontend-v02/` trees are the primary implementation surfaces identified for this work, but deployment/configuration references must be checked before deciding whether the older trees are inert, archival or still consumed by any workflow. Do not delete them based on directory naming alone.
+
+These findings make the global email uniqueness and account-release work a schema-level prerequisite. An application-only pre-check cannot close races between individual registration and organisation/cohort provisioning.
+
 ## 8. Target data model and migration direction
 
 The final schema must enforce a globally unique canonical email identity and one account class. The exact DDL is deferred until the current live schema and all relevant migration dependencies have been reconciled.
