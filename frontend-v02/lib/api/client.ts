@@ -163,7 +163,9 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
         : typeof body.detail === "string" ? body.detail
         : typeof body.message === "string" ? body.message
         : "We could not complete that request. Please try again.";
-      throw new Error(message);
+      const error = new Error(message) as Error & { status?: number };
+      error.status = response.status;
+      throw error;
     }
     if (key) writeCache(key, body, lifetime);
     else if (method !== "GET" && mutationInvalidatesCache(path)) invalidateRequestCache();
