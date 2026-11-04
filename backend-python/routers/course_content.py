@@ -389,6 +389,29 @@ def _check_course_view_access(
     if context.is_platform_admin:
         return
 
+    user = context.user
+    user_id = str(context.user_id or "")
+    account_type = str(getattr(user, "account_type", "") or "").strip().lower()
+    legacy_role = str(getattr(user, "role", "") or "").strip().lower()
+    if account_type == "cohort":
+        # Dedicated cohort accounts must use /cohort-learning/me endpoints,
+        # which validate the exact cohort course and lesson assignment.
+        raise HTTPException(403, "Cohort learners must access assigned content through their cohort learning workspace.")
+
+    legacy_cohort_memberships = []
+    if user_id:
+        try:
+            legacy_cohort_memberships = (
+                supabase.table("cohort_members")
+                .select("cohort_id")
+                .eq("user_id", user_id)
+                .eq("status", "active")
+                .execute()
+            ).data or []
+        except Exception:
+            raise HTTPException(503, "Cohort assignment could not be verified.") from None
+    legacy_cohort_learner = legacy_role == "witstart" or bool(legacy_cohort_memberships)
+
     course_id = str(course.get("id") or "")
     ownership = str(course.get("ownership") or "").strip().lower()
     course_org = course.get("organisation_id")
@@ -430,6 +453,13 @@ def _check_course_view_access(
                 or str(getattr(context.user, "role", "") or "").strip().lower() in {"normal", "witstart", "learner"}
             )
             if grant:
+                if legacy_cohort_learner:
+                    if any(
+                        _has_active_scoped_course_source(user_id, str(organisation_id), course_id, row)
+                        for row in enrolments
+                    ):
+                        return
+                    raise HTTPException(403, "This course has not been assigned to your cohort.")
                 if is_learner:
                     active_workspace = (
                         supabase.table("organisations")
@@ -497,6 +527,23 @@ def _check_course_view_access(
             )
 
         if access_result.data:
+            if legacy_cohort_learner:
+                scoped_enrolments = (
+                    supabase.table("learnora_enrolments")
+                    .select("id,source_type,cohort_id,organisation_id,status")
+                    .eq("course_id", course_id)
+                    .eq("user_id", user_id)
+                    .eq("organisation_id", str(organisation_id))
+                    .in_("status", ["active", "completed"])
+                    .limit(20)
+                    .execute()
+                ).data or []
+                if any(
+                    _has_active_scoped_course_source(user_id, str(organisation_id), course_id, row)
+                    for row in scoped_enrolments
+                ):
+                    return
+                raise HTTPException(403, "This course has not been assigned to your cohort.")
             is_learner = (
                 (context.organisation_role or "").strip().lower() == "learner"
                 or str(getattr(context.user, "role", "") or "").strip().lower() in {"normal", "witstart", "learner"}
