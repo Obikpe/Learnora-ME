@@ -1,26 +1,13 @@
 """
-Learnora administrator management.
+Learnora platform administrator management.
 
-Administrator roles
-------------------
-super_admin
-    Full Learnora platform control.
-
-staff_admin
-    Internal Learnora staff administrator.
-    Can manage normal Learnora learners.
-
-witstart_admin
-    Administrator for the separate WitStart environment.
-    Can manage WitStart learners only.
-
-Learners
---------
-normal
-witstart
+Only platform super administrators and internal staff administrators are
+supported by the active Learnora ME administrator API. Legacy assigned/cohort
+records are preserved in storage but are not provisioned or managed through
+this individual learner administration surface.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -34,7 +21,6 @@ from .auth import (
     check_password_rules,
     require_super_admin,
     require_learnora_admin,
-    require_witstart_admin,
     require_admin,
     log_audit_event,
     log_security_event,
@@ -109,12 +95,10 @@ class GrantFreeRequest(BaseModel):
 VALID_ADMIN_ROLES = {
     "super_admin",
     "staff_admin",
-    "witstart_admin",
 }
 
 VALID_LEARNER_ROLES = {
     "normal",
-    "witstart",
 }
 
 
@@ -224,9 +208,6 @@ def _can_manage_learner(
     if admin.role == "staff_admin":
         return learner_role == "normal"
 
-    if admin.role == "witstart_admin":
-        return learner_role == "witstart"
-
     return False
 
 
@@ -257,10 +238,7 @@ def get_admin_stats(
         Full platform statistics.
 
     staff_admin:
-        Learnora/normal learner statistics only.
-
-    witstart_admin:
-        WitStart learner statistics only.
+        Individual Learnora learner statistics only.
 
     Statistics are calculated from actual database records.
     No revenue or other values are estimated.
@@ -306,18 +284,15 @@ def get_admin_stats(
     # ---------------------------------------------------------------
 
     if admin.role == "super_admin":
-        scoped_users = users
-
-    elif admin.role == "staff_admin":
         scoped_users = [
             u for u in users
             if u.get("role") == "normal"
         ]
 
-    elif admin.role == "witstart_admin":
+    elif admin.role == "staff_admin":
         scoped_users = [
             u for u in users
-            if u.get("role") == "witstart"
+            if u.get("role") == "normal"
         ]
 
     else:
@@ -333,11 +308,6 @@ def get_admin_stats(
     normal = [
         u for u in scoped_users
         if u.get("role") == "normal"
-    ]
-
-    witstart = [
-        u for u in scoped_users
-        if u.get("role") == "witstart"
     ]
 
     active = [
@@ -367,7 +337,6 @@ def get_admin_stats(
         "users": {
             "total": len(scoped_users),
             "normal": len(normal),
-            "witstart": len(witstart),
             "active": len(active),
             "paid": len(paid),
             "pending": len(pending),
@@ -401,10 +370,6 @@ def get_admin_stats(
                 a for a in admins
                 if a.get("role") == "staff_admin"
             ]),
-            "witstart_admin": len([
-                a for a in admins
-                if a.get("role") == "witstart_admin"
-            ]),
         }
 
     return response
@@ -425,24 +390,16 @@ def get_all_users(
         all learners
 
     staff_admin:
-        normal learners
-
-    witstart_admin:
-        WitStart learners
+        individual Learnora learners
     """
 
     query = (
         supabase
         .table("users")
         .select(SAFE_USER_COLUMNS)
+        .eq("role", "normal")
         .order("created_at", desc=True)
     )
-
-    if admin.role == "staff_admin":
-        query = query.eq("role", "normal")
-
-    elif admin.role == "witstart_admin":
-        query = query.eq("role", "witstart")
 
     response = query.execute()
 
@@ -501,7 +458,7 @@ def create_user(
             status_code=400,
             detail=(
                 "Role must be one of: "
-                "normal, witstart"
+                "normal"
             ),
         )
 
@@ -520,12 +477,6 @@ def create_user(
 
     expires_at = None
 
-    # WitStart accounts get the default 91-day period.
-    if role == "witstart":
-        expires_at = (
-            now + timedelta(days=91)
-        ).isoformat()
-
     row = {
         "email": email,
         "name": (
@@ -538,11 +489,7 @@ def create_user(
         "role": role,
         "sub_status": "active",
         "is_paid": True,
-        "subscription_tier": (
-            "witstart"
-            if role == "witstart"
-            else "paid"
-        ),
+        "subscription_tier": "paid",
         "created_at": now.isoformat(),
     }
 
@@ -826,7 +773,7 @@ def create_admin(
             status_code=400,
             detail=(
                 "Role must be one of: "
-                "super_admin, staff_admin, witstart_admin"
+                "super_admin, staff_admin"
             ),
         )
 
@@ -1296,8 +1243,6 @@ def get_activity_stream(
     Staff admin:
         Learnora-oriented activity
 
-    WitStart admin:
-        WitStart-oriented activity
     """
 
     response = (
@@ -1311,23 +1256,7 @@ def get_activity_stream(
 
     activity = response.data or []
 
-    if admin.role == "witstart_admin":
-        activity = [
-            item
-            for item in activity
-            if item.get("role") == "witstart"
-            or (
-                isinstance(
-                    item.get("metadata"),
-                    dict,
-                )
-                and item["metadata"].get(
-                    "created_by_role"
-                ) == "witstart_admin"
-            )
-        ]
-
-    elif admin.role == "staff_admin":
+    if admin.role == "staff_admin":
         activity = [
             item
             for item in activity
