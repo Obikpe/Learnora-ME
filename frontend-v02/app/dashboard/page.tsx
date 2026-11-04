@@ -101,14 +101,21 @@ export default function MyLearningPage() {
     const progressResponse = progressResult[0];
     const progressLoaded = progressResponse.status === "fulfilled";
     const progressData = progressResponse.status === "fulfilled" ? progressResponse.value : null;
-    setActivitySummary(progressResult[1].status === "fulfilled" ? progressResult[1].value : null);
-    setLearningPlan(progressResult[2].status === "fulfilled" ? progressResult[2].value?.plan || null : null);
+    if (progressResult[1].status === "fulfilled") setActivitySummary(progressResult[1].value);
+    if (progressResult[2].status === "fulfilled") setLearningPlan(progressResult[2].value?.plan || null);
 
     if (progressData) {
       setLearning(progressData);
     } else {
-      setLearning({ courses: [] });
-      setError("Your learning records could not be loaded.");
+      const failure = (progressResponse as PromiseRejectedResult).reason as (Error & { status?: number }) | undefined;
+      if (failure?.status === 401) {
+        if (typeof window !== "undefined") window.location.replace("/login");
+        return;
+      }
+      // Keep the last successful dashboard data during a refresh failure.
+      // On first load, leave it null so the page can show a real retry state
+      // instead of presenting an API failure as an empty learning account.
+      setError("Your learning records could not be loaded. Please try again.");
     }
     setLoading(false);
 
@@ -130,7 +137,7 @@ export default function MyLearningPage() {
         const result = await request<any>("/public/courses");
         setCatalogue(Array.isArray(result.courses) ? result.courses : Array.isArray(result.data) ? result.data : []);
       } catch {
-        setCatalogue([]);
+        // Retain previously loaded recommendations if a refresh temporarily fails.
       } finally {
         setCatalogueLoading(false);
       }
@@ -145,8 +152,8 @@ export default function MyLearningPage() {
     ]);
     setEvidenceError(evidenceResult.status === "rejected");
     setCertificateError(credentialResult.status === "rejected");
-    setEvidence(evidenceResult.status === "fulfilled" ? evidenceResult.value : { skills: [], evidence: [] });
-    setCredentials(credentialResult.status === "fulfilled" ? credentialResult.value : { certificates: [] });
+    if (evidenceResult.status === "fulfilled") setEvidence(evidenceResult.value);
+    if (credentialResult.status === "fulfilled") setCredentials(credentialResult.value);
     setRefreshing(false);
   }
 
@@ -255,7 +262,7 @@ export default function MyLearningPage() {
       </div>
     </section>
 
-    {error && <p role="alert" className="mb-5 text-sm text-[var(--warning)]">{error}</p>}
+    {error && <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--warning)]/25 bg-[var(--warning)]/[.05] px-4 py-3 text-sm text-[var(--warning)]"><span>{error}</span><button type="button" onClick={() => void load(user)} disabled={refreshing} className="inline-flex min-h-9 items-center rounded-lg border border-[var(--border)] px-3 text-xs font-semibold text-[var(--text-heading)] disabled:opacity-50">{refreshing ? "Retrying…" : "Try again"}</button></div>}
 
     <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Learning summary">
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Active courses</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{inProgress.length}</p></div>
@@ -283,7 +290,9 @@ export default function MyLearningPage() {
     </section>}
     <div className="mt-6 grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_19rem]">
       <section className="min-w-0" role="tabpanel">
-        {tab === "in-progress" && (inProgress.length
+        {tab === "in-progress" && (!learning
+          ? <div className="empty">Your learning records are unavailable right now. Use “Try again” above to reload them.</div>
+          : inProgress.length
           ? <div className="space-y-4">{inProgress.map((row: any) => <CourseCard key={row.enrolment?.id || row.course?.id} row={row} completed={false}/>)}</div>
           : courses.length === 0
             ? <section>
