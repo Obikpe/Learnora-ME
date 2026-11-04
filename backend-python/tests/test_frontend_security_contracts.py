@@ -43,6 +43,15 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn("if (progressResult[1].status === \"fulfilled\") setActivitySummary", dashboard)
         self.assertIn("if (evidenceResult.status === \"fulfilled\") setEvidence", dashboard)
 
+    def test_dashboard_session_gate_recovers_from_temporary_verification_failures(self):
+        layout = (ROOT / "frontend-v02" / "app" / "dashboard" / "layout.tsx").read_text(encoding="utf-8")
+        self.assertIn("status === 401 || status === 403", layout)
+        self.assertIn("status === 409", layout)
+        self.assertIn("We could not verify your Learnora session", layout)
+        self.assertIn("onClick={() => void validate()}", layout)
+        self.assertIn('"/login?next="', layout)
+        self.assertNotIn('window.location.replace("/")', layout)
+
     def test_ai_tutor_is_hidden_and_unavailable_during_active_quizzes(self):
         player = (ROOT / "frontend-v02" / "app" / "dashboard" / "learning" / "[courseId]" / "page.tsx").read_text(encoding="utf-8")
         shell = (ROOT / "frontend-v02" / "components" / "dashboard" / "Shell.tsx").read_text(encoding="utf-8")
