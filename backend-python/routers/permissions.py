@@ -79,7 +79,6 @@ ORGANISATION_ROLES = {
 LEGACY_ADMIN_ROLES = {
     "super_admin",
     "staff_admin",
-    "witstart_admin",
 }
 
 LEGACY_LEARNER_ROLES = {
