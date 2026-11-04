@@ -61,42 +61,166 @@ def resolve_course_access(
     organisation_id: Optional[str] = None,
     allow_free_access: bool = False,
 ):
-    """Return the strongest current access source, or None."""
-    course = _course(course_id)
+    """Return access only from the caller's single account context.
 
+    Individual purchases/subscriptions/free-launch access are never inherited
+    by an organisation or cohort identity. Retained memberships reserve that
+    context even when suspended or when the cohort has ended.
+    """
+    course = _course(course_id)
     if not course or course.get("status") != "published":
         return None
 
+    try:
+        cohort_accounts = (
+            supabase.table("cohort_accounts")
+            .select("id")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        ).data or []
+        all_memberships = (
+            supabase.table("organisation_members")
+            .select("organisation_id,role,status")
+            .eq("user_id", user_id)
+            .execute()
+        ).data or []
+        all_cohort_memberships = (
+            supabase.table("cohort_members")
+            .select("id,cohort_id,status")
+            .eq("user_id", user_id)
+            .limit(1000)
+            .execute()
+        ).data or []
+    except Exception as exc:
+        print(f"Course identity scope lookup failed: {type(exc).__name__}")
+        raise HTTPException(503, "Course access could not be verified. Please retry.") from None
+
+    # Dedicated cohort accounts must use the cohort-learning API. A retained
+    # legacy cohort membership also prevents individual purchase/free access.
+    if cohort_accounts or all_cohort_memberships:
+        return None
+
+    if all_memberships:
+        active_memberships = [
+            row for row in all_memberships
+            if str(row.get("status") or "").lower() == "active"
+        ]
+        all_organisation_ids = {
+            str(row.get("organisation_id"))
+            for row in all_memberships
+            if row.get("organisation_id")
+        }
+        active_organisation_ids = {
+            str(row.get("organisation_id"))
+            for row in active_memberships
+            if row.get("organisation_id")
+        }
+        if (
+            not active_memberships
+            or len(all_organisation_ids) != 1
+            or len(active_organisation_ids) != 1
+        ):
+            return None
+        resolved_organisation_id = next(iter(active_organisation_ids))
+        if organisation_id and str(organisation_id) != resolved_organisation_id:
+            return None
+        organisation_id = resolved_organisation_id
+
+    if organisation_id:
+        # An organisation account can only use the active organisation
+        # assignment/entitlement path. Its personal purchases and subscriptions
+        # are deliberately not considered.
+        if not all_memberships:
+            return None
+        membership = (
+            supabase.table("organisation_members")
+            .select("id,status,role")
+            .eq("organisation_id", organisation_id)
+            .eq("user_id", user_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        )
+        if not membership.data:
+            return None
+        if course.get("organisation_id") and str(course.get("organisation_id")) != str(organisation_id):
+            return None
+
+        entitlements = (
+            supabase.table("learnora_access_entitlements")
+            .select("*")
+            .eq("course_id", course_id)
+            .eq("organisation_id", organisation_id)
+            .eq("status", "active")
+            .execute()
+        ).data or []
+        for entitlement in entitlements:
+            if _active(entitlement):
+                return {
+                    "allowed": True,
+                    "source": entitlement.get("source_type"),
+                    "entitlement": entitlement,
+                }
+
+        course_access = (
+            supabase.table("course_access")
+            .select("*")
+            .eq("organisation_id", organisation_id)
+            .eq("course_id", course_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        )
+        if course_access.data:
+            lifecycle = (
+                supabase.table("learnora_organisation_lifecycle")
+                .select("status")
+                .eq("organisation_id", organisation_id)
+                .limit(1)
+                .execute()
+            )
+            active_organisation = (
+                supabase.table("organisations")
+                .select("id,is_active")
+                .eq("id", organisation_id)
+                .eq("is_active", True)
+                .limit(1)
+                .execute()
+            )
+            if (
+                active_organisation.data
+                and lifecycle.data
+                and lifecycle.data[0].get("status") in {"active", "expiring"}
+            ):
+                return {
+                    "allowed": True,
+                    "source": "organisation_assignment",
+                    "membership": membership.data[0],
+                    "course_access": course_access.data[0],
+                }
+        return None
+
+    # Only identities with no retained organisation/cohort relationship reach
+    # the individual learner access path.
     if (
         allow_free_access
         and free_access_mode_enabled()
-        and not organisation_id
         and not course.get("organisation_id")
         and course.get("ownership") == "learnora"
     ):
         return {"allowed": True, "source": "free_launch"}
 
     entitlements = (
-        supabase
-        .table("learnora_access_entitlements")
+        supabase.table("learnora_access_entitlements")
         .select("*")
         .eq("course_id", course_id)
+        .eq("user_id", user_id)
         .eq("status", "active")
         .execute()
     ).data or []
-
     for entitlement in entitlements:
-        user_match = (
-            entitlement.get("user_id")
-            and str(entitlement["user_id"]) == str(user_id)
-        )
-        org_match = (
-            organisation_id
-            and entitlement.get("organisation_id")
-            and str(entitlement["organisation_id"]) == str(organisation_id)
-        )
-
-        if (user_match or org_match) and _active(entitlement):
+        if _active(entitlement):
             return {
                 "allowed": True,
                 "source": entitlement.get("source_type"),
@@ -104,8 +228,7 @@ def resolve_course_access(
             }
 
     purchase = (
-        supabase
-        .table("learnora_course_purchases")
+        supabase.table("learnora_course_purchases")
         .select("*")
         .eq("user_id", user_id)
         .eq("course_id", course_id)
@@ -114,7 +237,6 @@ def resolve_course_access(
         .limit(1)
         .execute()
     )
-
     if purchase.data:
         return {
             "allowed": True,
@@ -122,79 +244,9 @@ def resolve_course_access(
             "purchase": purchase.data[0],
         }
 
-    if not organisation_id:
-        memberships = (
-            supabase
-            .table("organisation_members")
-            .select("organisation_id")
-            .eq("user_id", user_id)
-            .eq("status", "active")
-            .limit(20)
-            .execute()
-        ).data or []
-
-        for membership in memberships:
-            oid = membership.get("organisation_id")
-            if not oid:
-                continue
-
-            access = resolve_course_access(
-                user_id,
-                course_id,
-                str(oid),
-            )
-            if access:
-                return access
-
-    else:
-        membership = (
-            supabase
-            .table("organisation_members")
-            .select("id,status,role")
-            .eq("organisation_id", organisation_id)
-            .eq("user_id", user_id)
-            .eq("status", "active")
-            .limit(1)
-            .execute()
-        )
-
-        if membership.data:
-            course_access = (
-                supabase
-                .table("course_access")
-                .select("*")
-                .eq("organisation_id", organisation_id)
-                .eq("course_id", course_id)
-                .eq("status", "active")
-                .limit(1)
-                .execute()
-            )
-
-            if course_access.data:
-                lifecycle = (
-                    supabase
-                    .table("learnora_organisation_lifecycle")
-                    .select("status")
-                    .eq("organisation_id", organisation_id)
-                    .limit(1)
-                    .execute()
-                )
-
-                if lifecycle.data and lifecycle.data[0].get("status") in {
-                    "active",
-                    "expiring",
-                }:
-                    return {
-                        "allowed": True,
-                        "source": "organisation_assignment",
-                        "membership": membership.data[0],
-                        "course_access": course_access.data[0],
-                    }
-
     if course.get("ownership") == "learnora":
         subscription = (
-            supabase
-            .table("learnora_subscriptions")
+            supabase.table("learnora_subscriptions")
             .select("*")
             .eq("user_id", user_id)
             .in_("status", ["trialing", "active"])
@@ -202,7 +254,6 @@ def resolve_course_access(
             .limit(1)
             .execute()
         )
-
         if subscription.data and _active(subscription.data[0]):
             return {
                 "allowed": True,
