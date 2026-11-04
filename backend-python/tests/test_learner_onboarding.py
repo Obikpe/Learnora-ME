@@ -1,6 +1,7 @@
 """Individual learner boundaries for optional AI onboarding and recommendations."""
 import os
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
 os.environ.setdefault("APP_ENV", "development")
@@ -30,6 +31,13 @@ class LearnerOnboardingBoundaryTests(unittest.TestCase):
                 role="normal", account_type="learner", organisation_id="org-1",
             ))
         self.assertEqual(raised.exception.status_code, 403)
+
+    def test_recommendations_use_the_same_public_course_visibility_rules(self):
+        source = (Path(__file__).resolve().parents[1] / "routers" / "learner_onboarding.py").read_text(encoding="utf-8")
+        recommendations = source.split('def recommendations(', 1)[1]
+        self.assertIn("_is_public_course(row, organisation_map, creator_map)", recommendations)
+        self.assertIn("_public_course_payload(row)", recommendations)
+        self.assertIn('select("id,organisation_id,creator_id,title,slug', recommendations)
 
     def test_staff_cannot_use_individual_onboarding(self):
         with self.assertRaises(HTTPException) as raised:
