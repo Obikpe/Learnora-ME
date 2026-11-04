@@ -1254,6 +1254,30 @@ def _find_user(
 
 
 # ---------------------------------------------------------------------------
+def _find_cohort_accounts_by_email(email: str) -> list[dict]:
+    """Find every reserved organisation/cohort identity for a canonical email.
+
+    Cohort accounts are still stored separately for compatibility. This guard
+    prevents the public individual registration/login path from treating an
+    existing organisation identity as an available individual email.
+    """
+    try:
+        response = (
+            supabase.table("cohort_accounts")
+            .select("id,cohort_id,organisation_id,status")
+            .ilike("email", _escape_ilike_literal(email))
+            .limit(10)
+            .execute()
+        )
+    except Exception as exc:
+        print(f"Reserved account lookup failed: {type(exc).__name__}")
+        raise HTTPException(
+            status_code=503,
+            detail="Account availability could not be verified. Please try again.",
+        ) from None
+    return response.data or []
+
+
 # LEARNER ENTITLEMENT
 # ---------------------------------------------------------------------------
 
@@ -1557,10 +1581,6 @@ def get_current_user(
     # ADMIN ACCOUNT
     # ---------------------------------------------------------------
 
-    admin = _find_admin(
-        email
-    )
-
     if admin:
 
         if not admin.get(
@@ -1640,10 +1660,6 @@ def get_current_user(
     # ---------------------------------------------------------------
     # LEARNER ACCOUNT
     # ---------------------------------------------------------------
-
-    user = _find_user(
-        email
-    )
 
     if not user:
 
@@ -1766,7 +1782,13 @@ def get_current_user(
 
 
 def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tuple[str | None, str | None]:
-    """Resolve active organisation membership before applying individual access."""
+    """Resolve exactly one active organisation boundary for an account.
+
+    Legacy cohort membership is included because some historical learners are
+    represented by public.users + cohort_members rather than a dedicated
+    cohort_accounts identity. Multiple active organisation boundaries are
+    ambiguous and must never be silently resolved by query ordering.
+    """
     try:
         memberships = (
             supabase.table("organisation_members")
@@ -1776,30 +1798,35 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
             .order("joined_at", desc=True)
             .execute()
         ).data or []
+
+        active_contexts: list[tuple[str, str]] = []
         for membership in memberships:
+            organisation_id = str(membership.get("organisation_id") or "")
+            if not organisation_id:
+                continue
             organisation = (
                 supabase.table("organisations")
                 .select("id,is_active")
-                .eq("id", membership["organisation_id"])
+                .eq("id", organisation_id)
                 .limit(1)
                 .execute()
             )
             if organisation.data and organisation.data[0].get("is_active"):
-                return str(membership["organisation_id"]), str(membership["role"])
+                active_contexts.append((organisation_id, str(membership.get("role") or "")))
 
-        # Legacy WitStart/cohort learners are represented by public.users +
-        # cohort_members rather than organisation_members. Resolve their
-        # organisation from the active cohort so scoped assignment checks can
-        # authorise their existing cohort course enrolments.
         cohort_memberships = (
             supabase.table("cohort_members")
             .select("cohort_id")
             .eq("user_id", user_id)
             .eq("status", "active")
-            .limit(10)
+            .limit(100)
             .execute()
         ).data or []
-        cohort_ids = list({str(row["cohort_id"]) for row in cohort_memberships if row.get("cohort_id")})
+        cohort_ids = list({
+            str(row["cohort_id"])
+            for row in cohort_memberships
+            if row.get("cohort_id")
+        })
         if cohort_ids:
             cohorts = (
                 supabase.table("cohorts")
@@ -1820,18 +1847,49 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
                     .execute()
                 ).data or []
                 if organisation and organisation[0].get("is_active"):
-                    return organisation_id, "learner"
-        return None, None
+                    active_contexts.append((organisation_id, "learner"))
+
+        organisation_ids = {item[0] for item in active_contexts}
+        if len(organisation_ids) > 1:
+            log_security_event(
+                action="multiple_active_organisation_contexts",
+                metadata={
+                    "user_id": user_id,
+                    "organisation_count": len(organisation_ids),
+                },
+            )
+            if fail_closed:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "This account is linked to more than one active organisation. "
+                        "Contact Learnora support to resolve the account before continuing."
+                    ),
+                )
+            return None, None
+
+        if not organisation_ids:
+            return None, None
+
+        organisation_id = next(iter(organisation_ids))
+        membership_role = next(
+            (role for oid, role in active_contexts if oid == organisation_id and role),
+            None,
+        )
+        return organisation_id, membership_role or "learner"
+
+    except HTTPException:
+        raise
     except Exception as exc:
-        if free_access_mode_enabled() and fail_closed:
+        if fail_closed:
+            print(f"Organisation identity resolution failed: {type(exc).__name__}")
             raise HTTPException(
                 status_code=503,
-                detail="Your organisation membership could not be verified. Please try again before accessing free learner content.",
-            ) from exc
+                detail="Your organisation access could not be verified. Please try again.",
+            ) from None
         return None, None
 
 
-# ---------------------------------------------------------------------------
 # AUTHORIZATION DEPENDENCIES
 # ---------------------------------------------------------------------------
 
@@ -2047,13 +2105,46 @@ def login(
             ),
         )
 
+    # Resolve every legacy identity source before choosing an authentication
+    # path. Never fall through from a failed account class to another one.
+    cohort_accounts = _find_cohort_accounts_by_email(email)
+    admin = _find_admin(email)
+    user = _find_user(email)
+
+    if (admin and user) or (cohort_accounts and (admin or user)):
+        log_security_event(
+            action="conflicting_email_account_contexts",
+            email=email,
+            request=request,
+            metadata={
+                "has_admin": bool(admin),
+                "has_individual_user": bool(user),
+                "cohort_account_count": len(cohort_accounts),
+            },
+        )
+        raise HTTPException(
+            status_code=409,
+            detail="This email has conflicting account records. Contact Learnora support before signing in.",
+        )
+
+    if cohort_accounts and not admin and not user:
+        # Organisation/cohort identities must not authenticate through the
+        # public individual learner endpoint.
+        verify_password(payload.password, DUMMY_LOGIN_PASSWORD_HASH)
+        _record_failure(rate_key)
+        log_security_event(
+            action="reserved_organisation_email_login_attempt",
+            email=email,
+            request=request,
+        )
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+        )
+
     # ---------------------------------------------------------------
     # ADMIN
     # ---------------------------------------------------------------
-
-    admin = _find_admin(
-        email
-    )
 
     if admin:
 
@@ -2315,7 +2406,10 @@ def login(
             )
 
     organisation_id, organisation_role = (
-        _active_organisation_context(str(user["id"]))
+        _active_organisation_context(
+            str(user["id"]),
+            fail_closed=role in {"normal", "witstart"},
+        )
         if role != "organisation_prospect"
         else (None, None)
     )
@@ -2419,6 +2513,17 @@ def register(
             detail=(
                 "An account with this "
                 "email already exists"
+            ),
+        )
+
+    reserved_cohort_accounts = _find_cohort_accounts_by_email(email)
+    if reserved_cohort_accounts:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "This email is reserved for an organisation-managed account. "
+                "Ask the organisation to release the account before creating "
+                "an individual Learnora account."
             ),
         )
 
