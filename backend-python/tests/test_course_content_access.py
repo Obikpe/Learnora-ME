@@ -248,9 +248,9 @@ class CourseContentAccessTests(unittest.TestCase):
 
     def test_individual_free_launch_catalogue_access_is_preserved(self):
         course = {"id": "course-1", "ownership": "learnora", "organisation_id": None, "status": "published"}
-        with patch.object(course_content, "free_access_mode_enabled", return_value=True), \\
-             patch.object(course_content, "supabase", FakeSupabase()):
-            course_content._check_course_view_access(context(None, role="learner"), course)
+        with patch.object(course_content, "free_access_mode_enabled", return_value=True):
+            with patch.object(course_content, "supabase", FakeSupabase()):
+                course_content._check_course_view_access(context(None, role="learner"), course)
 
     def test_new_cohort_account_cannot_use_generic_course_content_endpoint(self):
         course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
