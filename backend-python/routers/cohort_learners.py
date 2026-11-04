@@ -616,7 +616,7 @@ def activate_cohort_account(body: CohortActivation):
     now = datetime.now(timezone.utc)
     result = (
         supabase.table("cohort_accounts")
-        .select("id,cohort_id,status,activation_expires_at")
+        .select("id,cohort_id,email,status,activation_expires_at")
         .eq("activation_token_hash", _hash_token(body.token))
         .eq("status", "pending_activation")
         .limit(1)
@@ -625,6 +625,18 @@ def activate_cohort_account(body: CohortActivation):
     if not result.data:
         raise HTTPException(400, "Activation link is invalid, expired, or already used.")
     account = result.data[0]
+    account_email = norm_email(str(account.get("email") or ""))
+    reserved_accounts = _find_cohort_accounts_by_email(account_email)
+    if (
+        _find_user(account_email)
+        or _find_admin(account_email)
+        or len(reserved_accounts) != 1
+        or str(reserved_accounts[0].get("id")) != str(account["id"])
+    ):
+        raise HTTPException(
+            409,
+            "This email has conflicting account records. Contact the organisation before activating this account.",
+        )
     expiry = account.get("activation_expires_at")
     try:
         expires_at = datetime.fromisoformat(str(expiry).replace("Z", "+00:00"))
@@ -689,6 +701,20 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
         _cohort_record_failure(rate_key)
         _cohort_record_failure(ip_rate_key)
         raise HTTPException(403, "This cohort account is not active. Activate it or contact your organisation.")
+    account_email = norm_email(str(account.get("email") or ""))
+    reserved_accounts = _find_cohort_accounts_by_email(account_email)
+    if (
+        _find_user(account_email)
+        or _find_admin(account_email)
+        or len(reserved_accounts) != 1
+        or str(reserved_accounts[0].get("id")) != str(account["id"])
+    ):
+        _cohort_record_failure(rate_key)
+        _cohort_record_failure(ip_rate_key)
+        raise HTTPException(
+            409,
+            "This email has conflicting account records. Contact the organisation before signing in.",
+        )
     cohort = supabase.table("cohorts").select("status").eq("id", account["cohort_id"]).limit(1).execute()
     if not cohort.data or cohort.data[0].get("status") not in {"draft", "upcoming", "active"}:
         raise HTTPException(403, "This cohort has ended and the account is no longer available.")
