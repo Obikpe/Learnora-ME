@@ -26,7 +26,7 @@ Examples:
 
         ↓
 
-    assigned to Witstart Academy
+    assigned to an organisation
 
         ↓
 
