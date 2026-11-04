@@ -59,6 +59,19 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn('me.account_type!=="learner"||me.role!=="normal"', page)
         self.assertIn('memberships.some((membership:any)=>membership.status==="active")', page)
 
+    def test_active_learnora_me_ui_has_no_product_specific_legacy_workspace(self):
+        root = ROOT / "frontend-v02"
+        sidebar = (root / "components" / "dashboard" / "Sidebar.tsx").read_text(encoding="utf-8")
+        section = (root / "app" / "dashboard" / "[section]" / "page.tsx").read_text(encoding="utf-8")
+        courses = (root / "app" / "courses" / "page.tsx").read_text(encoding="utf-8")
+        tracks = (root / "app" / "tracks" / "page.tsx").read_text(encoding="utf-8")
+        legacy_route = (root / "app" / "dashboard" / "witstart" / "page.tsx").read_text(encoding="utf-8")
+        self.assertNotIn("witstart", sidebar.lower())
+        self.assertNotIn("witstart", section.lower())
+        self.assertNotIn("witstart", courses.lower())
+        self.assertNotIn("witstart", tracks.lower())
+        self.assertIn('redirect("/dashboard")', legacy_route)
+
     def test_ai_tutor_is_hidden_and_unavailable_during_active_quizzes(self):
         player = (ROOT / "frontend-v02" / "app" / "dashboard" / "learning" / "[courseId]" / "page.tsx").read_text(encoding="utf-8")
         shell = (ROOT / "frontend-v02" / "components" / "dashboard" / "Shell.tsx").read_text(encoding="utf-8")
