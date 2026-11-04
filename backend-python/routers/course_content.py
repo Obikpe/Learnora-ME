@@ -458,7 +458,7 @@ def _check_course_view_access(
             ).data or []
             is_learner = (
                 (context.organisation_role or "").strip().lower() == "learner"
-                or str(getattr(context.user, "role", "") or "").strip().lower() in {"normal", "witstart", "learner"}
+                or str(getattr(context.user, "role", "") or "").strip().lower() in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}
             )
             if grant:
                 if legacy_cohort_learner:
@@ -554,7 +554,7 @@ def _check_course_view_access(
                 raise HTTPException(403, "This course has not been assigned to your cohort.")
             is_learner = (
                 (context.organisation_role or "").strip().lower() == "learner"
-                or str(getattr(context.user, "role", "") or "").strip().lower() in {"normal", "witstart", "learner"}
+                or str(getattr(context.user, "role", "") or "").strip().lower() in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}
             )
             if is_learner:
                 active_workspace = (
@@ -656,7 +656,7 @@ def _assert_module_unlocked(context: PermissionContext, module: dict):
         return
     role = (context.organisation_role or "").strip().lower()
     legacy_role = str(getattr(context.user, "role", "") or "").strip().lower()
-    if role != "learner" and legacy_role not in {"normal", "witstart", "learner"}:
+    if role != "learner" and legacy_role not in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}:
         return
 
     previous_modules = (
