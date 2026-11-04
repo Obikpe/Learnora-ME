@@ -4,9 +4,8 @@ Learnora organisation management.
 This router belongs to the new multi-tenant Learnora architecture.
 
 Important:
-- Do not hard-code Witstart into this router.
-- Organisation access is controlled through the new permission system.
-- Legacy admin roles remain supported elsewhere while migration is in progress.
+- Organisation access is controlled through the shared permission system.
+- Product-specific pilot roles are not part of the organisation model.
 """
 
 from datetime import datetime, timezone
