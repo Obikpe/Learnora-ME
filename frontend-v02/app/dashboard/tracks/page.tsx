@@ -56,7 +56,7 @@ export default function MyLearningTracksPage() {
       if (!active) return;
       const memberships = me.organisation_memberships || [];
       const assignedLearner = Boolean(
-        me.account_type === "cohort" || me.role === "witstart" || me.cohort_id || me.organisation_id || me.organisation_role === "member" ||
+        me.account_type === "cohort" || (me.account_type === "learner" && me.role !== "normal") || me.cohort_id || me.organisation_id || me.organisation_role === "member" ||
         me.organisation_role === "learner" ||
         memberships.some((membership: any) => ["learner", "member"].includes(membership.role) && membership.status === "active")
       );
