@@ -3694,8 +3694,8 @@ def me(
         "course_access": user.course_access,
         "trial_ends_at": user.trial_ends_at,
         "expires_at": user.expires_at,
-        "organisation_id": single_membership.get("organisation_id") if single_membership else user.organisation_id,
-        "organisation_role": single_membership.get("role") if single_membership else user.organisation_role,
+        "organisation_id": single_membership.get("organisation_id") if single_membership else (user.organisation_id if not memberships else None),
+        "organisation_role": single_membership.get("role") if single_membership else (user.organisation_role if not memberships else None),
         "cohort_id": cohort_id,
         "organisation_memberships": memberships,
         "allowed": allowed_for(
