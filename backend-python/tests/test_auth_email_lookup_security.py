@@ -54,9 +54,28 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         self.assertIn("verify_password(", unknown_path)
         self.assertIn("DUMMY_LOGIN_PASSWORD_HASH", unknown_path)
 
+    def test_public_login_and_registration_respect_reserved_cohort_emails(self):
+        source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
+        login = source.split('@router.post("/login")', 1)[1].split("# REGISTER", 1)[0]
+        register = source.split('"/register"', 1)[1].split("# VERIFY EMAIL", 1)[0]
+        self.assertIn('_find_cohort_accounts_by_email(email)', login)
+        self.assertIn('if cohort_accounts and not admin and not user:', login)
+        self.assertIn('if (admin and user) or (cohort_accounts and (admin or user)):', login)
+        self.assertIn('_find_cohort_accounts_by_email(email)', register)
+        self.assertIn('reserved for an organisation-managed account', register)
+
+    def test_organisation_context_resolution_fails_closed_on_multiple_tenants(self):
+        source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
+        resolver = source.split("def _active_organisation_context(", 1)[1].split("# AUTHORIZATION DEPENDENCIES", 1)[0]
+        self.assertIn('organisation_ids = {item[0] for item in active_contexts}', resolver)
+        self.assertIn('if len(organisation_ids) > 1:', resolver)
+        self.assertIn('status_code=409', resolver)
+        self.assertIn('if fail_closed:', resolver)
+        self.assertIn('fail_closed=role in {"normal", "witstart"}', source)
+
     def test_email_lookup_helper_escapes_all_pattern_wildcards(self):
         source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
-        self.assertGreaterEqual(source.count("_escape_ilike_literal(email)"), 2)
+        self.assertGreaterEqual(source.count("_escape_ilike_literal(email)"), 3)
 
 
 if __name__ == "__main__":
