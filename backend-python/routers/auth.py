@@ -269,16 +269,17 @@ if len(JWT_SECRET) < 32:
 # ROLES
 # ---------------------------------------------------------------------------
 
+LEGACY_ASSIGNED_LEARNER_ROLE = "witstart"
+
 LEARNER_ROLES = {
     "normal",
-    "witstart",
+    LEGACY_ASSIGNED_LEARNER_ROLE,
     "organisation_prospect",
 }
 
 ADMIN_ROLES = {
     "super_admin",
     "staff_admin",
-    "witstart_admin",
 }
 
 ACTIVE_STATUSES = {
@@ -977,7 +978,6 @@ def allowed_for(
                 "permissions": [
                     "manage_all_learners",
                     "manage_admins",
-                    "manage_witstart",
                     "grant_free_month",
                     "view_activity",
                     "view_traffic",
@@ -1001,35 +1001,12 @@ def allowed_for(
                 ],
             }
 
-        if role == "witstart_admin":
-
-            return {
-                "courses": 12,
-                "tracks": [
-                    "WitStart Private"
-                ],
-                "is_admin": True,
-                "admin_role": role,
-                "redirect_view": (
-                    "/dashboard/admin/witstart_admin"
-                ),
-                "permissions": [
-                    "manage_witstart_learners",
-                    "view_witstart_activity",
-                ],
-            }
-
-    if role == "witstart":
-
+    if role == LEGACY_ASSIGNED_LEARNER_ROLE:
         return {
             "courses": 12,
-            "tracks": [
-                "Witstart Private"
-            ],
+            "tracks": ["assigned"],
             "is_admin": False,
-            "redirect_view": (
-                "/dashboard/witstart"
-            ),
+            "redirect_view": "/dashboard",
         }
 
     return {
@@ -1785,7 +1762,7 @@ def get_current_user(
         )
 
     organisation_id, organisation_role = (
-        _active_organisation_context(str(user["id"]), fail_closed=role in {"normal", "witstart"})
+        _active_organisation_context(str(user["id"]), fail_closed=role in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE})
         if role != "organisation_prospect"
         else (None, None)
     )
@@ -2064,42 +2041,6 @@ def require_learnora_admin(
     return user
 
 
-def require_witstart_admin(
-    user: CurrentUser = Depends(
-        get_current_user
-    ),
-) -> CurrentUser:
-
-    if (
-        user.account_type
-        != "admin"
-    ):
-
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "Administrator access "
-                "required"
-            ),
-        )
-
-    if user.role not in {
-        "super_admin",
-        "witstart_admin",
-    }:
-
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "WitStart administrator "
-                "access required"
-            ),
-        )
-
-    return user
-
-
-# ---------------------------------------------------------------------------
 # REQUEST MODELS
 # ---------------------------------------------------------------------------
 
@@ -2473,7 +2414,7 @@ def login(
     organisation_id, organisation_role = (
         _active_organisation_context(
             str(user["id"]),
-            fail_closed=role in {"normal", "witstart"},
+            fail_closed=role in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE},
         )
         if role != "organisation_prospect"
         else (None, None)
