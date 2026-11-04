@@ -41,6 +41,7 @@ from fastapi import Depends, Header, HTTPException, status
 
 from .auth import (
     CurrentUser,
+    LEGACY_ASSIGNED_LEARNER_ROLE,
     get_current_user,
     supabase,
 )
@@ -83,7 +84,7 @@ LEGACY_ADMIN_ROLES = {
 
 LEGACY_LEARNER_ROLES = {
     "normal",
-    "witstart",
+    LEGACY_ASSIGNED_LEARNER_ROLE,
 }
 
 
