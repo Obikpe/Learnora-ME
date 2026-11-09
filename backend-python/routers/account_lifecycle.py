@@ -155,7 +155,7 @@ def request_account_deletion(
         f"{confirmation_url}\n\n"
         "Your account will not be deactivated unless you open this link. "
         "After confirmation, your account will be deactivated for 30 days. You can reactivate it during that period. "
-        "After 30 days, the account will be permanently deleted and a limited record may be retained where legally necessary. "
+        "After 30 days, the live sign-in profile will be permanently closed. Limited records may be retained under Learnora's privacy and retention policy. "
         "Any active recurring Learnora subscription will be cancelled when deactivation is confirmed.\n\n"
         "If you did not request this, ignore this email and your account will remain available.\n\n"
         "Learnora ME"
@@ -168,7 +168,7 @@ def request_account_deletion(
 <p>We received a request to delete your Learnora account. If you confirm, your account will be deactivated for 30 days. You can reactivate it during that period. After 30 days, it will be permanently deleted.</p>
 <p style="margin:28px 0"><a href="{confirmation_url}" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#172033;color:#fff;text-decoration:none;font-weight:bold">Confirm account deletion</a></p>
 <p style="font-size:13px;line-height:1.6;color:#64748b">This secure link expires in 60 minutes. If you confirm, your account will be deactivated for 30 days. You can reactivate it during that period. After 30 days, it will be permanently deleted. Active recurring Learnora subscriptions will be cancelled when deactivation is confirmed.</p>
-<p style="font-size:13px;line-height:1.6;color:#64748b">A limited account record and associated learning history will be retained for legitimate record-keeping.</p>
+<p style="font-size:13px;line-height:1.6;color:#64748b">Limited account, learning, security or audit records may be retained under Learnora's privacy and retention policy.</p>
 <p style="font-size:13px;color:#64748b">If you did not request this, ignore this email. Your account will remain available.</p>
 </div></body></html>"""
     try:
