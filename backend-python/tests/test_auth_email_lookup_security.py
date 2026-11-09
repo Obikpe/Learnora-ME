@@ -11,7 +11,7 @@ os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
-from routers.auth import _escape_ilike_literal, _find_cohort_accounts_by_email, _get_client_ip
+from routers.auth import CurrentUser, _escape_ilike_literal, _find_cohort_accounts_by_email, _get_client_ip, me
 
 
 class AuthEmailLookupSecurityTests(unittest.TestCase):
@@ -86,6 +86,26 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         self.assertIn("return None", optional)
         self.assertIn("raise", optional)
 
+
+    @patch("routers.auth.supabase")
+    def test_current_user_endpoint_fails_closed_when_membership_lookup_fails(self, mock_supabase):
+        query = Mock()
+        mock_supabase.table.return_value = query
+        query.select.return_value = query
+        query.eq.return_value = query
+        query.execute.side_effect = RuntimeError("database unavailable")
+        user = CurrentUser(
+            id="user-1",
+            email="learner@example.com",
+            role="normal",
+            sub_status="free",
+            account_type="learner",
+        )
+
+        with self.assertRaises(HTTPException) as raised:
+            me(user)
+
+        self.assertEqual(raised.exception.status_code, 503)
 
     @patch("routers.auth.supabase")
     def test_reserved_email_lookup_uses_literal_case_insensitive_match(self, mock_supabase):
