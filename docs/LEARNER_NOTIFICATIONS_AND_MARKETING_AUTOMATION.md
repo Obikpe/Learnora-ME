@@ -50,7 +50,7 @@ For each due account, the database function:
 
 The historical record is not a second usable account, but it still contains personal data: it retains the original email and user UUID. This is restricted pseudonymisation, not complete anonymisation or erasure. Existing learning/progress rows may also remain linked to that UUID. Before production rollout, decide which learner-linked records are deleted, irreversibly anonymised or retained, document the lawful basis and retention period for the original email/UUID/deletion reason, and make the learner-facing deletion notice match that policy. Do not retain identifiable history indefinitely by default.
 
-**Operational dependency:** the deployed backend needs a strong `CRON_SECRET` environment variable. The daily cron is configured in `backend-python/vercel.json`; set the secret in the Vercel production environment before deploying. Monitor cron failures and alert staff when a finalisation run fails.
+**Operational dependency:** the deployed backend needs a strong `CRON_SECRET` environment variable. The daily cron is configured in `backend-python/vercel.json`. The finaliser also has an explicit `ACCOUNT_DELETION_FINALIZER_ENABLED` gate which defaults to `false`; keep it false until the table-by-table retention/erasure policy is approved and implemented. Once approved, set the secret and enable the gate in the Vercel production environment. Monitor cron results and alert staff when a finalisation run fails.
 
 ### 1.5 Organisation-managed identities
 
@@ -242,7 +242,7 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 
 ### Not yet released / must be completed before production use
 - Apply the new migration `20261109180000_learner_deletion_grace_and_marketing_consent.sql` to the active Pheonix Supabase project before deploying the backend code. The migration has not been applied to production.
-- Set a strong production `CRON_SECRET` in Vercel before deploying the backend; verify the daily cron is authorised and monitor its result.
+- Set a strong production `CRON_SECRET` in Vercel before deploying the backend. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until the data-erasure/retention matrix is approved and implemented; then explicitly enable it and verify the daily cron.
 - Run backend tests, frontend typecheck/build and browser acceptance on phone/tablet/desktop.
 - Verify email delivery for deletion confirmation and reactivation links, and test all 30-day boundary cases.
 - Implement and test the event/outbox notification engine, interest-signal capture, campaign worker and actual marketing email templates. The unsubscribe endpoint and page are in place, and the backend exposes a helper that creates a per-email opaque unsubscribe URL. No campaign sender currently consumes that helper.
