@@ -13,7 +13,7 @@ export default function LearningSessionTracker() {
 
   useEffect(() => {
     let disposed = false;
-    let heartbeatTimer: ReturnType<typeof window.setInterval> | null = null;
+    let heartbeatTimer: number | null = null;
     let eligibleLearner = false;
 
     const recentInteraction = () => Date.now() - lastActivityAt.current <= 300_000;
