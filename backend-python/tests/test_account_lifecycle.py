@@ -38,18 +38,17 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertLess(cancel_at, finalize_at)
         self.assertIn('["active", "past_due", "paused"]', source)
 
-    def test_history_is_retained_without_preserving_authentication_secrets(self):
-        migration = (ROOT / "supabase/migrations/20261102130000_learner_account_deletion.sql").read_text(encoding="utf-8")
-        self.assertIn("CREATE TABLE IF NOT EXISTS public.deleted_account_history", migration)
-        self.assertIn("original_user_id uuid NOT NULL UNIQUE", migration)
-        self.assertIn("account_snapshot jsonb NOT NULL", migration)
-        self.assertIn("password_hash = NULL", migration)
-        self.assertIn("account_status = 'deleted'", migration)
-        self.assertIn("SET status = 'suspended'", migration)
-        self.assertIn("expires_at = NULL", migration)
-        self.assertIn("trial_ends_at = NULL", migration)
-        self.assertIn("email = 'deleted+'", migration)
-        self.assertNotIn("DELETE FROM PUBLIC.USERS", migration.upper())
+    def test_final_erasure_retains_only_the_restricted_history_record(self):
+        migration = (ROOT / "supabase/migrations/20261109190000_erase_learner_records_after_recovery.sql").read_text(encoding="utf-8")
+        self.assertIn("INSERT INTO public.deleted_account_history", migration)
+        self.assertIn("'{}'::jsonb", migration)
+        self.assertIn("DELETE FROM public.users WHERE id = v_user.id", migration)
+        self.assertIn("user_id", migration)
+        self.assertIn("learner_id", migration)
+        self.assertIn("FOR UPDATE SKIP LOCKED", migration)
+        self.assertIn("DELETE FROM public.audit_logs", migration)
+        self.assertNotIn("UPDATE public.users", migration)
+        self.assertNotIn("email = 'deleted+'", migration)
 
     def test_account_deletion_history_is_not_browser_readable(self):
         migration = (ROOT / "supabase/migrations/20261102130000_learner_account_deletion.sql").read_text(encoding="utf-8")
