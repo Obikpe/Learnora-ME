@@ -11,7 +11,7 @@ os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
-from routers.auth import CurrentUser, _escape_ilike_literal, _find_admin, _find_cohort_accounts_by_email, _find_user, _get_client_ip, me
+from routers.auth import CurrentUser, _active_organisation_context, _escape_ilike_literal, _find_admin, _find_cohort_accounts_by_email, _find_user, _get_client_ip, me
 
 
 class AuthEmailLookupSecurityTests(unittest.TestCase):
@@ -143,6 +143,40 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 409)
         mock_supabase.table.assert_called_once_with("users")
         query.limit.assert_called_once_with(2)
+
+    def test_unresolved_retained_cohort_membership_cannot_become_individual(self):
+        class Query:
+            def __init__(self, rows):
+                self.rows = rows
+                self.filters = {}
+            def select(self, *_args, **_kwargs): return self
+            def eq(self, key, value): self.filters[key] = value; return self
+            def in_(self, key, values): self.filters[key] = set(values); return self
+            def order(self, *_args, **_kwargs): return self
+            def limit(self, *_args, **_kwargs): return self
+            def execute(self):
+                rows = list(self.rows)
+                for key, value in self.filters.items():
+                    if isinstance(value, set):
+                        rows = [row for row in rows if row.get(key) in value]
+                    else:
+                        rows = [row for row in rows if row.get(key) == value]
+                return SimpleNamespace(data=rows)
+
+        class Database:
+            def table(self, name):
+                fixtures = {
+                    "organisation_members": [],
+                    "cohort_members": [{"cohort_id": "missing-cohort"}],
+                    "cohorts": [],
+                    "security_logs": [],
+                }
+                return Query(fixtures.get(name, []))
+
+        with patch("routers.auth.supabase", Database()):
+            with self.assertRaises(HTTPException) as raised:
+                _active_organisation_context("user-1", fail_closed=True)
+        self.assertEqual(raised.exception.status_code, 409)
 
     def test_password_recovery_resolves_all_account_contexts(self):
         source = Path(__file__).resolve().parents[1] / "routers" / "auth.py"
