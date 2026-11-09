@@ -1,6 +1,7 @@
 """Regression tests for literal, case-insensitive email account lookup patterns."""
 import os
 import unittest
+import httpx
 from pathlib import Path
 from unittest.mock import Mock, patch
 from types import SimpleNamespace
@@ -127,6 +128,25 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
             r"learner\_test\%\*@example.com",
         )
         query.limit.assert_called_once_with(10)
+
+    @patch("routers.auth.supabase")
+    @patch("routers.auth.time.sleep")
+    def test_learner_identity_lookup_retries_transient_postgrest_disconnect(self, _sleep, mock_supabase):
+        query = Mock()
+        mock_supabase.table.return_value = query
+        query.select.return_value = query
+        query.ilike.return_value = query
+        query.limit.return_value = query
+        query.execute.side_effect = [
+            httpx.RemoteProtocolError("Server disconnected"),
+            SimpleNamespace(data=[{"id": "user-1", "email": "learner@example.com"}]),
+        ]
+
+        row = _find_user("learner@example.com")
+
+        self.assertEqual(row["id"], "user-1")
+        self.assertEqual(query.execute.call_count, 2)
+        _sleep.assert_called_once_with(0.15)
 
     @patch("routers.auth.supabase")
     def test_duplicate_individual_email_rows_are_rejected(self, mock_supabase):
