@@ -650,14 +650,39 @@ def _check_course_view_access(
     )
 
 
-def _assert_module_unlocked(context: PermissionContext, module: dict):
-    """Learners must pass every prior module assessment at 70% or higher."""
+def _is_learner_viewer(context: PermissionContext) -> bool:
     if context.is_platform_admin:
-        return
+        return False
     role = (context.organisation_role or "").strip().lower()
+    if role in {"owner", "admin", "instructor", "team_manager"}:
+        return False
     legacy_role = str(getattr(context.user, "role", "") or "").strip().lower()
-    if role != "learner" and legacy_role not in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}:
+    return role == "learner" or legacy_role in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}
+
+
+def _assert_learner_lesson_visible(context: PermissionContext, lesson: dict, course: dict) -> None:
+    if not _is_learner_viewer(context):
         return
+    lesson_status = str(lesson.get("status") or "").lower()
+    course_status = str(course.get("status") or "").lower()
+    if (
+        lesson_status not in {"published", "archived"}
+        or course_status not in {"published", "archived"}
+        or (course_status != "archived" and lesson_status != "published")
+    ):
+        raise HTTPException(404, "Lesson not found.")
+
+
+def _assert_module_unlocked(context: PermissionContext, module: dict):
+    """Learners must access published modules and pass every prior assessment."""
+    if not _is_learner_viewer(context):
+        return
+
+    module_status = str(module.get("status") or "").lower()
+    course = _get_course(str(module.get("course_id") or ""))
+    course_status = str((course or {}).get("status") or "").lower()
+    if module_status not in {"published", "archived"} or course_status not in {"published", "archived"}:
+        raise HTTPException(404, "Module not found.")
 
     previous_modules = (
         supabase.table("course_modules")
