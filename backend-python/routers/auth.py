@@ -2632,6 +2632,7 @@ def register(
                     .eq("id", existing_user["id"])
                     .eq("account_status", "deactivation_pending")
                     .gt("account_deactivation_until", now.isoformat())
+                    .select("id")
                     .execute()
                 ).data or []
                 if not saved_reactivation:
