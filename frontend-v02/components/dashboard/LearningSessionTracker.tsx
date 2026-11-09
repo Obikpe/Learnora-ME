@@ -8,7 +8,7 @@ type SessionStart = { session?: { id?: string } };
 
 export default function LearningSessionTracker() {
   const sessionId = useRef<string | null>(null);
-  const lastActivityAt = useRef(0);
+  const lastActivityAt = useRef(Date.now());
   const starting = useRef(false);
 
   useEffect(() => {
