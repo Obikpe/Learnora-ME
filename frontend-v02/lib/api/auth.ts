@@ -36,6 +36,18 @@ export function getCachedCurrentUser() {
   return token ? restoreCachedUser(token) : null;
 }
 
+/** Update fields changed by authenticated settings actions without waiting for cache expiry. */
+export function updateCachedCurrentUser(patch: Record<string, any>) {
+  const token = activeToken();
+  if (!token || !cachedUser || cachedForToken !== token) return;
+  cachedUser = { ...cachedUser, ...patch };
+  cachedAt = Date.now();
+  try {
+    const epoch = sessionStorage.getItem("phx_session_epoch") || "implicit";
+    sessionStorage.setItem(USER_CACHE_PREFIX + epoch, JSON.stringify({ savedAt: cachedAt, user: cachedUser }));
+  } catch {}
+}
+
 export const login = (email: string, password: string) =>
   request<any>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
 
