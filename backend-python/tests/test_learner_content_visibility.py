@@ -90,9 +90,9 @@ class LearnerContentVisibilityTests(unittest.TestCase):
             '@router.get("/lessons/{lesson_id}")', 1
         )[0]
         structure = source.split(
-            'def get_course_structure(', 1
+            "def get_course_structure(", 1
         )[1].split(
-            "# ============================================================\n# MODULES", 1
+            "@router.", 1
         )[0]
         self.assertIn('lesson.get("status")', list_lessons)
         self.assertIn('lesson.get("status")', structure)
