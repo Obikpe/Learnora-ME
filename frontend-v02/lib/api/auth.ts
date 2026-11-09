@@ -39,8 +39,10 @@ export function getCachedCurrentUser() {
 export const login = (email: string, password: string) =>
   request<any>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
 
-export const register = (name: string, email: string, password: string) =>
-  request<any>("/auth/register", { method: "POST", body: JSON.stringify({ name, email, password }) });
+export const register = (name: string, email: string, password: string, marketingEmailOptIn = false) =>
+  request<any>("/auth/register", { method: "POST", body: JSON.stringify({
+    name, email, password, marketing_email_opt_in: marketingEmailOptIn,
+  }) });
 
 export function currentUser(): Promise<any> {
   const token = activeToken();
