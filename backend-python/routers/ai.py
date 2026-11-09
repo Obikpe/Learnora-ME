@@ -211,19 +211,23 @@ async def ask(
         lesson = lesson_rows[0]
         if lesson.get("status") != "published":
             raise HTTPException(404, "Published lesson not found.")
-        if lesson.get("module_id"):
-            from .progress import _assert_module_unlocked
-            _assert_module_unlocked(str(user.id), str(lesson["module_id"]))
         course_rows = (
             supabase.table("learnora_courses")
-            .select("id,title,level,short_description")
+            .select("id,title,level,short_description,status")
             .eq("id", body.course_id)
             .limit(1)
             .execute()
         ).data or []
-        if not course_rows:
+        if not course_rows or str(course_rows[0].get("status") or "").lower() not in {"published", "archived"}:
             raise HTTPException(404, "Course not found.")
         course = course_rows[0]
+        if lesson.get("module_id"):
+            from .progress import _assert_module_unlocked
+            _assert_module_unlocked(
+                str(user.id),
+                str(lesson["module_id"]),
+                include_archived=str(course.get("status") or "").lower() == "archived",
+            )
         lesson_progress = (
             supabase.table("learnora_lesson_progress")
             .select("progress_percent,completed,last_position_seconds,last_accessed_at")
