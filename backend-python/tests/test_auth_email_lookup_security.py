@@ -11,7 +11,7 @@ os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
-from routers.auth import CurrentUser, _escape_ilike_literal, _find_cohort_accounts_by_email, _get_client_ip, me
+from routers.auth import CurrentUser, _escape_ilike_literal, _find_admin, _find_cohort_accounts_by_email, _find_user, _get_client_ip, me
 
 
 class AuthEmailLookupSecurityTests(unittest.TestCase):
@@ -125,6 +125,38 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
             r"learner\_test\%\*@example.com",
         )
         query.limit.assert_called_once_with(10)
+
+    @patch("routers.auth.supabase")
+    def test_duplicate_individual_email_rows_are_rejected(self, mock_supabase):
+        query = Mock()
+        mock_supabase.table.return_value = query
+        query.select.return_value = query
+        query.ilike.return_value = query
+        query.limit.return_value = query
+        query.execute.return_value = SimpleNamespace(data=[{"id": "user-1"}, {"id": "user-2"}])
+
+        with self.assertRaises(HTTPException) as raised:
+            _find_user("learner@example.com")
+
+        self.assertEqual(raised.exception.status_code, 409)
+        mock_supabase.table.assert_called_once_with("users")
+        query.limit.assert_called_once_with(2)
+
+    @patch("routers.auth.supabase")
+    def test_duplicate_admin_email_rows_are_rejected(self, mock_supabase):
+        query = Mock()
+        mock_supabase.table.return_value = query
+        query.select.return_value = query
+        query.ilike.return_value = query
+        query.limit.return_value = query
+        query.execute.return_value = SimpleNamespace(data=[{"id": "admin-1"}, {"id": "admin-2"}])
+
+        with self.assertRaises(HTTPException) as raised:
+            _find_admin("admin@example.com")
+
+        self.assertEqual(raised.exception.status_code, 409)
+        mock_supabase.table.assert_called_once_with("admins")
+        query.limit.assert_called_once_with(2)
 
     @patch("routers.auth.supabase")
     def test_reserved_email_lookup_fails_closed_when_database_is_unavailable(self, mock_supabase):
