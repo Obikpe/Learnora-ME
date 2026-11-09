@@ -104,7 +104,7 @@ The Learnora admin Users view exposes current learners, accounts in the 30-day r
 
 The registration form presents a separate, optional, unticked checkbox:
 
-> Yes, I would like to receive Learnora marketing emails about new learning tracks, course releases, offers and discounts.
+> Yes, I would like to receive Learnora marketing updates by email and in-app notifications about new learning tracks, course releases, offers and discounts.
 
 It must not be bundled with Terms of Use, Privacy Policy acceptance or account creation. Leaving it unticked must not block registration or reduce access to learning.
 
