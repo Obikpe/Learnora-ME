@@ -1,14 +1,32 @@
 from datetime import datetime, timedelta, timezone
 from html import escape
+import hmac
+import os
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
+from typing import Literal
 
 from routers import auth, billing
 
 router = APIRouter(prefix="/api/account-lifecycle", tags=["account lifecycle"])
 
 DELETION_TOKEN_TTL_MINUTES = 60
+REACTIVATION_TOKEN_TTL_HOURS = 24
+ACCOUNT_RECOVERY_DAYS = 30
+
+
+class RequestDeletionRequest(BaseModel):
+    reason: Literal[
+        "not_using",
+        "found_alternative",
+        "missing_content",
+        "technical_issues",
+        "cost",
+        "privacy",
+        "other",
+    ]
+    reason_details: str | None = Field(default=None, max_length=1000)
 
 
 class ConfirmDeletionRequest(BaseModel):
@@ -63,6 +81,7 @@ def _require_individual_learner(user: auth.CurrentUser) -> None:
 
 @router.post("/request-deletion")
 def request_account_deletion(
+    payload: RequestDeletionRequest,
     request: Request,
     user: auth.CurrentUser = Depends(auth.get_current_user),
 ):
@@ -107,6 +126,8 @@ def request_account_deletion(
             "account_deletion_token_hash": token_hash,
             "account_deletion_expires_at": expires_at.isoformat(),
             "account_deletion_requested_at": now.isoformat(),
+            "deletion_reason": payload.reason,
+            "deletion_reason_details": (payload.reason_details or "").strip() or None,
         })
         .eq("id", user.id)
         .in_("account_status", ["active", "deletion_pending"])
@@ -123,9 +144,10 @@ def request_account_deletion(
         "We received a request to delete your Learnora account. "
         "To confirm, open the secure link below within 60 minutes:\n\n"
         f"{confirmation_url}\n\n"
-        "Your account will not be deleted unless you open this link. "
-        "Any active recurring Learnora subscription will be cancelled before deletion is completed. "
-        "A limited account record and associated learning history will be retained for legitimate record-keeping.\n\n"
+        "Your account will not be deactivated unless you open this link. "
+        "After confirmation, your account will be deactivated for 30 days. You can reactivate it during that period. "
+        "After 30 days, the account will be permanently deleted and a limited record may be retained where legally necessary. "
+        "Any active recurring Learnora subscription will be cancelled when deactivation is confirmed.\n\n"
         "If you did not request this, ignore this email and your account will remain available.\n\n"
         "Learnora ME"
     )
@@ -134,9 +156,9 @@ def request_account_deletion(
 <div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
 <h1 style="margin:0 0 16px">Confirm account deletion</h1>
 <p>Hi {safe_display_name},</p>
-<p>We received a request to delete your Learnora account. This action will sign you out and remove access to your account.</p>
+<p>We received a request to delete your Learnora account. If you confirm, your account will be deactivated for 30 days. You can reactivate it during that period. After 30 days, it will be permanently deleted.</p>
 <p style="margin:28px 0"><a href="{confirmation_url}" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#172033;color:#fff;text-decoration:none;font-weight:bold">Confirm account deletion</a></p>
-<p style="font-size:13px;line-height:1.6;color:#64748b">This secure link expires in 60 minutes. Your account will not be deleted unless you confirm. Active recurring Learnora subscriptions will be cancelled before deletion is completed.</p>
+<p style="font-size:13px;line-height:1.6;color:#64748b">This secure link expires in 60 minutes. If you confirm, your account will be deactivated for 30 days. You can reactivate it during that period. After 30 days, it will be permanently deleted. Active recurring Learnora subscriptions will be cancelled when deactivation is confirmed.</p>
 <p style="font-size:13px;line-height:1.6;color:#64748b">A limited account record and associated learning history will be retained for legitimate record-keeping.</p>
 <p style="font-size:13px;color:#64748b">If you did not request this, ignore this email. Your account will remain available.</p>
 </div></body></html>"""
@@ -165,10 +187,15 @@ def request_account_deletion(
         account_type="learner",
         role=user.role,
         request=request,
+        metadata={
+            "deletion_reason": payload.reason,
+            "deletion_reason_details": (payload.reason_details or "").strip() or None,
+            "confirmation_expires_at": expires_at.isoformat(),
+        },
     )
     return {
         "success": True,
-        "message": "We sent a confirmation link to your email address. Your account will remain active until you confirm.",
+        "message": "We sent a confirmation link to your email address. Your account remains active until you confirm.",
         "expires_in_minutes": DELETION_TOKEN_TTL_MINUTES,
     }
 
@@ -256,16 +283,88 @@ def confirm_account_deletion(
             detail="We could not complete account deletion. Please contact Learnora support.",
         )
 
+    deactivation_until = now + timedelta(days=ACCOUNT_RECOVERY_DAYS)
     auth.log_audit_event(
-        action="learner_account_deleted",
+        action="learner_account_deactivated",
         email=account["email"],
         account_type="learner",
         role=account.get("role") or "normal",
         request=request,
-        metadata={"user_id": learner.id, "history_retained": True},
+        metadata={
+            "user_id": learner.id,
+            "deactivation_until": deactivation_until.isoformat(),
+            "recovery_days": ACCOUNT_RECOVERY_DAYS,
+            "deletion_reason": account.get("deletion_reason"),
+        },
     )
     auth.clear_auth_cookie(response)
     return {
         "success": True,
-        "message": "Your Learnora account has been deleted.",
+        "message": "Your Learnora account is now deactivated. You can reactivate it within 30 days; after that, it will be permanently deleted.",
+        "deactivation_until": deactivation_until.isoformat(),
     }
+
+
+class ReactivateAccountRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=512)
+
+
+@router.post("/reactivate")
+def reactivate_account(payload: ReactivateAccountRequest, request: Request):
+    raw_token = payload.token.strip()
+    token_hash = auth._hash_token(raw_token)
+    now = datetime.now(timezone.utc)
+    updated = (
+        auth.supabase.table("users")
+        .update({
+            "account_status": "active",
+            "account_deactivation_until": None,
+            "account_reactivation_token_hash": None,
+            "account_reactivation_expires_at": None,
+            "account_deletion_requested_at": None,
+            "deletion_reason": None,
+            "deletion_reason_details": None,
+        })
+        .eq("account_reactivation_token_hash", token_hash)
+        .eq("account_status", "deactivation_pending")
+        .gt("account_deactivation_until", now.isoformat())
+        .gt("account_reactivation_expires_at", now.isoformat())
+        .execute()
+    ).data or []
+    if not updated:
+        raise HTTPException(status_code=400, detail="This activation link is invalid, expired, or the recovery period has ended.")
+
+    account = updated[0]
+    auth.log_audit_event(
+        action="learner_account_reactivated",
+        email=account.get("email"),
+        account_type="learner",
+        role=account.get("role") or "normal",
+        request=request,
+        metadata={"user_id": account.get("id")},
+    )
+    return {"success": True, "message": "Your Learnora account has been reactivated. You can now sign in."}
+
+
+@router.get("/finalize-expired")
+def finalize_expired_account_deletions(authorization: str | None = Header(default=None)):
+    expected = os.getenv("CRON_SECRET", "").strip()
+    if not expected:
+        raise HTTPException(status_code=503, detail="Account finalisation is not configured.")
+    if not hmac.compare_digest(authorization or "", f"Bearer {expected}"):
+        raise HTTPException(status_code=401, detail="Unauthorised.")
+    now = datetime.now(timezone.utc)
+    try:
+        result = auth.supabase.rpc(
+            "finalize_expired_learner_account_deletions",
+            {"p_now": now.isoformat()},
+        ).execute()
+    except Exception as exc:
+        print(f"Expired learner account finalisation failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Account finalisation is temporarily unavailable.") from None
+    count = result.data
+    if isinstance(count, list) and count:
+        count = next(iter(count[0].values()), 0) if isinstance(count[0], dict) else count[0]
+    if isinstance(count, dict):
+        count = next(iter(count.values()), 0)
+    return {"success": True, "finalised": int(count or 0), "checked_at": now.isoformat()}
