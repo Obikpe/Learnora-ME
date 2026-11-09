@@ -78,6 +78,8 @@ class LearnerContentVisibilityTests(unittest.TestCase):
         self.assertIn("_is_learner_viewer(context)", view_guard)
         self.assertIn('not in {"published", "archived"}', view_guard)
         self.assertIn('module_status not in {"published", "archived"}', module_guard)
+        self.assertIn('if course_status == "archived":', module_guard)
+        self.assertIn('.in_("status", ["published", "archived"])', module_guard)
         self.assertIn("_assert_learner_lesson_visible(context, lesson, course)", source)
 
     def test_learner_structure_endpoints_filter_unpublished_rows(self):
