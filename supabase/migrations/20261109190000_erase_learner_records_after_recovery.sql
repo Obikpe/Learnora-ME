@@ -121,6 +121,33 @@ BEGIN
        WHERE email = v_user.email OR portal_user_id = v_user.id;
     END IF;
 
+    -- Remove learner-signed contracts and their dependent contract records.
+    -- Detach successor references first so the self-reference cannot block
+    -- deletion; dependent versions/entitlements/reservations cascade.
+    IF to_regclass('public.learnora_contracts') IS NOT NULL THEN
+      UPDATE public.learnora_contracts
+         SET previous_contract_id = NULL
+       WHERE previous_contract_id IN (
+         SELECT id FROM public.learnora_contracts WHERE signed_by_user_id = v_user.id
+       );
+
+      DELETE FROM public.learnora_contracts
+       WHERE signed_by_user_id = v_user.id;
+    END IF;
+
+    -- These are actor-attributed lifecycle records, not shared organisation
+    -- state. Remove the actor's own event rows rather than retaining a second
+    -- account-linked audit trail.
+    IF to_regclass('public.learnora_cohort_lifecycle') IS NOT NULL THEN
+      DELETE FROM public.learnora_cohort_lifecycle
+       WHERE changed_by = v_user.id;
+    END IF;
+
+    IF to_regclass('public.learnora_organisation_lifecycle') IS NOT NULL THEN
+      DELETE FROM public.learnora_organisation_lifecycle
+       WHERE changed_by = v_user.id;
+    END IF;
+
     -- Creator-owned ledger, payout and sale rows can RESTRICT deletion
     -- of the creator profile. Remove them before deleting that profile.
     IF to_regclass('public.learnora_creator_ledger') IS NOT NULL
