@@ -1187,17 +1187,23 @@ def _find_admin(
             "email",
             _escape_ilike_literal(email),
         )
-        .limit(1)
+        .limit(2)
         .execute()
     )
 
     rows = response.data or []
+    if len(rows) > 1:
+        log_security_event(
+            action="duplicate_admin_email_identity",
+            email=email,
+            metadata={"account_table": "admins", "matched_rows": len(rows)},
+        )
+        raise HTTPException(
+            status_code=409,
+            detail="This email has multiple administrator records. Contact Learnora support before signing in.",
+        )
 
-    return (
-        rows[0]
-        if rows
-        else None
-    )
+    return rows[0] if rows else None
 
 
 def _find_user(
@@ -1216,17 +1222,23 @@ def _find_user(
             "email",
             _escape_ilike_literal(email),
         )
-        .limit(1)
+        .limit(2)
         .execute()
     )
 
     rows = response.data or []
+    if len(rows) > 1:
+        log_security_event(
+            action="duplicate_individual_email_identity",
+            email=email,
+            metadata={"account_table": "users", "matched_rows": len(rows)},
+        )
+        raise HTTPException(
+            status_code=409,
+            detail="This email has multiple learner account records. Contact Learnora support before continuing.",
+        )
 
-    return (
-        rows[0]
-        if rows
-        else None
-    )
+    return rows[0] if rows else None
 
 
 # ---------------------------------------------------------------------------
