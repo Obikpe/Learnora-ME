@@ -654,3 +654,34 @@ Read-only verification confirmed the track-course relationship, published status
 ### Remaining verification
 - The request endpoint has not yet been re-exercised after applying the migration. The next user-initiated request should confirm whether the confirmation email is sent. Typing `DELETE` only requests the email; the account is deleted only after the confirmation link is used.
 - No user account was deleted, no existing learning records were removed, and no frontend or backend deployment was triggered by this correction.
+
+
+## Responsive navigation, learner account recovery and notification consent — 9 November 2026
+
+### Mobile and tablet navigation
+- The previous mobile drawer was rendered inside the sticky header. The header's backdrop filter can establish a containing block for fixed descendants, which can clip a viewport-fixed drawer to the header. The drawer now renders through a React body portal at a higher stacking level, so it covers the Learnora ME brand/header area and displays the complete permitted navigation.
+- The notification preview now renders through a body portal as a right-side drawer below the sticky header. Its width is constrained to `min(22rem, 100vw)`, text is smaller, content wraps safely, and the header remains interactive so clicking the bell again closes the drawer.
+- These changes are source-level corrections; browser acceptance on real phone/tablet viewports has not yet been run.
+
+### Account deletion and 30-day recovery
+- Deletion requests now require a structured reason with optional details. The 60-minute confirmation email remains a separate step.
+- Confirming deletion changes the learner to `deactivation_pending` for 30 days rather than immediately anonymising the account. Sign-in and authenticated requests are blocked during this period.
+- A registration attempt using the same email during the recovery period issues a 24-hour reactivation link to the existing email. Reactivation restores the original account and learning history; it does not create a duplicate account or replace the existing password.
+- A new database migration `supabase/migrations/20261109180000_learner_deletion_grace_and_marketing_consent.sql` adds the recovery state, token fields, deletion reason and finalisation RPC. The daily Vercel cron is configured at `/api/account-lifecycle/finalize-expired`; production must have a strong `CRON_SECRET` environment variable set before deployment.
+- Finalisation after 30 days creates a restricted history row, records the deletion reason in audit activity, anonymises the live user row and releases the original email for future registration. The live account is not anonymised during the recovery period.
+- Learnora admin Users now exposes learner account status, pending recovery-period deletions and completed deletion history/reasons. The admin activity stream also receives lifecycle audit events.
+- Existing organisation/cohort and organisation-owner safeguards remain in place.
+
+### Marketing consent and unsubscribe
+- Registration now has an optional, unticked marketing email opt-in. The backend records the opt-in flag, timestamp and source; no marketing consent is inferred from registration or use.
+- Account Settings can opt the learner in or out. A signed, purpose-specific unsubscribe endpoint and confirmation page are available for future marketing email footers. The token is carried in the URL fragment so it is not sent in ordinary HTTP request URLs.
+- Consent evidence is retained when the learner withdraws consent; withdrawal is recorded separately. Future marketing sends must check the current opt-in/suppression state immediately before delivery.
+- Added `docs/LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md` defining transactional versus marketing messages, event-driven recipient targeting, course-enrolment updates, inferred interest signals, durable outbox/delivery handling, campaign controls and compliance safeguards.
+- The automated event/outbox worker, search-interest capture, campaign authoring/sending and actual marketing templates are not implemented yet. The unsubscribe URL helper is ready for a future sender to use.
+
+### Migration and release status
+- The new migration is committed but has **not** been applied to the active Pheonix Supabase project. Apply it before deploying the updated backend; the new backend queries reference columns introduced by this migration.
+- Set `CRON_SECRET` in the production Vercel environment before deploying the backend. Confirm the daily cron runs and finalises only accounts whose recovery period has expired.
+- No frontend or backend deployment was triggered. No production schema migration was applied in this work.
+- Backend tests and frontend build/typecheck were not executed in this session. Static regression contracts were added to `backend-python/tests/test_account_lifecycle.py`; they still need to be run.
+- Browser acceptance remains required at phone, tablet and desktop breakpoints, including drawer visibility/close behaviour, notification drawer viewport width and bell toggle.
