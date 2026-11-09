@@ -438,9 +438,7 @@ def _check_course_view_access(
         if course_org is not None:
             if not organisation_id or str(course_org) != str(organisation_id):
                 raise HTTPException(403, "You do not have access to this course.")
-            role = (context.organisation_role or "").strip().lower()
-            legacy_role = str(getattr(context.user, "role", "") or "").strip().lower()
-            if role not in {"learner"} and legacy_role not in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}:
+            if not _is_learner_viewer(context):
                 return
             grant = (
                 supabase.table("course_access")
@@ -462,10 +460,7 @@ def _check_course_view_access(
                 .limit(20)
                 .execute()
             ).data or []
-            is_learner = (
-                (context.organisation_role or "").strip().lower() == "learner"
-                or str(getattr(context.user, "role", "") or "").strip().lower() in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}
-            )
+            is_learner = _is_learner_viewer(context)
             if grant:
                 if legacy_cohort_learner:
                     if any(
@@ -558,10 +553,7 @@ def _check_course_view_access(
                 ):
                     return
                 raise HTTPException(403, "This course has not been assigned to your cohort.")
-            is_learner = (
-                (context.organisation_role or "").strip().lower() == "learner"
-                or str(getattr(context.user, "role", "") or "").strip().lower() in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE, "learner"}
-            )
+            is_learner = _is_learner_viewer(context)
             if is_learner:
                 active_workspace = (
                     supabase.table("organisations")
