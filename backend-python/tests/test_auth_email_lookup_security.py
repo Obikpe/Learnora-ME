@@ -102,7 +102,7 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         mock_supabase.table.assert_called_once_with("cohort_accounts")
         query.ilike.assert_called_once_with(
             "email",
-            r"learner\\_test\\%\\*@example.com",
+            r"learner\_test\%\*@example.com",
         )
         query.limit.assert_called_once_with(10)
 
