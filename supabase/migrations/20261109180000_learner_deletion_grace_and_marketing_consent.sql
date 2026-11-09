@@ -11,8 +11,7 @@ ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS marketing_email_opt_in boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS marketing_consent_at timestamptz,
   ADD COLUMN IF NOT EXISTS marketing_consent_source text,
-  ADD COLUMN IF NOT EXISTS marketing_unsubscribed_at timestamptz,
-  ADD COLUMN IF NOT EXISTS marketing_unsubscribe_token_hash text;
+  ADD COLUMN IF NOT EXISTS marketing_unsubscribed_at timestamptz;
 
 ALTER TABLE public.users
   DROP CONSTRAINT IF EXISTS users_account_status_check;
@@ -24,9 +23,20 @@ CREATE UNIQUE INDEX IF NOT EXISTS users_account_reactivation_token_hash_uidx
   ON public.users (account_reactivation_token_hash)
   WHERE account_reactivation_token_hash IS NOT NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_marketing_unsubscribe_token_hash_uidx
-  ON public.users (marketing_unsubscribe_token_hash)
-  WHERE marketing_unsubscribe_token_hash IS NOT NULL;
+CREATE TABLE IF NOT EXISTS public.learner_marketing_unsubscribe_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  token_hash text NOT NULL UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  consumed_at timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS learner_marketing_unsubscribe_tokens_user_idx
+  ON public.learner_marketing_unsubscribe_tokens (user_id, created_at DESC);
+
+ALTER TABLE public.learner_marketing_unsubscribe_tokens ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.learner_marketing_unsubscribe_tokens FROM PUBLIC, anon, authenticated;
+GRANT ALL ON public.learner_marketing_unsubscribe_tokens TO service_role;
 
 CREATE INDEX IF NOT EXISTS users_deactivation_due_idx
   ON public.users (account_deactivation_until)
@@ -154,6 +164,11 @@ BEGIN
     )
     ON CONFLICT (original_user_id) DO NOTHING;
 
+    UPDATE public.learner_marketing_unsubscribe_tokens
+       SET consumed_at = p_now
+     WHERE user_id = v_user.id
+       AND consumed_at IS NULL;
+
     UPDATE public.organisation_members
        SET status = 'suspended'
      WHERE user_id = v_user.id
@@ -194,7 +209,6 @@ BEGIN
            marketing_consent_at = NULL,
            marketing_consent_source = NULL,
            marketing_unsubscribed_at = p_now,
-           marketing_unsubscribe_token_hash = NULL,
            deleted_at = p_now
      WHERE id = v_user.id;
 
