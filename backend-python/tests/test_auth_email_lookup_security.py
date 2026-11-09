@@ -2,14 +2,16 @@
 import os
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+from types import SimpleNamespace
+from fastapi import HTTPException
 from starlette.requests import Request
 
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
-from routers.auth import _escape_ilike_literal, _get_client_ip
+from routers.auth import _escape_ilike_literal, _find_cohort_accounts_by_email, _get_client_ip
 
 
 class AuthEmailLookupSecurityTests(unittest.TestCase):
@@ -83,6 +85,40 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         self.assertIn("if exc.status_code == 401:", optional)
         self.assertIn("return None", optional)
         self.assertIn("raise", optional)
+
+
+    @patch("routers.auth.supabase")
+    def test_reserved_email_lookup_uses_literal_case_insensitive_match(self, mock_supabase):
+        query = Mock()
+        mock_supabase.table.return_value = query
+        query.select.return_value = query
+        query.ilike.return_value = query
+        query.limit.return_value = query
+        query.execute.return_value = SimpleNamespace(data=[{"id": "cohort-account-1"}])
+
+        rows = _find_cohort_accounts_by_email(r"learner_test%*@example.com")
+
+        self.assertEqual(rows, [{"id": "cohort-account-1"}])
+        mock_supabase.table.assert_called_once_with("cohort_accounts")
+        query.ilike.assert_called_once_with(
+            "email",
+            r"learner\\_test\\%\\*@example.com",
+        )
+        query.limit.assert_called_once_with(10)
+
+    @patch("routers.auth.supabase")
+    def test_reserved_email_lookup_fails_closed_when_database_is_unavailable(self, mock_supabase):
+        query = Mock()
+        mock_supabase.table.return_value = query
+        query.select.return_value = query
+        query.ilike.return_value = query
+        query.limit.return_value = query
+        query.execute.side_effect = RuntimeError("database unavailable")
+
+        with self.assertRaises(HTTPException) as raised:
+            _find_cohort_accounts_by_email("learner@example.com")
+
+        self.assertEqual(raised.exception.status_code, 503)
 
     def test_email_lookup_helper_escapes_all_pattern_wildcards(self):
         source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
