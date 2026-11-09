@@ -45,7 +45,7 @@ export default function AdminSection({params}:{params:{section:string}}){
   {key:"email",label:"Email"},
   {key:"created_at",label:"Joined",render:(r:any)=>dateLabel(r.created_at)},
   {key:"account_status",label:"Account status",render:(r:any)=>String(r.account_status||"active").replaceAll("_"," ")},
-  {key:"marketing_email_opt_in",label:"Marketing",render:(r:any)=>r.marketing_email_opt_in?"Opted in":"Not opted in"}
+  {key:"marketing_email_opt_in",label:"Marketing updates",render:(r:any)=>r.marketing_email_opt_in&&r.marketing_in_app_opt_in?"Opted in":"Not opted in"}
  ];
  const lifecycleRows=[
   ...(data?.pending_deletions||[]).map((r:any)=>({...r,id:r.id,event_status:r.account_status,record_email:r.email,occurred_at:r.account_deletion_requested_at})),
