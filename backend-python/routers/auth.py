@@ -2611,6 +2611,12 @@ def register(
     if existing_user and existing_user.get("account_status") == "deactivation_pending":
         recovery_until = _parse_datetime(existing_user.get("account_deactivation_until"))
         if not recovery_until or recovery_until <= now:
+            finalizer_enabled = os.getenv("ACCOUNT_DELETION_FINALIZER_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
+            if not finalizer_enabled:
+                raise HTTPException(
+                    status_code=503,
+                    detail="This account has reached the end of its recovery period. Final account closure is being prepared; please try registration again later.",
+                )
             try:
                 supabase.rpc(
                     "finalize_expired_learner_account_deletions",
