@@ -8,7 +8,7 @@ type SessionStart = { session?: { id?: string } };
 
 export default function LearningSessionTracker() {
   const sessionId = useRef<string | null>(null);
-  const lastActivityAt = useRef(Date.now());
+  const lastActivityAt = useRef(0);
   const starting = useRef(false);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function LearningSessionTracker() {
       const id = sessionId.current;
       if (!id) return;
       sessionId.current = null;
-      const body = JSON.stringify({ active: false });
+      const body = JSON.stringify({ active: recentInteraction() });
       if (keepalive) {
         void fetch("/api/progress/learning-sessions/" + id + "/heartbeat", {
           method: "POST",
