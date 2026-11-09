@@ -1,7 +1,8 @@
+"use client";
+
 import { usePathname } from "next/navigation";
 import LearningSessionTracker from "../../../components/dashboard/LearningSessionTracker";
 
-"use client";
 
 export default function CohortLearningLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
