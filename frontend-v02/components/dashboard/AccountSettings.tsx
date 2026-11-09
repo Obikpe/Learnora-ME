@@ -29,7 +29,7 @@ export default function AccountSettings({ user }: { user: any }) {
     try {
       await request("/account-lifecycle/marketing-preferences", { method: "PATCH", body: JSON.stringify({ enabled }) });
       setMarketingOptIn(enabled);
-      setMarketingMessage(enabled ? "You are opted in to Learnora marketing emails." : "You are unsubscribed from Learnora marketing emails.");
+      setMarketingMessage(enabled ? "You are opted in to Learnora marketing updates." : "You are unsubscribed from Learnora marketing updates.");
     } catch (e: any) {
       setMarketingMessage(e.message || "We could not update your email preferences.");
     } finally { setMarketingBusy(false); }
@@ -114,7 +114,7 @@ export default function AccountSettings({ user }: { user: any }) {
           {marketingMessage && <p role="status" className="mt-2 text-xs text-slate-300">{marketingMessage}</p>}
         </div>
         <button type="button" disabled={marketingBusy} onClick={() => void updateMarketingPreference(!marketingOptIn)} className={`inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold transition disabled:opacity-50 ${marketingOptIn ? "border border-white/15 text-slate-300 hover:bg-white/5" : "bg-[#d7ad35] text-black hover:bg-[#e4c56e]"}`}>
-          {marketingBusy ? "Saving…" : marketingOptIn ? "Unsubscribe from marketing" : "Opt in to marketing emails"}
+          {marketingBusy ? "Saving…" : marketingOptIn ? "Unsubscribe from marketing" : "Opt in to marketing updates"}
         </button>
       </div>
     </section>}
