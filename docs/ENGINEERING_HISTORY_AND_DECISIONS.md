@@ -693,3 +693,9 @@ Read-only verification confirmed the track-course relationship, published status
 - The deletion-history record retains original email and UUID, so it is restricted/pseudonymised personal data, not anonymous data. A table-by-table erasure/retention matrix is a production blocker. Do not enable the finalisation cron until that policy is approved and implemented.
 - The latest GitHub Actions workflow run for source commit `736f001ca8a19db99559951fe93f3954b7b4fbad` concluded `failure` before any job steps were created (`steps: null`, no logs URL). This is not evidence of a test assertion or compile failure; CI did not provide an executable job/log. Re-run CI when the runner/workflow infrastructure is available.
 - Vercel's latest production deployments for both `learnora-me-v02` and `learnora-backend` still point to the earlier commit `62294529305e90780d8a83730f45034c0807cb23`. No deployment was triggered by this work; the new source changes are not live.
+
+
+### Finaliser safety gate
+- The daily account-finalisation endpoint now no-ops unless `ACCOUNT_DELETION_FINALIZER_ENABLED=true`. The environment example defaults it to false.
+- Registration attempts after the 30-day deadline also refuse to trigger finalisation while the gate is disabled. This prevents a user sign-up request or an accidentally configured cron from executing a finalisation policy before the linked-data retention matrix has been approved.
+- Set `CRON_SECRET` and explicitly enable the finaliser only after the erasure/retention policy and table-level processing are approved.
