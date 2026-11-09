@@ -109,7 +109,7 @@ The registration form presents a separate, optional, unticked checkbox:
 It must not be bundled with Terms of Use, Privacy Policy acceptance or account creation. Leaving it unticked must not block registration or reduce access to learning.
 
 Store an auditable consent record:
-- `marketing_email_opt_in`;
+- `marketing_email_opt_in` and `marketing_in_app_opt_in`;
 - `marketing_consent_at`;
 - `marketing_consent_source` (for example, `signup_form` or `account_settings`).
 
@@ -120,7 +120,7 @@ Do not infer consent from account creation, course enrolment, browsing, search a
 - Learners can change the preference in Account Settings.
 - Every marketing email must include a prominent, working unsubscribe link in its footer.
 - The unsubscribe action must work without requiring the learner to sign in, must be idempotent, and must update the central suppression state immediately. Each campaign email receives an opaque random token; only its hash is stored in a service-only token table. Unsubscribing consumes all outstanding tokens for that learner.
-- Marketing delivery must check consent and suppression status at send time, not only when a campaign audience is first built.
+- Email and promotional in-app delivery must check consent and suppression status at send time, not only when a campaign audience is first built.
 - Keep a minimal suppression record long enough to prevent accidental re-import or re-subscription. A later opt-in must be a new affirmative action with a new consent timestamp.
 - Do not include marketing content in essential account/security emails or enrolled-course service notices.
 
