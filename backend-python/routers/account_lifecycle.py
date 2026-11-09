@@ -200,7 +200,6 @@ def request_account_deletion(
         request=request,
         metadata={
             "deletion_reason": payload.reason,
-            "deletion_reason_details": (payload.reason_details or "").strip() or None,
             "confirmation_expires_at": expires_at.isoformat(),
         },
     )
