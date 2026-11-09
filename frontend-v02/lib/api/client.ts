@@ -158,11 +158,15 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
         sessionStorage.setItem("phx_logged_out", "1");
         localStorage.setItem("phx_logged_out", "1");
       }
-      const message = response.status >= 500
-        ? "Something went wrong while loading your information. Please try again. If the problem continues, contact Learnora support."
-        : typeof body.detail === "string" ? body.detail
+      const safeServerMessage =
+        typeof body.detail === "string" && body.detail !== "Internal Server Error" ? body.detail
         : typeof body.message === "string" ? body.message
-        : "We could not complete that request. Please try again.";
+        : typeof body.error === "string" ? body.error
+        : "";
+      const message = safeServerMessage ||
+        (response.status >= 500
+          ? "Something went wrong while loading your information. Please try again. If the problem continues, contact Learnora support."
+          : "We could not complete that request. Please try again.");
       const error = new Error(message) as Error & { status?: number };
       error.status = response.status;
       throw error;
