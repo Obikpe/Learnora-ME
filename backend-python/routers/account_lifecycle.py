@@ -209,6 +209,21 @@ def confirm_account_deletion(
         is_paid=bool(account.get("is_paid")),
     )
 
+    # Re-check the retained identity boundary at confirmation time. A managed
+    # membership added after the email was sent must not be deleted implicitly.
+    organisation_id, organisation_role = auth._active_organisation_context(
+        str(account["id"]),
+        fail_closed=True,
+    )
+    if organisation_id or organisation_role:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "This account is now linked to an organisation or cohort. "
+                "The organisation must release the account before deletion can continue."
+            ),
+        )
+
     active_subscriptions = (
         billing.supabase.table("learnora_subscriptions")
         .select("id")
