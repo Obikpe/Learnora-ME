@@ -184,7 +184,8 @@ class FreeAccessModeTests(unittest.TestCase):
                 with self.subTest(course=course):
                     with self.assertRaises(HTTPException) as raised:
                         course_content._check_course_view_access(context, course)
-                    self.assertEqual(raised.exception.status_code, 403)
+                    expected_status = 404 if course.get("status") == "draft" else 403
+                    self.assertEqual(raised.exception.status_code, expected_status)
 
     def test_organisation_scoped_request_does_not_receive_individual_free_grant(self):
         context = SimpleNamespace(
