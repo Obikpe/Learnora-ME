@@ -3655,17 +3655,20 @@ def reset_password(
     cohort_accounts = _find_cohort_accounts_by_email(email)
     admin = _find_admin(email)
     user = _find_user(email)
-    identity_matches_token = (
-        bool(admin)
-        and str(admin.get("id")) == str(account_id)
-        and not user
-        and not cohort_accounts
-        if account_type == "admin"
-        else bool(user)
-        and str(user.get("id")) == str(account_id)
-        and not admin
-        and not cohort_accounts
-    )
+    if account_type == "admin":
+        identity_matches_token = (
+            bool(admin)
+            and str(admin.get("id")) == str(account_id)
+            and not user
+            and not cohort_accounts
+        )
+    else:
+        identity_matches_token = (
+            bool(user)
+            and str(user.get("id")) == str(account_id)
+            and not admin
+            and not cohort_accounts
+        )
     if not identity_matches_token:
         raise HTTPException(
             status_code=409,
