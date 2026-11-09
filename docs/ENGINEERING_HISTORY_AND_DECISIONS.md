@@ -705,3 +705,16 @@ Read-only verification confirmed the track-course relationship, published status
 - The signup opt-in now covers both marketing email and promotional in-app notifications. Separate fields (`marketing_email_opt_in`, `marketing_in_app_opt_in`) are stored, and the same preference control/unsubscribe flow withdraws both channels.
 - The marketing-email URL helper issues opaque per-message tokens stored as hashes in a service-only table. The sender must use this helper and include the link in every campaign footer when the campaign worker is built.
 - Both privacy-policy routes now disclose optional marketing consent, withdrawal, essential service communications and the 30-day account recovery process. They remain drafts until Learnora's legal operator/contact details and retention schedule are completed and reviewed.
+
+## Account deletion decision — 30-day recovery, then complete learner erasure
+
+The approved product rule is:
+
+- Confirmed deletion starts a 30-day deactivation and recovery window. No learner data is erased during this period.
+- Reactivation during the window restores the existing account with its password, enrolments, progress, notes, submissions and other learner records intact.
+- At the end of the 30 days, the finalisation process deletes the learner's `public.users` row and all account-linked learner records, including learning/progress data, notes, assessments, submissions, certificates, discussions, AI conversations/usage, notifications, activity records, account tokens, membership links and learner-owned commercial/profile rows.
+- The only learner-specific record retained is the restricted `public.deleted_account_history` row. It contains the deletion-history fields and reason; it is not a reusable learner account.
+- The finaliser must fail atomically if a dependent learner record cannot be deleted. It must never report completion after partial cleanup.
+- Shared platform catalogue and organisation resources are not deleted solely because a learner created or was assigned as their actor; the learner attribution is detached where appropriate.
+
+The implementation is represented by migrations `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql`. They remain unapplied to production until separately authorised. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until migrations, schema checks and deletion tests are complete. The Terms and Privacy Policy wording will be reviewed and updated in a separate documentation/legal-review pass after the feature set is complete.
