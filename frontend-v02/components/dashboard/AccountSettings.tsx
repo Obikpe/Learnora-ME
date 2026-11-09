@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { CheckCircle2, KeyRound, ShieldCheck, UserRound, Trash2, AlertTriangle } from "lucide-react";
 import { request } from "../../lib/api/client";
+import { updateCachedCurrentUser } from "../../lib/api/auth";
 
 export default function AccountSettings({ user }: { user: any }) {
   const [form, setForm] = useState({ current_password: "", new_password: "", confirm_password: "" });
@@ -29,6 +30,7 @@ export default function AccountSettings({ user }: { user: any }) {
     try {
       await request("/account-lifecycle/marketing-preferences", { method: "PATCH", body: JSON.stringify({ enabled }) });
       setMarketingOptIn(enabled);
+      updateCachedCurrentUser({ marketing_email_opt_in: enabled, marketing_in_app_opt_in: enabled });
       setMarketingMessage(enabled ? "You are opted in to Learnora marketing updates." : "You are unsubscribed from Learnora marketing updates.");
     } catch (e: any) {
       setMarketingMessage(e.message || "We could not update your email preferences.");
