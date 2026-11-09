@@ -1875,10 +1875,31 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
                 .in_("id", cohort_ids)
                 .execute()
             ).data or []
+            resolved_cohort_ids = set()
             for cohort in cohorts:
                 organisation_id = str(cohort.get("organisation_id") or "")
+                cohort_id = str(cohort.get("id") or "")
                 if organisation_id:
                     contexts.append((organisation_id, "learner"))
+                    resolved_cohort_ids.add(cohort_id)
+            unresolved_cohort_ids = set(cohort_ids) - resolved_cohort_ids
+            if unresolved_cohort_ids:
+                log_security_event(
+                    action="unresolved_cohort_identity_context",
+                    metadata={
+                        "user_id": user_id,
+                        "unresolved_cohort_count": len(unresolved_cohort_ids),
+                    },
+                )
+                if fail_closed:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=(
+                            "This account has an unresolved organisation-managed cohort record. "
+                            "Contact Learnora support before continuing."
+                        ),
+                    )
+                return None, None
 
         organisation_ids = {item[0] for item in contexts}
         if len(organisation_ids) > 1:
