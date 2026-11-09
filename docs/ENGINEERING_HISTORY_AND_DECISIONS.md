@@ -685,3 +685,11 @@ Read-only verification confirmed the track-course relationship, published status
 - No frontend or backend deployment was triggered. No production schema migration was applied in this work.
 - Backend tests and frontend build/typecheck were not executed in this session. Static regression contracts were added to `backend-python/tests/test_account_lifecycle.py`; they still need to be run.
 - Browser acceptance remains required at phone, tablet and desktop breakpoints, including drawer visibility/close behaviour, notification drawer viewport width and bell toggle.
+
+
+### Additional privacy and verification findings
+- The marketing unsubscribe mechanism now uses opaque random per-email tokens. Only token hashes are stored in the service-only `learner_marketing_unsubscribe_tokens` table; the raw token is carried in the URL fragment and outstanding tokens are consumed when a learner unsubscribes.
+- A read-only inventory of the active Pheonix schema found many learner-linked tables beyond `public.users` (enrolments, progress, sessions, notes, quiz/assignment/project submissions, certificates, AI conversations, discussions, notifications, subscriptions, purchases and audit records). The new finaliser does not yet delete or irreversibly anonymise every one of these rows.
+- The deletion-history record retains original email and UUID, so it is restricted/pseudonymised personal data, not anonymous data. A table-by-table erasure/retention matrix is a production blocker. Do not enable the finalisation cron until that policy is approved and implemented.
+- The latest GitHub Actions workflow run for source commit `736f001ca8a19db99559951fe93f3954b7b4fbad` concluded `failure` before any job steps were created (`steps: null`, no logs URL). This is not evidence of a test assertion or compile failure; CI did not provide an executable job/log. Re-run CI when the runner/workflow infrastructure is available.
+- Vercel's latest production deployments for both `learnora-me-v02` and `learnora-backend` still point to the earlier commit `62294529305e90780d8a83730f45034c0807cb23`. No deployment was triggered by this work; the new source changes are not live.
