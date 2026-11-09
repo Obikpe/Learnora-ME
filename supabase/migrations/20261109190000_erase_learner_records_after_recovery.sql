@@ -121,6 +121,32 @@ BEGIN
        WHERE email = v_user.email OR portal_user_id = v_user.id;
     END IF;
 
+    -- Creator-owned ledger, payout and sale rows can RESTRICT deletion
+    -- of the creator profile. Remove them before deleting that profile.
+    IF to_regclass('public.learnora_creator_ledger') IS NOT NULL
+       AND to_regclass('public.learnora_creator_accounts') IS NOT NULL THEN
+      DELETE FROM public.learnora_creator_ledger
+       WHERE creator_id IN (
+         SELECT id FROM public.learnora_creator_accounts WHERE user_id = v_user.id
+       );
+    END IF;
+
+    IF to_regclass('public.learnora_creator_payouts') IS NOT NULL
+       AND to_regclass('public.learnora_creator_accounts') IS NOT NULL THEN
+      DELETE FROM public.learnora_creator_payouts
+       WHERE creator_id IN (
+         SELECT id FROM public.learnora_creator_accounts WHERE user_id = v_user.id
+       );
+    END IF;
+
+    IF to_regclass('public.learnora_creator_sales') IS NOT NULL
+       AND to_regclass('public.learnora_creator_accounts') IS NOT NULL THEN
+      DELETE FROM public.learnora_creator_sales
+       WHERE creator_id IN (
+         SELECT id FROM public.learnora_creator_accounts WHERE user_id = v_user.id
+       );
+    END IF;
+
     -- Delete every row whose foreign key RESTRICTs deletion of the learner.
     -- This covers purchases, subscriptions, creator/staff identity rows and
     -- any future restrictive FK added to users without hard-coding its name.
