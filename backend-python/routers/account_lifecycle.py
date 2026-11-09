@@ -434,6 +434,10 @@ def update_marketing_preferences(
     ).data or []
     if not result:
         raise HTTPException(status_code=409, detail="Marketing preferences could not be updated for this account.")
+    if not payload.enabled:
+        auth.supabase.table("learner_marketing_unsubscribe_tokens").update({
+            "consumed_at": now,
+        }).eq("user_id", user.id).is_("consumed_at", "null").execute()
     auth.log_audit_event(
         action="learner_marketing_consent_updated",
         email=user.email,
