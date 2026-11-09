@@ -7,6 +7,7 @@ import { request } from "../../lib/api/client";
 
 export default function ReactivateAccountPage() {
   const [token, setToken] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -14,7 +15,9 @@ export default function ReactivateAccountPage() {
 
   useEffect(() => {
     const value = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("token") || "";
+    const address = new URLSearchParams(window.location.search).get("email") || "";
     setToken(value);
+    setEmail(address);
     setLoading(false);
   }, []);
 
@@ -49,8 +52,9 @@ export default function ReactivateAccountPage() {
         <h1 className="mt-4 font-display text-3xl">Reactivate your account</h1>
         <p className="mt-3 text-sm leading-7 text-slate-400">You can reactivate your account within 30 days of confirming deletion. This secure activation link is valid for 24 hours.</p>
         {error && <p role="alert" className="mt-5 rounded-xl border border-red-400/20 bg-red-400/[.05] p-3 text-sm text-red-200">{error}</p>}
-        {!token && <p role="alert" className="mt-5 rounded-xl border border-amber-400/20 bg-amber-400/[.05] p-3 text-sm text-amber-100"><AlertTriangle className="mr-2 inline" size={15}/>This activation link is missing or invalid. Return to sign-up and enter your email again to request a new link.</p>}
-        <div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={!token||busy} onClick={()=>void reactivate()} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#d7ad35] px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">{busy?<LoaderCircle className="animate-spin" size={16}/>:null}{busy?"Reactivating…":"Reactivate account"}</button><Link href="/login" className="inline-flex min-h-11 items-center rounded-xl border border-white/15 px-5 py-3 text-sm text-slate-300">Return to sign in</Link></div>
+        {!token && email && <p role="status" className="mt-5 rounded-xl border border-emerald-400/20 bg-emerald-400/[.05] p-3 text-sm leading-6 text-emerald-100">We sent an activation link to <strong className="break-all">{email}</strong>. Check your inbox and open the link within 24 hours. You will reactivate your existing account and keep your learning history.</p>}
+        {!token && !email && <p role="alert" className="mt-5 rounded-xl border border-amber-400/20 bg-amber-400/[.05] p-3 text-sm text-amber-100"><AlertTriangle className="mr-2 inline" size={15}/>This activation link is missing or invalid. Return to sign-up and enter your email again to request a new link.</p>}
+        <div className="mt-6 flex flex-wrap gap-3">{token && <button type="button" disabled={busy} onClick={()=>void reactivate()} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#d7ad35] px-5 py-3 text-sm font-semibold text-black disabled:opacity-40">{busy?<LoaderCircle className="animate-spin" size={16}/>:null}{busy?"Reactivating…":"Reactivate account"}</button>}<Link href="/login" className="inline-flex min-h-11 items-center rounded-xl border border-white/15 px-5 py-3 text-sm text-slate-300">Return to sign in</Link></div>
       </>}
       <p className="mt-8 text-xs text-slate-500">Need help? <a className="underline underline-offset-4" href="mailto:learnorame@gmail.com">Contact Learnora support</a>.</p>
     </section>
