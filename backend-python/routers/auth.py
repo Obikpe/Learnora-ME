@@ -2624,10 +2624,18 @@ def register(
             token_hash = _hash_token(raw_token)
             token_expires_at = now + timedelta(hours=24)
             try:
-                supabase.table("users").update({
-                    "account_reactivation_token_hash": token_hash,
-                    "account_reactivation_expires_at": token_expires_at.isoformat(),
-                }).eq("id", existing_user["id"]).eq("account_status", "deactivation_pending").execute()
+                saved_reactivation = (
+                    supabase.table("users").update({
+                        "account_reactivation_token_hash": token_hash,
+                        "account_reactivation_expires_at": token_expires_at.isoformat(),
+                    })
+                    .eq("id", existing_user["id"])
+                    .eq("account_status", "deactivation_pending")
+                    .gt("account_deactivation_until", now.isoformat())
+                    .execute()
+                ).data or []
+                if not saved_reactivation:
+                    raise RuntimeError("Account recovery period has ended")
                 activation_url = f"{FRONTEND_URL}/reactivate-account#token={raw_token}"
                 display_name = (existing_user.get("name") or "there").strip()
                 _send_email(
