@@ -360,6 +360,9 @@ def reactivate_account(payload: ReactivateAccountRequest, request: Request):
 
 @router.get("/finalize-expired")
 def finalize_expired_account_deletions(authorization: str | None = Header(default=None)):
+    enabled = os.getenv("ACCOUNT_DELETION_FINALIZER_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
+    if not enabled:
+        return {"success": True, "enabled": False, "finalised": 0}
     expected = os.getenv("CRON_SECRET", "").strip()
     if not expected:
         raise HTTPException(status_code=503, detail="Account finalisation is not configured.")
