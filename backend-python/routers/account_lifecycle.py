@@ -392,6 +392,7 @@ def create_marketing_unsubscribe_url(user_id: str) -> str:
         .select("id")
         .eq("id", str(user_id))
         .eq("account_status", "active")
+        .eq("email_verified", True)
         .eq("marketing_email_opt_in", True)
         .limit(1)
         .execute()
