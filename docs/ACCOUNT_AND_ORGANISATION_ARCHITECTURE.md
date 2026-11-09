@@ -439,3 +439,10 @@ This section supersedes earlier status statements above where they described the
 
 Continue on `main`. Do not deploy, trigger CI, execute SQL, apply migrations, alter live records, or mutate legacy WitStart data. Use focused regression tests and source-level checks; report runtime/browser/database verification gaps explicitly.
 
+
+
+## Learner account deletion and recovery addendum — 9 November 2026
+
+Individual learner self-service deletion uses a 60-minute email confirmation followed by a 30-day `deactivation_pending` recovery period. The learner can reactivate the same account through a one-time email link during that period. The original email, password and learning history are retained during recovery; a same-email registration attempt issues a reactivation link rather than creating a second account. After the recovery deadline, a protected scheduled finaliser creates a restricted deletion-history record and anonymises the live account. Organisation/cohort identity and ownership safeguards remain unchanged.
+
+The implementation details, deletion-reason audit trail, staff visibility, marketing consent and future notification engine are documented in [LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md](LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md). The associated database migration is additive and must be applied before deploying backend code that reads its new columns. It has not been applied to production.
