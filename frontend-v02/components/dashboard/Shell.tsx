@@ -6,7 +6,7 @@ import Topbar from "./Topbar";
 import LearningSessionTracker from "./LearningSessionTracker";
 import NotificationPanel from "./NotificationPanel";
 
-export default function Shell({ children, admin, role, active, hideTutor = false, restricted = false, trackLearning = true }: {
+export default function Shell({ children, admin, role, active, hideTutor = false, restricted = false, trackLearning = false }: {
   children: React.ReactNode; admin?: boolean; role?: string; active: string; hideTutor?: boolean; restricted?: boolean; trackLearning?: boolean;
 }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
