@@ -27,6 +27,8 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
   const [unread, setUnread] = useState(0);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [toast, setToast] = useState<ToastNotice | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewItems, setPreviewItems] = useState<NoticePreview[]>([]);
   const [accountOpen, setAccountOpen] = useState(false);
   const lastSeenIds = useRef<Set<string> | null>(null);
   const browserSeenIds = useRef<Set<string> | null>(null);
@@ -74,6 +76,7 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
       ]);
       setUnread(Math.max(0, Number(countResult.unread_count || 0)));
       const notices = Array.isArray(feed.notifications) ? feed.notifications : [];
+      setPreviewItems(notices.slice(0, 5));
       const currentIds = new Set(notices.map(notice => notice.id));
 
       if (lastSeenIds.current === null) {
@@ -173,10 +176,25 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
         title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className={actionClass}>
         {theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}
       </button>
-      {!admin && <Link href="/dashboard/notifications" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className={`relative ${actionClass}`}>
-        <Bell size={17}/>
-        {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
-      </Link>}
+      {!admin && <div className="relative">
+        <button type="button" onClick={() => setPreviewOpen(value => !value)} aria-expanded={previewOpen} aria-label={unread ? `Notifications preview, ${unread} unread` : "Notifications preview"} className={`relative ${actionClass}`}>
+          <Bell size={17}/>
+          {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
+        </button>
+        {previewOpen && <div className="absolute right-0 top-full z-[85] mt-3 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
+          <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+            <span className="text-sm font-semibold text-[var(--text-heading)]">Notifications</span>
+            <span className="text-[11px] text-[var(--text-muted)]">{unread} unread</span>
+          </div>
+          {previewItems.length ? <div className="max-h-[22rem] overflow-y-auto">
+            {previewItems.map(item => <button key={item.id} type="button" onClick={() => { setPreviewOpen(false); router.push("/dashboard/notifications?selected=" + encodeURIComponent(item.id)); }} className="block w-full border-b border-[var(--border)] px-4 py-3 text-left transition hover:bg-[var(--bg-soft)] last:border-b-0">
+              <span className="block truncate text-sm font-semibold text-[var(--text-heading)]">{item.title}</span>
+              <span className="mt-1 block line-clamp-2 text-xs leading-5 text-[var(--text-muted)]">{item.body}</span>
+            </button>)}
+          </div> : <p className="px-4 py-6 text-sm text-[var(--text-muted)]">No notifications yet.</p>}
+          <Link href="/dashboard/notifications" onClick={() => setPreviewOpen(false)} className="block border-t border-[var(--border)] px-4 py-3 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--bg-soft)]">View all notifications</Link>
+        </div>}
+      </div>}
       <div className="relative">
         <button type="button" onClick={() => setAccountOpen(value => !value)} aria-expanded={accountOpen} aria-label="Account and profile menu" title="Account and profile" className={actionClass}><CircleUserRound size={18}/></button>
         {accountOpen && <div className="absolute right-0 top-full z-[75] mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl">
