@@ -99,7 +99,7 @@ Do not infer consent from account creation, course enrolment, browsing, search a
 
 - Learners can change the preference in Account Settings.
 - Every marketing email must include a prominent, working unsubscribe link in its footer.
-- The unsubscribe action must work without requiring the learner to sign in, must be idempotent, and must update the central suppression state immediately.
+- The unsubscribe action must work without requiring the learner to sign in, must be idempotent, and must update the central suppression state immediately. Each campaign email receives an opaque random token; only its hash is stored in a service-only token table. Unsubscribing consumes all outstanding tokens for that learner.
 - Marketing delivery must check consent and suppression status at send time, not only when a campaign audience is first built.
 - Keep a minimal suppression record long enough to prevent accidental re-import or re-subscription. A later opt-in must be a new affirmative action with a new consent timestamp.
 - Do not include marketing content in essential account/security emails or enrolled-course service notices.
@@ -206,7 +206,7 @@ Before enabling campaigns, obtain qualified privacy/legal review of:
 - marketing to minors and guardian consent requirements;
 - applicable advertising/consumer-protection rules.
 
-Security controls: signed, purpose-limited unsubscribe tokens; no email addresses in URLs; rate-limited public token endpoints; no raw tokens in logs; escape user-generated reason details; strict admin permissions; audit campaign changes; and test that unsubscribed/deactivated/deleted users are excluded.
+Security controls: opaque random, single-use unsubscribe tokens stored as hashes; no email addresses or account IDs in URLs; rate-limited public token endpoints; no raw tokens in logs; escape user-generated reason details; strict admin permissions; audit campaign changes; and test that unsubscribed/deactivated/deleted users are excluded.
 
 ## 6. Implementation status and release gates
 
@@ -225,6 +225,6 @@ Security controls: signed, purpose-limited unsubscribe tokens; no email addresse
 - Set a strong production `CRON_SECRET` in Vercel before deploying the backend; verify the daily cron is authorised and monitor its result.
 - Run backend tests, frontend typecheck/build and browser acceptance on phone/tablet/desktop.
 - Verify email delivery for deletion confirmation and reactivation links, and test all 30-day boundary cases.
-- Implement and test the event/outbox notification engine, interest-signal capture, campaign worker and actual marketing email templates. The unsubscribe endpoint and page are in place, but no campaign sender currently consumes the generated unsubscribe URL helper.
+- Implement and test the event/outbox notification engine, interest-signal capture, campaign worker and actual marketing email templates. The unsubscribe endpoint and page are in place, and the backend exposes a helper that creates a per-email opaque unsubscribe URL. No campaign sender currently consumes that helper.
 - Review privacy notice and terms with qualified counsel before enabling marketing campaigns.
 - Do not deploy or apply the migration without the separately authorised release process.
