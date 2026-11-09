@@ -89,8 +89,12 @@ class AccountLifecycleContractTests(unittest.TestCase):
         lifecycle = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
         signup = (ROOT / "frontend-v02/app/register/page.tsx").read_text(encoding="utf-8")
         self.assertIn("marketing_email_opt_in boolean NOT NULL DEFAULT false", migration)
+        self.assertIn("marketing_in_app_opt_in boolean NOT NULL DEFAULT false", migration)
+        self.assertIn("learner_marketing_unsubscribe_tokens", migration)
         self.assertIn('@router.patch("/marketing-preferences")', lifecycle)
         self.assertIn('@router.post("/marketing-unsubscribe")', lifecycle)
+        self.assertIn("auth._hash_token(raw_token)", lifecycle)
+        self.assertIn("ACCOUNT_DELETION_FINALIZER_ENABLED", lifecycle)
         self.assertIn("marketingEmailOptIn,setMarketingEmailOptIn]=useState(false)", signup)
         self.assertIn("marketing_email_opt_in: marketingEmailOptIn", (ROOT / "frontend-v02/lib/api/auth.ts").read_text(encoding="utf-8"))
 
