@@ -92,7 +92,11 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
     ["discover", "learning", "tracks"].includes(item.key)
   );
   const moreItems = extraItems.filter(item => !primaryItems.some(primary => primary.key === item.key));
-  const mobileItems = extraItems.filter(item => !["notifications", "settings"].includes(item.key));
+  // The mobile drawer is the primary navigation on tablet and phone. Keep all
+  // permitted destinations here instead of relying on the desktop "More" menu.
+  const mobileItems = extraItems.filter(item =>
+    !["notifications", "settings"].includes(item.key)
+  );
   const isActive = (item: NavItem) => active === item.key || (item.key === "learning" && active === "overview");
   const navLink = (item: NavItem, mobile = false) => {
     const Icon = item.icon;
@@ -150,8 +154,31 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
           <span className="font-bold text-[var(--text-heading)]">Learnora <span className="text-[var(--primary)]">ME</span></span>
           <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="grid size-9 place-items-center rounded-lg hover:bg-[var(--bg-soft)]"><X size={18}/></button>
         </div>
-        <nav aria-label="Learning destinations" className="flex-1 space-y-1 overflow-y-auto">
-          {mobileItems.map(item => navLink(item, true))}
+        <nav aria-label="Learning destinations" className="min-h-0 flex-1 overflow-y-auto py-1">
+          <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[.14em] text-[var(--text-muted)]">
+            {admin ? "Administration" : "Your learning"}
+          </p>
+          <div className="flex flex-col gap-1">
+            {mobileItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={isActive(item) ? "page" : undefined}
+                  className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                    isActive(item)
+                      ? "bg-[var(--primary-tint)] text-[var(--primary)]"
+                      : "text-[var(--text-body)] hover:bg-[var(--bg-soft)] hover:text-[var(--text-heading)]"
+                  }`}
+                >
+                  <Icon size={17} strokeWidth={1.8} />
+                  <span className="flex-1">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
       </section>
     </div>}
