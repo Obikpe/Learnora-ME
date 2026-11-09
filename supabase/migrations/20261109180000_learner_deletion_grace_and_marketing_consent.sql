@@ -9,6 +9,7 @@ ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS deletion_reason text,
   ADD COLUMN IF NOT EXISTS deletion_reason_details text,
   ADD COLUMN IF NOT EXISTS marketing_email_opt_in boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS marketing_in_app_opt_in boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS marketing_consent_at timestamptz,
   ADD COLUMN IF NOT EXISTS marketing_consent_source text,
   ADD COLUMN IF NOT EXISTS marketing_unsubscribed_at timestamptz;
@@ -154,6 +155,7 @@ BEGIN
         'expires_at', v_user.expires_at,
         'trial_ends_at', v_user.trial_ends_at,
         'marketing_email_opt_in', v_user.marketing_email_opt_in,
+        'marketing_in_app_opt_in', v_user.marketing_in_app_opt_in,
         'marketing_consent_at', v_user.marketing_consent_at,
         'marketing_consent_source', v_user.marketing_consent_source,
         'marketing_unsubscribed_at', v_user.marketing_unsubscribed_at
@@ -206,6 +208,7 @@ BEGIN
            account_reactivation_expires_at = NULL,
            account_deactivation_until = NULL,
            marketing_email_opt_in = false,
+           marketing_in_app_opt_in = false,
            marketing_consent_at = NULL,
            marketing_consent_source = NULL,
            marketing_unsubscribed_at = p_now,
