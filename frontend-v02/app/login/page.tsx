@@ -59,7 +59,14 @@ export default function Login() {
       }
       if(selected&&["owner","admin"].includes(selected.role))setOrganisationContext(String(selected.organisation_id));else clearOrganisationContext();
       router.push(me.role==="organisation_prospect"?"/organisation-portal":selected&&["owner","admin"].includes(selected.role)?"/dashboard/organisation":"/dashboard");
-    } catch(e:any) {setError(e.message||"We could not sign you in. Check your details and try again.");}
+    } catch(e:any) {
+      const message=e.message||"We could not sign you in. Check your details and try again.";
+      if(message.startsWith("ACCOUNT_DEACTIVATED:")){
+        router.push("/reactivate-account?email="+encodeURIComponent(email.trim().toLowerCase()));
+        return;
+      }
+      setError(message);
+    }
     finally {setBusy(false);}
   }
   return <main className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1fr_.92fr]">
