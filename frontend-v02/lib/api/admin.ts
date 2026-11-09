@@ -14,3 +14,6 @@ export const capacity=(id:string)=>request<any>("/commercial/organisations/"+enc
 export const creatorApplications=()=>request<any>("/creator/admin/applications");
 export const aiProviders=()=>request<any>("/ai/admin/providers");
 export const aiLimits=()=>request<any>("/ai/admin/limits");
+export const adminUsers=()=>request<any>("/admin/users");
+export const adminAccountLifecycle=()=>request<any>("/admin/account-lifecycle");
+export const adminActivity=()=>request<any>("/admin/activity");
