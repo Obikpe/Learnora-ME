@@ -504,3 +504,8 @@ The learner dashboard uses lesson-weighted progress across active enrolments. Se
 - The SQL migration `supabase/migrations/20261103120000_learner_learning_sessions_and_streaks.sql` is prepared but must be applied and verified separately before persisted values are available. Historical days are not backfilled because the previous records do not consistently retain the learner timezone or equivalent cohort completion timestamps; streak history begins with verified events after migration. No production migration is executed by a GitHub commit.
 - The browser timezone is validated against IANA timezone data. Invalid or missing timezone values fall back to `Africa/Lagos`.
 - Learning-time and streak values are not fabricated. If tracking is unavailable, the UI indicates that rather than inventing a number.
+
+
+## 15. Learner account recovery and communications
+
+The current learner account recovery, deletion-reason capture, 30-day recovery period, marketing-consent requirements and planned event-driven notification architecture are specified in [LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md](LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md). That document is the detailed source of truth for message classification, audience targeting, consent, unsubscribe, delivery and release gates.
