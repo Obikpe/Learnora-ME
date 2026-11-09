@@ -193,17 +193,12 @@ async def ask(
     if body.course_id or body.lesson_id or body.assessment_id:
         if body.feature != "tutor" or not body.course_id or not body.lesson_id:
             raise HTTPException(422, "Lesson context requires the tutor feature, course ID and lesson ID.")
-        enrolment = (
-            supabase.table("learnora_enrolments")
-            .select("id,status")
-            .eq("user_id", str(user.id))
-            .eq("course_id", body.course_id)
-            .in_("status", ["active", "completed"])
-            .limit(1)
-            .execute()
-        ).data or []
+        # Reuse the central access-scope resolver: a personal enrolment must
+        # never authorise an organisation/cohort learner or creator identity.
+        from .progress import _enrolment
+        enrolment = _enrolment(str(user.id), str(body.course_id))
         if not enrolment:
-            raise HTTPException(403, "You must be enrolled in this course to use its lesson context.")
+            raise HTTPException(403, "You must have an active enrolment or assignment for this course to use its lesson context.")
         lesson_rows = (
             supabase.table("learnora_lessons")
             .select("id,module_id,title,description,content,lesson_type,status,course_modules!inner(course_id,title,order_index)")
