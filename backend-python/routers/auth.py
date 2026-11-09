@@ -1033,6 +1033,7 @@ class CurrentUser(BaseModel):
     account_type: str
     is_paid: bool = False
     marketing_email_opt_in: bool = False
+    marketing_in_app_opt_in: bool = False
 
     expires_at: Optional[str] = None
     trial_ends_at: Optional[str] = None
@@ -1240,7 +1241,8 @@ def _find_user(
             "id, name, email, password_hash, role, "
             "sub_status, is_paid, subscription_tier, "
             "expires_at, trial_ends_at, email_verified_at, "
-            "account_status, account_deactivation_until, marketing_email_opt_in"
+            "account_status, account_deactivation_until, marketing_email_opt_in, "
+            "marketing_in_app_opt_in"
         )
         .ilike(
             "email",
@@ -1841,6 +1843,7 @@ def get_current_user(
             entitlement["is_paid"]
         ),
         marketing_email_opt_in=bool(user.get("marketing_email_opt_in")),
+        marketing_in_app_opt_in=bool(user.get("marketing_in_app_opt_in")),
         expires_at=(
             entitlement["expires_at"]
         ),
@@ -2717,6 +2720,7 @@ def register(
         "created_at": now.isoformat(),
         "email_verified_at": None,
         "marketing_email_opt_in": bool(payload.marketing_email_opt_in),
+        "marketing_in_app_opt_in": bool(payload.marketing_email_opt_in),
         "marketing_consent_at": now.isoformat() if payload.marketing_email_opt_in else None,
         "marketing_consent_source": "signup_form" if payload.marketing_email_opt_in else None,
         "marketing_unsubscribed_at": None,
