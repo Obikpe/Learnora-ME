@@ -41,7 +41,7 @@ SAFE_USER_COLUMNS = (
     "subscription_tier, created_at, expires_at, "
     "trial_ends_at, account_status, account_deletion_requested_at, "
     "account_deactivation_until, deletion_reason, deletion_reason_details, "
-    "marketing_email_opt_in"
+    "marketing_email_opt_in, marketing_in_app_opt_in"
 )
 
 SAFE_ADMIN_COLUMNS = (
