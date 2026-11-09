@@ -56,6 +56,26 @@ The historical record is not a second usable account, but it still contains pers
 
 The self-service deletion and reactivation flow is for independent individual learners only. Cohort and organisation-managed accounts must continue through the organisation release/ownership process. Do not silently convert a managed identity into an independent account.
 
+
+### 1.6 Data-erasure boundary — production blocker
+
+A read-only inventory of the active Pheonix schema found learner-linked rows beyond `public.users`, including:
+- learning and progress: `learnora_enrolments`, `learnora_lesson_progress`, `learner_learning_days`, `learning_sessions`, `learner_skills`, `learner_badges`, `learner_lesson_notes`, `learning_recommendations`;
+- assessments and work: `quiz_attempts`, `assignment_submissions`, `project_submissions`, `skill_evidence`, `certificates`;
+- communication and AI: `learnora_notifications`, `learnora_discussions`, `learnora_discussion_replies`, `learnora_ai_conversations`, `ai_usage_logs`;
+- commercial and administration: `learnora_subscriptions`, `learnora_course_purchases`, `learnora_access_entitlements`, `learnora_activity_logs`, `learnora_feedback`, and related audit/token records.
+
+The current 30-day finaliser replaces the live login identity and stores a restricted history record; it does **not** yet delete or irreversibly anonymise every learner-linked row in these tables. The history record itself retains the original email and UUID, so it is pseudonymised/restricted personal data, not anonymous data. This means the current code implements account closure and recovery, but it must not be represented as complete erasure of all personal data.
+
+Before enabling finalisation in production, approve a table-by-table retention matrix:
+- erase personal content that is no longer needed and has no other lawful retention basis;
+- irreversibly de-identify records kept for aggregate learning analytics where feasible;
+- retain financial, certificate, dispute, security or audit records only for a documented lawful purpose and defined period;
+- sever the original email/UUID from records that do not require identity linkage;
+- keep the deletion reason and original email accessible only to authorised staff for the approved retention period.
+
+This matrix also determines the learner-facing wording and the staff deletion-history screen. Do not run the finaliser in production until this retention boundary is approved and implemented.
+
 ## 2. Deletion reasons and Learnora staff visibility
 
 The deletion form uses a controlled reason:
