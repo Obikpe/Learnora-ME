@@ -24,6 +24,13 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn('if (', guard)
         self.assertIn("organisation must release the account", guard)
 
+    def test_managed_identity_is_rechecked_when_confirmation_link_is_used(self):
+        source = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
+        confirmation = source.split('def confirm_account_deletion(', 1)[1]
+        self.assertIn("auth._active_organisation_context(", confirmation)
+        self.assertIn("fail_closed=True", confirmation)
+        self.assertIn("organisation must release the account", confirmation)
+
     def test_active_recurring_subscriptions_are_cancelled_before_deletion(self):
         source = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
         cancel_at = source.index("billing.cancel_learner_subscription(learner)")
