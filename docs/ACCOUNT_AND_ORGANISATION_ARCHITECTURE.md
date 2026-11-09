@@ -400,3 +400,32 @@ Before implementation, inspect the live schema and baseline to determine whether
 ---
 
 **Current state:** Architecture documented. No application implementation, schema, database data, deployment or CI workflow has been changed by this pass.
+
+## 11. Implementation update — 9 November 2026
+
+This section supersedes earlier status statements above where they described the learner implementation as not yet started. It records the current code changes; it does not claim the launch workflow is complete.
+
+### 11.1 Implemented in the active codebase
+
+- `backend-python/routers/auth.py` now has a fail-closed lookup for reserved `cohort_accounts` email identities. Individual registration rejects an email reserved by an organisation/cohort account, and individual login does not fall through to the `users` table when the email belongs only to a managed cohort account.
+- The authenticated-user resolver checks the separate admin, individual-user and cohort-account identity sources for conflicting records. Conflicts return HTTP 409 and are security-logged rather than silently selecting one account.
+- Cohort-token resolution verifies that the token's cohort account is the sole managed account for its canonical email and that no individual or administrator identity shares that email.
+- Organisation-context resolution checks both direct organisation memberships and retained legacy cohort memberships. Multiple organisation or incompatible role contexts fail closed for learner authentication.
+- `backend-python/routers/cohort_learners.py` blocks cohort provisioning when an individual/admin identity or another cohort's managed account already uses the email. Existing same-cohort inactive records can be considered for controlled re-provisioning; active duplicates are rejected.
+- The individual login page verifies the newly established session with `/auth/me` before routing. Failed verification clears the local session marker. The frontend continues to use the HttpOnly cookie rather than persisting the JWT in browser storage.
+- The API client attaches HTTP status codes to thrown errors. The dashboard preserves previously loaded learning data on transient refresh failures, distinguishes unavailable data from a genuinely empty learning state, and redirects on unauthorised responses.
+- The dashboard learning-session tracker timer declaration now uses `ReturnType<typeof window.setInterval>`, matching the browser timer identifier type. This fixes the TypeScript error reported by the Vercel build at `components/dashboard/LearningSessionTracker.tsx:120`. The change is committed on `main` as `fcb4fd0`.
+
+### 11.2 Verification status and known limitations
+
+- The Vercel build log supplied on 9 November 2026 reported successful Next.js compilation, then failed during TypeScript validation on the timer type mismatch. The source fix is committed, but a subsequent production build has not yet been run or observed. Do not treat the build as verified until a fresh build passes.
+- No local test suite, fresh production build, browser journey, deployment, CI workflow, SQL migration or live database operation was run as part of the above changes.
+- Email uniqueness remains an application-level guard across separate identity tables. It is not race-safe against simultaneous individual registration and managed-account provisioning. The global canonical email registry/unique constraint and its backfill/conflict-resolution procedure remain a future additive migration; do not apply it without explicit approval and a reviewed live-schema/data plan.
+- The organisation-controlled release/deletion workflow is not implemented. A managed email is blocked from individual registration until the managed identity is formally released through an authorised workflow. Do not delete or anonymise existing managed identities as an automatic workaround.
+- Existing legacy `witstart` role compatibility remains in active auth/session code pending the full audit of historical rows and the separate cohort login path. Historical records and migration history must remain untouched; remove active product-specific role handling only after a safe compatibility transition is designed.
+- The full learner vertical slice is still being audited: registration/verification/recovery, login/session revocation, public catalogue visibility, enrolment, course/lesson content, assessment, progress, evidence and completion must each be reconciled across backend and frontend before launch readiness can be claimed.
+
+### 11.3 Operational boundary
+
+Continue on `main`. Do not deploy, trigger CI, execute SQL, apply migrations, alter live records, or mutate legacy WitStart data. Use focused regression tests and source-level checks; report runtime/browser/database verification gaps explicitly.
+
