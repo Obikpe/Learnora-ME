@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { CheckCircle2, KeyRound, ShieldCheck, UserRound, Trash2, AlertTriangle } from "lucide-react";
 import { request } from "../../lib/api/client";
@@ -17,6 +17,23 @@ export default function AccountSettings({ user }: { user: any }) {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleteNotice, setDeleteNotice] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(Boolean(user?.marketing_email_opt_in));
+  const [marketingBusy, setMarketingBusy] = useState(false);
+  const [marketingMessage, setMarketingMessage] = useState("");
+
+  useEffect(() => { setMarketingOptIn(Boolean(user?.marketing_email_opt_in)); }, [user?.marketing_email_opt_in]);
+
+  async function updateMarketingPreference(enabled: boolean) {
+    setMarketingBusy(true);
+    setMarketingMessage("");
+    try {
+      await request("/account-lifecycle/marketing-preferences", { method: "PATCH", body: JSON.stringify({ enabled }) });
+      setMarketingOptIn(enabled);
+      setMarketingMessage(enabled ? "You are opted in to Learnora marketing emails." : "You are unsubscribed from Learnora marketing emails.");
+    } catch (e: any) {
+      setMarketingMessage(e.message || "We could not update your email preferences.");
+    } finally { setMarketingBusy(false); }
+  }
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,6 +106,18 @@ export default function AccountSettings({ user }: { user: any }) {
         <button disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black disabled:opacity-50"><ShieldCheck size={15}/>{busy ? "Updating password…" : "Update password"}</button>
       </form>
     </section>
+    {user?.account_type === "learner" && user?.role === "normal" && <section className="xl:col-span-2 rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-w-2xl">
+          <h2 className="font-semibold">Marketing emails</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Choose whether Learnora can email you about new learning tracks, course announcements, offers and discounts. This is separate from essential account, security and enrolled-course service messages.</p>
+          {marketingMessage && <p role="status" className="mt-2 text-xs text-slate-300">{marketingMessage}</p>}
+        </div>
+        <button type="button" disabled={marketingBusy} onClick={() => void updateMarketingPreference(!marketingOptIn)} className={`inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold transition disabled:opacity-50 ${marketingOptIn ? "border border-white/15 text-slate-300 hover:bg-white/5" : "bg-[#d7ad35] text-black hover:bg-[#e4c56e]"}`}>
+          {marketingBusy ? "Saving…" : marketingOptIn ? "Unsubscribe from marketing" : "Opt in to marketing emails"}
+        </button>
+      </div>
+    </section>}
     {canDeleteAccount ? <section className="xl:col-span-2 rounded-2xl border border-red-500/20 bg-[#0e1319] p-5 sm:p-6">
       <div className="flex items-start gap-3">
         <div className="rounded-xl bg-red-500/10 p-2.5 text-red-300"><AlertTriangle size={19}/></div>
