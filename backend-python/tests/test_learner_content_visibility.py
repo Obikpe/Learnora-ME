@@ -53,6 +53,14 @@ class LearnerContentVisibilityTests(unittest.TestCase):
         )[0]
         self.assertIn("_available_lesson_context(lesson_id)", helper)
 
+    def test_ai_lesson_context_uses_scope_aware_enrolment(self):
+        ai_source = (
+            Path(__file__).resolve().parents[1] / "routers" / "ai.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("from .progress import _enrolment", ai_source)
+        self.assertIn('_enrolment(str(user.id), str(body.course_id))', ai_source)
+        self.assertNotIn('supabase.table("learnora_enrolments")', ai_source)
+
 
 if __name__ == "__main__":
     unittest.main()
