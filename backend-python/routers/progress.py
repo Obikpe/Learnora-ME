@@ -140,6 +140,16 @@ def _enrolment(user_id: str, course_id: str):
     enrolment must never become an organisation learner's access token.
     """
     try:
+        course_rows = (
+            supabase.table("learnora_courses")
+            .select("id,status")
+            .eq("id", course_id)
+            .limit(1)
+            .execute()
+        ).data or []
+        if not course_rows or str(course_rows[0].get("status") or "").lower() not in {"published", "archived"}:
+            return None
+
         cohort_account = (
             supabase.table("cohort_accounts")
             .select("id")
