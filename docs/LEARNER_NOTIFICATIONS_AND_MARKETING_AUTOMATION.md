@@ -248,3 +248,18 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 - Implement and test the event/outbox notification engine, interest-signal capture, campaign worker and actual marketing email templates. The unsubscribe endpoint and page are in place, and the backend exposes a helper that creates a per-email opaque unsubscribe URL. No campaign sender currently consumes that helper.
 - Review privacy notice and terms with qualified counsel before enabling marketing campaigns.
 - Do not deploy or apply the migration without the separately authorised release process.
+
+
+## 7. Nigerian privacy references used for this design
+
+This is an engineering interpretation for product planning, not legal advice. The current reference set is:
+- **Nigeria Data Protection Act 2023:** sections 26(1)–(7) place the burden of proving consent on the controller, require affirmative rather than preselected consent, state that silence/inactivity is not consent, and require the right to withdraw to be explained. Section 27 requires clear privacy information including purposes, recipients, retention periods, rights and relevant profiling. Sections 35 and 36 cover withdrawal and objection, including an objection to direct marketing and related profiling.
+- **NDPC General Application and Implementation Directive (GAID) 2025:** Article 18(1)(a) states that consent is required for any direct marketing activity.
+- **ICLG, Data Protection Laws and Regulations 2026 — Nigeria:** its current country chapter explains the interaction between the NDPA direct-marketing objection right and the GAID opt-in requirement.
+
+Primary references:
+- [Nigeria Data Protection Act 2023 — Federal Government Gazette copy](https://www.nadpa-rapdp.org/sites/default/files/2023-07/Nigeria_Data_Protection_Act_2023_0.pdf)
+- [NDPC General Application and Implementation Directive 2025](https://ndpc.gov.ng/wp-content/uploads/2025/07/NDP-ACT-GAID-2025-MARCH-20TH.pdf)
+- [ICLG 2026 — Nigeria data protection](https://iclg.com/practice-areas/data-protection-laws-and-regulations/nigeria)
+
+The controller identity, contact details, retention periods, lawful bases, provider contracts and whether Learnora meets any NDPC registration/DPO threshold must be assessed for the actual operating entity. A checkbox and unsubscribe link are necessary controls for marketing consent, but they do not by themselves establish full compliance or guarantee that the operator cannot be sued.
