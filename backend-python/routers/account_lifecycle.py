@@ -391,7 +391,7 @@ def create_marketing_unsubscribe_url(user_id: str) -> str:
         auth.JWT_SECRET,
         algorithm=auth.ALGORITHM,
     )
-    return f"{auth.FRONTEND_URL}/unsubscribe?token={token}"
+    return f"{auth.FRONTEND_URL}/unsubscribe#token={token}"
 
 
 @router.patch("/marketing-preferences")
@@ -403,12 +403,16 @@ def update_marketing_preferences(
     if user.account_type != "learner" or user.role != "normal" or not user.id:
         raise HTTPException(status_code=403, detail="Marketing preferences are available for individual learner accounts.")
     now = datetime.now(timezone.utc).isoformat()
-    updates = {
-        "marketing_email_opt_in": payload.enabled,
-        "marketing_consent_at": now if payload.enabled else None,
-        "marketing_consent_source": "account_settings" if payload.enabled else None,
-        "marketing_unsubscribed_at": None if payload.enabled else now,
-    }
+    updates = {"marketing_email_opt_in": payload.enabled}
+    if payload.enabled:
+        updates.update({
+            "marketing_consent_at": now,
+            "marketing_consent_source": "account_settings",
+            "marketing_unsubscribed_at": None,
+        })
+    else:
+        # Keep the last consent evidence for audit; record withdrawal separately.
+        updates["marketing_unsubscribed_at"] = now
     result = (
         auth.supabase.table("users")
         .update(updates)
@@ -452,8 +456,6 @@ def unsubscribe_from_marketing(
         auth.supabase.table("users")
         .update({
             "marketing_email_opt_in": False,
-            "marketing_consent_at": None,
-            "marketing_consent_source": None,
             "marketing_unsubscribed_at": now,
         })
         .eq("id", user_id)
