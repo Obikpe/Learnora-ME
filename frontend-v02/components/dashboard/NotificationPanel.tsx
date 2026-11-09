@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Bell, BellRing, Clock3, ExternalLink, X } from "lucide-react";
+import { Bell, BellRing, Clock3, ExternalLink, X, ChevronLeft } from "lucide-react";
 import { request } from "../../lib/api/client";
 
 type Notice = {
@@ -40,9 +40,11 @@ export default function NotificationPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   useEffect(() => {
     setSelectedId(initialSelectedId || "");
+    setMobileDetailOpen(false);
   }, [initialSelectedId]);
 
   useEffect(() => {
@@ -74,6 +76,7 @@ export default function NotificationPanel({
 
   async function select(item: Notice) {
     setSelectedId(item.id);
+    setMobileDetailOpen(true);
     if (item.read_at || busyId) return;
     setBusyId(item.id);
     try {
@@ -107,11 +110,11 @@ export default function NotificationPanel({
 
         {error && <div role="alert" className="mx-5 mt-4 border border-[var(--error)]/25 bg-[var(--error)]/[.06] px-4 py-3 text-sm text-[var(--error)] sm:mx-7">{error}</div>}
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <main className="min-h-[16rem] overflow-y-auto border-b border-[var(--border)] p-5 sm:p-7 lg:border-b-0 lg:border-r">
+        <div className="relative grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <main className={`min-h-0 overflow-y-auto border-b border-[var(--border)] bg-[var(--bg)] p-5 sm:p-7 lg:static lg:block lg:border-b-0 lg:border-r ${mobileDetailOpen ? "absolute inset-0 z-20 block translate-x-0" : "hidden translate-x-full"} transition-transform duration-300 ease-out lg:translate-x-0`}>
             {loading ? <div className="space-y-4" aria-label="Loading notification"><div className="h-7 w-2/3 animate-pulse rounded bg-[var(--skeleton)]"/><div className="h-3 w-1/3 animate-pulse rounded bg-[var(--skeleton)]"/><div className="mt-8 h-28 animate-pulse rounded bg-[var(--skeleton)]"/></div>
             : selected ? <>
-              <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--primary)]">Selected notification</p>
+              <button type="button" onClick={() => setMobileDetailOpen(false)} className="mb-5 inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-[var(--text-muted)] transition hover:text-[var(--text-heading)] lg:hidden"><ChevronLeft size={16}/> Back to notifications</button><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--primary)]">Selected notification</p>
               <h3 className="mt-3 max-w-3xl text-2xl font-bold leading-tight tracking-tight text-[var(--text-heading)] sm:text-3xl">{selected.title}</h3>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)]">
                 <span className="inline-flex items-center gap-1.5"><Clock3 size={13}/>{relativeTime(selected.created_at)}</span>
@@ -123,7 +126,7 @@ export default function NotificationPanel({
             </> : <div className="grid min-h-64 place-items-center text-center"><div><Bell size={28} className="mx-auto text-[var(--text-muted)]"/><p className="mt-4 text-sm font-semibold text-[var(--text-heading)]">No notifications yet</p><p className="mt-1 text-xs text-[var(--text-muted)]">New learning updates will appear here.</p></div></div>}
           </main>
 
-          <aside className="min-h-0 overflow-y-auto bg-[var(--card)]" aria-label="Notification list">
+          <aside className={`min-h-0 overflow-y-auto bg-[var(--card)] ${mobileDetailOpen ? "hidden" : "block"} lg:block`} aria-label="Notification list">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
               <h3 className="text-xs font-bold uppercase tracking-[.13em] text-[var(--text-muted)]">All notifications</h3>
               <span className="text-[11px] tabular-nums text-[var(--text-muted)]">{items.length}</span>
