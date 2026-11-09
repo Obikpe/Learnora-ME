@@ -3157,17 +3157,30 @@ def resend_verification(
         ),
     }
 
-    user = _find_user(
-        email
-    )
+    cohort_accounts = _find_cohort_accounts_by_email(email)
+    admin = _find_admin(email)
+    user = _find_user(email)
 
-    if not user:
+    if (admin and user) or (cohort_accounts and (admin or user)):
+        log_security_event(
+            action="conflicting_email_account_contexts",
+            email=email,
+            request=request,
+            metadata={
+                "has_admin": bool(admin),
+                "has_individual_user": bool(user),
+                "cohort_account_count": len(cohort_accounts),
+                "endpoint": "resend_verification",
+            },
+        )
         return generic_response
 
-    if (
-        user.get("sub_status")
-        != "pending"
-    ):
+    # Managed cohort and administrator accounts do not use the individual
+    # email-verification flow. Do not send a token to an ambiguous identity.
+    if cohort_accounts or admin or not user:
+        return generic_response
+
+    if user.get("sub_status") != "pending":
         return generic_response
 
     now = datetime.now(
@@ -3317,31 +3330,36 @@ def forgot_password(
         ),
     }
 
-    admin = _find_admin(
-        email
-    )
+    cohort_accounts = _find_cohort_accounts_by_email(email)
+    admin = _find_admin(email)
+    user = _find_user(email)
+
+    if (admin and user) or (cohort_accounts and (admin or user)):
+        log_security_event(
+            action="conflicting_email_account_contexts",
+            email=email,
+            request=request,
+            metadata={
+                "has_admin": bool(admin),
+                "has_individual_user": bool(user),
+                "cohort_account_count": len(cohort_accounts),
+                "endpoint": "forgot_password",
+            },
+        )
+        return generic_response
+
+    # Cohort credentials use their managed-account recovery path. Never reset
+    # an administrator or individual password for an email reserved by a cohort.
+    if cohort_accounts or (not admin and not user):
+        return generic_response
 
     if admin:
-
-        if not admin.get(
-            "is_active",
-            False,
-        ):
+        if not admin.get("is_active", False):
             return generic_response
-
         account_id = admin["id"]
         account_type = "admin"
         account_name = admin.get("name")
-
     else:
-
-        user = _find_user(
-            email
-        )
-
-        if not user:
-            return generic_response
-
         account_id = user["id"]
         account_type = "learner"
         account_name = user.get("name")
