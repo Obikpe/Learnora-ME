@@ -59,6 +59,7 @@ class LearnerContentVisibilityTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("from .progress import _enrolment", ai_source)
         self.assertIn('_enrolment(str(user.id), str(body.course_id))', ai_source)
+        self.assertIn('include_archived=str(course.get("status") or "").lower() == "archived"', ai_source)
         self.assertNotIn('supabase.table("learnora_enrolments")', ai_source)
 
     def test_course_content_routes_hide_draft_courses_modules_and_lessons(self):
