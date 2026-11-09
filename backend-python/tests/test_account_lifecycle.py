@@ -75,13 +75,24 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn("finalize_expired_learner_account_deletions", migration)
         self.assertIn("FOR UPDATE SKIP LOCKED", migration)
 
-    def test_signup_routes_recoverable_accounts_to_email_reactivation(self):
+    def test_signup_routes_recoverable_accounts_without_sending_reactivation_email(self):
         source = (ROOT / "backend-python/routers/auth.py").read_text(encoding="utf-8")
         registration = source.split('"/register"', 1)[1].split("# VERIFY EMAIL", 1)[0]
         self.assertIn('account_status") == "deactivation_pending"', registration)
-        self.assertIn("/reactivate-account#token=", registration)
-        self.assertIn("account_reactivation_expires_at", registration)
+        self.assertIn("ACCOUNT_DEACTIVATED:", registration)
+        self.assertNotIn("_send_email(", registration)
+        self.assertNotIn("/reactivate-account#token=", registration)
         self.assertIn("marketing_email_opt_in: bool = False", source)
+
+    def test_reactivation_email_is_requested_explicitly_and_password_is_required(self):
+        source = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
+        self.assertIn('@router.post("/request-reactivation")', source)
+        self.assertIn('@router.post("/reactivate")', source)
+        self.assertIn("class RequestReactivationRequest", source)
+        self.assertIn("password: str = Field(min_length=1", source)
+        self.assertIn("auth.verify_password(payload.password", source)
+        self.assertIn("auth._send_email(", source)
+        self.assertIn("account_reactivation_token_hash", source)
 
     def test_marketing_consent_is_optional_and_can_be_withdrawn(self):
         migration = (ROOT / "supabase/migrations/20261109180000_learner_deletion_grace_and_marketing_consent.sql").read_text(encoding="utf-8")
