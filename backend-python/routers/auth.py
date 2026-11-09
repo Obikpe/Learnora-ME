@@ -3752,8 +3752,11 @@ def me(
                 .execute()
             ).data or []
         except Exception as exc:
-            print("Current-user organisation membership lookup failed:", exc)
-            memberships = []
+            print("Current-user organisation membership lookup failed:", type(exc).__name__)
+            raise HTTPException(
+                status_code=503,
+                detail="Your organisation access could not be verified. Please try again.",
+            ) from None
 
     organisation_ids = list({str(row["organisation_id"]) for row in memberships if row.get("organisation_id")})
     if organisation_ids:
