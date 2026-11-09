@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bell, Check, X, Sun, Moon, Headset, CircleUserRound, LogOut } from "lucide-react";
@@ -28,12 +29,15 @@ export default function Topbar({ admin = false, onOpenNotification }: { admin?: 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [toast, setToast] = useState<ToastNotice | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
   const [previewItems, setPreviewItems] = useState<NoticePreview[]>([]);
   const [accountOpen, setAccountOpen] = useState(false);
   const lastSeenIds = useRef<Set<string> | null>(null);
   const browserSeenIds = useRef<Set<string> | null>(null);
   const inFlight = useRef(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => { setPortalReady(true); }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -181,19 +185,28 @@ export default function Topbar({ admin = false, onOpenNotification }: { admin?: 
           <Bell size={17}/>
           {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
         </button>
-        {previewOpen && <div className="absolute right-0 top-full z-[85] mt-3 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
-          <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-            <span className="text-sm font-semibold text-[var(--text-heading)]">Notifications</span>
-            <span className="text-[11px] text-[var(--text-muted)]">{unread} unread</span>
-          </div>
-          {previewItems.length ? <div className="max-h-[22rem] overflow-y-auto">
-            {previewItems.map(item => <button key={item.id} type="button" onClick={() => { setPreviewOpen(false); onOpenNotification?.(item.id); }} className="block w-full border-b border-[var(--border)] px-4 py-3 text-left transition hover:bg-[var(--bg-soft)] last:border-b-0">
-              <span className="block truncate text-sm font-semibold text-[var(--text-heading)]">{item.title}</span>
-              <span className="mt-1 block line-clamp-2 text-xs leading-5 text-[var(--text-muted)]">{item.body}</span>
-            </button>)}
-          </div> : <p className="px-4 py-6 text-sm text-[var(--text-muted)]">No notifications yet.</p>}
-          <button type="button" onClick={() => { setPreviewOpen(false); onOpenNotification?.(); }} className="block w-full border-t border-[var(--border)] px-4 py-3 text-left text-xs font-semibold text-[var(--primary)] hover:bg-[var(--bg-soft)]">View all notifications</button>
-        </div>}
+        {previewOpen && portalReady && createPortal(
+          <div className="fixed inset-0 z-[110]" role="presentation">
+            <button type="button" aria-label="Close notification preview" onClick={() => setPreviewOpen(false)} className="absolute inset-0 bg-black/35"/>
+            <aside role="dialog" aria-modal="true" aria-label="Notification preview" className="absolute inset-y-0 right-0 flex w-[min(22rem,100vw)] max-w-full flex-col overflow-hidden border-l border-[var(--border)] bg-[var(--card)] shadow-2xl animate-[notification-drawer-in_180ms_ease-out]">
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-3 sm:px-4">
+                <div className="min-w-0">
+                  <span className="block text-xs font-semibold text-[var(--text-heading)]">Notifications</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--text-muted)]">{unread} unread</span>
+                </div>
+                <button type="button" onClick={() => setPreviewOpen(false)} aria-label="Close notification preview" className="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-soft)]"><X size={16}/></button>
+              </div>
+              {previewItems.length ? <div className="min-h-0 flex-1 overflow-y-auto">
+                {previewItems.map(item => <button key={item.id} type="button" onClick={() => { setPreviewOpen(false); onOpenNotification?.(item.id); }} className="block w-full border-b border-[var(--border)] px-3 py-3 text-left transition hover:bg-[var(--bg-soft)] last:border-b-0 sm:px-4">
+                  <span className="block truncate text-xs font-semibold leading-5 text-[var(--text-heading)]">{item.title}</span>
+                  <span className="mt-1 block line-clamp-2 break-words text-[11px] leading-4 text-[var(--text-muted)]">{item.body}</span>
+                </button>)}
+              </div> : <p className="px-3 py-6 text-xs text-[var(--text-muted)]">No notifications yet.</p>}
+              <button type="button" onClick={() => { setPreviewOpen(false); onOpenNotification?.(); }} className="shrink-0 border-t border-[var(--border)] px-3 py-3 text-left text-[11px] font-semibold text-[var(--primary)] hover:bg-[var(--bg-soft)] sm:px-4">View all notifications</button>
+            </aside>
+          </div>,
+          document.body
+        )}
       </div>}
       <div className="relative">
         <button type="button" onClick={() => setAccountOpen(value => !value)} aria-expanded={accountOpen} aria-label="Account and profile menu" title="Account and profile" className={actionClass}><CircleUserRound size={18}/></button>
