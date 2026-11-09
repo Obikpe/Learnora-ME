@@ -56,6 +56,7 @@ class FakeQuery:
 class FakeSupabase:
     def __init__(self, course_access=None, enrolments=None, **tables):
         self.rows = {
+            "learnora_courses": [{"id": "course-1", "status": "published"}],
             "course_access": course_access or [],
             "learnora_enrolments": enrolments or [],
             "organisations": [{"id": "org-a", "is_active": True}],
