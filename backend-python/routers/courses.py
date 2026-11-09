@@ -693,24 +693,66 @@ def self_enrol_in_free_course(
 
     existing = (
         supabase.table("learnora_enrolments")
-        .select("id,status,enrolled_at,completed_at")
-        .eq("user_id", user.id)
+        .select("id,status,enrolled_at,completed_at,organisation_id,cohort_id")
+        .eq("user_id", str(user.id))
         .eq("course_id", course_id)
-        .in_("status", ["active", "completed"])
+        .is_("organisation_id", "null")
+        .is_("cohort_id", "null")
         .order("enrolled_at", desc=True)
-        .limit(1)
+        .limit(2)
         .execute()
     )
-    if existing.data:
-        return {"success": True, "already_enrolled": True, "enrolment": existing.data[0]}
+    existing_rows = existing.data or []
+    if len(existing_rows) > 1:
+        raise HTTPException(
+            409,
+            "Multiple individual enrolment records exist for this course. Contact Learnora support before continuing.",
+        )
+    if existing_rows:
+        enrolment = existing_rows[0]
+        enrolment_status = str(enrolment.get("status") or "").lower()
+        if enrolment_status in {"active", "completed"}:
+            return {"success": True, "already_enrolled": True, "enrolment": enrolment}
+        if enrolment_status != "withdrawn":
+            raise HTTPException(
+                409,
+                "This course enrolment is not available for self-service reactivation. Contact Learnora support.",
+            )
+
+        now = datetime.now(timezone.utc).isoformat()
+        reactivated = (
+            supabase.table("learnora_enrolments")
+            .update({
+                "status": "active",
+                "enrolled_at": now,
+                "completed_at": None,
+                "source_type": "self_enrolment",
+            })
+            .eq("id", str(enrolment["id"]))
+            .eq("user_id", str(user.id))
+            .eq("course_id", course_id)
+            .eq("status", "withdrawn")
+            .is_("organisation_id", "null")
+            .is_("cohort_id", "null")
+            .execute()
+        )
+        if not reactivated.data:
+            raise HTTPException(409, "The course enrolment changed while you were rejoining. Refresh and try again.")
+        return {
+            "success": True,
+            "already_enrolled": False,
+            "reactivated": True,
+            "enrolment": reactivated.data[0],
+        }
 
     now = datetime.now(timezone.utc).isoformat()
     inserted = (
         supabase.table("learnora_enrolments")
         .insert({
-            "user_id": user.id,
+            "user_id": str(user.id),
             "course_id": course_id,
             "organisation_id": None,
+            "cohort_id": None,
             "status": "active",
             "enrolled_at": now,
             "source_type": "self_enrolment",
