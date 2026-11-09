@@ -2380,6 +2380,18 @@ def login(
             ),
         )
 
+    if user.get("account_status") == "deactivation_pending":
+        recovery_until = _parse_datetime(user.get("account_deactivation_until"))
+        if recovery_until and recovery_until > datetime.now(timezone.utc):
+            raise HTTPException(
+                status_code=403,
+                detail="ACCOUNT_DEACTIVATED: This Learnora account is deactivated but can still be reactivated within its 30-day recovery period. Continue to the account reactivation page.",
+            )
+        raise HTTPException(
+            status_code=403,
+            detail="This account's 30-day recovery period has ended and it is awaiting permanent closure.",
+        )
+
     valid, needs_rehash = (
         verify_password(
             payload.password,
@@ -2407,12 +2419,6 @@ def login(
             detail=(
                 "Invalid email or password"
             ),
-        )
-
-    if user.get("account_status") == "deactivation_pending":
-        raise HTTPException(
-            status_code=403,
-            detail="This account is deactivated and scheduled for deletion. Use the activation link sent to your email to reactivate it within 30 days.",
         )
 
     _clear_failures(
@@ -2610,90 +2616,29 @@ def register(
 
     if existing_user and existing_user.get("account_status") == "deactivation_pending":
         recovery_until = _parse_datetime(existing_user.get("account_deactivation_until"))
-        if not recovery_until or recovery_until <= now:
-            finalizer_enabled = os.getenv("ACCOUNT_DELETION_FINALIZER_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
-            if not finalizer_enabled:
-                raise HTTPException(
-                    status_code=503,
-                    detail="This account has reached the end of its recovery period. Final account closure is being prepared; please try registration again later.",
-                )
-            try:
-                supabase.rpc(
-                    "finalize_expired_learner_account_deletions",
-                    {"p_now": now.isoformat()},
-                ).execute()
-                existing_user = _find_user(email)
-            except Exception as exc:
-                print(f"Expired account finalisation during registration failed: {type(exc).__name__}")
-                raise HTTPException(
-                    status_code=503,
-                    detail="We are preparing this account for a new registration. Please try again shortly.",
-                ) from None
-
-        if existing_user and existing_user.get("account_status") == "deactivation_pending":
-            raw_token = _generate_raw_token()
-            token_hash = _hash_token(raw_token)
-            token_expires_at = now + timedelta(hours=24)
-            try:
-                saved_reactivation = (
-                    supabase.table("users").update({
-                        "account_reactivation_token_hash": token_hash,
-                        "account_reactivation_expires_at": token_expires_at.isoformat(),
-                    })
-                    .eq("id", existing_user["id"])
-                    .eq("account_status", "deactivation_pending")
-                    .gt("account_deactivation_until", now.isoformat())
-                    .select("id")
-                    .execute()
-                ).data or []
-                if not saved_reactivation:
-                    raise RuntimeError("Account recovery period has ended")
-                activation_url = f"{FRONTEND_URL}/reactivate-account#token={raw_token}"
-                display_name = (existing_user.get("name") or "there").strip()
-                _send_email(
-                    recipient=email,
-                    subject="Reactivate your Learnora account",
-                    text_body=(
-                        f"Hi {display_name},\n\n"
-                        "A sign-up attempt was made using this email address. Your Learnora account is currently within its 30-day recovery period. "
-                        "Open the secure link below within 24 hours to reactivate it:\n\n"
-                        f"{activation_url}\n\n"
-                        "If you did not request this, ignore this email. Your account will remain scheduled for deletion.\n\n"
-                        "Learnora ME"
-                    ),
-                    html_body=(
-                        "<!doctype html><html><body style='font-family:Arial,sans-serif;color:#172033'>"
-                        "<div style='max-width:560px;margin:32px auto;padding:28px;border:1px solid #e5e7eb;border-radius:16px'>"
-                        "<h1>Reactivate your Learnora account</h1>"
-                        f"<p>Hi {escape(display_name)},</p>"
-                        "<p>Your account is within its 30-day recovery period. Use the secure link below within 24 hours to reactivate it.</p>"
-                        f"<p><a href='{escape(activation_url)}'>Reactivate account</a></p>"
-                        "<p style='font-size:13px;color:#64748b'>If you did not request this, ignore this email. Your account will remain scheduled for deletion.</p>"
-                        "</div></body></html>"
-                    ),
-                )
-                log_audit_event(
-                    action="learner_account_reactivation_link_requested",
-                    email=email,
-                    account_type="learner",
-                    role=existing_user.get("role") or "normal",
-                    request=request,
-                    metadata={"user_id": existing_user["id"]},
-                )
-            except Exception as exc:
-                print(f"Account reactivation email failed: {type(exc).__name__}")
-                supabase.table("users").update({
-                    "account_reactivation_token_hash": None,
-                    "account_reactivation_expires_at": None,
-                }).eq("id", existing_user["id"]).eq("account_reactivation_token_hash", token_hash).execute()
-                raise HTTPException(
-                    status_code=503,
-                    detail="We could not send the activation link. Please try again.",
-                ) from None
+        if recovery_until and recovery_until > now:
             raise HTTPException(
                 status_code=409,
-                detail="This account is scheduled for deletion. We sent an activation link to your email. Open it to reactivate your existing account instead of creating a new one.",
+                detail="ACCOUNT_DEACTIVATED: This Learnora account is deactivated but can still be reactivated within its 30-day recovery period. Continue to the account reactivation page.",
             )
+        finalizer_enabled = os.getenv("ACCOUNT_DELETION_FINALIZER_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
+        if not finalizer_enabled:
+            raise HTTPException(
+                status_code=503,
+                detail="This account has reached the end of its recovery period and is awaiting permanent closure. Please try again later.",
+            )
+        try:
+            supabase.rpc(
+                "finalize_expired_learner_account_deletions",
+                {"p_now": now.isoformat()},
+            ).execute()
+            existing_user = _find_user(email)
+        except Exception as exc:
+            print(f"Expired account finalisation during registration failed: {type(exc).__name__}")
+            raise HTTPException(
+                status_code=503,
+                detail="We are preparing this account for a new registration. Please try again shortly.",
+            ) from None
 
     if existing_user:
         if existing_user.get("sub_status") == "pending":
