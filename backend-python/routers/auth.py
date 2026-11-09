@@ -1172,11 +1172,29 @@ def log_security_event(
 # FIND ACCOUNT
 # ---------------------------------------------------------------------------
 
+def _execute_supabase_read_with_retry(query, operation: str):
+    """Retry a read once/twice when the pooled HTTP connection is dropped.
+
+    The production traces show intermittent httpx RemoteProtocolError failures
+    while PostgREST is serving authentication lookups. These are transport
+    failures, not query errors, so retrying the idempotent SELECT is safe.
+    """
+    for attempt in range(3):
+        try:
+            return query.execute()
+        except httpx.TransportError as exc:
+            if attempt == 2:
+                print(f"{operation} failed after transient connection retries: {type(exc).__name__}")
+                raise
+            time.sleep(0.15 * (attempt + 1))
+
+
+
 def _find_admin(
     email: str,
 ):
 
-    response = (
+    query = (
         supabase
         .table("admins")
         .select(
@@ -1188,8 +1206,8 @@ def _find_admin(
             _escape_ilike_literal(email),
         )
         .limit(2)
-        .execute()
     )
+    response = _execute_supabase_read_with_retry(query, "Admin identity lookup")
 
     rows = response.data or []
     if len(rows) > 1:
@@ -1210,7 +1228,7 @@ def _find_user(
     email: str,
 ):
 
-    response = (
+    query = (
         supabase
         .table("users")
         .select(
@@ -1223,8 +1241,8 @@ def _find_user(
             _escape_ilike_literal(email),
         )
         .limit(2)
-        .execute()
     )
+    response = _execute_supabase_read_with_retry(query, "Learner identity lookup")
 
     rows = response.data or []
     if len(rows) > 1:
@@ -1250,13 +1268,13 @@ def _find_cohort_accounts_by_email(email: str) -> list[dict]:
     existing organisation identity as an available individual email.
     """
     try:
-        response = (
+        query = (
             supabase.table("cohort_accounts")
             .select("id,cohort_id,organisation_id,status")
             .ilike("email", _escape_ilike_literal(email))
             .limit(10)
-            .execute()
         )
+        response = _execute_supabase_read_with_retry(query, "Reserved account lookup")
     except Exception as exc:
         print(f"Reserved account lookup failed: {type(exc).__name__}")
         raise HTTPException(
