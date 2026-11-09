@@ -74,6 +74,7 @@ import re
 import secrets
 import base64
 import time
+from html import escape
 
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
@@ -1237,7 +1238,8 @@ def _find_user(
         .select(
             "id, name, email, password_hash, role, "
             "sub_status, is_paid, subscription_tier, "
-            "expires_at, trial_ends_at, email_verified_at"
+            "expires_at, trial_ends_at, email_verified_at, "
+            "account_status, account_deactivation_until"
         )
         .ilike(
             "email",
@@ -1732,10 +1734,15 @@ def get_current_user(
     # ---------------------------------------------------------------
 
     if not user:
-
         raise HTTPException(
             status_code=401,
             detail="User account not found",
+        )
+
+    if user.get("account_status") == "deactivation_pending":
+        raise HTTPException(
+            status_code=403,
+            detail="This account is deactivated and scheduled for deletion. Reactivate it using the link sent to your email.",
         )
 
     role = (
@@ -2106,6 +2113,7 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     name: Optional[str] = None
+    marketing_email_opt_in: bool = False
 
 
 class ChangePasswordRequest(BaseModel):
@@ -2396,6 +2404,12 @@ def login(
             ),
         )
 
+    if user.get("account_status") == "deactivation_pending":
+        raise HTTPException(
+            status_code=403,
+            detail="This account is deactivated and scheduled for deletion. Use the activation link sent to your email to reactivate it within 30 days.",
+        )
+
     _clear_failures(
         rate_key
     )
@@ -2586,41 +2600,94 @@ def register(
             ),
         )
 
-    existing_user = _find_user(
-        email
-    )
+    existing_user = _find_user(email)
+    now = datetime.now(timezone.utc)
+
+    if existing_user and existing_user.get("account_status") == "deactivation_pending":
+        recovery_until = _parse_datetime(existing_user.get("account_deactivation_until"))
+        if not recovery_until or recovery_until <= now:
+            try:
+                supabase.rpc(
+                    "finalize_expired_learner_account_deletions",
+                    {"p_now": now.isoformat()},
+                ).execute()
+                existing_user = _find_user(email)
+            except Exception as exc:
+                print(f"Expired account finalisation during registration failed: {type(exc).__name__}")
+                raise HTTPException(
+                    status_code=503,
+                    detail="We are preparing this account for a new registration. Please try again shortly.",
+                ) from None
+
+        if existing_user and existing_user.get("account_status") == "deactivation_pending":
+            raw_token = _generate_raw_token()
+            token_hash = _hash_token(raw_token)
+            token_expires_at = now + timedelta(hours=24)
+            try:
+                supabase.table("users").update({
+                    "account_reactivation_token_hash": token_hash,
+                    "account_reactivation_expires_at": token_expires_at.isoformat(),
+                }).eq("id", existing_user["id"]).eq("account_status", "deactivation_pending").execute()
+                activation_url = f"{FRONTEND_URL}/reactivate-account#token={raw_token}"
+                display_name = (existing_user.get("name") or "there").strip()
+                _send_email(
+                    recipient=email,
+                    subject="Reactivate your Learnora account",
+                    text_body=(
+                        f"Hi {display_name},\n\n"
+                        "A sign-up attempt was made using this email address. Your Learnora account is currently within its 30-day recovery period. "
+                        "Open the secure link below within 24 hours to reactivate it:\n\n"
+                        f"{activation_url}\n\n"
+                        "If you did not request this, ignore this email. Your account will remain scheduled for deletion.\n\n"
+                        "Learnora ME"
+                    ),
+                    html_body=(
+                        "<!doctype html><html><body style='font-family:Arial,sans-serif;color:#172033'>"
+                        "<div style='max-width:560px;margin:32px auto;padding:28px;border:1px solid #e5e7eb;border-radius:16px'>"
+                        "<h1>Reactivate your Learnora account</h1>"
+                        f"<p>Hi {escape(display_name)},</p>"
+                        "<p>Your account is within its 30-day recovery period. Use the secure link below within 24 hours to reactivate it.</p>"
+                        f"<p><a href='{escape(activation_url)}'>Reactivate account</a></p>"
+                        "<p style='font-size:13px;color:#64748b'>If you did not request this, ignore this email. Your account will remain scheduled for deletion.</p>"
+                        "</div></body></html>"
+                    ),
+                )
+                log_audit_event(
+                    action="learner_account_reactivation_link_requested",
+                    email=email,
+                    account_type="learner",
+                    role=existing_user.get("role") or "normal",
+                    request=request,
+                    metadata={"user_id": existing_user["id"]},
+                )
+            except Exception as exc:
+                print(f"Account reactivation email failed: {type(exc).__name__}")
+                supabase.table("users").update({
+                    "account_reactivation_token_hash": None,
+                    "account_reactivation_expires_at": None,
+                }).eq("id", existing_user["id"]).eq("account_reactivation_token_hash", token_hash).execute()
+                raise HTTPException(
+                    status_code=503,
+                    detail="We could not send the activation link. Please try again.",
+                ) from None
+            raise HTTPException(
+                status_code=409,
+                detail="This account is scheduled for deletion. We sent an activation link to your email. Open it to reactivate your existing account instead of creating a new one.",
+            )
 
     if existing_user:
-
-        if (
-            existing_user.get(
-                "sub_status"
-            )
-            == "pending"
-        ):
-
+        if existing_user.get("sub_status") == "pending":
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "An account with this email "
-                    "already exists but has not "
-                    "been verified. Please use "
-                    "the verification email or "
-                    "request a new one."
+                    "An account with this email already exists but has not been verified. "
+                    "Please use the verification email or request a new one."
                 ),
             )
-
         raise HTTPException(
             status_code=400,
-            detail=(
-                "An account with this "
-                "email already exists"
-            ),
+            detail="An account with this email already exists",
         )
-
-    now = datetime.now(
-        timezone.utc
-    )
 
     # ---------------------------------------------------------------
     # CREATE PENDING ACCOUNT
@@ -2638,6 +2705,10 @@ def register(
         "subscription_tier": "free",
         "created_at": now.isoformat(),
         "email_verified_at": None,
+        "marketing_email_opt_in": bool(payload.marketing_email_opt_in),
+        "marketing_consent_at": now.isoformat() if payload.marketing_email_opt_in else None,
+        "marketing_consent_source": "signup_form" if payload.marketing_email_opt_in else None,
+        "marketing_unsubscribed_at": None,
     }
 
     try:
@@ -2782,6 +2853,7 @@ def register(
         account_type="learner",
         role="normal",
         request=request,
+        metadata={"marketing_email_opt_in": bool(payload.marketing_email_opt_in)},
     )
 
     return {
