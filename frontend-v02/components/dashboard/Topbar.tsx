@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, Check, X, Sun, Moon, Headset, CircleUserRound, ChevronDown, LogOut } from "lucide-react";
+import { Bell, Check, X, Sun, Moon, Headset, CircleUserRound, LogOut } from "lucide-react";
 import { clearToken } from "../../lib/api";
 import { request } from "../../lib/api/client";
 
