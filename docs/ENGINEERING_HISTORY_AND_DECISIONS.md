@@ -634,3 +634,23 @@ Read-only verification confirmed the track-course relationship, published status
 ### Verification and release
 - Source files were re-fetched from `main` after the changes. The backend test suite has not been executed in this session.
 - No Supabase data or schema was changed. No Vercel deployment was triggered. The retry and error-message changes will not affect production until the backend and frontend are deployed through the user's normal release process.
+
+
+## Account deletion schema mismatch — 9 November 2026
+
+### Production diagnosis
+- The production backend had been updated to commit `62294529305e90780d8a83730f45034c0807cb23`, but the active Supabase database had not received the corresponding learner-account-deletion migration.
+- Vercel runtime logs captured `POST /api/account-lifecycle/request-deletion` on the production deployment. The request failed when PostgREST attempted to select `users.account_status` and `users.account_deletion_expires_at`; Supabase returned PostgreSQL error `42703` because `users.account_status` did not exist.
+- A read-only inspection of `public.users` confirmed that all five lifecycle columns were missing. The migration-history table had no row for migration version `20261102130000`, and the `complete_learner_account_deletion(text,timestamptz)` RPC was absent.
+- The account-deletion migration was already present in `supabase/migrations/20261102130000_learner_account_deletion.sql`. The migration's referenced organisation tables and required columns were verified to exist before applying it.
+
+### Live correction and verification
+- Applied the existing `20261102130000_learner_account_deletion.sql` migration to the active Supabase project `gihfupzvdpyrmynqgukz` using the Supabase migration operation. The migration adds lifecycle fields to `public.users`, creates the restricted `deleted_account_history` table, and creates the account-deletion completion RPC.
+- Verified all five lifecycle columns exist, `public.deleted_account_history` exists, and `public.complete_learner_account_deletion(text,timestamptz)` exists. Function execute privileges are limited to `service_role` and the database owner role; PUBLIC, anon and authenticated were revoked by the migration.
+- Checked the affected learner row after migration: `account_status='active'`, no deletion token, no deletion-request timestamp and no deleted timestamp. The failed request did not leave a partially pending deletion or delete the account.
+- The production backend and frontend were not redeployed as part of this schema-only correction. The backend already contains the route code; the database schema was the missing dependency.
+- Vercel Hobby runtime logs have a short retention window (one hour). A 30-minute query returned the failed request records; a wider query was rejected by the logs API. This explains why some attempts to inspect logs appeared empty or unavailable. When diagnosing a fresh reproduction, query the latest 30 minutes and filter for `request-deletion`.
+
+### Remaining verification
+- The request endpoint has not yet been re-exercised after applying the migration. The next user-initiated request should confirm whether the confirmation email is sent. Typing `DELETE` only requests the email; the account is deleted only after the confirmation link is used.
+- No user account was deleted, no existing learning records were removed, and no frontend or backend deployment was triggered by this correction.
