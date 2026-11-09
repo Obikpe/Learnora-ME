@@ -102,7 +102,7 @@ The Learnora admin Users view exposes current learners, accounts in the 30-day r
 
 ### 3.1 Registration
 
-The registration form presents a separate, optional, unticked checkbox:
+The registration form presents a separate, optional, unticked checkbox covering both email and promotional in-app marketing:
 
 > Yes, I would like to receive Learnora marketing updates by email and in-app notifications about new learning tracks, course releases, offers and discounts.
 
@@ -119,7 +119,7 @@ Do not infer consent from account creation, course enrolment, browsing, search a
 
 - Learners can change the preference in Account Settings.
 - Every marketing email must include a prominent, working unsubscribe link in its footer.
-- The unsubscribe action must work without requiring the learner to sign in, must be idempotent, and must update the central suppression state immediately. Each campaign email receives an opaque random token; only its hash is stored in a service-only token table. Unsubscribing consumes all outstanding tokens for that learner.
+- The unsubscribe action must work without requiring the learner to sign in, must be idempotent, and must update the central suppression state immediately for both marketing channels. Each campaign email receives an opaque random token; only its hash is stored in a service-only token table. Unsubscribing consumes all outstanding tokens for that learner.
 - Email and promotional in-app delivery must check consent and suppression status at send time, not only when a campaign audience is first built.
 - Keep a minimal suppression record long enough to prevent accidental re-import or re-subscription. A later opt-in must be a new affirmative action with a new consent timestamp.
 - Do not include marketing content in essential account/security emails or enrolled-course service notices.
