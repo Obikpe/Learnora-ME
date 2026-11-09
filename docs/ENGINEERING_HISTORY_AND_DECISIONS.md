@@ -699,3 +699,9 @@ Read-only verification confirmed the track-course relationship, published status
 - The daily account-finalisation endpoint now no-ops unless `ACCOUNT_DELETION_FINALIZER_ENABLED=true`. The environment example defaults it to false.
 - Registration attempts after the 30-day deadline also refuse to trigger finalisation while the gate is disabled. This prevents a user sign-up request or an accidentally configured cron from executing a finalisation policy before the linked-data retention matrix has been approved.
 - Set `CRON_SECRET` and explicitly enable the finaliser only after the erasure/retention policy and table-level processing are approved.
+
+
+### Marketing channel consent and public notice
+- The signup opt-in now covers both marketing email and promotional in-app notifications. Separate fields (`marketing_email_opt_in`, `marketing_in_app_opt_in`) are stored, and the same preference control/unsubscribe flow withdraws both channels.
+- The marketing-email URL helper issues opaque per-message tokens stored as hashes in a service-only table. The sender must use this helper and include the link in every campaign footer when the campaign worker is built.
+- Both privacy-policy routes now disclose optional marketing consent, withdrawal, essential service communications and the 30-day account recovery process. They remain drafts until Learnora's legal operator/contact details and retention schedule are completed and reviewed.
