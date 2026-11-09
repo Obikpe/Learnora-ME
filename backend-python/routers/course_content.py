@@ -682,15 +682,17 @@ def _assert_module_unlocked(context: PermissionContext, module: dict):
     if module_status not in {"published", "archived"} or course_status not in {"published", "archived"}:
         raise HTTPException(404, "Module not found.")
 
-    previous_modules = (
+    previous_query = (
         supabase.table("course_modules")
         .select("id,title,order_index")
         .eq("course_id", str(module["course_id"]))
         .lt("order_index", module["order_index"])
-        .eq("status", "published")
-        .order("order_index")
-        .execute()
-    ).data or []
+    )
+    if course_status == "archived":
+        previous_query = previous_query.in_("status", ["published", "archived"])
+    else:
+        previous_query = previous_query.eq("status", "published")
+    previous_modules = previous_query.order("order_index").execute().data or []
     for previous in previous_modules:
         quizzes = (
             supabase.table("quizzes")
