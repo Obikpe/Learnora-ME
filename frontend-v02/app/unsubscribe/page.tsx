@@ -12,7 +12,7 @@ export default function UnsubscribePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setToken(new URLSearchParams(window.location.search).get("token") || "");
+    setToken(new URLSearchParams(window.location.hash.replace(/^#/, "")).get("token") || "");
   }, []);
 
   async function unsubscribe() {
