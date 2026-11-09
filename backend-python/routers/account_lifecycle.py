@@ -139,6 +139,7 @@ def request_account_deletion(
         })
         .eq("id", user.id)
         .in_("account_status", ["active", "deletion_pending"])
+        .select("id")
         .execute()
     ).data or []
     if not saved:
@@ -183,6 +184,8 @@ def request_account_deletion(
             "account_deletion_token_hash": None,
             "account_deletion_expires_at": None,
             "account_deletion_requested_at": None,
+            "deletion_reason": None,
+            "deletion_reason_details": None,
         }).eq("id", user.id).eq("account_deletion_token_hash", token_hash).execute()
         raise HTTPException(
             status_code=503,
@@ -337,6 +340,7 @@ def reactivate_account(payload: ReactivateAccountRequest, request: Request):
         .eq("account_status", "deactivation_pending")
         .gt("account_deactivation_until", now.isoformat())
         .gt("account_reactivation_expires_at", now.isoformat())
+        .select("id,email,role")
         .execute()
     ).data or []
     if not updated:
@@ -418,6 +422,7 @@ def update_marketing_preferences(
         .update(updates)
         .eq("id", user.id)
         .eq("account_status", "active")
+        .select("id")
         .execute()
     ).data or []
     if not result:
@@ -459,6 +464,7 @@ def unsubscribe_from_marketing(
             "marketing_unsubscribed_at": now,
         })
         .eq("id", user_id)
+        .select("id,email,role")
         .execute()
     ).data or []
     if result:
