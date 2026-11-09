@@ -39,7 +39,9 @@ router = APIRouter()
 SAFE_USER_COLUMNS = (
     "id, email, name, role, sub_status, is_paid, "
     "subscription_tier, created_at, expires_at, "
-    "trial_ends_at"
+    "trial_ends_at, account_status, account_deletion_requested_at, "
+    "account_deactivation_until, deletion_reason, deletion_reason_details, "
+    "marketing_email_opt_in"
 )
 
 SAFE_ADMIN_COLUMNS = (
@@ -417,6 +419,42 @@ def get_all_users(
 
     return {
         "users": response.data or [],
+    }
+
+
+@router.get("/account-lifecycle")
+def get_learner_account_lifecycle(
+    admin: CurrentUser = Depends(require_admin),
+):
+    """Return active recovery-period deactivations and completed deletions for staff review."""
+    pending = (
+        supabase.table("users")
+        .select(
+            "id,email,name,role,account_status,account_deletion_requested_at,"
+            "account_deactivation_until,deletion_reason,deletion_reason_details"
+        )
+        .eq("role", "normal")
+        .in_("account_status", ["deletion_pending", "deactivation_pending"])
+        .order("account_deletion_requested_at", desc=True)
+        .limit(200)
+        .execute()
+    ).data or []
+
+    completed = (
+        supabase.table("deleted_account_history")
+        .select(
+            "original_user_id,original_email,display_name,account_role,"
+            "account_created_at,deletion_requested_at,deactivation_until,"
+            "deleted_at,deletion_reason,deletion_reason_details"
+        )
+        .order("deleted_at", desc=True)
+        .limit(200)
+        .execute()
+    ).data or []
+
+    return {
+        "pending_deletions": pending,
+        "completed_deletions": completed,
     }
 
 
