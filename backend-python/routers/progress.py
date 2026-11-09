@@ -50,7 +50,8 @@ class AssignmentSubmissionIn(BaseModel):
     file_url: Optional[str] = Field(default=None, max_length=2000)
 
 
-def _lesson_context(lesson_id: str, user_id: str):
+def _available_lesson_context(lesson_id: str):
+    """Resolve only content that belongs to a published or reviewable archived course."""
     rows = (
         supabase.table("learnora_lessons")
         .select("id,module_id,content,status,course_modules!inner(course_id,status)")
@@ -81,6 +82,11 @@ def _lesson_context(lesson_id: str, user_id: str):
         or (course_status != "archived" and lesson_status != "published")
     ):
         raise HTTPException(404, "Lesson not found.")
+    return lesson, course_id
+
+
+def _lesson_context(lesson_id: str, user_id: str):
+    lesson, course_id = _available_lesson_context(lesson_id)
     if not _enrolment(user_id, course_id):
         raise HTTPException(403, "You are not enrolled in this course.")
     _assert_module_unlocked(user_id, str(lesson["module_id"]))
@@ -291,16 +297,8 @@ def effective_passing_score(quiz: dict) -> float:
 
 
 def _module_for_lesson(lesson_id: str):
-    result = (
-        supabase.table("learnora_lessons")
-        .select("id,module_id")
-        .eq("id", lesson_id)
-        .limit(1)
-        .execute()
-    )
-    if not result.data:
-        raise HTTPException(404, "Lesson not found.")
-    return str(result.data[0]["module_id"])
+    lesson, _course_id = _available_lesson_context(lesson_id)
+    return str(lesson["module_id"])
 
 
 def _module_for_quiz(quiz: dict):
@@ -424,6 +422,17 @@ def _assert_module_unlocked(user_id: str, module_id: str, include_archived: bool
     if not current:
         raise HTTPException(404, "Module not found.")
     module = current[0]
+    module_status = str(module.get("status") or "").lower()
+    course_rows = (
+        supabase.table("learnora_courses")
+        .select("status")
+        .eq("id", str(module.get("course_id") or ""))
+        .limit(1)
+        .execute()
+    ).data or []
+    course_status = str(course_rows[0].get("status") or "").lower() if course_rows else ""
+    if module_status not in {"published", "archived"} or course_status not in {"published", "archived"}:
+        raise HTTPException(404, "Module not found.")
     previous_query = (
         supabase.table("course_modules")
         .select("id,title,order_index,status")
