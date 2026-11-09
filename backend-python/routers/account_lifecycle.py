@@ -315,8 +315,95 @@ def confirm_account_deletion(
     }
 
 
+class RequestReactivationRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+
+
 class ReactivateAccountRequest(BaseModel):
     token: str = Field(min_length=20, max_length=512)
+    password: str = Field(min_length=1, max_length=128)
+
+
+@router.post("/request-reactivation")
+def request_account_reactivation(payload: RequestReactivationRequest, request: Request):
+    """Send a reactivation link only after the learner explicitly requests one."""
+    email = auth.norm_email(payload.email)
+    now = datetime.now(timezone.utc)
+    generic = {
+        "success": True,
+        "message": "If this email belongs to an account that can still be recovered, a reactivation link will be sent.",
+    }
+    try:
+        account = auth._find_user(email)
+    except Exception as exc:
+        print(f"Account reactivation lookup failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="We could not process this request. Please try again.") from None
+
+    if not account or account.get("account_status") != "deactivation_pending":
+        return generic
+    recovery_until = auth._parse_datetime(account.get("account_deactivation_until"))
+    if not recovery_until or recovery_until <= now:
+        return generic
+
+    raw_token = auth._generate_raw_token()
+    token_hash = auth._hash_token(raw_token)
+    expires_at = min(now + timedelta(hours=REACTIVATION_TOKEN_TTL_HOURS), recovery_until)
+    saved = (
+        auth.supabase.table("users")
+        .update({
+            "account_reactivation_token_hash": token_hash,
+            "account_reactivation_expires_at": expires_at.isoformat(),
+        })
+        .eq("id", account["id"])
+        .eq("account_status", "deactivation_pending")
+        .gt("account_deactivation_until", now.isoformat())
+        .select("id")
+        .execute()
+    ).data or []
+    if not saved:
+        return generic
+
+    activation_url = f"{auth.FRONTEND_URL}/reactivate-account#token={raw_token}"
+    display_name = (account.get("name") or "there").strip()
+    safe_name = escape(display_name)
+    text_body = (
+        f"Hi {display_name},\n\n"
+        "You asked to reactivate your Learnora account. Open the secure link below, then enter the password you used for this account to confirm reactivation:\n\n"
+        f"{activation_url}\n\n"
+        f"This link expires in {REACTIVATION_TOKEN_TTL_HOURS} hours or when the 30-day recovery period ends, whichever comes first. "
+        "If you did not request this, ignore this email. Your account will remain deactivated.\n\nLearnora ME"
+    )
+    html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
+<div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
+<h1>Reactivate your Learnora account</h1><p>Hi {safe_name},</p>
+<p>You asked to reactivate your Learnora account. Open the secure link below, then enter your existing account password to confirm that it is really you.</p>
+<p style="margin:28px 0"><a href="{escape(activation_url)}" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#172033;color:#fff;text-decoration:none;font-weight:bold">Continue reactivation</a></p>
+<p style="font-size:13px;line-height:1.6;color:#64748b">This link expires in {REACTIVATION_TOKEN_TTL_HOURS} hours or when the 30-day recovery period ends, whichever comes first. If you did not request this, ignore this email. Your account will remain deactivated.</p>
+</div></body></html>"""
+    try:
+        auth._send_email(
+            recipient=email,
+            subject="Your Learnora account reactivation link",
+            text_body=text_body,
+            html_body=html_body,
+        )
+    except Exception as exc:
+        print(f"Account reactivation email failed: {type(exc).__name__}")
+        auth.supabase.table("users").update({
+            "account_reactivation_token_hash": None,
+            "account_reactivation_expires_at": None,
+        }).eq("id", account["id"]).eq("account_reactivation_token_hash", token_hash).execute()
+        raise HTTPException(status_code=503, detail="We could not send the reactivation email. Please try again.") from None
+
+    auth.log_audit_event(
+        action="learner_account_reactivation_link_requested",
+        email=email,
+        account_type="learner",
+        role=account.get("role") or "normal",
+        request=request,
+        metadata={"user_id": account["id"], "expires_at": expires_at.isoformat()},
+    )
+    return generic
 
 
 @router.post("/reactivate")
@@ -324,6 +411,24 @@ def reactivate_account(payload: ReactivateAccountRequest, request: Request):
     raw_token = payload.token.strip()
     token_hash = auth._hash_token(raw_token)
     now = datetime.now(timezone.utc)
+    rows = (
+        auth.supabase.table("users")
+        .select("id,email,role,password_hash,account_deactivation_until,account_reactivation_expires_at")
+        .eq("account_reactivation_token_hash", token_hash)
+        .eq("account_status", "deactivation_pending")
+        .gt("account_deactivation_until", now.isoformat())
+        .gt("account_reactivation_expires_at", now.isoformat())
+        .limit(1)
+        .execute()
+    ).data or []
+    if not rows:
+        raise HTTPException(status_code=400, detail="This reactivation link is invalid, expired, or the 30-day recovery period has ended.")
+
+    account = rows[0]
+    valid, _ = auth.verify_password(payload.password, account.get("password_hash") or "")
+    if not valid:
+        raise HTTPException(status_code=401, detail="The password does not match this Learnora account.")
+
     updated = (
         auth.supabase.table("users")
         .update({
@@ -335,6 +440,7 @@ def reactivate_account(payload: ReactivateAccountRequest, request: Request):
             "deletion_reason": None,
             "deletion_reason_details": None,
         })
+        .eq("id", account["id"])
         .eq("account_reactivation_token_hash", token_hash)
         .eq("account_status", "deactivation_pending")
         .gt("account_deactivation_until", now.isoformat())
@@ -343,18 +449,18 @@ def reactivate_account(payload: ReactivateAccountRequest, request: Request):
         .execute()
     ).data or []
     if not updated:
-        raise HTTPException(status_code=400, detail="This activation link is invalid, expired, or the recovery period has ended.")
+        raise HTTPException(status_code=409, detail="This reactivation link has already been used or the recovery period has ended.")
 
-    account = updated[0]
+    restored = updated[0]
     auth.log_audit_event(
         action="learner_account_reactivated",
-        email=account.get("email"),
+        email=restored.get("email"),
         account_type="learner",
-        role=account.get("role") or "normal",
+        role=restored.get("role") or "normal",
         request=request,
-        metadata={"user_id": account.get("id")},
+        metadata={"user_id": restored.get("id")},
     )
-    return {"success": True, "message": "Your Learnora account has been reactivated. You can now sign in."}
+    return {"success": True, "message": "Your Learnora account has been reactivated. You can now sign in with your existing password."}
 
 
 @router.get("/finalize-expired")
