@@ -1032,6 +1032,7 @@ class CurrentUser(BaseModel):
     sub_status: str
     account_type: str
     is_paid: bool = False
+    marketing_email_opt_in: bool = False
 
     expires_at: Optional[str] = None
     trial_ends_at: Optional[str] = None
@@ -1239,7 +1240,7 @@ def _find_user(
             "id, name, email, password_hash, role, "
             "sub_status, is_paid, subscription_tier, "
             "expires_at, trial_ends_at, email_verified_at, "
-            "account_status, account_deactivation_until"
+            "account_status, account_deactivation_until, marketing_email_opt_in"
         )
         .ilike(
             "email",
@@ -1839,6 +1840,7 @@ def get_current_user(
         is_paid=(
             entitlement["is_paid"]
         ),
+        marketing_email_opt_in=bool(user.get("marketing_email_opt_in")),
         expires_at=(
             entitlement["expires_at"]
         ),
