@@ -37,44 +37,34 @@ The 60-minute deletion-confirmation link is separate from the 30-day recovery pe
 - If the 24-hour link expires but the 30-day recovery period is still open, entering the email again issues a fresh link.
 - At or after the 30-day deadline, the finalisation job must run before the email can be registered as a new account. If finalisation is delayed, registration must fail safely and retry rather than create a duplicate.
 
-### 1.4 Final deletion
+### 1.4 Final deletion and complete learner-data erasure
 
 A daily Vercel cron invokes the protected account-finalisation endpoint. The endpoint calls a service-role-only database function that processes a bounded batch with row locking and `SKIP LOCKED`.
 
-For each due account, the database function:
-- inserts a restricted `deleted_account_history` record, including the original email, account dates, deletion reason and the minimum required account snapshot;
-- replaces the live login identity with a generated deleted-account address and releases the original email for a future registration;
-- clears credentials, verification and recovery tokens, marketing consent and other live account contact fields;
-- disables retained organisation team/member links where applicable;
-- records a `learner_account_deleted` audit event including the reason and finalisation date.
+For each account whose 30-day recovery deadline has passed, finalisation must be atomic:
 
-The historical record is not a second usable account, but it still contains personal data: it retains the original email and user UUID. This is restricted pseudonymisation, not complete anonymisation or erasure. Existing learning/progress rows may also remain linked to that UUID. Before production rollout, decide which learner-linked records are deleted, irreversibly anonymised or retained, document the lawful basis and retention period for the original email/UUID/deletion reason, and make the learner-facing deletion notice match that policy. Do not retain identifiable history indefinitely by default.
+1. Insert or update one restricted `deleted_account_history` record containing only the original account identifier/email, account dates, deletion reason and deletion details required for the deletion history.
+2. Delete the learner's account-linked records across learning, progress, sessions, onboarding, notes, skills, badges, recommendations, assessments, submissions, certificates, discussions, replies, AI conversations, AI usage, notifications, purchases, subscriptions, entitlements, feedback, creator/learner profile data, tokens, cohort membership/progress and other learner-owned tables.
+3. Remove learner-specific audit/security entries and email-keyed records that would otherwise preserve a second copy of the learner's personal data.
+4. Delete the row from `public.users` itself. Do not leave a disabled, anonymised or tombstone user row.
+5. Preserve only the restricted `deleted_account_history` record. Shared catalogue and organisation resources are not deleted merely because the learner was recorded as their creator; user attribution is detached where the foreign key is configured to set null.
 
-**Operational dependency:** the deployed backend needs a strong `CRON_SECRET` environment variable. The daily cron is configured in `backend-python/vercel.json`. The finaliser also has an explicit `ACCOUNT_DELETION_FINALIZER_ENABLED` gate which defaults to `false`; keep it false until the table-by-table retention/erasure policy is approved and implemented. Once approved, set the secret and enable the gate in the Vercel production environment. Monitor cron results and alert staff when a finalisation run fails.
+The entire operation runs inside one database transaction per batch function invocation. If a dependent record prevents deletion or any cleanup statement fails, the transaction must fail rather than report a successful deletion while leaving partial learner data behind. The function uses row locking and `SKIP LOCKED` so overlapping invocations do not finalise the same account twice.
+
+The original email remains in the dedicated deletion-history table so Learnora can maintain its account-deletion history and prevent accidental account recreation from bypassing the recovery process. That history is restricted to authorised staff and is not a usable learner account. No learner learning history, profile, submissions, conversations or other account-linked records are retained in that history snapshot.
+
+**Operational dependency:** the deployed backend needs a strong `CRON_SECRET` environment variable. The daily cron is configured in `backend-python/vercel.json`. The finaliser also has an explicit `ACCOUNT_DELETION_FINALIZER_ENABLED` gate which defaults to `false`; keep it false until the erasure migration is applied, the production schema has been checked against the cleanup inventory, and automated deletion tests pass. Monitor cron results and alert staff when a finalisation run fails.
 
 ### 1.5 Organisation-managed identities
 
 The self-service deletion and reactivation flow is for independent individual learners only. Cohort and organisation-managed accounts must continue through the organisation release/ownership process. Do not silently convert a managed identity into an independent account.
 
 
-### 1.6 Data-erasure boundary — production blocker
+### 1.6 Data-erasure boundary
 
-A read-only inventory of the active Pheonix schema found learner-linked rows beyond `public.users`, including:
-- learning and progress: `learnora_enrolments`, `learnora_lesson_progress`, `learner_learning_days`, `learning_sessions`, `learner_skills`, `learner_badges`, `learner_lesson_notes`, `learning_recommendations`;
-- assessments and work: `quiz_attempts`, `assignment_submissions`, `project_submissions`, `skill_evidence`, `certificates`;
-- communication and AI: `learnora_notifications`, `learnora_discussions`, `learnora_discussion_replies`, `learnora_ai_conversations`, `ai_usage_logs`;
-- commercial and administration: `learnora_subscriptions`, `learnora_course_purchases`, `learnora_access_entitlements`, `learnora_activity_logs`, `learnora_feedback`, and related audit/token records.
+The approved rule is complete erasure after the 30-day recovery period. During the recovery period, the learner's profile, password, enrolments, progress and all other learner records remain intact so reactivation restores the account as it was. At the deadline, the finaliser deletes the learner's entire account-linked record set and the `public.users` row. The only retained learner-specific record is the restricted `deleted_account_history` row.
 
-The current 30-day finaliser replaces the live login identity and stores a restricted history record; it does **not** yet delete or irreversibly anonymise every learner-linked row in these tables. The history record itself retains the original email and UUID, so it is pseudonymised/restricted personal data, not anonymous data. This means the current code implements account closure and recovery, but it must not be represented as complete erasure of all personal data.
-
-Before enabling finalisation in production, approve a table-by-table retention matrix:
-- erase personal content that is no longer needed and has no other lawful retention basis;
-- irreversibly de-identify records kept for aggregate learning analytics where feasible;
-- retain financial, certificate, dispute, security or audit records only for a documented lawful purpose and defined period;
-- sever the original email/UUID from records that do not require identity linkage;
-- keep the deletion reason and original email accessible only to authorised staff for the approved retention period.
-
-This matrix also determines the learner-facing wording and the staff deletion-history screen. Do not run the finaliser in production until this retention boundary is approved and implemented.
+The finalisation migration inventories learner-owned UUID references and restrictive foreign keys so legacy tables without foreign-key constraints are included. The cleanup must fail atomically if any dependent record prevents deletion. Do not describe the process as complete erasure until the migration is applied and the production database tests verify that no learner-linked rows remain outside the history table.
 
 ## 2. Deletion reasons and Learnora staff visibility
 
@@ -241,8 +231,8 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 - A daily finalisation cron and protected endpoint are defined.
 
 ### Not yet released / must be completed before production use
-- Apply the new migration `20261109180000_learner_deletion_grace_and_marketing_consent.sql` to the active Pheonix Supabase project before deploying the backend code. The migration has not been applied to production.
-- Set a strong production `CRON_SECRET` in Vercel before deploying the backend. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until the data-erasure/retention matrix is approved and implemented; then explicitly enable it and verify the daily cron.
+- Apply both `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql` to the active Pheonix Supabase project before deploying the backend code. Neither migration has been applied to production.
+- Set a strong production `CRON_SECRET` in Vercel before deploying the backend. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until both migrations are applied and the complete erasure tests pass; then explicitly enable it and verify the daily cron.
 - Run backend tests, frontend typecheck/build and browser acceptance on phone/tablet/desktop.
 - Verify email delivery for deletion confirmation and reactivation links, and test all 30-day boundary cases.
 - Implement and test the event/outbox notification engine, interest-signal capture, campaign worker and actual marketing email templates. The unsubscribe endpoint and page are in place, and the backend exposes a helper that creates a per-email opaque unsubscribe URL. No campaign sender currently consumes that helper.
