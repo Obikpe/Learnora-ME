@@ -616,7 +616,7 @@ The implementation pass has moved beyond the initial inventory. The following ch
 - Individual course self-enrolment is scoped to personal rows, reactivates a withdrawn personal enrolment in place, and rejects ambiguous duplicates or non-reactivatable statuses.
 - Progress, lesson content, notes, workspace, media and AI lesson-context paths now use the central scope-aware enrolment checks. Draft courses/modules/lessons are hidden from learner contexts while authorised course-management roles retain draft visibility.
 - The course detail page explains that an organisation-managed identity must be released before an individual account can be created. Individual onboarding redirects cohort and organisation-managed identities to the appropriate workspace.
-- The reported Vercel TypeScript error in the learning-session tracker was fixed by typing the interval from `window.setInterval`. The timer cleanup also explicitly checks for null.
+- The reported Vercel TypeScript error in the learning-session tracker was fixed by declaring the browser interval handle as `number`, matching `window.setInterval()`'s DOM return type in the combined DOM/Node type environment. The timer cleanup also explicitly checks for null. The correction is committed as `e51f5b60`; a post-fix production build is still pending.
 - Focused regression tests were added or updated for duplicate email identities, auth recovery, deletion confirmation, enrolment reactivation, progress/content visibility, AI lesson scope and publication-state fixtures.
 - A design-only Step 8 plan documents the future global identity registry and personal-enrolment partial unique index. It is not an executable migration and has not been applied.
 
