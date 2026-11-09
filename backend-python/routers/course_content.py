@@ -798,6 +798,11 @@ def list_modules(
         )
 
         modules = result.data or []
+        if _is_learner_viewer(context):
+            modules = [
+                module for module in modules
+                if str(module.get("status") or "").lower() in {"published", "archived"}
+            ]
 
         return {
             "success": True,
@@ -1097,6 +1102,17 @@ def list_lessons(
         )
 
         lessons = result.data or []
+        if _is_learner_viewer(context):
+            lessons = [
+                lesson for lesson in lessons
+                if (
+                    str(lesson.get("status") or "").lower() in {"published", "archived"}
+                    and (
+                        str(course.get("status") or "").lower() == "archived"
+                        or str(lesson.get("status") or "").lower() == "published"
+                    )
+                )
+            ]
 
         return {
             "success": True,
@@ -1142,6 +1158,7 @@ def get_lesson(
             detail="Course not found.",
         )
     _check_course_view_access(context, course)
+    _assert_learner_lesson_visible(context, lesson, course)
 
     return {
         "success": True,
@@ -1527,6 +1544,11 @@ def get_course_structure(
         )
 
         modules = modules_result.data or []
+        if _is_learner_viewer(context):
+            modules = [
+                module for module in modules
+                if str(module.get("status") or "").lower() in {"published", "archived"}
+            ]
 
         # --------------------------------------------------------
         # Load all lessons for the course's modules
@@ -1566,6 +1588,17 @@ def get_course_structure(
             )
 
             lessons = lessons_result.data or []
+            if _is_learner_viewer(context):
+                lessons = [
+                    lesson for lesson in lessons
+                    if (
+                        str(lesson.get("status") or "").lower() in {"published", "archived"}
+                        and (
+                            str(course.get("status") or "").lower() == "archived"
+                            or str(lesson.get("status") or "").lower() == "published"
+                        )
+                    )
+                ]
 
             for lesson in lessons:
                 module_id = str(lesson["module_id"])
