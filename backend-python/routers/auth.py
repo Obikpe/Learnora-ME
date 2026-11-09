@@ -1185,7 +1185,10 @@ def _execute_supabase_read_with_retry(query, operation: str):
         except httpx.TransportError as exc:
             if attempt == 2:
                 print(f"{operation} failed after transient connection retries: {type(exc).__name__}")
-                raise
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"{operation} is temporarily unavailable. Please try again.",
+                ) from None
             time.sleep(0.15 * (attempt + 1))
 
 
