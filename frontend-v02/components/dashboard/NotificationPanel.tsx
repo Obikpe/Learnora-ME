@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Bell, BellRing, Check, Clock3, ExternalLink, X } from "lucide-react";
+import { Bell, BellRing, Clock3, ExternalLink, X } from "lucide-react";
 import { request } from "../../lib/api/client";
 
 type Notice = {
