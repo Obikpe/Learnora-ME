@@ -182,6 +182,33 @@ export default function MyLearningPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Keep the live session totals and meaningful-day streak current while the dashboard is open.
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const refreshSummary = async () => {
+      if (document.visibilityState !== "visible") return;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos";
+      try {
+        const summary = await request<any>("/progress/learning-summary?timezone=" + encodeURIComponent(timezone));
+        if (active) setActivitySummary(summary);
+      } catch {
+        // Preserve the last confirmed summary when tracking is temporarily unavailable.
+      }
+    };
+    void refreshSummary();
+    const timer = window.setInterval(() => { void refreshSummary(); }, 30_000);
+    const onFocus = () => { void refreshSummary(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [user]);
+
   const assignedLearner = Boolean(
     user?.account_type === "cohort" ||
     user?.role === "witstart" ||
