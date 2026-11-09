@@ -44,7 +44,7 @@ export default function ConfirmAccountDeletionPage() {
       {loading ? <div className="mt-10 flex items-center gap-3 text-sm text-slate-400"><LoaderCircle className="animate-spin" size={18}/>Loading confirmation…</div> : done ? <>
         <CheckCircle2 className="mt-10 text-emerald-400" size={34}/>
         <h1 className="mt-4 font-display text-3xl">Account deactivated</h1>
-        <p className="mt-3 text-sm leading-7 text-slate-400">Your account is now deactivated. You have 30 days to reactivate it using the link sent to your email. After the recovery period, your account and all account-linked learner records will be permanently erased. Only a restricted account-deletion history record will be retained.</p>
+        <p className="mt-3 text-sm leading-7 text-slate-400">Your account is now deactivated. You have 30 days to reactivate it. No reactivation email is sent when you confirm deletion. If you return and try to sign in or create an account with this email, Learnora will guide you through requesting a reactivation link. You will confirm your identity with the password for your original account. After the recovery period, your account and all account-linked learner records will be permanently erased. Only a restricted account-deletion history record will be retained.</p>
         <Link href="/login" className="mt-6 inline-flex rounded-xl bg-[#d7ad35] px-5 py-3 text-sm font-bold text-black">Return to Learnora</Link>
       </> : <>
         <AlertTriangle className="mt-10 text-red-300" size={34}/>
