@@ -3630,11 +3630,45 @@ def reset_password(
             ),
         )
 
-    table = (
-        "admins"
+    email = norm_email(token_record.get("email") or "")
+    cohort_accounts = _find_cohort_accounts_by_email(email)
+    admin = _find_admin(email)
+    user = _find_user(email)
+    identity_matches_token = (
+        bool(admin)
+        and str(admin.get("id")) == str(account_id)
+        and not user
+        and not cohort_accounts
         if account_type == "admin"
-        else "users"
+        else bool(user)
+        and str(user.get("id")) == str(account_id)
+        and not admin
+        and not cohort_accounts
     )
+    if not identity_matches_token:
+        raise HTTPException(
+            status_code=409,
+            detail="This account identity has changed or is ambiguous. Request a new password reset link.",
+        )
+
+    table = "admins" if account_type == "admin" else "users"
+
+    # Claim the token before changing the password. The conditional update
+    # ensures two simultaneous submissions cannot both consume one token.
+    try:
+        claimed = (
+            supabase.table("password_reset_tokens")
+            .update({"used_at": now.isoformat()})
+            .eq("id", token_record["id"])
+            .is_("used_at", "null")
+            .gt("expires_at", now.isoformat())
+            .execute()
+        ).data or []
+    except Exception as exc:
+        print(f"Password reset token claim failed: {type(exc).__name__}")
+        raise HTTPException(503, "Unable to reset the password right now. Please request a new link.") from None
+    if not claimed:
+        raise HTTPException(409, "This password reset link has already been used or has expired.")
 
     new_hash = hash_password(
         payload.new_password
@@ -3677,30 +3711,6 @@ def reset_password(
             detail=(
                 "Account could not be found."
             ),
-        )
-
-    # ---------------------------------------------------------------
-    # CONSUME RESET TOKEN
-    # ---------------------------------------------------------------
-
-    try:
-
-        supabase.table(
-            "password_reset_tokens"
-        ).update(
-            {
-                "used_at": now.isoformat(),
-            }
-        ).eq(
-            "id",
-            token_record["id"],
-        ).execute()
-
-    except Exception as exc:
-
-        print(
-            "Failed to mark reset token "
-            f"used: {exc}"
         )
 
     # ---------------------------------------------------------------
