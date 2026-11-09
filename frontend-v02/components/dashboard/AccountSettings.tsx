@@ -12,6 +12,8 @@ export default function AccountSettings({ user }: { user: any }) {
   const [notice, setNotice] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
+  const [deletionReason, setDeletionReason] = useState("not_using");
+  const [deletionReasonDetails, setDeletionReasonDetails] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleteNotice, setDeleteNotice] = useState("");
@@ -49,7 +51,10 @@ export default function AccountSettings({ user }: { user: any }) {
     }
     setDeleteBusy(true);
     try {
-      const result = await request<{ message?: string }>("/account-lifecycle/request-deletion", { method: "POST" });
+      const result = await request<{ message?: string }>("/account-lifecycle/request-deletion", {
+        method: "POST",
+        body: JSON.stringify({ reason: deletionReason, reason_details: deletionReasonDetails.trim() || null }),
+      });
       setDeleteNotice(result.message || "A confirmation link has been sent to your email address.");
       setShowDelete(false);
       setDeleteText("");
@@ -89,18 +94,32 @@ export default function AccountSettings({ user }: { user: any }) {
         <div className="rounded-xl bg-red-500/10 p-2.5 text-red-300"><AlertTriangle size={19}/></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-red-200">Delete account</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Request permanent removal of your Learnora sign-in and account access. We will email a secure confirmation link to {user?.email || "your registered email address"}. Your account is not deleted until you confirm from that email.</p>
-          <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-500">Your learning records will be retained in a restricted history record in accordance with the platform’s retention policy.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Request account deletion. We will email a secure confirmation link to {user?.email || "your registered email address"}. After you confirm, your account is deactivated for 30 days. You can reactivate it during that period; after 30 days, it will be permanently deleted.</p>
+          <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-500">Your learning history remains available only during the recovery period. A limited record may be retained after final deletion where legally necessary.</p>
           {deleteError && <p role="alert" className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[.05] p-3 text-sm text-red-200">{deleteError}</p>}
           {deleteNotice && <p role="status" className="mt-4 rounded-xl border border-emerald-400/20 bg-emerald-400/[.05] p-3 text-sm text-emerald-200">{deleteNotice}</p>}
-          <button type="button" onClick={() => {setShowDelete(true);setDeleteError("");setDeleteText("");}} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-400/30 px-4 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-400/10"><Trash2 size={15}/>Request account deletion</button>
+          <button type="button" onClick={() => {setShowDelete(true);setDeleteError("");setDeleteText("");setDeletionReason("not_using");setDeletionReasonDetails("");}} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-400/30 px-4 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-400/10"><Trash2 size={15}/>Request account deletion</button>
         </div>
       </div>
     </section> : <section className="xl:col-span-2 rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-6"><h2 className="font-semibold">Need to close this account?</h2><p className="mt-2 text-sm leading-6 text-slate-400">Contact <a className="underline underline-offset-4" href="mailto:learnorame@gmail.com">Learnora support</a> so we can help with your account and any organisation or programme responsibilities.</p></section>}
     {showDelete && <div className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-4" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setShowDelete(false);}}>
       <section role="dialog" aria-modal="true" aria-labelledby="delete-account-title" className="w-full max-w-lg rounded-2xl border border-red-400/30 bg-[#11171e] p-6 shadow-2xl">
         <h2 id="delete-account-title" className="text-xl font-semibold">Confirm deletion request</h2>
-        <p className="mt-3 text-sm leading-6 text-slate-400">A confirmation email will be sent to your registered address. The link expires after 60 minutes. If you confirm, your account access will be removed and a limited history record will be retained.</p>
+        <p className="mt-3 text-sm leading-6 text-slate-400">A confirmation email will be sent to your registered address. The link expires after 60 minutes. If you confirm, your account will be deactivated for 30 days. You can reactivate it during that period. After 30 days, permanent deletion will be processed.</p>
+        <label className="mt-5 block text-sm text-slate-300">Why are you leaving?
+          <select value={deletionReason} onChange={e=>setDeletionReason(e.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] p-3 text-sm text-white outline-none focus:border-red-400/50">
+            <option value="not_using">I no longer need Learnora</option>
+            <option value="found_alternative">I found another learning platform</option>
+            <option value="missing_content">I could not find the courses or tracks I needed</option>
+            <option value="technical_issues">I experienced technical problems</option>
+            <option value="cost">Pricing or future costs are a concern</option>
+            <option value="privacy">I have privacy or data concerns</option>
+            <option value="other">Another reason</option>
+          </select>
+        </label>
+        <label className="mt-4 block text-sm text-slate-300">Anything else you would like us to know? <span className="text-xs text-slate-500">(Optional)</span>
+          <textarea maxLength={1000} rows={3} value={deletionReasonDetails} onChange={e=>setDeletionReasonDetails(e.target.value)} className="mt-2 w-full resize-y rounded-xl border border-white/10 bg-[#090c10] p-3 text-sm text-white outline-none focus:border-red-400/50" placeholder="Share any details that may help us improve Learnora."/>
+        </label>
         <label className="mt-5 block text-sm text-slate-300">Type DELETE to continue<input autoComplete="off" value={deleteText} onChange={e=>setDeleteText(e.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] p-3 text-sm text-white outline-none focus:border-red-400/50"/></label>
         {deleteError && <p role="alert" className="mt-3 text-sm text-red-300">{deleteError}</p>}
         <div className="mt-6 flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setShowDelete(false)} className="rounded-xl border border-white/15 px-4 py-2.5 text-sm text-slate-300">Cancel</button><button type="button" disabled={deleteBusy||deleteText!=="DELETE"} onClick={()=>void requestDeletion()} className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">{deleteBusy?"Sending email…":"Send confirmation email"}</button></div>
