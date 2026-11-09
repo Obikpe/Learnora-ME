@@ -51,7 +51,10 @@ class Query:
 
 class FakeSupabase:
     def __init__(self, rows):
-        self.rows = rows
+        self.rows = {
+            "learnora_courses": [{"id": "course-1", "status": "published"}],
+            **rows,
+        }
 
     def table(self, name):
         return Query(self.rows.get(name, []))
