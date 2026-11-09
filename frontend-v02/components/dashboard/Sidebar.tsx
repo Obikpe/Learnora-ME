@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -48,10 +49,13 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
 }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
   const [canTeach, setCanTeach] = useState(false);
   const [assignedLearner, setAssignedLearner] = useState(restricted || role === "assigned");
   const [identityResolved, setIdentityResolved] = useState(false);
   const [search, setSearch] = useState("");
+
+  useEffect(() => { setPortalReady(true); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -147,7 +151,7 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
 
 
 
-    {mobileOpen && <div className="fixed inset-0 z-[80] xl:hidden">
+    {mobileOpen && portalReady && createPortal(<div className="fixed inset-0 z-[100] xl:hidden">
       <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-black/45"/>
       <section role="dialog" aria-modal="true" aria-label="Learning navigation" className="absolute inset-y-0 left-0 flex w-[min(21rem,88vw)] flex-col border-r border-[var(--border)] bg-[var(--card)] p-4 shadow-2xl">
         <div className="mb-5 flex items-center justify-between border-b border-[var(--border)] pb-4">
@@ -181,6 +185,6 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
           </div>
         </nav>
       </section>
-    </div>}
+    </div>, document.body)}
   </div>;
 }
