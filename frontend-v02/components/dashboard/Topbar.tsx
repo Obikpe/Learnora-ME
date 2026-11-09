@@ -22,7 +22,7 @@ function safeInternalPath(value?: string | null) {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard/notifications";
 }
 
-export default function Topbar({ admin = false }: { admin?: boolean }) {
+export default function Topbar({ admin = false, onOpenNotification }: { admin?: boolean; onOpenNotification?: (id?: string) => void }) {
   const router = useRouter();
   const [unread, setUnread] = useState(0);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -187,12 +187,12 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
             <span className="text-[11px] text-[var(--text-muted)]">{unread} unread</span>
           </div>
           {previewItems.length ? <div className="max-h-[22rem] overflow-y-auto">
-            {previewItems.map(item => <button key={item.id} type="button" onClick={() => { setPreviewOpen(false); router.push("/dashboard/notifications?selected=" + encodeURIComponent(item.id)); }} className="block w-full border-b border-[var(--border)] px-4 py-3 text-left transition hover:bg-[var(--bg-soft)] last:border-b-0">
+            {previewItems.map(item => <button key={item.id} type="button" onClick={() => { setPreviewOpen(false); onOpenNotification?.(item.id); }} className="block w-full border-b border-[var(--border)] px-4 py-3 text-left transition hover:bg-[var(--bg-soft)] last:border-b-0">
               <span className="block truncate text-sm font-semibold text-[var(--text-heading)]">{item.title}</span>
               <span className="mt-1 block line-clamp-2 text-xs leading-5 text-[var(--text-muted)]">{item.body}</span>
             </button>)}
           </div> : <p className="px-4 py-6 text-sm text-[var(--text-muted)]">No notifications yet.</p>}
-          <Link href="/dashboard/notifications" onClick={() => setPreviewOpen(false)} className="block border-t border-[var(--border)] px-4 py-3 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--bg-soft)]">View all notifications</Link>
+          <button type="button" onClick={() => { setPreviewOpen(false); onOpenNotification?.(); }} className="block w-full border-t border-[var(--border)] px-4 py-3 text-left text-xs font-semibold text-[var(--primary)] hover:bg-[var(--bg-soft)]">View all notifications</button>
         </div>}
       </div>}
       <div className="relative">
