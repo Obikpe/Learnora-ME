@@ -606,3 +606,27 @@ Organisation account invitations and release, organisation/cohort administration
 
 The one-email/one-account-context rule remains the target. Because the live schema has separate `users`, `admins` and `cohort_accounts` identity sources and historical cohort records must be preserved, application guards are an interim safety measure only. A globally race-safe uniqueness guarantee requires a separately reviewed additive identity-reservation migration and a conflict-resolution plan; do not claim that guarantee until the migration is safely applied and verified.
 
+## Individual learner implementation status — 9 November 2026
+
+The implementation pass has moved beyond the initial inventory. The following changes are committed on `main`:
+
+- Authentication now checks all three email identity sources, rejects duplicate user/admin rows instead of selecting an arbitrary match, fails closed when organisation membership resolution is unavailable, and rejects unresolved retained cohort references.
+- Registration, login, cohort provisioning, verification resend and password recovery apply the reserved-identity checks. Password-reset token use is conditionally claimed before the password update so concurrent submissions cannot both reuse one token.
+- Account deletion requires an individual identity and rechecks retained organisation/cohort context at confirmation time. An account that became managed after the deletion email was sent cannot be deleted through the stale confirmation link.
+- Individual course self-enrolment is scoped to personal rows, reactivates a withdrawn personal enrolment in place, and rejects ambiguous duplicates or non-reactivatable statuses.
+- Progress, lesson content, notes, workspace, media and AI lesson-context paths now use the central scope-aware enrolment checks. Draft courses/modules/lessons are hidden from learner contexts while authorised course-management roles retain draft visibility.
+- The course detail page explains that an organisation-managed identity must be released before an individual account can be created. Individual onboarding redirects cohort and organisation-managed identities to the appropriate workspace.
+- The reported Vercel TypeScript error in the learning-session tracker was fixed by typing the interval from `window.setInterval`. The timer cleanup also explicitly checks for null.
+- Focused regression tests were added or updated for duplicate email identities, auth recovery, deletion confirmation, enrolment reactivation, progress/content visibility, AI lesson scope and publication-state fixtures.
+- A design-only Step 8 plan documents the future global identity registry and personal-enrolment partial unique index. It is not an executable migration and has not been applied.
+
+### Remaining release gates
+
+1. Run the focused Python test suite from `backend-python/` and fix all failures. Tests added in this pass have not been executed.
+2. Run a fresh frontend production build after the timer fix. The supplied Vercel log is from commit `325d9b1`; the timer correction is later on `main`. No post-fix Vercel build has been observed.
+3. Complete an authenticated browser walkthrough of signup, verification, login, dashboard, catalogue, individual enrolment, lesson content, progress, assessment, evidence and certificates.
+4. Review the active Supabase schema and duplicate report before preparing any executable identity/enrolment migration. No SQL or live data changes are authorised in this pass.
+5. Do not mark the individual learner launch as ready until the test, build and runtime/browser gates pass.
+
+No deployment, CI run, SQL migration or live database mutation was performed for this implementation update.
+
