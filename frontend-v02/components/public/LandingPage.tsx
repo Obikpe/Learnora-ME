@@ -281,7 +281,6 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-wrap landing-principles-section">
-        <div className="landing-section-heading"><div><p className="landing-kicker"><span/> The Learnora difference</p><h2>Learning should lead somewhere useful.</h2></div></div>
         <div className="landing-principles-grid">
           <article><span>01</span><h3>Practice matters</h3><p>Understanding grows when people use ideas, make decisions and learn from feedback.</p></article>
           <article><span>02</span><h3>Evidence should be honest</h3><p>Course completion, assessment results and instructor-reviewed evidence are different things.</p></article>
