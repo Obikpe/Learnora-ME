@@ -65,6 +65,53 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn("/account-lifecycle/confirm-deletion", confirmation)
         self.assertIn("mailto:learnorame@gmail.com", confirmation)
 
+    def test_confirmed_deletion_starts_a_30_day_recovery_period(self):
+        source = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
+        migration = (ROOT / "supabase/migrations/20261109180000_learner_deletion_grace_and_marketing_consent.sql").read_text(encoding="utf-8")
+        self.assertIn("ACCOUNT_RECOVERY_DAYS = 30", source)
+        self.assertIn('@router.post("/reactivate")', source)
+        self.assertIn('@router.get("/finalize-expired")', source)
+        self.assertIn("account_status = 'deactivation_pending'", migration)
+        self.assertIn("p_deleted_at + interval '30 days'", migration)
+        self.assertIn("finalize_expired_learner_account_deletions", migration)
+        self.assertIn("FOR UPDATE SKIP LOCKED", migration)
+
+    def test_signup_routes_recoverable_accounts_to_email_reactivation(self):
+        source = (ROOT / "backend-python/routers/auth.py").read_text(encoding="utf-8")
+        registration = source.split('"/register"', 1)[1].split("# VERIFY EMAIL", 1)[0]
+        self.assertIn('account_status") == "deactivation_pending"', registration)
+        self.assertIn("/reactivate-account#token=", registration)
+        self.assertIn("account_reactivation_expires_at", registration)
+        self.assertIn("marketing_email_opt_in: bool = False", source)
+
+    def test_marketing_consent_is_optional_and_can_be_withdrawn(self):
+        migration = (ROOT / "supabase/migrations/20261109180000_learner_deletion_grace_and_marketing_consent.sql").read_text(encoding="utf-8")
+        lifecycle = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
+        signup = (ROOT / "frontend-v02/app/register/page.tsx").read_text(encoding="utf-8")
+        self.assertIn("marketing_email_opt_in boolean NOT NULL DEFAULT false", migration)
+        self.assertIn('@router.patch("/marketing-preferences")', lifecycle)
+        self.assertIn('@router.post("/marketing-unsubscribe")', lifecycle)
+        self.assertIn("marketingEmailOptIn,setMarketingEmailOptIn]=useState(false)", signup)
+        self.assertIn("marketing_email_opt_in: marketingEmailOptIn", (ROOT / "frontend-v02/lib/api/auth.ts").read_text(encoding="utf-8"))
+
+    def test_deletion_reasons_are_visible_to_authorised_admins(self):
+        admin = (ROOT / "backend-python/routers/admin.py").read_text(encoding="utf-8")
+        frontend = (ROOT / "frontend-v02/app/dashboard/admin/[section]/page.tsx").read_text(encoding="utf-8")
+        self.assertIn('@router.get("/account-lifecycle")', admin)
+        self.assertIn("deletion_reason_details", admin)
+        self.assertIn("Account deletion activity", frontend)
+        self.assertIn("deletion_reason", frontend)
+
+    def test_mobile_drawer_and_notification_preview_render_outside_header(self):
+        sidebar = (ROOT / "frontend-v02/components/dashboard/Sidebar.tsx").read_text(encoding="utf-8")
+        topbar = (ROOT / "frontend-v02/components/dashboard/Topbar.tsx").read_text(encoding="utf-8")
+        self.assertIn("createPortal", sidebar)
+        self.assertIn("document.body", sidebar)
+        self.assertIn("createPortal", topbar)
+        self.assertIn("top-[4.5rem]", topbar)
+        self.assertIn("w-[min(22rem,100vw)]", topbar)
+        self.assertIn("onClick={() => setPreviewOpen(value => !value)}", topbar)
+
 
 if __name__ == "__main__":
     unittest.main()
