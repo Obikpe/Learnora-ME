@@ -149,6 +149,23 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         _sleep.assert_called_once_with(0.15)
 
     @patch("routers.auth.supabase")
+    @patch("routers.auth.time.sleep")
+    def test_learner_identity_lookup_returns_safe_503_after_transient_retries_exhaust(self, _sleep, mock_supabase):
+        query = Mock()
+        mock_supabase.table.return_value = query
+        query.select.return_value = query
+        query.ilike.return_value = query
+        query.limit.return_value = query
+        query.execute.side_effect = httpx.RemoteProtocolError("Server disconnected")
+
+        with self.assertRaises(HTTPException) as raised:
+            _find_user("learner@example.com")
+
+        self.assertEqual(raised.exception.status_code, 503)
+        self.assertEqual(query.execute.call_count, 3)
+        self.assertIn("temporarily unavailable", raised.exception.detail)
+
+    @patch("routers.auth.supabase")
     def test_duplicate_individual_email_rows_are_rejected(self, mock_supabase):
         query = Mock()
         mock_supabase.table.return_value = query
