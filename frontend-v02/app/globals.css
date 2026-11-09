@@ -280,3 +280,9 @@ html[data-theme="dark"] .text-emerald-200 { color: var(--success) !important; }
 .text-zinc-400, .text-zinc-500, .text-stone-400, .text-stone-500 {
   color: var(--text-muted) !important;
 }
+
+
+@keyframes notification-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
