@@ -33,6 +33,14 @@ class ConfirmDeletionRequest(BaseModel):
     token: str = Field(min_length=20, max_length=512)
 
 
+class MarketingPreferencesRequest(BaseModel):
+    enabled: bool
+
+
+class MarketingUnsubscribeRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=4096)
+
+
 def _require_individual_learner(user: auth.CurrentUser) -> None:
     if user.account_type != "learner" or user.role != "normal" or not user.id:
         raise HTTPException(
@@ -212,7 +220,7 @@ def confirm_account_deletion(
 
     rows = (
         auth.supabase.table("users")
-        .select("id,email,name,role,sub_status,is_paid,account_status,account_deletion_expires_at")
+        .select("id,email,name,role,sub_status,is_paid,account_status,account_deletion_expires_at,deletion_reason")
         .eq("account_deletion_token_hash", token_hash)
         .eq("account_status", "deletion_pending")
         .limit(1)
@@ -368,3 +376,99 @@ def finalize_expired_account_deletions(authorization: str | None = Header(defaul
     if isinstance(count, dict):
         count = next(iter(count.values()), 0)
     return {"success": True, "finalised": int(count or 0), "checked_at": now.isoformat()}
+
+
+def create_marketing_unsubscribe_url(user_id: str) -> str:
+    """Create a signed, user-specific unsubscribe URL for future marketing mail."""
+    now = datetime.now(timezone.utc)
+    token = auth.jwt.encode(
+        {
+            "sub": str(user_id),
+            "purpose": "marketing_unsubscribe",
+            "iat": int(now.timestamp()),
+            "exp": int((now + timedelta(days=365 * 5)).timestamp()),
+        },
+        auth.JWT_SECRET,
+        algorithm=auth.ALGORITHM,
+    )
+    return f"{auth.FRONTEND_URL}/unsubscribe?token={token}"
+
+
+@router.patch("/marketing-preferences")
+def update_marketing_preferences(
+    payload: MarketingPreferencesRequest,
+    request: Request,
+    user: auth.CurrentUser = Depends(auth.get_current_user),
+):
+    if user.account_type != "learner" or user.role != "normal" or not user.id:
+        raise HTTPException(status_code=403, detail="Marketing preferences are available for individual learner accounts.")
+    now = datetime.now(timezone.utc).isoformat()
+    updates = {
+        "marketing_email_opt_in": payload.enabled,
+        "marketing_consent_at": now if payload.enabled else None,
+        "marketing_consent_source": "account_settings" if payload.enabled else None,
+        "marketing_unsubscribed_at": None if payload.enabled else now,
+    }
+    result = (
+        auth.supabase.table("users")
+        .update(updates)
+        .eq("id", user.id)
+        .eq("account_status", "active")
+        .execute()
+    ).data or []
+    if not result:
+        raise HTTPException(status_code=409, detail="Marketing preferences could not be updated for this account.")
+    auth.log_audit_event(
+        action="learner_marketing_consent_updated",
+        email=user.email,
+        account_type="learner",
+        role=user.role,
+        request=request,
+        metadata={"marketing_email_opt_in": payload.enabled, "source": "account_settings"},
+    )
+    return {"success": True, "marketing_email_opt_in": payload.enabled}
+
+
+@router.post("/marketing-unsubscribe")
+def unsubscribe_from_marketing(
+    payload: MarketingUnsubscribeRequest,
+    request: Request,
+):
+    try:
+        claims = auth.jwt.decode(
+            payload.token.strip(),
+            auth.JWT_SECRET,
+            algorithms=[auth.ALGORITHM],
+        )
+    except auth.JWTError:
+        raise HTTPException(status_code=400, detail="This unsubscribe link is invalid or has expired.") from None
+
+    user_id = str(claims.get("sub") or "")
+    if claims.get("purpose") != "marketing_unsubscribe" or not user_id:
+        raise HTTPException(status_code=400, detail="This unsubscribe link is invalid or has expired.")
+
+    now = datetime.now(timezone.utc).isoformat()
+    result = (
+        auth.supabase.table("users")
+        .update({
+            "marketing_email_opt_in": False,
+            "marketing_consent_at": None,
+            "marketing_consent_source": None,
+            "marketing_unsubscribed_at": now,
+        })
+        .eq("id", user_id)
+        .execute()
+    ).data or []
+    if result:
+        account = result[0]
+        auth.log_audit_event(
+            action="learner_marketing_unsubscribed",
+            email=account.get("email"),
+            account_type="learner",
+            role=account.get("role") or "normal",
+            request=request,
+            metadata={"source": "email_unsubscribe_link"},
+        )
+    # Return the same success message for unknown/deleted accounts to avoid
+    # disclosing whether an email address remains registered.
+    return {"success": True, "message": "This email address has been unsubscribed from Learnora marketing emails."}
