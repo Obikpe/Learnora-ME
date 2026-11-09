@@ -167,7 +167,7 @@ BEGIN
       JOIN pg_attribute parent_col
         ON parent_col.attrelid = parent.oid AND parent_col.attnum = parent_key.attnum
       WHERE fk.contype = 'f'
-        AND fk.confdeltype = 'r'
+        AND fk.confdeltype IN ('a', 'r')
         AND child_ns.nspname = 'public'
         AND parent_ns.nspname = 'public'
         AND parent.relname = 'users'
@@ -187,7 +187,10 @@ BEGIN
     FOR v_col IN
       SELECT DISTINCT c.table_name, c.column_name
       FROM information_schema.columns c
+      JOIN information_schema.tables t
+        ON t.table_schema = c.table_schema AND t.table_name = c.table_name
       WHERE c.table_schema = 'public'
+        AND t.table_type = 'BASE TABLE'
         AND c.data_type = 'uuid'
         AND c.column_name IN (
           'user_id',
