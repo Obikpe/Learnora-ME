@@ -121,7 +121,7 @@ export default function LearningSessionTracker() {
 
     return () => {
       disposed = true;
-      if (heartbeatTimer) window.clearInterval(heartbeatTimer);
+      if (heartbeatTimer !== null) window.clearInterval(heartbeatTimer);
       activityEvents.forEach(event => window.removeEventListener(event, markActivity));
       document.removeEventListener("visibilitychange", onVisibility);
       document.removeEventListener("play", markMediaActivity, true);
