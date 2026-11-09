@@ -446,3 +446,16 @@ Continue on `main`. Do not deploy, trigger CI, execute SQL, apply migrations, al
 Individual learner self-service deletion uses a 60-minute email confirmation followed by a 30-day `deactivation_pending` recovery period. The learner can reactivate the same account through a one-time email link during that period. The original email, password and learning history are retained during recovery; a same-email registration attempt issues a reactivation link rather than creating a second account. After the recovery deadline, a protected scheduled finaliser creates a restricted deletion-history record and anonymises the live account. Organisation/cohort identity and ownership safeguards remain unchanged.
 
 The implementation details, deletion-reason audit trail, staff visibility, marketing consent and future notification engine are documented in [LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md](LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md). The associated database migration is additive and must be applied before deploying backend code that reads its new columns. It has not been applied to production.
+
+## Account deletion decision — 30-day recovery, then complete learner erasure
+
+The approved product rule is:
+
+- Confirmed deletion starts a 30-day deactivation and recovery window. No learner data is erased during this period.
+- Reactivation during the window restores the existing account with its password, enrolments, progress, notes, submissions and other learner records intact.
+- At the end of the 30 days, the finalisation process deletes the learner's `public.users` row and all account-linked learner records, including learning/progress data, notes, assessments, submissions, certificates, discussions, AI conversations/usage, notifications, activity records, account tokens, membership links and learner-owned commercial/profile rows.
+- The only learner-specific record retained is the restricted `public.deleted_account_history` row. It contains the deletion-history fields and reason; it is not a reusable learner account.
+- The finaliser must fail atomically if a dependent learner record cannot be deleted. It must never report completion after partial cleanup.
+- Shared platform catalogue and organisation resources are not deleted solely because a learner created or was assigned as their actor; the learner attribution is detached where appropriate.
+
+The implementation is represented by migrations `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql`. They remain unapplied to production until separately authorised. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until migrations, schema checks and deletion tests are complete. The Terms and Privacy Policy wording will be reviewed and updated in a separate documentation/legal-review pass after the feature set is complete.
