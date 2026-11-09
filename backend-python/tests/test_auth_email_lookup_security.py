@@ -142,6 +142,28 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         mock_supabase.table.assert_called_once_with("users")
         query.limit.assert_called_once_with(2)
 
+    def test_password_recovery_resolves_all_account_contexts(self):
+        source = Path(__file__).resolve().parents[1] / "routers" / "auth.py"
+        text = source.read_text(encoding="utf-8")
+        resend = text.split("def resend_verification(", 1)[1].split("# FORGOT PASSWORD", 1)[0]
+        forgot = text.split("def forgot_password(", 1)[1].split("# RESET PASSWORD", 1)[0]
+        self.assertIn("_find_cohort_accounts_by_email(email)", resend)
+        self.assertIn("_find_admin(email)", resend)
+        self.assertIn("_find_user(email)", resend)
+        self.assertIn("_find_cohort_accounts_by_email(email)", forgot)
+        self.assertIn("_find_admin(email)", forgot)
+        self.assertIn("_find_user(email)", forgot)
+
+    def test_password_reset_claims_token_conditionally_before_password_update(self):
+        source = Path(__file__).resolve().parents[1] / "routers" / "auth.py"
+        text = source.read_text(encoding="utf-8")
+        reset = text.split("def reset_password(", 1)[1].split("# CURRENT ACCOUNT", 1)[0]
+        claim_index = reset.index('.is_("used_at", "null")')
+        update_index = reset.index('"password_hash": new_hash')
+        self.assertLess(claim_index, update_index)
+        self.assertIn('.gt("expires_at", now.isoformat())', reset)
+        self.assertIn("identity_matches_token", reset)
+
     @patch("routers.auth.supabase")
     def test_duplicate_admin_email_rows_are_rejected(self, mock_supabase):
         query = Mock()
