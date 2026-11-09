@@ -17,7 +17,7 @@ export default function Register() {
     catch(e:any) {
       const message=e.message||"Your account could not be created.";
       const lower=message.toLowerCase();
-      if(lower.includes("scheduled for deletion")&&lower.includes("activation link")){
+      if(message.startsWith("ACCOUNT_DEACTIVATED:")){
         router.push("/reactivate-account?email="+encodeURIComponent(email.trim().toLowerCase()));
       } else {
         const accountNeedsVerification=(lower.includes("account was created")&&lower.includes("verification email"))||(lower.includes("already exists")&&(lower.includes("not been verified")||lower.includes("not verified")||lower.includes("unverified")));
