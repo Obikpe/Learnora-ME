@@ -61,6 +61,43 @@ class LearnerContentVisibilityTests(unittest.TestCase):
         self.assertIn('_enrolment(str(user.id), str(body.course_id))', ai_source)
         self.assertNotIn('supabase.table("learnora_enrolments")', ai_source)
 
+    def test_course_content_routes_hide_draft_courses_modules_and_lessons(self):
+        source = (
+            Path(__file__).resolve().parents[1] / "routers" / "course_content.py"
+        ).read_text(encoding="utf-8")
+        view_guard = source.split(
+            "def _check_course_view_access(", 1
+        )[1].split(
+            "def _assert_module_unlocked(", 1
+        )[0]
+        module_guard = source.split(
+            "def _assert_module_unlocked(", 1
+        )[1].split(
+            "def _validate_module_status(", 1
+        )[0]
+        self.assertIn("_is_learner_viewer(context)", view_guard)
+        self.assertIn('not in {"published", "archived"}', view_guard)
+        self.assertIn('module_status not in {"published", "archived"}', module_guard)
+        self.assertIn("_assert_learner_lesson_visible(context, lesson, course)", source)
+
+    def test_learner_structure_endpoints_filter_unpublished_rows(self):
+        source = (
+            Path(__file__).resolve().parents[1] / "routers" / "course_content.py"
+        ).read_text(encoding="utf-8")
+        list_lessons = source.split(
+            'def list_lessons(', 1
+        )[1].split(
+            '@router.get("/lessons/{lesson_id}")', 1
+        )[0]
+        structure = source.split(
+            'def get_course_structure(', 1
+        )[1].split(
+            "# ============================================================\n# MODULES", 1
+        )[0]
+        self.assertIn('lesson.get("status")', list_lessons)
+        self.assertIn('lesson.get("status")', structure)
+        self.assertIn('module.get("status")', structure)
+
 
 if __name__ == "__main__":
     unittest.main()
