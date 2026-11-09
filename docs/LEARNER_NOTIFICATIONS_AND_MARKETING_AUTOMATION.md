@@ -43,12 +43,12 @@ A daily Vercel cron invokes the protected account-finalisation endpoint. The end
 
 For each due account, the database function:
 - inserts a restricted `deleted_account_history` record, including the original email, account dates, deletion reason and the minimum required account snapshot;
-- anonymises the live user row and releases the original email for a future registration;
+- replaces the live login identity with a generated deleted-account address and releases the original email for a future registration;
 - clears credentials, verification and recovery tokens, marketing consent and other live account contact fields;
 - disables retained organisation team/member links where applicable;
 - records a `learner_account_deleted` audit event including the reason and finalisation date.
 
-The historical record is not a second usable account. Its access must remain restricted to authorised staff/service roles and its retention period must be documented. The legal basis and retention period for keeping the original email and deletion reason require privacy review; do not retain them indefinitely by default.
+The historical record is not a second usable account, but it still contains personal data: it retains the original email and user UUID. This is restricted pseudonymisation, not complete anonymisation or erasure. Existing learning/progress rows may also remain linked to that UUID. Before production rollout, decide which learner-linked records are deleted, irreversibly anonymised or retained, document the lawful basis and retention period for the original email/UUID/deletion reason, and make the learner-facing deletion notice match that policy. Do not retain identifiable history indefinitely by default.
 
 **Operational dependency:** the deployed backend needs a strong `CRON_SECRET` environment variable. The daily cron is configured in `backend-python/vercel.json`; set the secret in the Vercel production environment before deploying. Monitor cron failures and alert staff when a finalisation run fails.
 
