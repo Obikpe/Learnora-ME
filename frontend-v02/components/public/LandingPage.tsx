@@ -200,7 +200,6 @@ export default function LandingPage() {
 
       <section className="landing-wrap landing-hero" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
-          <p className="landing-kicker"><span/> {slide.eyebrow}</p>
           <h1>{slide.title}</h1>
           <p className="landing-hero-description">{slide.body}</p>
           <div className="landing-actions">
@@ -222,8 +221,7 @@ export default function LandingPage() {
           <div className="landing-hero-image">
             <img src={slide.image} alt={slide.alt} fetchPriority="high" />
             <div className="landing-image-caption">
-              <span>THE LEARNORA APPROACH</span>
-              <strong>A course is a beginning. What you do with it is the story.</strong>
+                            <strong>A course is a beginning. What you do with it is the story.</strong>
             </div>
           </div>
           <div className="landing-slide-controls" aria-label="Featured messages">
