@@ -392,6 +392,12 @@ def _check_course_view_access(
     if context.is_platform_admin:
         return
 
+    if (
+        _is_learner_viewer(context)
+        and str(course.get("status") or "").lower() not in {"published", "archived"}
+    ):
+        raise HTTPException(404, "Course not found.")
+
     user = context.user
     user_id = str(context.user_id or "")
     account_type = str(getattr(user, "account_type", "") or "").strip().lower()
