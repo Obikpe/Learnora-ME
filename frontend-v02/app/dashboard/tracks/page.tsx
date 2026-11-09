@@ -76,7 +76,7 @@ export default function MyLearningTracksPage() {
         <h1 className="mt-3 font-display text-4xl sm:text-5xl">My learning tracks</h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Follow the courses in each track and keep track of your progress from one place.</p>
       </div>
-      <Link href="/tracks" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black">Explore tracks <ArrowRight size={15}/></Link>
+      <Link href="/dashboard/tracks/explore" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black">Explore tracks <ArrowRight size={15}/></Link>
     </header>
 
     {loading ? <div className="mt-8"><Skeleton label="Loading your learning tracks"/></div>
@@ -96,6 +96,6 @@ export default function MyLearningTracksPage() {
             </div>)}
           </div>
         </article>)}
-      </div> : <div className="mt-8"><EmptyState title="You have not joined a learning track yet" message="Explore published tracks, choose a learning journey and enrol to see your courses and progress here." action={<Link href="/tracks" className="rounded-xl bg-[#d7ad35] px-4 py-2.5 text-sm font-bold text-black">Explore learning tracks</Link>}/></div>}
+      </div> : <div className="mt-8"><EmptyState title="You have not joined a learning track yet" message="Explore published tracks, choose a learning journey and enrol to see your courses and progress here." action={<Link href="/dashboard/tracks/explore" className="rounded-xl bg-[#d7ad35] px-4 py-2.5 text-sm font-bold text-black">Explore learning tracks</Link>}/></div>}
   </Shell>;
 }
