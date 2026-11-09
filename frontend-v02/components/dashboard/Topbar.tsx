@@ -186,7 +186,7 @@ export default function Topbar({ admin = false, onOpenNotification }: { admin?: 
           {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
         </button>
         {previewOpen && portalReady && createPortal(
-          <div className="fixed inset-0 z-[110]" role="presentation">
+          <div className="fixed inset-x-0 bottom-0 top-[4.5rem] z-[110]" role="presentation">
             <button type="button" aria-label="Close notification preview" onClick={() => setPreviewOpen(false)} className="absolute inset-0 bg-black/35"/>
             <aside role="dialog" aria-modal="true" aria-label="Notification preview" className="absolute inset-y-0 right-0 flex w-[min(22rem,100vw)] max-w-full flex-col overflow-hidden border-l border-[var(--border)] bg-[var(--card)] shadow-2xl animate-[notification-drawer-in_180ms_ease-out]">
               <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-3 sm:px-4">
