@@ -76,6 +76,8 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         self.assertNotIn('.eq("status", "active")', resolver)
         self.assertIn('status_code=409', resolver)
         self.assertIn('if fail_closed:', resolver)
+        self.assertIn('unresolved_cohort_ids = set(cohort_ids) - resolved_cohort_ids', resolver)
+        self.assertIn('unresolved_cohort_identity_context', resolver)
         self.assertIn('fail_closed=role in {"normal", LEGACY_ASSIGNED_LEARNER_ROLE}', source)
 
     def test_optional_public_session_only_downgrades_expired_auth_to_anonymous(self):
