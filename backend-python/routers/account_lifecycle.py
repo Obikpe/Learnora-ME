@@ -383,19 +383,26 @@ def finalize_expired_account_deletions(authorization: str | None = Header(defaul
 
 
 def create_marketing_unsubscribe_url(user_id: str) -> str:
-    """Create a signed, user-specific unsubscribe URL for future marketing mail."""
-    now = datetime.now(timezone.utc)
-    token = auth.jwt.encode(
-        {
-            "sub": str(user_id),
-            "purpose": "marketing_unsubscribe",
-            "iat": int(now.timestamp()),
-            "exp": int((now + timedelta(days=365 * 5)).timestamp()),
-        },
-        auth.JWT_SECRET,
-        algorithm=auth.ALGORITHM,
-    )
-    return f"{auth.FRONTEND_URL}/unsubscribe#token={token}"
+    """Create an opaque, single-use unsubscribe URL for one marketing email."""
+    eligible = (
+        auth.supabase.table("users")
+        .select("id")
+        .eq("id", str(user_id))
+        .eq("account_status", "active")
+        .eq("marketing_email_opt_in", True)
+        .limit(1)
+        .execute()
+    ).data or []
+    if not eligible:
+        raise ValueError("Learner is not eligible for marketing email delivery.")
+
+    raw_token = auth._generate_raw_token()
+    auth.supabase.table("learner_marketing_unsubscribe_tokens").insert({
+        "user_id": str(user_id),
+        "token_hash": auth._hash_token(raw_token),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }).execute()
+    return f"{auth.FRONTEND_URL}/unsubscribe#token={raw_token}"
 
 
 @router.patch("/marketing-preferences")
@@ -443,19 +450,21 @@ def unsubscribe_from_marketing(
     payload: MarketingUnsubscribeRequest,
     request: Request,
 ):
-    try:
-        claims = auth.jwt.decode(
-            payload.token.strip(),
-            auth.JWT_SECRET,
-            algorithms=[auth.ALGORITHM],
-        )
-    except auth.JWTError:
-        raise HTTPException(status_code=400, detail="This unsubscribe link is invalid or has expired.") from None
+    token_hash = auth._hash_token(payload.token.strip())
+    token_rows = (
+        auth.supabase.table("learner_marketing_unsubscribe_tokens")
+        .select("id,user_id")
+        .eq("token_hash", token_hash)
+        .is_("consumed_at", "null")
+        .limit(1)
+        .execute()
+    ).data or []
+    if not token_rows:
+        # Idempotent response: never disclose whether an address/account exists.
+        return {"success": True, "message": "This email address has been unsubscribed from Learnora marketing emails."}
 
-    user_id = str(claims.get("sub") or "")
-    if claims.get("purpose") != "marketing_unsubscribe" or not user_id:
-        raise HTTPException(status_code=400, detail="This unsubscribe link is invalid or has expired.")
-
+    token_record = token_rows[0]
+    user_id = str(token_record["user_id"])
     now = datetime.now(timezone.utc).isoformat()
     result = (
         auth.supabase.table("users")
@@ -467,6 +476,13 @@ def unsubscribe_from_marketing(
         .select("id,email,role")
         .execute()
     ).data or []
+
+    # Consume every outstanding link for this learner. A future opt-in can
+    # create new tokens without allowing old campaign links to become active.
+    auth.supabase.table("learner_marketing_unsubscribe_tokens").update({
+        "consumed_at": now,
+    }).eq("user_id", user_id).is_("consumed_at", "null").execute()
+
     if result:
         account = result[0]
         auth.log_audit_event(
@@ -477,6 +493,5 @@ def unsubscribe_from_marketing(
             request=request,
             metadata={"source": "email_unsubscribe_link"},
         )
-    # Return the same success message for unknown/deleted accounts to avoid
-    # disclosing whether an email address remains registered.
     return {"success": True, "message": "This email address has been unsubscribed from Learnora marketing emails."}
+
