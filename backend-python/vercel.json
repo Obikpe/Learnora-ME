@@ -5,5 +5,13 @@
       "runtime": "vercel-python@4.2.0"
     }
   },
-  "git": {"deploymentEnabled":false}
+  "git": {
+    "deploymentEnabled": false
+  },
+  "crons": [
+    {
+      "path": "/api/account-lifecycle/finalize-expired",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }
