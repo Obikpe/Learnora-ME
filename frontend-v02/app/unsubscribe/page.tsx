@@ -42,7 +42,7 @@ export default function UnsubscribePage() {
         <p className="mt-3 text-sm leading-7 text-slate-400">You will no longer receive Learnora marketing emails or promotional in-app notifications. Essential account, security and relevant learning-service messages may still be sent.</p>
       </> : <>
         <MailX className="mt-10 text-[var(--gold-light)]" size={34}/>
-        <h1 className="mt-4 font-display text-3xl">Manage marketing emails</h1>
+        <h1 className="mt-4 font-display text-3xl">Manage marketing updates</h1>
         <p className="mt-3 text-sm leading-7 text-slate-400">Confirm that you want to stop receiving Learnora marketing emails and promotional in-app notifications about new tracks, course announcements, offers and discounts.</p>
         {error && <p role="alert" className="mt-5 rounded-xl border border-red-400/20 bg-red-400/[.05] p-3 text-sm text-red-200">{error}</p>}
         {!token && <p role="alert" className="mt-5 text-sm text-amber-200">This unsubscribe link is missing its confirmation token. You can update your preferences from Account Settings after signing in.</p>}
