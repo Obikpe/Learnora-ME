@@ -133,6 +133,7 @@ class PublicTrackProgressTests(unittest.TestCase):
     def test_course_summary_ignores_draft_modules_and_lessons(self):
         fixtures = {
             "learnora_courses": [{"id": "course-1", "status": "published"}],
+            "users": [{"id": "learner-1", "role": "normal"}],
             "learnora_enrolments": [
                 {"id": "enrol-1", "user_id": "learner-1", "course_id": "course-1", "status": "active"}
             ],
@@ -161,6 +162,7 @@ class PublicTrackProgressTests(unittest.TestCase):
     def test_archived_course_summary_keeps_module_assessment_locks(self):
         fixtures = {
             "learnora_courses": [{"id": "course-1", "status": "archived"}],
+            "users": [{"id": "learner-1", "role": "normal"}],
             "learnora_enrolments": [
                 {"id": "enrol-1", "user_id": "learner-1", "course_id": "course-1", "status": "active"}
             ],
