@@ -53,7 +53,7 @@ class AssignmentSubmissionIn(BaseModel):
 def _lesson_context(lesson_id: str, user_id: str):
     rows = (
         supabase.table("learnora_lessons")
-        .select("id,module_id,content,course_modules!inner(course_id)")
+        .select("id,module_id,content,status,course_modules!inner(course_id,status)")
         .eq("id", lesson_id)
         .limit(1)
         .execute()
@@ -61,7 +61,26 @@ def _lesson_context(lesson_id: str, user_id: str):
     if not rows:
         raise HTTPException(404, "Lesson not found.")
     lesson = rows[0]
-    course_id = str(lesson["course_modules"]["course_id"])
+    module = lesson.get("course_modules") or {}
+    course_id = str(module.get("course_id") or "")
+    lesson_status = str(lesson.get("status") or "").lower()
+    module_status = str(module.get("status") or "").lower()
+    course_rows = (
+        supabase.table("learnora_courses")
+        .select("status")
+        .eq("id", course_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    course_status = str(course_rows[0].get("status") or "").lower() if course_rows else ""
+    if (
+        not course_id
+        or course_status not in {"published", "archived"}
+        or module_status not in {"published", "archived"}
+        or lesson_status not in {"published", "archived"}
+        or (course_status != "archived" and lesson_status != "published")
+    ):
+        raise HTTPException(404, "Lesson not found.")
     if not _enrolment(user_id, course_id):
         raise HTTPException(403, "You are not enrolled in this course.")
     _assert_module_unlocked(user_id, str(lesson["module_id"]))
@@ -880,10 +899,7 @@ def get_lesson_workspace(
 
 @router.get("/lessons/{lesson_id}/notes")
 def get_lesson_note(lesson_id: str, user: CurrentUser = Depends(get_current_user)):
-    course_id = _course_for_lesson(lesson_id)
-    if not _enrolment(str(user.id), course_id):
-        raise HTTPException(403, "You are not enrolled in this course.")
-    _assert_module_unlocked(str(user.id), _module_for_lesson(lesson_id))
+    _lesson, course_id = _lesson_context(lesson_id, str(user.id))
     result = supabase.table("learner_lesson_notes").select(
         "id,content,created_at,updated_at"
     ).eq("user_id", user.id).eq("lesson_id", lesson_id).limit(1).execute()
@@ -892,10 +908,7 @@ def get_lesson_note(lesson_id: str, user: CurrentUser = Depends(get_current_user
 
 @router.put("/lessons/{lesson_id}/notes")
 def save_lesson_note(lesson_id: str, body: LessonNoteIn, user: CurrentUser = Depends(get_current_user)):
-    course_id = _course_for_lesson(lesson_id)
-    if not _enrolment(str(user.id), course_id):
-        raise HTTPException(403, "You are not enrolled in this course.")
-    _assert_module_unlocked(str(user.id), _module_for_lesson(lesson_id))
+    _lesson, course_id = _lesson_context(lesson_id, str(user.id))
     now = datetime.now(timezone.utc).isoformat()
     result = supabase.table("learner_lesson_notes").upsert({
         "user_id": user.id,
@@ -1492,10 +1505,7 @@ def lesson_media(
     lesson_id: str,
     user: CurrentUser = Depends(get_current_user),
 ):
-    course_id = _course_for_lesson(lesson_id)
-    if not _enrolment(str(user.id), course_id):
-        raise HTTPException(403, "You are not enrolled in this course.")
-    _assert_module_unlocked(str(user.id), _module_for_lesson(lesson_id))
+    _lesson, course_id = _lesson_context(lesson_id, str(user.id))
 
     videos = (
         supabase.table("lesson_videos")
@@ -1555,15 +1565,8 @@ def update_lesson_progress(
     body: LessonProgressIn,
     user: CurrentUser = Depends(get_current_user),
 ):
-    course_id = _course_for_lesson(lesson_id)
+    _lesson, course_id = _lesson_context(lesson_id, str(user.id))
     enrolment = _enrolment(str(user.id), course_id)
-
-    if not enrolment:
-        raise HTTPException(
-            403,
-            "You are not enrolled in this course.",
-        )
-    _assert_module_unlocked(str(user.id), _module_for_lesson(lesson_id))
 
     now = datetime.now(timezone.utc).isoformat()
 
