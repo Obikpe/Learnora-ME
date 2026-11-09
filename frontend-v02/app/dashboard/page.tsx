@@ -216,9 +216,9 @@ export default function MyLearningPage() {
   const activeCompletedLessons = inProgress.reduce((sum:number, row:any) => sum + Number(row.completed_lessons || 0), 0);
   const overallProgress = activeCourseLessons ? Math.round((activeCompletedLessons / activeCourseLessons) * 100) : 0;
   const learningSeconds = Number(activitySummary?.learning_time_seconds || 0);
-  const learningTimeLabel = activitySummary ? (learningSeconds >= 3600
+  const learningTimeLabel = learningSeconds >= 3600
     ? Math.floor(learningSeconds / 3600) + "h " + Math.floor((learningSeconds % 3600) / 60) + "m"
-    : learningSeconds >= 60 ? Math.floor(learningSeconds / 60) + "m" : learningSeconds + "s") : "Not available";
+    : learningSeconds >= 60 ? Math.floor(learningSeconds / 60) + "m" : learningSeconds + "s";
   const recentLearningDays = activitySummary?.learning_days || [];
   const lastAccessed = learning?.last_accessed_item || null;
   const continueItem = lastAccessed || (() => {
@@ -268,7 +268,7 @@ export default function MyLearningPage() {
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Active courses</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learning ? inProgress.length : "—"}</p></div>
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Lessons completed</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learning ? completedLessons : "—"}<span className="ml-1 text-sm font-medium text-[var(--text-muted)]">/ {learning ? totalLessons : "—"}</span></p></div>
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning time</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learningTimeLabel}</p></div>
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning streak</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{activitySummary ? activitySummary.current_streak + " days" : "—"}</p></div>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning streak</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{Number(activitySummary?.current_streak || 0) + " days"}</p></div>
     </section>
     <section className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
       <div className="mb-2 flex items-center justify-between gap-3"><h2 className="text-sm font-semibold text-[var(--text-heading)]">Overall learning progress</h2><span className="text-sm font-bold tabular-nums text-[var(--text-heading)]">{learning && totalLessons ? overallProgress + "%" : "—"}</span></div>
@@ -337,7 +337,7 @@ export default function MyLearningPage() {
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
           <div className="flex items-center gap-2"><Clock3 size={17} className="text-[var(--primary)]"/><h2 className="text-sm font-bold text-[var(--text-heading)]">Learning snapshot</h2></div>
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{activitySummary ? activitySummary.longest_streak : "—"}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Longest streak</p></div>
+            <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{Number(activitySummary?.longest_streak || 0)}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Longest streak</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--success)]">{completed.length}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Completed</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{completedLessons}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Lessons completed</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{certificates.length}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Certificates</p></div>
