@@ -165,7 +165,7 @@ def request_account_deletion(
 <div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
 <h1 style="margin:0 0 16px">Confirm account deletion</h1>
 <p>Hi {safe_display_name},</p>
-<p>We received a request to delete your Learnora account. If you confirm, your account will be deactivated for 30 days. You can reactivate it during that period. After 30 days, it will be permanently deleted.</p>
+<p>We received a request to delete your Learnora account. If you confirm, your account will be deactivated for 30 days. You can reactivate it during that period. After 30 days, your account and all account-linked learner records will be permanently erased. Only a restricted account-deletion history record will be retained.</p>
 <p style="margin:28px 0"><a href="{confirmation_url}" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#172033;color:#fff;text-decoration:none;font-weight:bold">Confirm account deletion</a></p>
 <p style="font-size:13px;line-height:1.6;color:#64748b">This secure link expires in 60 minutes. If you confirm, your account will be deactivated for 30 days. You can reactivate it during that period. After 30 days, it will be permanently deleted. Active recurring Learnora subscriptions will be cancelled when deactivation is confirmed.</p>
 <p style="font-size:13px;line-height:1.6;color:#64748b">After the 30-day recovery period, all account-linked learner records will be erased. Only a restricted account-deletion history record will be retained.</p>
@@ -310,7 +310,7 @@ def confirm_account_deletion(
     auth.clear_auth_cookie(response)
     return {
         "success": True,
-        "message": "Your Learnora account is now deactivated. You can reactivate it within 30 days; after that, it will be permanently deleted.",
+        "message": "Your Learnora account is now deactivated. You can reactivate it within 30 days; after that, your account and all account-linked learner records will be permanently erased. Only a restricted account-deletion history record will be retained.",
         "deactivation_until": deactivation_until.isoformat(),
     }
 
