@@ -86,7 +86,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.addCleanup(entitlement.stop)
 
     def test_scoped_course_assignment_does_not_grant_access_to_every_organisation_learner(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(course_access=[{
             "id": "grant-1", "course_id": "course-1",
             "organisation_id": "org-a", "status": "active", "access_type": "scoped",
@@ -97,7 +97,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_scoped_course_assignment_allows_the_enrolled_learner(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(
             course_access=[{
                 "id": "grant-1", "course_id": "course-1",
@@ -117,7 +117,7 @@ class CourseContentAccessTests(unittest.TestCase):
             course_content._check_course_view_access(context(role="learner"), course)
 
     def test_scoped_enrolment_is_denied_when_contract_has_expired(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(
             course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "scoped"}],
             enrolments=[{"id": "enrolment-1", "course_id": "course-1", "user_id": "user-1", "organisation_id": "org-a", "status": "active", "source_type": "individual_assignment"}],
@@ -130,7 +130,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_team_assignment_requires_active_team_membership(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(
             course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "scoped"}],
             enrolments=[{"id": "enrolment-1", "course_id": "course-1", "user_id": "user-1", "organisation_id": "org-a", "status": "active", "source_type": "team_assignment"}],
@@ -144,7 +144,7 @@ class CourseContentAccessTests(unittest.TestCase):
             course_content._check_course_view_access(context(role="learner"), course)
 
     def test_removed_team_member_loses_scoped_course_access(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(
             course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "scoped"}],
             enrolments=[{"id": "enrolment-1", "course_id": "course-1", "user_id": "user-1", "organisation_id": "org-a", "status": "active", "source_type": "team_assignment"}],
@@ -159,7 +159,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_cohort_assignment_requires_active_cohort_membership(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(
             course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "scoped"}],
             enrolments=[{"id": "enrolment-1", "course_id": "course-1", "user_id": "user-1", "organisation_id": "org-a", "status": "active", "source_type": "cohort_assignment", "cohort_id": "cohort-a"}],
@@ -172,26 +172,26 @@ class CourseContentAccessTests(unittest.TestCase):
             course_content._check_course_view_access(context(role="learner"), course)
 
     def test_organisation_owned_course_is_readable_inside_own_tenant(self):
-        course = {"id": "course-1", "ownership": "organisation", "organisation_id": "org-a"}
+        course = {"id": "course-1", "status": "published", "ownership": "organisation", "organisation_id": "org-a"}
         with patch.object(course_content, "supabase", FakeSupabase()):
             course_content._check_course_view_access(context(), course)
 
     def test_organisation_owned_course_is_denied_to_another_tenant(self):
-        course = {"id": "course-1", "ownership": "organisation", "organisation_id": "org-b"}
+        course = {"id": "course-1", "status": "published", "ownership": "organisation", "organisation_id": "org-b"}
         with patch.object(course_content, "supabase", FakeSupabase()):
             with self.assertRaises(HTTPException) as raised:
                 course_content._check_course_view_access(context("org-a"), course)
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_learner_cannot_read_organisation_owned_course_without_grant(self):
-        course = {"id": "course-1", "ownership": "organisation", "organisation_id": "org-a"}
+        course = {"id": "course-1", "status": "published", "ownership": "organisation", "organisation_id": "org-a"}
         with patch.object(course_content, "supabase", FakeSupabase()):
             with self.assertRaises(HTTPException) as raised:
                 course_content._check_course_view_access(context(role="learner"), course)
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_learner_can_read_organisation_owned_course_with_active_grant(self):
-        course = {"id": "course-1", "ownership": "organisation", "organisation_id": "org-a"}
+        course = {"id": "course-1", "status": "published", "ownership": "organisation", "organisation_id": "org-a"}
         db = FakeSupabase(
             course_access=[{
                 "id": "grant-1", "course_id": "course-1",
@@ -207,7 +207,7 @@ class CourseContentAccessTests(unittest.TestCase):
             course_content._check_course_view_access(context(role="learner"), course)
 
     def test_organisation_wide_grant_does_not_bypass_inactive_learner_membership(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(
             course_access=[{
                 "id": "grant-1", "course_id": "course-1",
@@ -221,7 +221,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_learnora_course_requires_active_organisation_grant_or_enrolment(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(course_access=[{
             "id": "grant-1", "course_id": "course-1",
             "organisation_id": "org-a", "status": "active", "access_type": "assigned",
@@ -230,7 +230,7 @@ class CourseContentAccessTests(unittest.TestCase):
             course_content._check_course_view_access(context(), course)
 
     def test_individual_enrolment_cannot_cross_tenant_boundary(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(enrolments=[{
             "id": "enrolment-1", "course_id": "course-1",
             "user_id": "user-1", "organisation_id": "org-b", "status": "active",
@@ -241,7 +241,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_individual_unscoped_enrolment_is_preserved(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(enrolments=[{
             "id": "enrolment-1", "course_id": "course-1",
             "user_id": "user-1", "organisation_id": None, "status": "active",
@@ -250,13 +250,13 @@ class CourseContentAccessTests(unittest.TestCase):
             course_content._check_course_view_access(context(None, role="learner"), course)
 
     def test_individual_free_launch_catalogue_access_is_preserved(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None, "status": "published"}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None, "status": "published"}
         with patch.object(course_content, "free_access_mode_enabled", return_value=True):
             with patch.object(course_content, "supabase", FakeSupabase()):
                 course_content._check_course_view_access(context(None, role="learner"), course)
 
     def test_new_cohort_account_cannot_use_generic_course_content_endpoint(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         with patch.object(course_content, "supabase", FakeSupabase()):
             with self.assertRaises(HTTPException) as raised:
                 course_content._check_course_view_access(
@@ -266,7 +266,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_legacy_cohort_member_cannot_use_organisation_wide_grant_without_cohort_assignment(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(
             course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "assigned"}],
             enrolments=[{"id": "enrolment-1", "course_id": "course-1", "user_id": "user-1", "organisation_id": "org-a", "cohort_id": "cohort-a", "status": "active", "source_type": "cohort_assignment"}],
@@ -282,7 +282,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_legacy_cohort_member_can_read_only_course_assigned_to_their_cohort(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         db = FakeSupabase(
             course_access=[{"id": "grant-1", "course_id": "course-1", "organisation_id": "org-a", "status": "active", "access_type": "assigned"}],
             enrolments=[{"id": "enrolment-1", "course_id": "course-1", "user_id": "user-1", "organisation_id": "org-a", "cohort_id": "cohort-a", "status": "active", "source_type": "cohort_assignment"}],
@@ -379,7 +379,7 @@ class CourseContentAccessTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 403)
 
     def test_platform_admin_can_read_course_without_tenant_grant(self):
-        course = {"id": "course-1", "ownership": "learnora", "organisation_id": None}
+        course = {"id": "course-1", "status": "published", "ownership": "learnora", "organisation_id": None}
         with patch.object(course_content, "supabase", FakeSupabase()):
             course_content._check_course_view_access(context(None, platform_admin=True), course)
 
