@@ -615,3 +615,22 @@ Read-only verification confirmed the track-course relationship, published status
 
 
 **Authenticated learning-track discovery — 9 November 2026:** The Explore tracks action inside My Learning Tracks must not send an authenticated learner to the public marketing/catalogue surface. Added a dedicated signed-in discovery route at `/dashboard/tracks/explore` and signed-in track detail route at `/dashboard/tracks/explore/[id]`. Both use the existing dashboard `Shell`, preserving horizontal desktop navigation and the responsive hamburger drawer on tablet/mobile. The signed-in catalogue reads published tracks from the existing public track API; detail pages use the existing track detail/progress/enrolment endpoints. The public `/tracks` routes remain available for logged-out visitors. Assigned cohort/organisation learners remain excluded from public discovery and self-enrolment, consistent with the existing access model. No certificate design changes, database migration, deployment or browser test were included in this change.
+
+
+## Account deletion request failure investigation — 9 November 2026
+
+### Finding
+- The signed-in Settings flow calls `POST /api/account-lifecycle/request-deletion` after the user types `DELETE`. This request first resolves the authenticated user through `auth.get_current_user`; account deletion does not begin until that dependency succeeds.
+- The frontend API client previously replaced every HTTP 5xx response with the same generic “Something went wrong while loading your information” text. That concealed safe FastAPI error details, including the explicit 503 returned when Gmail confirmation email delivery fails.
+- Vercel production runtime error aggregation for `learnora-backend` showed 31 ASGI error occurrences across 3 users in the selected 7-day window, with the latest at 2026-11-09 15:50:37 UTC. The captured stack includes `httpx.RemoteProtocolError: Server disconnected` while `auth.get_current_user` was executing `_find_user` against Supabase PostgREST. The trace is an authentication dependency failure, before the account-deletion route body. The aggregated route label was `/fastapi`, so this is strong evidence of a backend transport failure at the time, but does not uniquely prove that a particular user's deletion request generated that exact trace.
+- The backend production deployment serving `learnora-backend.vercel.app` was confirmed to contain the account lifecycle router and the account-deletion migration. Runtime log detail for an individual request was not available because the project's current Vercel log retention does not cover the requested window.
+
+### Changes committed
+- Added bounded retries (initial attempt plus two short retries) for idempotent Supabase PostgREST identity SELECTs used by learner, administrator and reserved cohort-account lookup. Retries are limited to `httpx.TransportError`; SQL/API errors are not retried.
+- When transient transport retries are exhausted, authentication lookup now returns a safe HTTP 503 rather than an unhandled ASGI 500.
+- Updated the frontend API client to display safe backend `detail`, `message` or `error` strings for failed requests instead of discarding all 5xx response details. Generic internal-server-error responses still use the generic fallback; raw exception details are not exposed.
+- Added backend regression tests for one transient disconnect followed by success, and for retries being exhausted and returning a safe 503.
+
+### Verification and release
+- Source files were re-fetched from `main` after the changes. The backend test suite has not been executed in this session.
+- No Supabase data or schema was changed. No Vercel deployment was triggered. The retry and error-message changes will not affect production until the backend and frontend are deployed through the user's normal release process.
