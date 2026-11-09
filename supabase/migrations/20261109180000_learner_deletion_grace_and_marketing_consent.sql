@@ -226,7 +226,6 @@ BEGIN
       jsonb_build_object(
         'user_id', v_user.id,
         'deletion_reason', v_user.deletion_reason,
-        'deletion_reason_details', v_user.deletion_reason_details,
         'deactivation_until', v_user.account_deactivation_until,
         'history_retained', true
       ),
