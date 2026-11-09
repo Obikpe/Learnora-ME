@@ -1871,12 +1871,14 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
     not silently convert an organisation account into an individual account.
     """
     try:
-        memberships = (
+        memberships_query = (
             supabase.table("organisation_members")
             .select("organisation_id,role")
             .eq("user_id", user_id)
             .order("joined_at", desc=True)
-            .execute()
+        )
+        memberships = _execute_supabase_read_with_retry(
+            memberships_query, "Organisation membership lookup"
         ).data or []
 
         contexts: list[tuple[str, str]] = []
@@ -1889,12 +1891,14 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
         # public.users + cohort_members relationship. Any retained cohort
         # membership continues to reserve the organisation account context;
         # cohort status controls learning access, not identity ownership.
-        cohort_memberships = (
+        cohort_memberships_query = (
             supabase.table("cohort_members")
             .select("cohort_id")
             .eq("user_id", user_id)
             .limit(1000)
-            .execute()
+        )
+        cohort_memberships = _execute_supabase_read_with_retry(
+            cohort_memberships_query, "Cohort identity lookup"
         ).data or []
         cohort_ids = list({
             str(row["cohort_id"])
@@ -1902,11 +1906,13 @@ def _active_organisation_context(user_id: str, fail_closed: bool = False) -> tup
             if row.get("cohort_id")
         })
         if cohort_ids:
-            cohorts = (
+            cohorts_query = (
                 supabase.table("cohorts")
                 .select("id,organisation_id")
                 .in_("id", cohort_ids)
-                .execute()
+            )
+            cohorts = _execute_supabase_read_with_retry(
+                cohorts_query, "Cohort organisation lookup"
             ).data or []
             resolved_cohort_ids = set()
             for cohort in cohorts:
