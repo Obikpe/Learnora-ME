@@ -137,13 +137,13 @@ The following is the approved product policy. Items marked **planned** are not r
 |---|---|---|---|---|
 | Account verification | Immediately after registration when verification is required | New account owner | Transactional; verification token expiry applies | Implemented |
 | Password reset | Only after the learner requests it | Account owner | Transactional; short-lived reset token | Implemented |
-| Security alert | Immediately after a defined high-impact security event | Affected account owner | Transactional; do not email for every routine sign-in | No dedicated trigger confirmed in reviewed routes; planned |
+| Security alert | Immediately after a learner password is changed or reset | Affected account owner | Transactional; sent in-app and by email; no marketing opt-in required | Implemented for password change and password reset |
 | Account deletion confirmation | After the learner explicitly requests deletion | Account owner | Transactional; confirmation link expires after 60 minutes | Implemented |
 | Account reactivation link | Only after a deactivated learner explicitly requests it | Account owner | Transactional; link expires after 24 hours or the end of the 30-day recovery window, whichever comes first | Implemented |
-| Welcome to Learnora ME | Immediately after initial account setup is successfully completed | New learner | One time per account; send both in-app and email | Planned; current verification email uses welcome wording but is sent before setup is complete and is not this welcome event |
-| Upcoming deadline | 24 hours before an important deadline, only if the associated activity remains incomplete | Affected learner | At most one email per deadline/activity; suppress if completed before send time | Planned |
-| Learning inactivity | After 7 consecutive days without meaningful learning activity | Inactive learner | No repeat more than once every 30 days; suppress if meaningful activity resumes before send time | Planned |
-| Marketing campaign | Only when an authorised campaign is scheduled and approved | Eligible opted-in learners | Explicit email opt-in required; unsubscribe and frequency caps enforced | Unsubscribe infrastructure exists; campaign sender/worker not implemented |
+| Welcome to Learnora ME | Immediately after initial account setup is successfully completed | New learner | One time per account; send both in-app and email | Implemented in source; requires the new delivery migration and automation flag before production use |
+| Upcoming deadline | First hourly automation run after a published assignment enters its 24-hour due window, if no submission exists | Affected learner with an active course enrolment | At most one email per assignment/deadline; in-app notification also created | Implemented for published assignments with `due_date`; quiz-specific deadlines are not represented in the current quiz schema |
+| Learning inactivity | After 7 consecutive days without meaningful learning activity | Individual learner with completed onboarding | No repeat email within 30 days; suppresses a reminder if meaningful activity resumes before the send check | Implemented in source; requires the new delivery migration and automation flag before production use |
+| Marketing campaign | Only when an authorised campaign is scheduled and approved | Eligible opted-in learners | Explicit email opt-in required; per-message unsubscribe link and consent recheck | Per-recipient consent-gated sender helper implemented; campaign authoring, audience selection, scheduling and admin UI remain future messaging-platform work |
 
 Meaningful learning activity means completing a lesson, quiz or assessment. Merely signing in does not reset the inactivity clock. Weekly progress summaries remain in-app initially and are not part of the email catalogue.
 
@@ -151,7 +151,7 @@ Meaningful learning activity means completing a lesson, quiz or assessment. Mere
 
 Do not send email for every lesson completion, quiz completion, comment, reply, routine course announcement, routine course update, certificate event, weekly progress summary or ordinary cohort activity. These belong in the in-app notification centre unless a separately approved critical-service reason applies.
 
-## 4. Automated notification engine — future implementation
+## 4. Automated notification engine
 
 Learnora should use event-driven notification routing rather than broadcasting every announcement to every learner.
 
@@ -197,17 +197,13 @@ The signal should store the learner ID, topic ID, source, confidence/weight, fir
 
 ### 4.4 Delivery architecture
 
-Use a durable outbox/queue:
-- application services publish a typed event with a stable idempotency key;
-- a recipient resolver calculates the audience from current enrolments, interest signals, account state and consent;
-- delivery records are created per recipient/channel;
-- a worker claims jobs with a lease, sends through the configured email provider or creates an in-app notification, and records outcome/provider ID;
-- transient errors retry with bounded exponential backoff; permanent failures move to a dead-letter state;
-- deduplicate event + recipient + channel so retries do not send duplicate messages;
-- enforce per-user frequency caps and quiet hours for promotional messages;
-- re-check account status, email verification, email marketing consent (for promotional messages) and unsubscribe suppression immediately before email send. Transactional emails use their own event-specific eligibility rules.
+The current implementation uses `learner_notification_deliveries` as a durable, service-role-only delivery ledger. Each recipient/event/channel pair is unique; the database claim function leases a delivery, recovers stale `sending` claims after 15 minutes and schedules failed attempts for retry after one hour. The hourly protected worker creates in-app notifications and sends eligible reminder emails. This is an initial durable delivery mechanism, not yet a general event bus or full campaign outbox.
 
-The current `learnora_notifications` table remains the in-app inbox source. The future engine should add event/outbox/delivery records rather than overloading the inbox table with campaign state.
+- Use stable event keys and one delivery record per recipient/channel.
+- Claim work atomically in Postgres to prevent overlapping cron invocations from sending duplicates.
+- Re-check account status, email verification and marketing email consent immediately before campaign email delivery. Transactional emails use their own event-specific eligibility rules.
+- Keep the `learnora_notifications` table as the in-app inbox source; do not store campaign state in it.
+- Future campaign scheduling should add bounded backoff, delivery/bounce/complaint tracking, audience preview, cancellation and audit controls before bulk campaign use.
 
 ### 4.5 Email requirements
 
@@ -223,8 +219,8 @@ Important transactional email templates must be separate from campaign templates
 
 ### 4.6 Reminder timing, deduplication and suppression
 
-- Deadline email: send once, exactly 24 hours before the configured important deadline, only if the relevant lesson, quiz or assessment remains incomplete at send time. Do not send a second reminder for the same activity/deadline.
-- Inactivity email: trigger after 7 consecutive days without a completed lesson, quiz or assessment. Login alone is not meaningful activity. Do not repeat an inactivity email more than once in any 30-day period.
+- Deadline email: the hourly worker sends once when a published assignment enters its 24-hour due window, only if the learner has an active enrolment and no submission exists at send time. Do not send a second reminder for the same assignment/deadline. Quiz-specific deadline reminders remain unavailable until quizzes have an explicit due-date field.
+- Inactivity email: trigger after 7 consecutive days without a completed lesson, quiz or assessment, using `learner_learning_days` as the activity source. Login alone is not meaningful activity. The worker checks `last_inactivity_email_at` and will not repeat an inactivity email within 30 days.
 - Cancel/suppress a pending inactivity email if the learner completes meaningful learning activity before it is sent.
 - Cancel/suppress a pending deadline email if the relevant activity is completed before it is sent.
 - Welcome email and welcome in-app notification: one delivery per account after initial setup completes; registration or verification alone is not the welcome trigger.
@@ -272,22 +268,30 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 ## 7. Implementation status and release gates
 
 ### Implemented in the current source changes
-- Mobile/tablet navigation drawer is rendered through a body portal so the sticky header/backdrop filter cannot clip it.
-- Notification preview is a compact dropdown anchored directly beneath the bell; selecting an item opens the full two-column notifications page.
-- Registration currently stores email and in-app marketing opt-in fields from one optional checkbox; this needs to be aligned with the agreed email-only marketing preference.
-- Marketing consent fields are written on registration.
-- Account Settings has a marketing preference control and deletion-reason capture; its current combined channel behaviour needs correction before marketing automation is released.
+- On phones and tablets only (up to 1023px), the notification preview width is constrained to the viewport; notification and profile menus close each other, close on outside interaction and close on Escape. Desktop menu behaviour and desktop preview width are unchanged.
+- Notification preview remains a compact dropdown beneath the bell; selecting an item opens the full two-column notifications page.
+- Signup and Account Settings marketing consent now controls email marketing only. Email unsubscribe changes only `marketing_email_opt_in`; it does not disable or hide in-app notifications.
+- Password change and password reset create one-time in-app security alerts and send transactional security emails.
+- Completing individual learner onboarding creates a one-time welcome notification and sends a welcome email. Failed delivery can be retried by the hourly worker.
+- Published assignments with due dates generate one in-app reminder and one email within the 24-hour due window when the learner has an active enrolment and no submission.
+- Individual learners with completed onboarding receive an in-app inactivity reminder after 7 days without meaningful activity and, subject to the 30-day cap, one email.
+- A per-recipient marketing email delivery helper checks current opt-in, creates a per-message unsubscribe token and rechecks consent before sending.
+- Account Settings retains deletion-reason capture; account deletion/recovery flows remain implemented.
 - Account deletion backend is changed to a 30-day deactivation/recovery flow, including same-email reactivation-link issuance and a reactivation endpoint/page.
 - Admin API/UI exposes learner account status and deletion events/reasons.
 - A daily finalisation cron and protected endpoint are defined.
 
 ### Not yet released / must be completed before production use
+- Apply `20261116120000_notification_email_automation.sql` to the active Pheonix Supabase project before deploying the new onboarding, delivery or reminder code. This migration has been committed but not applied.
+- Set `LEARNORA_NOTIFICATION_AUTOMATION_ENABLED=true` only after that migration is applied and the worker is verified. It defaults to `false`. Configure `CRON_SECRET` so Vercel can authenticate the hourly worker.
 - Both `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql` have been applied to the active Pheonix Supabase project and are recorded in migration history.
 - Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until the full production erasure test suite and cleanup verification pass. The migrations being applied is necessary but not sufficient to enable automatic finalisation. Confirm `CRON_SECRET`, cron execution and failure alerting before enabling the finaliser.
 - Run backend tests, frontend typecheck/build and browser acceptance on phone/tablet/desktop.
 - Verify email delivery for deletion confirmation and reactivation links, and test all 30-day boundary cases.
-- Implement and test the event/outbox notification engine, post-setup welcome notification/email, deadline and inactivity reminder scheduler, interest-signal capture, campaign worker and approved email templates. The unsubscribe endpoint and page are in place, and the backend exposes a helper that creates a per-email opaque unsubscribe URL. No campaign sender currently consumes that helper.
-- Correct the current unsubscribe implementation before campaign launch: it currently sets both `marketing_email_opt_in` and `marketing_in_app_opt_in` to false. The agreed product policy is email-only unsubscribe; it must leave all in-app notifications enabled and available. Review the Account Settings control and signup consent wording so they govern marketing email only.
+- Run the new notification migration against the CI PostgreSQL baseline and add database assertions for delivery-claim concurrency, RLS/grants, retry leases and suppression states.
+- The automation worker currently handles individual onboarding welcome messages, published assignment deadlines and individual learner inactivity. Extend deadline coverage to any future quiz/assessment deadline fields and cohort-specific assignment models when those data models expose authoritative due dates.
+- Add marketing campaign authoring, audience selection, preview, scheduling, cancellation and audit UI/API in the future messaging platform. The per-recipient sender helper is present, but there is no campaign authoring/scheduling worker yet.
+- Interest-signal capture and automated course recommendation campaigns remain future work. Course publish/update notifications currently remain in-app only.
 - Review existing course-publish/update fan-out against the approved audience rules. The current service sends in-app notifications to active/completed course enrolments and learners whose completed onboarding profile matches the course; it has no email sender. Confirm the intended scope and avoid treating a general course launch as an automatic email.
 - Review privacy notice and terms with qualified counsel before enabling marketing campaigns.
 - Do not deploy backend/frontend changes or enable the deletion finaliser without the separately authorised release process.
