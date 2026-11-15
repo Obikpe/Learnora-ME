@@ -445,9 +445,6 @@ def _process_inactivity_reminders(now: datetime) -> int:
         if member_user_id and joined_at:
             if joined_at > joined_map.get(member_user_id, ""):
                 joined_map[member_user_id] = joined_at
-    user_ids = list({str(row["user_id"]) for row in profiles if row.get("user_id")})
-    if not user_ids:
-        return 0
     users = []
     activity_rows = []
     for batch in _chunks(user_ids):
