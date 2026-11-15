@@ -33,6 +33,8 @@ def get_onboarding(user: CurrentUser = Depends(get_current_user)):
 def save_onboarding(body: OnboardingIn, user: CurrentUser = Depends(get_current_user)):
     _assert_individual(user)
     now = datetime.now(timezone.utc).isoformat()
+    existing_profile = _profile(str(user.id))
+    completed_at = (existing_profile or {}).get("onboarding_completed_at") or now
     result = supabase.table("learner_onboarding_profiles").upsert({
         "user_id": str(user.id),
         "goal": body.goal.strip(),
@@ -41,10 +43,19 @@ def save_onboarding(body: OnboardingIn, user: CurrentUser = Depends(get_current_
         "interests": [x.strip() for x in body.interests if x.strip()][:12],
         "weekly_time_minutes": body.weekly_time_minutes,
         "onboarding_completed": True,
+        "onboarding_completed_at": completed_at,
         "updated_at": now,
     }, on_conflict="user_id").execute()
     if not result.data:
         raise HTTPException(500, "Unable to save your learning preferences.")
+    # The welcome is a one-time onboarding event. Delivery is idempotent and
+    # best-effort so an email-provider outage cannot undo a completed setup.
+    try:
+        from services.notification_service import send_post_setup_welcome
+        send_post_setup_welcome(str(user.id))
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Post-setup welcome delivery could not be started")
     return {"success": True, "profile": result.data[0]}
 
 @router.get("/recommendations")
