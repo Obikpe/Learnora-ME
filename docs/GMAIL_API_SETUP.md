@@ -1,6 +1,6 @@
 # Gmail API setup for Learnora
 
-Learnora sends transactional account emails through the Gmail API over HTTPS. The currently implemented templates cover account verification, password reset, account-deletion confirmation and explicitly requested account reactivation links. The same transport is intended to support the approved post-setup welcome email, carefully limited deadline/inactivity reminders and consent-controlled marketing campaigns when those features are implemented. The email catalogue, triggers, frequency limits and consent rules are defined in [LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md](LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md). This avoids direct SMTP connections and does not require Resend or a custom sending domain.
+Learnora sends transactional account emails through the Gmail API over HTTPS. The currently implemented templates cover account verification, password reset, account-deletion confirmation, explicitly requested account reactivation links, learner password-change/reset security alerts, the post-setup welcome email, published-assignment deadline reminders and individual-learner inactivity reminders. A consent-gated per-recipient marketing sender helper is also present; campaign authoring and scheduling are not yet implemented. The email catalogue, triggers, frequency limits and consent rules are defined in [LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md](LEARNER_NOTIFICATIONS_AND_MARKETING_AUTOMATION.md). This avoids direct SMTP connections and does not require Resend or a custom sending domain.
 
 ## 1. Choose the sending Gmail account
 
@@ -57,7 +57,7 @@ In the **Learnora backend Vercel project** (`learnora-backend-v02`), add these v
 | `GMAIL_FROM_EMAIL` | Optional; defaults to `GMAIL_USER_EMAIL`. A different address must be a verified send-as alias |
 | `GMAIL_FROM_NAME` | Optional; defaults to `Learnora Me` |
 
-Keep all credentials server-side. Never add them to `NEXT_PUBLIC_*` variables, frontend projects, source files, screenshots, or chat messages. After the Gmail API configuration is in place, remove the old `SMTP_*` variables from the backend deployment; this code no longer reads them. Keep all credentials server-side. Do not add campaign logic or send bulk promotional mail merely because the transport is configured; campaign consent, unsubscribe suppression, recipient eligibility and frequency limits must be implemented first.
+Keep all credentials server-side. Never add them to `NEXT_PUBLIC_*` variables, frontend projects, source files, screenshots, or chat messages. After the Gmail API configuration is in place, remove the old `SMTP_*` variables from the backend deployment; this code no longer reads them. Keep all credentials server-side. Automated learner reminders run through the protected hourly `/api/notifications/process-automation` Vercel cron. The worker is disabled by default; set `LEARNORA_NOTIFICATION_AUTOMATION_ENABLED=true` only after applying `20261116120000_notification_email_automation.sql`, configuring `CRON_SECRET`, and verifying the worker. Bulk marketing campaigns must not be sent until campaign authoring/audience controls and the consent/suppression checks are operational.
 
 ## 6. Verify delivery
 
@@ -66,9 +66,12 @@ After the variables are saved, deploy the backend and test the currently impleme
 - the resend-verification action;
 - a password-reset email;
 - account-deletion confirmation;
-- explicitly requested account-reactivation email.
+- explicitly requested account-reactivation email;
+- password-change and password-reset security alerts;
+- one-time welcome email after completing initial onboarding;
+- assignment deadline and inactivity reminder emails through the protected worker (after the delivery migration and worker flag are enabled).
 
-When the future welcome/reminder/campaign features are implemented, add separate end-to-end tests for their triggers, idempotency, suppression rules and recipient eligibility. Do not treat transport-level Gmail success as proof that those product workflows exist.
+Add end-to-end tests for welcome/reminder triggers, idempotency, suppression rules and recipient eligibility before enabling the worker. Do not treat transport-level Gmail success as proof that those product workflows are operating correctly. Marketing campaigns still require the future messaging/campaign management layer.
 
 A successful Gmail API response means Google accepted the message for sending; also check the sender account's Sent folder and the recipient inbox/spam folder. Do not repeatedly retry an ambiguous send failure, because the provider may have accepted the first request.
 
