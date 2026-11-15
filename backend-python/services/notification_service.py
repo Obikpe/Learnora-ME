@@ -566,7 +566,7 @@ def _process_security_alert_retries(now: datetime) -> int:
             subject=str(notice.get("title") or "Learnora security alert"),
             text_body=(
                 f"{notice.get('body') or 'A security-related change occurred on your Learnora account.'}"
-                "\\n\\nIf you did not make this change, contact Learnora support immediately.\\n\\nLearnora ME"
+                "\n\nIf you did not make this change, contact Learnora support immediately.\n\nLearnora ME"
             ),
             html_body=(
                 "<!doctype html><html><body style='font-family:Arial,sans-serif;color:#172033'>"
