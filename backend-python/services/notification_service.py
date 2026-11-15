@@ -611,3 +611,95 @@ def notify_security_event(
         now=now,
     )
     return {"in_app": in_app, "email": email_sent}
+
+
+
+def send_marketing_campaign_email_once(
+    *,
+    user_id: str,
+    campaign_id: str,
+    subject: str,
+    text_body: str,
+    html_body: str,
+) -> bool:
+    """Send one consent-checked campaign email with a per-message unsubscribe link.
+
+    Campaign authoring/audience selection belongs to the future messaging
+    platform; this delivery primitive is deliberately not an audience builder.
+    """
+    from html import escape
+    from routers import auth
+    from routers.account_lifecycle import create_marketing_unsubscribe_url
+
+    campaign = str(campaign_id or "").strip()
+    if not campaign or len(campaign) > 120:
+        raise ValueError("A valid campaign identifier is required.")
+    now = datetime.now(timezone.utc)
+    eligible = (
+        supabase.table("users")
+        .select("id,email,email_verified,account_status,marketing_email_opt_in")
+        .eq("id", str(user_id))
+        .eq("account_status", "active")
+        .eq("email_verified", True)
+        .eq("marketing_email_opt_in", True)
+        .limit(1)
+        .execute()
+    ).data or []
+    if not eligible:
+        return False
+
+    event_key = f"marketing:{campaign}"
+    if not _claim_delivery(str(user_id), event_key, "email", now):
+        return False
+
+    unsubscribe_url = ""
+    try:
+        unsubscribe_url = create_marketing_unsubscribe_url(str(user_id))
+        # Re-check consent as close as possible to the provider send. This
+        # closes the normal queue-delay window after an audience was selected.
+        current = (
+            supabase.table("users")
+            .select("id,email,email_verified,account_status,marketing_email_opt_in")
+            .eq("id", str(user_id))
+            .eq("account_status", "active")
+            .eq("email_verified", True)
+            .eq("marketing_email_opt_in", True)
+            .limit(1)
+            .execute()
+        ).data or []
+        if not current:
+            raw_token = unsubscribe_url.partition("#token=")[2]
+            if raw_token:
+                supabase.table("learner_marketing_unsubscribe_tokens").update({
+                    "consumed_at": now.isoformat(),
+                }).eq("token_hash", auth._hash_token(raw_token)).is_("consumed_at", "null").execute()
+            supabase.table("learner_notification_deliveries").update({
+                "status": "sent",
+                "last_error": "Suppressed because marketing email consent was withdrawn before delivery.",
+                "updated_at": now.isoformat(),
+            }).eq("user_id", str(user_id)).eq("event_key", event_key).eq("channel", "email").eq("status", "sending").execute()
+            return False
+
+        user = current[0]
+        text_with_unsubscribe = (
+            f"{text_body.rstrip()}\n\n"
+            f"Unsubscribe from Learnora marketing emails: {unsubscribe_url}\n"
+        )
+        html_with_unsubscribe = (
+            f"{html_body}"
+            f'<p style="margin-top:28px;font-size:12px;line-height:1.6;color:#64748b">'
+            f'You are receiving this because you opted in to Learnora marketing emails. '
+            f'<a href="{escape(unsubscribe_url, quote=True)}">Unsubscribe</a>.</p>'
+        )
+        auth._send_email(
+            recipient=str(user["email"]),
+            subject=subject,
+            text_body=text_with_unsubscribe,
+            html_body=html_with_unsubscribe,
+        )
+        _finish_delivery(str(user_id), event_key, "email", True, now)
+        return True
+    except Exception as exc:
+        logger.exception("Marketing campaign email delivery failed for campaign %s", campaign)
+        _finish_delivery(str(user_id), event_key, "email", False, now, type(exc).__name__)
+        return False
