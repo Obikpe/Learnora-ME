@@ -5,6 +5,14 @@
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS last_inactivity_email_at timestamptz;
 
+ALTER TABLE public.learner_onboarding_profiles
+  ADD COLUMN IF NOT EXISTS onboarding_completed_at timestamptz;
+
+UPDATE public.learner_onboarding_profiles
+   SET onboarding_completed_at = COALESCE(updated_at, created_at, now())
+ WHERE onboarding_completed = true
+   AND onboarding_completed_at IS NULL;
+
 CREATE TABLE IF NOT EXISTS public.learner_notification_deliveries (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
