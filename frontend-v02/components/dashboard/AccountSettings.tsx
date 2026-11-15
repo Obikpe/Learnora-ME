@@ -30,8 +30,8 @@ export default function AccountSettings({ user }: { user: any }) {
     try {
       await request("/account-lifecycle/marketing-preferences", { method: "PATCH", body: JSON.stringify({ enabled }) });
       setMarketingOptIn(enabled);
-      updateCachedCurrentUser({ marketing_email_opt_in: enabled, marketing_in_app_opt_in: enabled });
-      setMarketingMessage(enabled ? "You are opted in to Learnora marketing updates." : "You are unsubscribed from Learnora marketing updates.");
+      updateCachedCurrentUser({ marketing_email_opt_in: enabled });
+      setMarketingMessage(enabled ? "You are opted in to Learnora marketing emails." : "You are unsubscribed from Learnora marketing emails.");
     } catch (e: any) {
       setMarketingMessage(e.message || "We could not update your email preferences.");
     } finally { setMarketingBusy(false); }
@@ -112,7 +112,7 @@ export default function AccountSettings({ user }: { user: any }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-2xl">
           <h2 className="font-semibold">Marketing updates</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">Choose whether Learnora can send promotional updates by email and in-app notifications about new learning tracks, course announcements, offers and discounts. This is separate from essential account, security and enrolled-course service messages.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Choose whether Learnora can send promotional emails about new learning tracks, learning opportunities, offers and discounts. This preference does not affect in-app notifications or essential account and security emails.</p>
           {marketingMessage && <p role="status" className="mt-2 text-xs text-slate-300">{marketingMessage}</p>}
         </div>
         <button type="button" disabled={marketingBusy} onClick={() => void updateMarketingPreference(!marketingOptIn)} className={`inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold transition disabled:opacity-50 ${marketingOptIn ? "border border-white/15 text-slate-300 hover:bg-white/5" : "bg-[#d7ad35] text-black hover:bg-[#e4c56e]"}`}>
