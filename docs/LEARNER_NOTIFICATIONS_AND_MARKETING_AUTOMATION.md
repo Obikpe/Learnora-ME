@@ -1,7 +1,7 @@
 # Learner account lifecycle, notifications and marketing automation
 
 **Status:** Product and engineering specification  
-**Updated:** 9 November 2026  
+**Updated:** 16 November 2026  
 **Scope:** Learnora ME individual learner accounts and shared Learnora notification services
 
 This document records the intended account-recovery, notification-targeting and marketing-consent behaviour. It separates the account-deletion grace-period implementation from the broader automated notification engine, which remains a future build.
@@ -88,44 +88,70 @@ The audit trail must distinguish:
 
 The Learnora admin Users view exposes current learners, accounts in the 30-day recovery period, completed deletions and their recorded reason. The activity stream retains the corresponding lifecycle audit events. Staff access remains governed by existing administrator permissions.
 
-## 3. Marketing consent
+## 3. Email marketing consent and channel policy
 
-### 3.1 Registration
+### 3.1 Email marketing consent
 
-The registration form presents a separate, optional, unticked checkbox covering both email and promotional in-app marketing:
+The optional, unticked registration checkbox and Account Settings preference apply to **marketing email only**. Suggested wording:
 
-> Yes, I would like to receive Learnora marketing updates by email and in-app notifications about new learning tracks, course releases, offers and discounts.
+> Yes, I would like to receive Learnora marketing emails about new learning tracks, course releases, learning opportunities, offers and discounts.
 
-It must not be bundled with Terms of Use, Privacy Policy acceptance or account creation. Leaving it unticked must not block registration or reduce access to learning.
+It must not be bundled with Terms of Use, Privacy Policy acceptance or account creation. Leaving it unticked must not block registration or reduce access to learning. Do not infer consent from account creation, course enrolment, browsing, search activity, silence or a preselected checkbox.
 
-Store an auditable consent record:
-- `marketing_email_opt_in` and `marketing_in_app_opt_in`;
-- `marketing_consent_at`;
-- `marketing_consent_source` (for example, `signup_form` or `account_settings`).
+The existing `marketing_email_opt_in` field is the authoritative permission for promotional email. Keep the historical `marketing_in_app_opt_in` database field only for compatibility/migration purposes; it must not be used to suppress, hide or disable in-app notifications. In-app notifications are always available in the Learnora notification centre and learners cannot unsubscribe from that channel.
 
-Do not infer consent from account creation, course enrolment, browsing, search activity, silence or a preselected checkbox.
+Store auditable email consent evidence using `marketing_email_opt_in`, `marketing_consent_at`, `marketing_consent_source` and `marketing_unsubscribed_at`.
 
-### 3.2 Withdrawal and suppression
+### 3.2 Email unsubscribe and suppression
 
-- Learners can change the preference in Account Settings.
+- Learners may withdraw consent for marketing email in Account Settings or through the unsubscribe link in a marketing email.
 - Every marketing email must include a prominent, working unsubscribe link in its footer.
-- The unsubscribe action must work without requiring the learner to sign in, must be idempotent, and must update the central suppression state immediately for both marketing channels. Each campaign email receives an opaque random token; only its hash is stored in a service-only token table. Unsubscribing consumes all outstanding tokens for that learner.
-- Email and promotional in-app delivery must check consent and suppression status at send time, not only when a campaign audience is first built.
+- The public unsubscribe action must work without sign-in, be idempotent and immediately set `marketing_email_opt_in=false`. It must not turn off in-app notifications, alter the notification inbox, or prevent future transactional/service messages.
+- Each campaign email receives an opaque random token; only its hash is stored in a service-only token table. Unsubscribing consumes all outstanding tokens for that learner.
+- Re-check email consent and suppression immediately before each marketing send, not only when a campaign audience is first built.
 - Keep a minimal suppression record long enough to prevent accidental re-import or re-subscription. A later opt-in must be a new affirmative action with a new consent timestamp.
-- Do not include marketing content in essential account/security emails or enrolled-course service notices.
+- Never include promotional content in essential account/security emails or disguise a promotion as a service notice.
 
-### 3.3 Transactional versus marketing messages
+### 3.3 Transactional, service and marketing classification
 
-| Message | Channel | Marketing opt-in required? |
+| Message | Default channel | Marketing email opt-in required? |
 |---|---|---|
-| Email verification, password reset, login/security alerts | Email | No; essential account communication |
-| Deletion confirmation and reactivation links | Email | No; account lifecycle communication |
-| Important account/service notices | In-app and, where needed, email | No, where genuinely necessary to provide or secure the service |
-| Update to a course the learner is currently enrolled in | In-app; email where useful | No, when limited to the learner's existing enrolment/service |
-| New track, general course launch, discounts, promotions | In-app and/or email | Yes; treat promotional delivery as marketing |
-| Recommendations based on search/browsing interest | In-app and/or email | Yes; interest-based promotional targeting must not bypass consent |
+| Account verification and password reset | Email | No; essential account communication |
+| Deletion confirmation and requested reactivation link | Email | No; account lifecycle communication |
+| High-impact security alert | Email and in-app where applicable | No; essential security communication |
+| Welcome after initial setup | In-app and email, once | No; onboarding/service communication |
+| Important platform/service incident | In-app; email only when necessary | No, when genuinely required to provide or secure the service |
+| Course/lesson activity, routine updates, comments and replies | In-app only | No email is sent |
+| Upcoming important deadline | In-app; one email 24 hours before if still incomplete | No; learning-service reminder |
+| Inactivity reminder | In-app; limited email reminder under section 4.6 | No; learning-service reminder |
+| New courses, general programme launches, offers and promotions | In-app; marketing email only with consent | Yes for email |
+| Interest-based promotional recommendations | In-app; marketing email only with consent | Yes for email |
 
-Do not relabel a promotion as an "important notification" to avoid the marketing preference. The purpose and content determine the category.
+Do not relabel a promotion as an important service notification to bypass email marketing consent. The purpose and content determine the category.
+
+### 3.4 Approved automated email catalogue
+
+The following is the approved product policy. Items marked **planned** are not represented as implemented.
+
+| Email | Trigger and timing | Recipient | Consent / frequency rule | Current source status |
+|---|---|---|---|---|
+| Account verification | Immediately after registration when verification is required | New account owner | Transactional; verification token expiry applies | Implemented |
+| Password reset | Only after the learner requests it | Account owner | Transactional; short-lived reset token | Implemented |
+| Security alert | Immediately after a defined high-impact security event | Affected account owner | Transactional; do not email for every routine sign-in | No dedicated trigger confirmed in reviewed routes; planned |
+| Account deletion confirmation | After the learner explicitly requests deletion | Account owner | Transactional; confirmation link expires after 60 minutes | Implemented |
+| Account reactivation link | Only after a deactivated learner explicitly requests it | Account owner | Transactional; link expires after 24 hours or the end of the 30-day recovery window, whichever comes first | Implemented |
+| Welcome to Learnora ME | Immediately after initial account setup is successfully completed | New learner | One time per account; send both in-app and email | Planned; current verification email uses welcome wording but is sent before setup is complete and is not this welcome event |
+| Upcoming deadline | 24 hours before an important deadline, only if the associated activity remains incomplete | Affected learner | At most one email per deadline/activity; suppress if completed before send time | Planned |
+| Learning inactivity | After 7 consecutive days without meaningful learning activity | Inactive learner | No repeat more than once every 30 days; suppress if meaningful activity resumes before send time | Planned |
+| Marketing campaign | Only when an authorised campaign is scheduled and approved | Eligible opted-in learners | Explicit email opt-in required; unsubscribe and frequency caps enforced | Unsubscribe infrastructure exists; campaign sender/worker not implemented |
+
+Meaningful learning activity means completing a lesson, quiz or assessment. Merely signing in does not reset the inactivity clock. Weekly progress summaries remain in-app initially and are not part of the email catalogue.
+
+### 3.5 Email exclusions
+
+Do not send email for every lesson completion, quiz completion, comment, reply, routine course announcement, routine course update, certificate event, weekly progress summary or ordinary cohort activity. These belong in the in-app notification centre unless a separately approved critical-service reason applies.
+
+## 4. Automated notification engine — future implementation
 
 ## 4. Automated notification engine — future implementation
 
@@ -133,15 +159,21 @@ Learnora should use event-driven notification routing rather than broadcasting e
 
 ### 4.1 Event and audience model
 
-| Event | Audience rule | Purpose |
-|---|---|---|
-| Account created / verified | The account owner | Transactional |
-| Account deletion requested / deactivated / reactivated | The account owner | Transactional |
-| Course enrolled | The enrolling learner | Service confirmation |
-| Enrolled course updated | Learners with a current enrolment in that course | Learning-service update |
-| Track/course published or materially updated | Learners with a relevant, sufficiently strong interest signal | Promotional/recommendation; marketing consent required |
-| New offer or discount | Eligible, marketing-opted-in learners | Marketing |
-| Platform-wide essential service incident | Accounts materially affected | Essential service notice |
+Every learner-facing notification is created in the in-app notification centre. Email is a separate, selective delivery decision governed by sections 3.3–3.5. No event should be email-only.
+
+| Event | Audience rule | In-app behaviour | Email behaviour |
+|---|---|---|---|
+| Registration / email verification | The account owner | Account/setup status as appropriate | Verification email only when required; not the post-setup welcome |
+| Initial setup completed | The account owner | Create one welcome notification | Send one welcome email; both deliveries must be idempotent |
+| Account deletion / reactivation | The account owner | Relevant account status notification where appropriate | Send only the requested transactional lifecycle email |
+| Course enrolled | The enrolling learner | In-app confirmation | No routine email by default |
+| Enrolled course materially updated | Current learners enrolled in that course | In-app notification | No automatic email by default; an authorised sender may choose email in the future messaging platform |
+| New course published | Relevant eligible learners | In-app notification under the approved targeting rules | Marketing email only with explicit email consent and approved campaign delivery |
+| Lesson, quiz or assessment completion | The learner | In-app acknowledgement/progress update where useful | No email |
+| Important deadline approaching | Learner with incomplete activity | In-app reminder | One email 24 hours before deadline if still incomplete |
+| Learning inactivity | Learner with no meaningful activity for 7 days | In-app reminder | One email at the approved threshold; repeat no more than every 30 days |
+| New offer or discount | Eligible audience | In-app promotional notification | Email only to opted-in learners |
+| Platform-wide essential incident | Accounts materially affected | In-app notice | Email only when necessary to provide or secure the service |
 
 Every event must resolve to an explicit recipient set. "All users" must never be the default audience.
 
@@ -161,8 +193,8 @@ The signal should store the learner ID, topic ID, source, confidence/weight, fir
 
 1. **Account-based:** route only to the relevant account.
 2. **Enrolment-based:** route course updates only to learners with an active/current enrolment in that course.
-3. **Interest-based:** route relevant catalogue updates only when the interest threshold is met. Treat this as marketing/personalised promotion and require opt-in for both email and promotional in-app delivery.
-4. **Global marketing:** route only to learners with active marketing consent and no suppression record.
+3. **Interest-based:** route relevant catalogue updates only when the interest threshold is met. In-app delivery remains available; email delivery is promotional and requires active email marketing consent.
+4. **Global marketing email:** route only to learners with active `marketing_email_opt_in` and no email suppression record. In-app notifications are not disabled by email unsubscribe.
 5. **Managed accounts:** respect organisation/cohort tenant rules and any organisation-level communication settings. Do not expose one organisation's learner data or preferences to another.
 
 ### 4.4 Delivery architecture
@@ -175,13 +207,13 @@ Use a durable outbox/queue:
 - transient errors retry with bounded exponential backoff; permanent failures move to a dead-letter state;
 - deduplicate event + recipient + channel so retries do not send duplicate messages;
 - enforce per-user frequency caps and quiet hours for promotional messages;
-- re-check account status, email verification, consent and unsubscribe suppression immediately before email send.
+- re-check account status, email verification, email marketing consent (for promotional messages) and unsubscribe suppression immediately before email send. Transactional emails use their own event-specific eligibility rules.
 
 The current `learnora_notifications` table remains the in-app inbox source. The future engine should add event/outbox/delivery records rather than overloading the inbox table with campaign state.
 
 ### 4.5 Email requirements
 
-Every marketing email must:
+The approved email catalogue and send timing are defined in section 3.4. Every marketing email must:
 - clearly identify Learnora and the commercial/marketing nature of the message;
 - use a truthful subject and sender identity;
 - include a working unsubscribe/preferences link at the bottom;
@@ -191,7 +223,16 @@ Every marketing email must:
 
 Important transactional email templates must be separate from campaign templates. The email worker must not send to a deactivated/deleted account.
 
-### 4.6 Admin campaign controls
+### 4.6 Reminder timing, deduplication and suppression
+
+- Deadline email: send once, exactly 24 hours before the configured important deadline, only if the relevant lesson, quiz or assessment remains incomplete at send time. Do not send a second reminder for the same activity/deadline.
+- Inactivity email: trigger after 7 consecutive days without a completed lesson, quiz or assessment. Login alone is not meaningful activity. Do not repeat an inactivity email more than once in any 30-day period.
+- Cancel/suppress a pending inactivity email if the learner completes meaningful learning activity before it is sent.
+- Cancel/suppress a pending deadline email if the relevant activity is completed before it is sent.
+- Welcome email and welcome in-app notification: one delivery per account after initial setup completes; registration or verification alone is not the welcome trigger.
+- Use stable idempotency keys for each event/recipient/channel to prevent duplicate sends after retries.
+
+### 4.7 Admin campaign controls
 
 Learnora staff should be able to:
 - create a draft campaign and choose a permitted audience rule;
@@ -203,7 +244,19 @@ Learnora staff should be able to:
 
 Require an explicit send action and permission check. Do not let a campaign editor override consent or suppression rules.
 
-## 5. Privacy, compliance and abuse safeguards
+## 5. Future instructor/admin message delivery
+
+The future Learnora message platform must let an authorised instructor or administrator choose the delivery channel when composing a message:
+
+- **In-app:** create a notification in the Learnora notification centre.
+- **Email:** send to the selected recipients' registered email addresses, subject to account eligibility and the message's transactional/service/marketing classification.
+- **Both:** deliver through both channels, subject to the same rules.
+
+Audience selection should support appropriate learner, course, cohort and organisation scopes, with tenant isolation and permission checks. The sender must preview the audience and message before sending. The channel selector does not override email marketing consent, unsubscribe suppression, account status or organisation communication restrictions. Promotional email requires explicit email marketing consent; genuinely necessary service messages remain separately classified. In-app notifications remain available and cannot be unsubscribed from.
+
+This is a future capability only; do not treat it as an existing messaging-platform feature.
+
+## 6. Privacy, compliance and abuse safeguards
 
 The platform is operated from Nigeria and should be designed conservatively around the Nigeria Data Protection Act 2023 and applicable NDPC guidance. Direct marketing should use affirmative, recorded opt-in consent; provide an easy withdrawal mechanism; and honour objections promptly. This engineering specification is not legal advice and does not guarantee legal compliance.
 
@@ -218,14 +271,14 @@ Before enabling campaigns, obtain qualified privacy/legal review of:
 
 Security controls: opaque random, single-use unsubscribe tokens stored as hashes; no email addresses or account IDs in URLs; rate-limited public token endpoints; no raw tokens in logs; escape user-generated reason details; strict admin permissions; audit campaign changes; and test that unsubscribed/deactivated/deleted users are excluded.
 
-## 6. Implementation status and release gates
+## 7. Implementation status and release gates
 
 ### Implemented in the current source changes
 - Mobile/tablet navigation drawer is rendered through a body portal so the sticky header/backdrop filter cannot clip it.
 - Notification preview is a constrained right-side drawer, with smaller text and the header left accessible so clicking the bell again closes it.
-- Registration has an optional, unticked marketing email opt-in.
+- Registration currently stores email and in-app marketing opt-in fields from one optional checkbox; this needs to be aligned with the agreed email-only marketing preference.
 - Marketing consent fields are written on registration.
-- Account Settings has a marketing preference control and deletion-reason capture.
+- Account Settings has a marketing preference control and deletion-reason capture; its current combined channel behaviour needs correction before marketing automation is released.
 - Account deletion backend is changed to a 30-day deactivation/recovery flow, including same-email reactivation-link issuance and a reactivation endpoint/page.
 - Admin API/UI exposes learner account status and deletion events/reasons.
 - A daily finalisation cron and protected endpoint are defined.
@@ -235,12 +288,14 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 - Set a strong production `CRON_SECRET` in Vercel before deploying the backend. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until both migrations are applied and the complete erasure tests pass; then explicitly enable it and verify the daily cron.
 - Run backend tests, frontend typecheck/build and browser acceptance on phone/tablet/desktop.
 - Verify email delivery for deletion confirmation and reactivation links, and test all 30-day boundary cases.
-- Implement and test the event/outbox notification engine, interest-signal capture, campaign worker and actual marketing email templates. The unsubscribe endpoint and page are in place, and the backend exposes a helper that creates a per-email opaque unsubscribe URL. No campaign sender currently consumes that helper.
+- Implement and test the event/outbox notification engine, post-setup welcome notification/email, deadline and inactivity reminder scheduler, interest-signal capture, campaign worker and approved email templates. The unsubscribe endpoint and page are in place, and the backend exposes a helper that creates a per-email opaque unsubscribe URL. No campaign sender currently consumes that helper.
+- Correct the current unsubscribe implementation before campaign launch: it currently sets both `marketing_email_opt_in` and `marketing_in_app_opt_in` to false. The agreed product policy is email-only unsubscribe; it must leave all in-app notifications enabled and available. Review the Account Settings control and signup consent wording so they govern marketing email only.
+- Review existing course-publish/update fan-out against the approved audience rules. The current service sends in-app notifications to active/completed course enrolments and learners whose completed onboarding profile matches the course; it has no email sender. Confirm the intended scope and avoid treating a general course launch as an automatic email.
 - Review privacy notice and terms with qualified counsel before enabling marketing campaigns.
 - Do not deploy or apply the migration without the separately authorised release process.
 
 
-## 7. Nigerian privacy references used for this design
+## 8. Nigerian privacy references used for this design
 
 This is an engineering interpretation for product planning, not legal advice. The current reference set is:
 - **Nigeria Data Protection Act 2023:** sections 26(1)–(7) place the burden of proving consent on the controller, require affirmative rather than preselected consent, state that silence/inactivity is not consent, and require the right to withdraw to be explained. Section 27 requires clear privacy information including purposes, recipients, retention periods, rights and relevant profiling. Sections 35 and 36 cover withdrawal and objection, including an objection to direct marketing and related profiling.
