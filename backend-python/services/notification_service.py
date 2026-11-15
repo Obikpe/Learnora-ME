@@ -674,8 +674,8 @@ def send_marketing_campaign_email_once(
                     "consumed_at": now.isoformat(),
                 }).eq("token_hash", auth._hash_token(raw_token)).is_("consumed_at", "null").execute()
             supabase.table("learner_notification_deliveries").update({
-                "status": "sent",
-                "last_error": "Suppressed because marketing email consent was withdrawn before delivery.",
+                "status": "suppressed",
+                "last_error": "Marketing email consent was withdrawn before delivery.",
                 "updated_at": now.isoformat(),
             }).eq("user_id", str(user_id)).eq("event_key", event_key).eq("channel", "email").eq("status", "sending").execute()
             return False
