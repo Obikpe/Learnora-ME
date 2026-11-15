@@ -530,21 +530,32 @@ def _process_inactivity_reminders(now: datetime) -> int:
 def _process_security_alert_retries(now: datetime) -> int:
     from html import escape
 
-    notifications = (
-        supabase.table("learnora_notifications")
-        .select("user_id,title,body,data,created_at")
-        .eq("notification_type", "security_alert")
-        .order("created_at", desc=True)
+    retry_rows = (
+        supabase.table("learner_notification_deliveries")
+        .select("user_id,event_key,status,updated_at")
+        .eq("channel", "email")
+        .in_("status", ["pending", "failed", "sending"])
+        .lte("next_attempt_at", now.isoformat())
+        .order("updated_at")
         .limit(500)
         .execute()
     ).data or []
     delivered = 0
     user_cache: dict[str, dict | None] = {}
-    for notice in notifications:
-        user_id = str(notice.get("user_id") or "")
-        event_key = str((notice.get("data") or {}).get("event_key") or "")
-        if not user_id or not event_key:
+    for delivery in retry_rows:
+        user_id = str(delivery.get("user_id") or "")
+        event_key = str(delivery.get("event_key") or "")
+        if not user_id or not event_key or not event_key.startswith("security:"):
             continue
+        if delivery.get("status") == "sending":
+            try:
+                claimed_at = datetime.fromisoformat(str(delivery.get("updated_at")).replace("Z", "+00:00"))
+                if claimed_at.tzinfo is None:
+                    claimed_at = claimed_at.replace(tzinfo=timezone.utc)
+                if claimed_at > now - timedelta(minutes=15):
+                    continue
+            except (TypeError, ValueError):
+                continue
         if user_id not in user_cache:
             rows = (
                 supabase.table("users")
@@ -559,19 +570,29 @@ def _process_security_alert_retries(now: datetime) -> int:
         user = user_cache[user_id]
         if not user or not user.get("email"):
             continue
+        notices = (
+            supabase.table("learnora_notifications")
+            .select("title,body,data")
+            .eq("user_id", user_id)
+            .eq("notification_type", "security_alert")
+            .contains("data", {"event_key": event_key})
+            .limit(1)
+            .execute()
+        ).data or []
+        if not notices:
+            continue
+        notice = notices[0]
+        title = str(notice.get("title") or "Learnora security alert")
+        body = str(notice.get("body") or "A security-related change occurred on your Learnora account.")
         if _send_automated_email_once(
             user_id=user_id,
             email=str(user["email"]),
             event_key=event_key,
-            subject=str(notice.get("title") or "Learnora security alert"),
-            text_body=(
-                f"{notice.get('body') or 'A security-related change occurred on your Learnora account.'}"
-                "\n\nIf you did not make this change, contact Learnora support immediately.\n\nLearnora ME"
-            ),
+            subject=title,
+            text_body=f"{body}\n\nIf you did not make this change, contact Learnora support immediately.\n\nLearnora ME",
             html_body=(
                 "<!doctype html><html><body style='font-family:Arial,sans-serif;color:#172033'>"
-                f"<h1>{escape(str(notice.get('title') or 'Learnora security alert'))}</h1>"
-                f"<p>{escape(str(notice.get('body') or 'A security-related change occurred on your Learnora account.'))}</p>"
+                f"<h1>{escape(title)}</h1><p>{escape(body)}</p>"
                 "<p>If you did not make this change, contact "
                 "<a href='mailto:learnorame@gmail.com'>Learnora support</a> immediately.</p>"
                 "</body></html>"
@@ -580,7 +601,6 @@ def _process_security_alert_retries(now: datetime) -> int:
         ):
             delivered += 1
     return delivered
-
 
 def process_automated_learner_notifications() -> dict[str, int]:
     """Hourly worker for welcome retries, security alerts and learning reminders."""
