@@ -607,19 +607,20 @@ def process_automated_learner_notifications() -> dict[str, int]:
     now = datetime.now(timezone.utc)
     results = {"welcome": 0, "security": 0, "deadlines": 0, "inactivity": 0}
     try:
-        profiles = (
-            supabase.table("learner_onboarding_profiles")
+        welcome_retries = (
+            supabase.table("learner_notification_deliveries")
             .select("user_id")
-            .eq("onboarding_completed", True)
-            .limit(5000)
+            .eq("event_key", "welcome:initial-setup:v1")
+            .in_("status", ["pending", "failed", "sending"])
+            .lte("next_attempt_at", now.isoformat())
+            .limit(1000)
             .execute()
         ).data or []
-        for profile in profiles:
-            user_id = str(profile.get("user_id") or "")
-            if user_id:
-                outcome = send_post_setup_welcome(user_id)
-                if outcome.get("email") or outcome.get("in_app"):
-                    results["welcome"] += 1
+        retry_user_ids = list({str(row["user_id"]) for row in welcome_retries if row.get("user_id")})
+        for user_id in retry_user_ids:
+            outcome = send_post_setup_welcome(user_id)
+            if outcome.get("email") or outcome.get("in_app"):
+                results["welcome"] += 1
     except Exception:
         logger.exception("Post-setup welcome retry batch failed")
     try:
