@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.learner_notification_deliveries (
   event_key text NOT NULL,
   channel text NOT NULL CHECK (channel IN ('in_app', 'email')),
   status text NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'sending', 'sent', 'failed')),
+    CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'suppressed')),
   attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
   next_attempt_at timestamptz NOT NULL DEFAULT now(),
   sent_at timestamptz,
