@@ -2677,7 +2677,7 @@ def register(
         "created_at": now.isoformat(),
         "email_verified_at": None,
         "marketing_email_opt_in": bool(payload.marketing_email_opt_in),
-        "marketing_in_app_opt_in": bool(payload.marketing_email_opt_in),
+        "marketing_in_app_opt_in": False,
         "marketing_consent_at": now.isoformat() if payload.marketing_email_opt_in else None,
         "marketing_consent_source": "signup_form" if payload.marketing_email_opt_in else None,
         "marketing_unsubscribed_at": None,
