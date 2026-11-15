@@ -579,22 +579,25 @@ def _sync_enrolment_completion(user_id: str, course_id: str, include_archived: b
         ).data or []
         if saved:
             summary["enrolment"] = saved[0]
-            course_rows = (
-                supabase.table("learnora_courses")
-                .select("title")
-                .eq("id", str(course_id))
-                .limit(1)
-                .execute()
-            ).data or []
-            course_title = str(course_rows[0].get("title") or "your course") if course_rows else "your course"
-            _notify_learning_event(
-                user_id=user_id,
-                event_key=f"course-completed:{course_id}",
-                notification_type="course_completed",
-                title="Course completed",
-                body=f"Congratulations! You have completed {course_title}.",
-                action_url="/dashboard/courses",
-            )
+            try:
+                course_rows = (
+                    supabase.table("learnora_courses")
+                    .select("title")
+                    .eq("id", str(course_id))
+                    .limit(1)
+                    .execute()
+                ).data or []
+                course_title = str(course_rows[0].get("title") or "your course") if course_rows else "your course"
+                _notify_learning_event(
+                    user_id=user_id,
+                    event_key=f"course-completed:{course_id}",
+                    notification_type="course_completed",
+                    title="Course completed",
+                    body=f"Congratulations! You have completed {course_title}.",
+                    action_url="/dashboard/courses",
+                )
+            except Exception as exc:
+                print(f"Course completion notification lookup failed ({type(exc).__name__})")
         else:
             latest = (
                 supabase.table("learnora_enrolments")
@@ -1512,6 +1515,16 @@ def my_progress(
                     saved_enrolment = {**enrolment, **latest[0]}
 
         completed = bool(saved_enrolment.get("status") == "completed" or calculated_complete)
+        if calculated_complete and enrolment.get("status") == "active" and completed:
+            course_title = str((course_map.get(course_id) or {}).get("title") or "your course")
+            _notify_learning_event(
+                user_id=str(user.id),
+                event_key=f"course-completed:{course_id}",
+                notification_type="course_completed",
+                title="Course completed",
+                body=f"Congratulations! You have completed {course_title}.",
+                action_url="/dashboard/courses",
+            )
         summaries.append({
             "enrolment": saved_enrolment,
             "course": course,
