@@ -1710,8 +1710,9 @@ def update_lesson_progress(
             "Unable to save lesson progress.",
         )
 
-    if completed and not was_completed:
-        _record_learning_day(user, "lesson_completed")
+    if completed:
+        if not was_completed:
+            _record_learning_day(user, "lesson_completed")
         _notify_learning_event(
             user_id=str(user.id),
             event_key=f"lesson-completed:{lesson_id}",
