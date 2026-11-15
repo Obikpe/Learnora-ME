@@ -5,7 +5,7 @@ turn a successful course publish/update into a failed course operation.
 """
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from routers.auth import supabase
@@ -610,6 +610,7 @@ def _process_weekly_in_app_summaries(now: datetime) -> int:
         .eq("account_type", "individual")
         .gte("activity_date", (now.date() - timedelta(days=8)).isoformat())
         .lte("activity_date", now.date().isoformat())
+        .order("activity_date", desc=True)
         .limit(20000)
         .execute()
     ).data or []
@@ -622,7 +623,7 @@ def _process_weekly_in_app_summaries(now: datetime) -> int:
     delivered = 0
     for user_id, rows in by_user.items():
         timezone_name = next(
-            (str(row.get("timezone")) for row in reversed(rows) if row.get("timezone")),
+            (str(row.get("timezone")) for row in rows if row.get("timezone")),
             "Africa/Lagos",
         )
         try:
