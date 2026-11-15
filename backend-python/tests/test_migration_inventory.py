@@ -91,8 +91,8 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("DROP INDEX IF EXISTS public.skill_evidence_project_submission_skill_unique_idx", rollback_sql)
 
     def test_learning_sessions_and_streak_migration_is_server_only_and_reversible(self):
-        migration = ACTIVE_DIR / "20261103120000_learner_learning_sessions_and_streaks.sql"
-        rollback = ROOT / "supabase" / "rollback" / "20261103120000_learner_learning_sessions_and_streaks.rollback.sql"
+        migration = ACTIVE_DIR / "20261103155243_learner_learning_sessions_and_streaks.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261103155243_learner_learning_sessions_and_streaks.rollback.sql"
         self.assertTrue(migration.is_file())
         self.assertTrue(rollback.is_file())
         sql = migration.read_text(encoding="utf-8")
