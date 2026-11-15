@@ -116,16 +116,47 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn("Account deletion activity", frontend)
         self.assertIn("deletion_reason", frontend)
 
-    def test_mobile_drawer_and_notification_preview_render_outside_header(self):
+    def test_mobile_notification_preview_is_compact_and_menus_dismiss_exclusively(self):
         sidebar = (ROOT / "frontend-v02/components/dashboard/Sidebar.tsx").read_text(encoding="utf-8")
         topbar = (ROOT / "frontend-v02/components/dashboard/Topbar.tsx").read_text(encoding="utf-8")
         self.assertIn("createPortal", sidebar)
         self.assertIn("document.body", sidebar)
-        self.assertIn("createPortal", topbar)
-        self.assertIn("top-[4.5rem]", topbar)
-        self.assertIn("w-[min(22rem,100vw)]", topbar)
-        self.assertIn("onClick={() => setPreviewOpen(value => !value)}", topbar)
+        self.assertNotIn("createPortal", topbar)
+        self.assertIn("absolute right-0 top-full", topbar)
+        self.assertIn("w-[min(22rem,calc(100vw-1.5rem))]", topbar)
+        self.assertIn('window.matchMedia("(max-width: 1023px)")', topbar)
+        self.assertIn("closeOnOutsideInteraction", topbar)
+        self.assertIn("notificationMenuRef", topbar)
+        self.assertIn("accountMenuRef", topbar)
+        self.assertIn("setPreviewOpen(false)", topbar)
+        self.assertIn("setAccountOpen(false)", topbar)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+    def test_marketing_unsubscribe_only_disables_email_marketing(self):
+        source = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
+        preferences = source.split('@router.patch("/marketing-preferences")', 1)[1].split('@router.post("/marketing-unsubscribe")', 1)[0]
+        unsubscribe = source.split('@router.post("/marketing-unsubscribe")', 1)[1]
+        self.assertIn('"marketing_email_opt_in": payload.enabled', preferences)
+        self.assertNotIn('"marketing_in_app_opt_in"', preferences)
+        self.assertIn('"marketing_email_opt_in": False', unsubscribe)
+        self.assertNotIn('"marketing_in_app_opt_in"', unsubscribe)
+
+    def test_notification_automation_has_a_protected_hourly_worker_and_durable_delivery_log(self):
+        migration = (ROOT / "supabase/migrations/20261116120000_notification_email_automation.sql").read_text(encoding="utf-8")
+        router = (ROOT / "backend-python/routers/notifications.py").read_text(encoding="utf-8")
+        service = (ROOT / "backend-python/services/notification_service.py").read_text(encoding="utf-8")
+        vercel = (ROOT / "backend-python/vercel.json").read_text(encoding="utf-8")
+        self.assertIn("learner_notification_deliveries", migration)
+        self.assertIn("claim_learner_notification_delivery", migration)
+        self.assertIn("finish_learner_notification_delivery", migration)
+        self.assertIn('@router.get("/process-automation")', router)
+        self.assertIn("CRON_SECRET", router)
+        self.assertIn("send_post_setup_welcome", service)
+        self.assertIn("_process_deadline_reminders", service)
+        self.assertIn("_process_inactivity_reminders", service)
+        self.assertIn("/api/notifications/process-automation", vercel)
+        self.assertIn('"schedule": "0 * * * *"', vercel)
