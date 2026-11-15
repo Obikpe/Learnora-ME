@@ -5,7 +5,7 @@ turn a successful course publish/update into a failed course operation.
 """
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from routers.auth import supabase
@@ -308,7 +308,7 @@ def _process_deadline_reminders(now: datetime) -> int:
     from html import escape
     from routers import auth
 
-    window_end = now + __import__("datetime").timedelta(hours=24)
+    window_end = now + timedelta(hours=24)
     assignments = (
         supabase.table("assignments")
         .select("id,course_id,title,due_date")
@@ -518,7 +518,23 @@ def _process_inactivity_reminders(now: datetime) -> int:
 def process_automated_learner_notifications() -> dict[str, int]:
     """Hourly worker for due-date and inactivity notifications."""
     now = datetime.now(timezone.utc)
-    results = {"deadlines": 0, "inactivity": 0}
+    results = {"welcome": 0, "deadlines": 0, "inactivity": 0}
+    try:
+        profiles = (
+            supabase.table("learner_onboarding_profiles")
+            .select("user_id")
+            .eq("onboarding_completed", True)
+            .limit(5000)
+            .execute()
+        ).data or []
+        for profile in profiles:
+            user_id = str(profile.get("user_id") or "")
+            if user_id:
+                outcome = send_post_setup_welcome(user_id)
+                if outcome.get("email") or outcome.get("in_app"):
+                    results["welcome"] += 1
+    except Exception:
+        logger.exception("Post-setup welcome retry batch failed")
     try:
         results["deadlines"] = _process_deadline_reminders(now)
     except Exception:
