@@ -601,10 +601,76 @@ def _process_security_alert_retries(now: datetime) -> int:
             delivered += 1
     return delivered
 
+def _process_weekly_in_app_summaries(now: datetime) -> int:
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    activity_rows = (
+        supabase.table("learner_learning_days")
+        .select("learner_id,activity_date,activity_count,timezone")
+        .eq("account_type", "individual")
+        .gte("activity_date", (now.date() - timedelta(days=8)).isoformat())
+        .lte("activity_date", now.date().isoformat())
+        .limit(20000)
+        .execute()
+    ).data or []
+    by_user: dict[str, list[dict]] = {}
+    for row in activity_rows:
+        user_id = str(row.get("learner_id") or "")
+        if user_id:
+            by_user.setdefault(user_id, []).append(row)
+
+    delivered = 0
+    for user_id, rows in by_user.items():
+        timezone_name = next(
+            (str(row.get("timezone")) for row in reversed(rows) if row.get("timezone")),
+            "Africa/Lagos",
+        )
+        try:
+            local_now = now.astimezone(ZoneInfo(timezone_name))
+        except (ZoneInfoNotFoundError, ValueError):
+            local_now = now.astimezone(ZoneInfo("Africa/Lagos"))
+            timezone_name = "Africa/Lagos"
+        # One quiet weekly digest, Monday morning in the learner's timezone.
+        # A three-hour window tolerates a delayed hourly cron without duplicates.
+        if local_now.weekday() != 0 or not (9 <= local_now.hour < 12):
+            continue
+        week_end = local_now.date()
+        week_start = week_end - timedelta(days=7)
+        week_rows = []
+        for row in rows:
+            try:
+                activity_date = date.fromisoformat(str(row.get("activity_date")))
+            except (TypeError, ValueError):
+                continue
+            if week_start <= activity_date < week_end:
+                week_rows.append(row)
+        if not week_rows:
+            continue
+        activity_count = sum(int(row.get("activity_count") or 0) for row in week_rows)
+        if activity_count <= 0:
+            continue
+        active_days = len({str(row.get("activity_date")) for row in week_rows})
+        event_key = f"weekly-summary:{week_start.isoformat()}"
+        if _create_in_app_once(
+            user_id=user_id,
+            event_key=event_key,
+            notification_type="weekly_learning_summary",
+            title="Your weekly learning summary",
+            body=(
+                f"Last week, you completed {activity_count} learning activities "
+                f"across {active_days} active days. Keep building your momentum this week."
+            ),
+            action_url="/dashboard",
+            now=now,
+        ):
+            delivered += 1
+    return delivered
+
+
 def process_automated_learner_notifications() -> dict[str, int]:
     """Hourly worker for welcome retries, security alerts and learning reminders."""
     now = datetime.now(timezone.utc)
-    results = {"welcome": 0, "security": 0, "deadlines": 0, "inactivity": 0}
+    results = {"welcome": 0, "security": 0, "deadlines": 0, "inactivity": 0, "weekly_summaries": 0}
     try:
         welcome_retries = (
             supabase.table("learner_notification_deliveries")
@@ -634,6 +700,10 @@ def process_automated_learner_notifications() -> dict[str, int]:
         results["inactivity"] = _process_inactivity_reminders(now)
     except Exception:
         logger.exception("Inactivity notification batch failed")
+    try:
+        results["weekly_summaries"] = _process_weekly_in_app_summaries(now)
+    except Exception:
+        logger.exception("Weekly in-app learning summary batch failed")
     return results
 
 
