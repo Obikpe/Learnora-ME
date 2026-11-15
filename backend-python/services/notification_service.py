@@ -412,7 +412,6 @@ def _process_deadline_reminders(now: datetime) -> int:
 
 def _process_inactivity_reminders(now: datetime) -> int:
     from html import escape
-    from datetime import timedelta
     from routers import auth
 
     cutoff = now - timedelta(days=7)
@@ -648,7 +647,6 @@ def notify_security_event(
 ) -> dict[str, bool]:
     """Deliver a high-impact learner security event in-app and by email."""
     from html import escape
-    from routers import auth
 
     now = datetime.now(timezone.utc)
     rows = (
