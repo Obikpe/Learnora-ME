@@ -784,6 +784,29 @@ def send_marketing_campaign_email_once(
 
 
 
+def create_learner_notification(
+    *,
+    user_id: str,
+    event_key: str,
+    notification_type: str,
+    title: str,
+    body: str,
+    action_url: str = "/dashboard/notifications",
+    organisation_id: str | None = None,
+) -> bool:
+    """Create one durable in-app notification for a learner event."""
+    return _create_in_app_once(
+        user_id=str(user_id),
+        event_key=event_key,
+        notification_type=notification_type,
+        title=title,
+        body=body,
+        action_url=action_url,
+        organisation_id=organisation_id,
+        now=datetime.now(timezone.utc),
+    )
+
+
 def create_account_event_notification(
     *,
     user_id: str,
@@ -793,12 +816,11 @@ def create_account_event_notification(
     action_url: str = "/dashboard/settings",
 ) -> bool:
     """Create an idempotent in-app account lifecycle notification."""
-    return _create_in_app_once(
-        user_id=str(user_id),
+    return create_learner_notification(
+        user_id=user_id,
         event_key=event_key,
         notification_type="account_update",
         title=title,
         body=body,
         action_url=action_url,
-        now=datetime.now(timezone.utc),
     )
