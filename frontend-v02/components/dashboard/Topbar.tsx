@@ -34,6 +34,8 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
   const browserSeenIds = useRef<Set<string> | null>(null);
   const inFlight = useRef(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notificationMenuRef = useRef<HTMLDivElement | null>(null);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -54,6 +56,10 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
   }, []);
 
   const toggleTheme = () => {
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      setPreviewOpen(false);
+      setAccountOpen(false);
+    }
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
     document.documentElement.dataset.theme = next;
@@ -166,22 +172,53 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
     };
   }, [refresh]);
 
+
+  // Compact menus on phones and tablets behave like mutually exclusive popovers.
+  // Desktop interaction is intentionally unchanged.
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)");
+    const closeOnOutsideInteraction = (event: PointerEvent) => {
+      if (!media.matches) return;
+      const target = event.target as Node | null;
+      if (
+        target &&
+        !notificationMenuRef.current?.contains(target) &&
+        !accountMenuRef.current?.contains(target)
+      ) {
+        setPreviewOpen(false);
+        setAccountOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (media.matches && event.key === "Escape") {
+        setPreviewOpen(false);
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsideInteraction);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideInteraction);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
   const actionClass = "grid size-10 place-items-center rounded-full border border-[var(--border)] bg-[var(--card)] text-[var(--text-body)] transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-tint)] hover:text-[var(--primary)]";
 
   return <>
     <div className="flex shrink-0 items-center gap-2">
-      {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" aria-label="Customer support" title="Customer support" className={actionClass}><Headset size={17}/></a>}
+      {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" onClick={() => { if (window.matchMedia("(max-width: 1023px)").matches) { setPreviewOpen(false); setAccountOpen(false); } }} aria-label="Customer support" title="Customer support" className={actionClass}><Headset size={17}/></a>}
       <button type="button" onClick={toggleTheme}
         aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
         title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className={actionClass}>
         {theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}
       </button>
-      {!admin && <div className="relative">
-        <button type="button" onClick={() => setPreviewOpen(value => !value)} aria-expanded={previewOpen} aria-label={unread ? `Notifications preview, ${unread} unread` : "Notifications preview"} className={`relative ${actionClass}`}>
+      {!admin && <div className="relative" ref={notificationMenuRef}>
+        <button type="button" onClick={() => { if (window.matchMedia("(max-width: 1023px)").matches) setAccountOpen(false); setPreviewOpen(value => !value); }} aria-expanded={previewOpen} aria-label={unread ? `Notifications preview, ${unread} unread` : "Notifications preview"} className={`relative ${actionClass}`}>
           <Bell size={17}/>
           {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
         </button>
-        {previewOpen && <aside role="dialog" aria-label="Notification preview" className="absolute right-0 top-full z-[80] mt-2 flex max-h-[min(28rem,calc(100vh-6rem))] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
+        {previewOpen && <aside role="dialog" aria-label="Notification preview" className="absolute right-0 top-full z-[80] mt-2 flex max-h-[min(28rem,calc(100vh-6rem))] w-[min(22rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
             <div className="min-w-0">
               <span className="block text-xs font-semibold text-[var(--text-heading)]">Notifications</span>
@@ -198,8 +235,8 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
           <button type="button" onClick={() => { setPreviewOpen(false); router.push("/dashboard/notifications"); }} className="shrink-0 border-t border-[var(--border)] px-4 py-3 text-left text-[11px] font-semibold text-[var(--primary)] hover:bg-[var(--bg-soft)]">View all notifications</button>
         </aside>}
       </div>}
-      <div className="relative">
-        <button type="button" onClick={() => setAccountOpen(value => !value)} aria-expanded={accountOpen} aria-label="Account and profile menu" title="Account and profile" className={actionClass}><CircleUserRound size={18}/></button>
+      <div className="relative" ref={accountMenuRef}>
+        <button type="button" onClick={() => { if (window.matchMedia("(max-width: 1023px)").matches) setPreviewOpen(false); setAccountOpen(value => !value); }} aria-expanded={accountOpen} aria-label="Account and profile menu" title="Account and profile" className={actionClass}><CircleUserRound size={18}/></button>
         {accountOpen && <div className="absolute right-0 top-full z-[75] mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl">
           <Link href={admin ? "/dashboard/admin/settings" : "/dashboard/settings"} onClick={() => setAccountOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm text-[var(--text-body)] hover:bg-[var(--bg-soft)]">{admin ? "Admin settings" : "Account settings"}</Link>
           <button type="button" onClick={() => { setAccountOpen(false); clearToken(); window.location.replace("/"); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-body)] hover:bg-[var(--bg-soft)]"><LogOut size={15}/>Sign out</button>
