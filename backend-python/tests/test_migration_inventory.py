@@ -120,6 +120,24 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("account_status = 'deleted'", sql)
         self.assertNotIn("DELETE FROM PUBLIC.USERS", sql.upper())
 
+
+    def test_notification_automation_migration_is_server_only_and_reversible(self):
+        migration = ACTIVE_DIR / "20261116120000_notification_email_automation.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261116120000_notification_email_automation.rollback.sql"
+        self.assertTrue(migration.is_file())
+        self.assertTrue(rollback.is_file())
+        sql = migration.read_text(encoding="utf-8")
+        self.assertIn("learner_notification_deliveries", sql)
+        self.assertIn("ENABLE ROW LEVEL SECURITY", sql)
+        self.assertIn("REVOKE ALL ON public.learner_notification_deliveries FROM PUBLIC, anon, authenticated", sql)
+        self.assertIn("GRANT ALL ON public.learner_notification_deliveries TO service_role", sql)
+        self.assertIn("claim_learner_notification_delivery", sql)
+        self.assertIn("finish_learner_notification_delivery", sql)
+        rollback_sql = rollback.read_text(encoding="utf-8")
+        self.assertIn("DROP TABLE IF EXISTS public.learner_notification_deliveries", rollback_sql)
+        self.assertIn("DROP COLUMN IF EXISTS last_inactivity_email_at", rollback_sql)
+        self.assertIn("DROP COLUMN IF EXISTS onboarding_completed_at", rollback_sql)
+
     def test_quota_fix_preserves_unlimited_monthly_limit_contract(self):
         sql = (ACTIVE_DIR / "20261020232148_allow_unlimited_monthly_ai_quota.sql").read_text(
             encoding="utf-8"
