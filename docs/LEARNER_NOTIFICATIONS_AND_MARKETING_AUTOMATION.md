@@ -157,7 +157,7 @@ Learnora should use event-driven notification routing rather than broadcasting e
 
 ### 4.1 Event and audience model
 
-Every learner-facing notification is created in the in-app notification centre. Email is a separate, selective delivery decision governed by sections 3.3–3.5. No event should be email-only.
+Every automated learner notification is created in the in-app notification centre. Email is a separate, selective delivery decision governed by sections 3.3–3.5. Manually composed messages are the exception: the future messaging platform lets the sender choose in-app, email or both.
 
 | Event | Audience rule | In-app behaviour | Email behaviour |
 |---|---|---|---|
