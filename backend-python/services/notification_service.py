@@ -544,3 +544,58 @@ def process_automated_learner_notifications() -> dict[str, int]:
     except Exception:
         logger.exception("Inactivity notification batch failed")
     return results
+
+
+
+def notify_security_event(
+    *,
+    user_id: str,
+    event_key: str,
+    title: str,
+    body: str,
+) -> dict[str, bool]:
+    """Deliver a high-impact learner security event in-app and by email."""
+    from html import escape
+    from routers import auth
+
+    now = datetime.now(timezone.utc)
+    rows = (
+        supabase.table("users")
+        .select("id,name,email,email_verified,account_status")
+        .eq("id", str(user_id))
+        .eq("account_status", "active")
+        .limit(1)
+        .execute()
+    ).data or []
+    if not rows:
+        return {"in_app": False, "email": False}
+    user = rows[0]
+    in_app = _create_in_app_once(
+        user_id=str(user_id),
+        event_key=event_key,
+        notification_type="security_alert",
+        title=title,
+        body=body,
+        action_url="/dashboard/settings",
+        now=now,
+    )
+    if not user.get("email_verified") or not user.get("email"):
+        return {"in_app": in_app, "email": False}
+    name = str(user.get("name") or "there")
+    safe_name = escape(name)
+    text_body = f"Hi {name},\n\n{body}\n\nIf you did not make this change, contact Learnora support immediately.\n\nLearnora ME"
+    html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
+<div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
+<h1>{escape(title)}</h1><p>Hi {safe_name},</p><p>{escape(body)}</p>
+<p>If you did not make this change, contact <a href="mailto:learnorame@gmail.com">Learnora support</a> immediately.</p>
+</div></body></html>"""
+    email_sent = _send_automated_email_once(
+        user_id=str(user_id),
+        email=str(user["email"]),
+        event_key=event_key,
+        subject=title,
+        text_body=text_body,
+        html_body=html_body,
+        now=now,
+    )
+    return {"in_app": in_app, "email": email_sent}
