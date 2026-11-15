@@ -54,6 +54,21 @@ from .permissions import (
 )
 
 
+def _notify_course_enrolment(user_id: str, course_id: str, course_title: str, event_key: str) -> None:
+    try:
+        from services.notification_service import create_learner_notification
+        create_learner_notification(
+            user_id=str(user_id),
+            event_key=event_key,
+            notification_type="course_enrolled",
+            title="You have a new course",
+            body=f"You are now enrolled in {course_title}.",
+            action_url="/dashboard/courses",
+        )
+    except Exception as exc:
+        print(f"Course enrolment notification failed ({type(exc).__name__})")
+
+
 router = APIRouter(
     prefix="/api/courses",
     tags=["Courses"],
@@ -738,6 +753,12 @@ def self_enrol_in_free_course(
         )
         if not reactivated.data:
             raise HTTPException(409, "The course enrolment changed while you were rejoining. Refresh and try again.")
+        _notify_course_enrolment(
+            str(user.id),
+            course_id,
+            str(course.get("title") or "your course"),
+            f"course-enrolment:{course_id}:{now}",
+        )
         return {
             "success": True,
             "already_enrolled": False,
@@ -761,6 +782,12 @@ def self_enrol_in_free_course(
     )
     if not inserted.data:
         raise HTTPException(500, "Unable to create course enrolment.")
+    _notify_course_enrolment(
+        str(user.id),
+        course_id,
+        str(course.get("title") or "your course"),
+        f"course-enrolment:{course_id}:{now}",
+    )
     return {"success": True, "already_enrolled": False, "enrolment": inserted.data[0]}
 
 
@@ -904,6 +931,14 @@ def self_enrol_in_track(
         if not inserted.data:
             raise HTTPException(500, "Unable to create the track course enrolments.")
         inserted_rows = inserted.data
+
+    if inserted_rows or reactivated_rows:
+        _notify_course_enrolment(
+            str(user.id),
+            track_id,
+            str(track_result.data[0].get("name") or "your learning track"),
+            f"track-enrolment:{track_id}:{now}",
+        )
 
     return {
         "success": True,
