@@ -225,6 +225,18 @@ def issue_course_certificate(
 
     if not row:
         raise HTTPException(500, "The certificate could not be issued. Please retry.")
+    try:
+        from services.notification_service import create_learner_notification
+        create_learner_notification(
+            user_id=str(user.id),
+            event_key=f"certificate-issued:{row['id']}",
+            notification_type="certificate_issued",
+            title="Your certificate is ready",
+            body=f"Your certificate for {str(course.get('title') or 'the course')} is now available.",
+            action_url="/dashboard/certificates",
+        )
+    except Exception as exc:
+        print(f"Certificate notification failed ({type(exc).__name__})")
     return {
         "success": True,
         "already_issued": False,
