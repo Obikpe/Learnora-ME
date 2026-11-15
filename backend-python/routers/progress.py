@@ -579,6 +579,22 @@ def _sync_enrolment_completion(user_id: str, course_id: str, include_archived: b
         ).data or []
         if saved:
             summary["enrolment"] = saved[0]
+            course_rows = (
+                supabase.table("learnora_courses")
+                .select("title")
+                .eq("id", str(course_id))
+                .limit(1)
+                .execute()
+            ).data or []
+            course_title = str(course_rows[0].get("title") or "your course") if course_rows else "your course"
+            _notify_learning_event(
+                user_id=user_id,
+                event_key=f"course-completed:{course_id}",
+                notification_type="course_completed",
+                title="Course completed",
+                body=f"Congratulations! You have completed {course_title}.",
+                action_url="/dashboard/courses",
+            )
         else:
             latest = (
                 supabase.table("learnora_enrolments")
@@ -743,6 +759,29 @@ def _record_learning_day(user: CurrentUser, activity_type: str) -> None:
     except Exception as exc:
         # Tracking failure must never prevent a learner from completing learning.
         print(f"Learning-day record failed: {type(exc).__name__}")
+
+
+def _notify_learning_event(
+    *,
+    user_id: str,
+    event_key: str,
+    notification_type: str,
+    title: str,
+    body: str,
+    action_url: str = "/dashboard/notifications",
+) -> None:
+    try:
+        from services.notification_service import create_learner_notification
+        create_learner_notification(
+            user_id=str(user_id),
+            event_key=event_key,
+            notification_type=notification_type,
+            title=title,
+            body=body,
+            action_url=action_url,
+        )
+    except Exception as exc:
+        print(f"Learning notification failed ({type(exc).__name__})")
 
 
 def _rpc_integer(result, default: int = 0) -> int:
@@ -1113,6 +1152,14 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
         raise HTTPException(500, "Unable to save quiz attempt.")
     if passed:
         _record_learning_day(user, "quiz_passed")
+        _notify_learning_event(
+            user_id=str(user.id),
+            event_key=f"quiz-passed:{quiz_id}",
+            notification_type="quiz_completed",
+            title="Quiz passed",
+            body=f"Well done! You passed {str(quiz.get('title') or 'the quiz')}.",
+            action_url="/dashboard/courses",
+        )
     course_progress = _sync_enrolment_completion(str(user.id), str(quiz["course_id"]), include_lesson_content=False)
     return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score, "course_progress": course_progress}
 
@@ -1198,6 +1245,14 @@ def submit_assignment(assignment_id: str, body: AssignmentSubmissionIn, user: Cu
     if not inserted.data:
         raise HTTPException(500, "Unable to save assignment submission.")
     _record_learning_day(user, "assignment_submitted")
+    _notify_learning_event(
+        user_id=str(user.id),
+        event_key=f"assignment-submitted:{inserted.data[0]['id']}",
+        notification_type="assignment_submitted",
+        title="Assignment submitted",
+        body="Your assignment submission has been received.",
+        action_url="/dashboard/courses",
+    )
     return {"success": True, "submission": inserted.data[0]}
 
 
@@ -1644,6 +1699,14 @@ def update_lesson_progress(
 
     if completed and not was_completed:
         _record_learning_day(user, "lesson_completed")
+        _notify_learning_event(
+            user_id=str(user.id),
+            event_key=f"lesson-completed:{lesson_id}",
+            notification_type="lesson_completed",
+            title="Lesson completed",
+            body=f"You completed {str(_lesson.get('title') or 'a lesson')}.",
+            action_url="/dashboard/courses",
+        )
     summary = _sync_enrolment_completion(str(user.id), course_id, include_lesson_content=False) if completed else None
 
     return {
