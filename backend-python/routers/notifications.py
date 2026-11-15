@@ -1,8 +1,10 @@
-"""Authenticated learner notification inbox."""
+"""Authenticated learner notification inbox and protected automation worker."""
+import hmac
+import os
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from .auth import CurrentUser, get_current_user, supabase
 
 router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
@@ -84,3 +86,27 @@ def mark_all_notifications_read(user: CurrentUser = Depends(get_current_user)):
         .execute()
     )
     return {"success": True, "updated": len(result.data or [])}
+
+
+
+@router.get("/process-automation")
+def process_learner_notification_automation(
+    authorization: str | None = Header(default=None),
+):
+    """Hourly Vercel cron for welcome retries and approved learner reminders."""
+    enabled = os.getenv("LEARNER_NOTIFICATION_AUTOMATION_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
+    if not enabled:
+        return {"success": True, "enabled": False, "processed": {}}
+    expected = os.getenv("CRON_SECRET", "").strip()
+    if not expected:
+        raise HTTPException(status_code=503, detail="Notification automation is not configured.")
+    if not hmac.compare_digest(authorization or "", f"Bearer {expected}"):
+        raise HTTPException(status_code=401, detail="Unauthorised.")
+    try:
+        from services.notification_service import process_automated_learner_notifications
+        processed = process_automated_learner_notifications()
+        return {"success": True, "enabled": True, "processed": processed}
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).exception("Learner notification automation failed")
+        raise HTTPException(status_code=503, detail="Notification automation is temporarily unavailable.") from None
