@@ -528,6 +528,7 @@ def _process_inactivity_reminders(now: datetime) -> int:
 
 
 def _process_security_alert_retries(now: datetime) -> int:
+    from html import escape
     from routers import auth
 
     notifications = (
