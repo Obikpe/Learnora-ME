@@ -175,6 +175,18 @@ def issue_course_certificate(
     if existing:
         if existing[0].get("revoked_at"):
             raise HTTPException(409, "This certificate has been revoked and cannot be reissued. Contact Learnora support.")
+        try:
+            from services.notification_service import create_learner_notification
+            create_learner_notification(
+                user_id=str(user.id),
+                event_key=f"certificate-issued:{existing[0]['id']}",
+                notification_type="certificate_issued",
+                title="Your certificate is ready",
+                body=f"Your certificate for {str(course.get('title') or 'the course')} is available.",
+                action_url="/dashboard/certificates",
+            )
+        except Exception as exc:
+            print(f"Certificate notification retry failed ({type(exc).__name__})")
         return {
             "success": True,
             "already_issued": True,
