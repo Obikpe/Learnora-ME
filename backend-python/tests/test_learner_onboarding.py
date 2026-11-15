@@ -39,6 +39,15 @@ class LearnerOnboardingBoundaryTests(unittest.TestCase):
         self.assertIn("_public_course_payload(row)", recommendations)
         self.assertIn('select("id,organisation_id,creator_id,title,slug', recommendations)
 
+
+    def test_completed_setup_records_first_completion_and_starts_welcome_delivery(self):
+        source = (Path(__file__).resolve().parents[1] / "routers" / "learner_onboarding.py").read_text(encoding="utf-8")
+        save = source.split('def save_onboarding(', 1)[1].split('@router.get("/recommendations")', 1)[0]
+        self.assertIn('"onboarding_completed_at": completed_at', save)
+        self.assertIn('from services.notification_service import send_post_setup_welcome', save)
+        self.assertIn('send_post_setup_welcome(str(user.id))', save)
+        self.assertIn('onboarding_completed_at', source)
+
     def test_staff_cannot_use_individual_onboarding(self):
         with self.assertRaises(HTTPException) as raised:
             learner_onboarding._assert_individual(SimpleNamespace(
