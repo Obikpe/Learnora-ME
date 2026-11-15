@@ -43,7 +43,9 @@ class LearnerOnboardingBoundaryTests(unittest.TestCase):
     def test_completed_setup_records_first_completion_and_starts_welcome_delivery(self):
         source = (Path(__file__).resolve().parents[1] / "routers" / "learner_onboarding.py").read_text(encoding="utf-8")
         save = source.split('def save_onboarding(', 1)[1].split('@router.get("/recommendations")', 1)[0]
+        self.assertIn('first_completion = not bool((existing_profile or {}).get("onboarding_completed"))', save)
         self.assertIn('"onboarding_completed_at": completed_at', save)
+        self.assertIn("if first_completion:", save)
         self.assertIn('from services.notification_service import send_post_setup_welcome', save)
         self.assertIn('send_post_setup_welcome(str(user.id))', save)
         self.assertIn('onboarding_completed_at', source)
