@@ -733,8 +733,15 @@ def update_my_cohort_lesson_progress(
         raise HTTPException(409, "Progress could not be saved. Please retry.")
     if not result.data:
         raise HTTPException(500, "Progress could not be saved.")
-    if completed and not was_completed:
-        _record_learning_day(user, "lesson_completed")
+    if completed:
+        if not was_completed:
+            _record_learning_day(user, "lesson_completed")
+        _notify_cohort_member(
+            str(member.get("user_id")) if member.get("user_id") else None,
+            f"cohort-lesson-completed:{assignment['id']}:{lesson_id}",
+            "Lesson completed",
+            "You completed an assigned lesson.",
+        )
     return {"success": True, "progress": result.data[0]}
 
 
