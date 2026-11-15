@@ -703,3 +703,24 @@ def send_marketing_campaign_email_once(
         logger.exception("Marketing campaign email delivery failed for campaign %s", campaign)
         _finish_delivery(str(user_id), event_key, "email", False, now, type(exc).__name__)
         return False
+
+
+
+def create_account_event_notification(
+    *,
+    user_id: str,
+    event_key: str,
+    title: str,
+    body: str,
+    action_url: str = "/dashboard/settings",
+) -> bool:
+    """Create an idempotent in-app account lifecycle notification."""
+    return _create_in_app_once(
+        user_id=str(user_id),
+        event_key=event_key,
+        notification_type="account_update",
+        title=title,
+        body=body,
+        action_url=action_url,
+        now=datetime.now(timezone.utc),
+    )
