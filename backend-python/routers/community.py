@@ -5,6 +5,27 @@ from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException
 from routers.auth import LEGACY_ASSIGNED_LEARNER_ROLE, require_active, CurrentUser, get_current_user, supabase
 
+def _notify_discussion_user(
+    *,
+    recipient_id: str,
+    event_key: str,
+    title: str,
+    body: str,
+) -> None:
+    try:
+        from services.notification_service import create_learner_notification
+        create_learner_notification(
+            user_id=str(recipient_id),
+            event_key=event_key,
+            notification_type="discussion_activity",
+            title=title,
+            body=body,
+            action_url="/dashboard/notifications",
+        )
+    except Exception as exc:
+        print(f"Discussion notification failed ({type(exc).__name__})")
+
+
 router = APIRouter()
 
 class Question(BaseModel):
@@ -184,6 +205,13 @@ def create_discussion_reply(discussion_id: str, body: ReplyCreate, user: Current
     }).execute()
     if not result.data:
         raise HTTPException(500, "Reply could not be saved.")
+    if str(discussion.get("user_id")) != str(user.id):
+        _notify_discussion_user(
+            recipient_id=str(discussion["user_id"]),
+            event_key=f"discussion-reply:{result.data[0]['id']}",
+            title="New reply to your discussion",
+            body=f"Someone replied to \"{str(discussion.get('title') or 'your discussion')}.\"",
+        )
     return {"success": True, "reply": {**result.data[0], "author_name": user.name or "You"}}
 
 
@@ -212,6 +240,20 @@ def mark_discussion_answer(discussion_id: str, reply_id: str, user: CurrentUser 
         raise HTTPException(404, "Reply not found.")
     supabase.table("learnora_discussion_replies").update({"is_answer": False}).eq("discussion_id", discussion_id).execute()
     result = supabase.table("learnora_discussion_replies").update({"is_answer": True}).eq("id", reply_id).execute()
+    reply_author = (
+        supabase.table("learnora_discussion_replies")
+        .select("user_id")
+        .eq("id", reply_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    if reply_author and str(reply_author[0].get("user_id")) != str(user.id):
+        _notify_discussion_user(
+            recipient_id=str(reply_author[0]["user_id"]),
+            event_key=f"discussion-answer:{reply_id}",
+            title="Your reply was marked as the answer",
+            body=f"Your reply in \"{str(discussion.get('title') or 'the discussion')}\" was marked as the answer.",
+        )
     return {"success": True, "reply": (result.data or reply)[0]}
 
 
