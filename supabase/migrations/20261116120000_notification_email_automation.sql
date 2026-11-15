@@ -54,23 +54,23 @@ BEGIN
     RAISE EXCEPTION 'Invalid notification delivery key or channel';
   END IF;
 
-  INSERT INTO public.learner_notification_deliveries (
+  INSERT INTO public.learner_notification_deliveries AS existing (
     user_id, event_key, channel, status, attempts, next_attempt_at, created_at, updated_at
   ) VALUES (
     p_user_id, p_event_key, p_channel, 'sending', 1, p_now, p_now, p_now
   )
   ON CONFLICT (user_id, event_key, channel) DO UPDATE
     SET status = 'sending',
-        attempts = public.learner_notification_deliveries.attempts + 1,
+        attempts = existing.attempts + 1,
         next_attempt_at = p_now,
         updated_at = p_now,
         last_error = NULL
     WHERE (
-      public.learner_notification_deliveries.status IN ('pending', 'failed')
-      AND public.learner_notification_deliveries.next_attempt_at <= p_now
+      existing.status IN ('pending', 'failed')
+      AND existing.next_attempt_at <= p_now
     ) OR (
-      public.learner_notification_deliveries.status = 'sending'
-      AND public.learner_notification_deliveries.updated_at < p_now - interval '15 minutes'
+      existing.status = 'sending'
+      AND existing.updated_at < p_now - interval '15 minutes'
     )
   RETURNING id INTO v_id;
 
