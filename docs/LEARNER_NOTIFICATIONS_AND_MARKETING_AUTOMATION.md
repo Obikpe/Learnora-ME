@@ -153,8 +153,6 @@ Do not send email for every lesson completion, quiz completion, comment, reply, 
 
 ## 4. Automated notification engine — future implementation
 
-## 4. Automated notification engine — future implementation
-
 Learnora should use event-driven notification routing rather than broadcasting every announcement to every learner.
 
 ### 4.1 Event and audience model
@@ -275,7 +273,7 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 
 ### Implemented in the current source changes
 - Mobile/tablet navigation drawer is rendered through a body portal so the sticky header/backdrop filter cannot clip it.
-- Notification preview is a constrained right-side drawer, with smaller text and the header left accessible so clicking the bell again closes it.
+- Notification preview is a compact dropdown anchored directly beneath the bell; selecting an item opens the full two-column notifications page.
 - Registration currently stores email and in-app marketing opt-in fields from one optional checkbox; this needs to be aligned with the agreed email-only marketing preference.
 - Marketing consent fields are written on registration.
 - Account Settings has a marketing preference control and deletion-reason capture; its current combined channel behaviour needs correction before marketing automation is released.
@@ -284,15 +282,15 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 - A daily finalisation cron and protected endpoint are defined.
 
 ### Not yet released / must be completed before production use
-- Apply both `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql` to the active Pheonix Supabase project before deploying the backend code. Neither migration has been applied to production.
-- Set a strong production `CRON_SECRET` in Vercel before deploying the backend. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until both migrations are applied and the complete erasure tests pass; then explicitly enable it and verify the daily cron.
+- Both `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql` have been applied to the active Pheonix Supabase project and are recorded in migration history.
+- Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until the full production erasure test suite and cleanup verification pass. The migrations being applied is necessary but not sufficient to enable automatic finalisation. Confirm `CRON_SECRET`, cron execution and failure alerting before enabling the finaliser.
 - Run backend tests, frontend typecheck/build and browser acceptance on phone/tablet/desktop.
 - Verify email delivery for deletion confirmation and reactivation links, and test all 30-day boundary cases.
 - Implement and test the event/outbox notification engine, post-setup welcome notification/email, deadline and inactivity reminder scheduler, interest-signal capture, campaign worker and approved email templates. The unsubscribe endpoint and page are in place, and the backend exposes a helper that creates a per-email opaque unsubscribe URL. No campaign sender currently consumes that helper.
 - Correct the current unsubscribe implementation before campaign launch: it currently sets both `marketing_email_opt_in` and `marketing_in_app_opt_in` to false. The agreed product policy is email-only unsubscribe; it must leave all in-app notifications enabled and available. Review the Account Settings control and signup consent wording so they govern marketing email only.
 - Review existing course-publish/update fan-out against the approved audience rules. The current service sends in-app notifications to active/completed course enrolments and learners whose completed onboarding profile matches the course; it has no email sender. Confirm the intended scope and avoid treating a general course launch as an automatic email.
 - Review privacy notice and terms with qualified counsel before enabling marketing campaigns.
-- Do not deploy or apply the migration without the separately authorised release process.
+- Do not deploy backend/frontend changes or enable the deletion finaliser without the separately authorised release process.
 
 
 ## 8. Nigerian privacy references used for this design
