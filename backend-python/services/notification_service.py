@@ -422,6 +422,29 @@ def _process_inactivity_reminders(now: datetime) -> int:
         .limit(5000)
         .execute()
     ).data or []
+    cohort_members = (
+        supabase.table("cohort_members")
+        .select("user_id,joined_at")
+        .eq("status", "active")
+        .not_.is_("user_id", "null")
+        .limit(5000)
+        .execute()
+    ).data or []
+    user_ids = list({
+        str(row["user_id"])
+        for row in [*profiles, *cohort_members]
+        if row.get("user_id")
+    })
+    if not user_ids:
+        return 0
+    profile_map = {str(row["user_id"]): row for row in profiles if row.get("user_id")}
+    joined_map: dict[str, str] = {}
+    for member in cohort_members:
+        member_user_id = str(member.get("user_id") or "")
+        joined_at = str(member.get("joined_at") or "")
+        if member_user_id and joined_at:
+            if joined_at > joined_map.get(member_user_id, ""):
+                joined_map[member_user_id] = joined_at
     user_ids = list({str(row["user_id"]) for row in profiles if row.get("user_id")})
     if not user_ids:
         return 0
@@ -440,7 +463,7 @@ def _process_inactivity_reminders(now: datetime) -> int:
             supabase.table("learner_learning_days")
             .select("learner_id,last_activity_at")
             .in_("learner_id", batch)
-            .eq("account_type", "individual")
+            .in_("account_type", ["individual", "cohort"])
             .order("last_activity_at", desc=True)
             .limit(20000)
             .execute()
@@ -451,14 +474,13 @@ def _process_inactivity_reminders(now: datetime) -> int:
         value = str(row.get("last_activity_at") or "")
         if learner_id and value and learner_id not in latest_activity:
             latest_activity[learner_id] = value
-    profile_map = {str(row["user_id"]): row for row in profiles if row.get("user_id")}
     delivered = 0
     for user in users:
         user_id = str(user.get("id") or "")
         if not user_id:
             continue
         profile = profile_map.get(user_id) or {}
-        last_activity_value = latest_activity.get(user_id) or profile.get("onboarding_completed_at") or user.get("created_at")
+        last_activity_value = latest_activity.get(user_id) or profile.get("onboarding_completed_at") or joined_map.get(user_id) or user.get("created_at")
         if not last_activity_value:
             continue
         try:
