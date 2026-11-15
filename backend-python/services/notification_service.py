@@ -13,6 +13,11 @@ from routers.auth import supabase
 logger = logging.getLogger(__name__)
 
 
+def _chunks(values: list[str], size: int = 100):
+    for start in range(0, len(values), size):
+        yield values[start:start + size]
+
+
 def _normalise(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
 
@@ -336,26 +341,30 @@ def _process_deadline_reminders(now: datetime) -> int:
         user_ids = list({str(row["user_id"]) for row in enrolments if row.get("user_id")})
         if not user_ids:
             continue
-        submitted = (
-            supabase.table("assignment_submissions")
-            .select("user_id")
-            .eq("assignment_id", assignment_id)
-            .in_("user_id", user_ids)
-            .limit(5000)
-            .execute()
-        ).data or []
-        completed_ids = {str(row["user_id"]) for row in submitted if row.get("user_id")}
+        completed_ids: set[str] = set()
+        for batch in _chunks(user_ids):
+            submitted = (
+                supabase.table("assignment_submissions")
+                .select("user_id")
+                .eq("assignment_id", assignment_id)
+                .in_("user_id", batch)
+                .limit(5000)
+                .execute()
+            ).data or []
+            completed_ids.update(str(row["user_id"]) for row in submitted if row.get("user_id"))
         pending_ids = [user_id for user_id in user_ids if user_id not in completed_ids]
         if not pending_ids:
             continue
-        users = (
-            supabase.table("users")
-            .select("id,name,email,email_verified,account_status")
-            .in_("id", pending_ids)
-            .eq("account_status", "active")
-            .limit(5000)
-            .execute()
-        ).data or []
+        users = []
+        for batch in _chunks(pending_ids):
+            users.extend((
+                supabase.table("users")
+                .select("id,name,email,email_verified,account_status")
+                .in_("id", batch)
+                .eq("account_status", "active")
+                .limit(100)
+                .execute()
+            ).data or [])
         title = str(assignment.get("title") or "Your assignment")
         safe_title = escape(title)
         due_text = str(due_value)
@@ -417,23 +426,26 @@ def _process_inactivity_reminders(now: datetime) -> int:
     user_ids = list({str(row["user_id"]) for row in profiles if row.get("user_id")})
     if not user_ids:
         return 0
-    users = (
-        supabase.table("users")
-        .select("id,name,email,email_verified,account_status,created_at,last_inactivity_email_at")
-        .in_("id", user_ids)
-        .eq("account_status", "active")
-        .limit(5000)
-        .execute()
-    ).data or []
-    activity_rows = (
-        supabase.table("learner_learning_days")
-        .select("learner_id,last_activity_at")
-        .in_("learner_id", user_ids)
-        .eq("account_type", "individual")
-        .order("last_activity_at", desc=True)
-        .limit(20000)
-        .execute()
-    ).data or []
+    users = []
+    activity_rows = []
+    for batch in _chunks(user_ids):
+        users.extend((
+            supabase.table("users")
+            .select("id,name,email,email_verified,account_status,created_at,last_inactivity_email_at")
+            .in_("id", batch)
+            .eq("account_status", "active")
+            .limit(100)
+            .execute()
+        ).data or [])
+        activity_rows.extend((
+            supabase.table("learner_learning_days")
+            .select("learner_id,last_activity_at")
+            .in_("learner_id", batch)
+            .eq("account_type", "individual")
+            .order("last_activity_at", desc=True)
+            .limit(20000)
+            .execute()
+        ).data or [])
     latest_activity: dict[str, str] = {}
     for row in activity_rows:
         learner_id = str(row.get("learner_id") or "")
