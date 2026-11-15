@@ -168,6 +168,8 @@ Every learner-facing notification is created in the in-app notification centre. 
 | Enrolled course materially updated | Current learners enrolled in that course | In-app notification | No automatic email by default; an authorised sender may choose email in the future messaging platform |
 | New course/lesson published or materially updated | Relevant enrolled learners and matching eligible learners | In-app notification under the approved targeting rules | No automatic email; promotional campaigns require explicit email consent |
 | Lesson completion, passed quiz, assignment submission, course completion and certificate issuance | The learner | In-app event notification; one per meaningful event (course completion/certificate are deduplicated) | No email |
+| Discussion reply or accepted answer | Discussion author / reply author | In-app notification to the affected learner | No email |
+| Weekly learning summary | Learners with meaningful activity in the previous week | One in-app summary on Monday morning in the learner's timezone | Never email |
 | Important deadline approaching | Learner with incomplete activity | In-app reminder | One email 24 hours before deadline if still incomplete |
 | Learning inactivity | Learner with no meaningful activity for 7 days | In-app reminder | One email at the approved threshold; repeat no more than every 30 days |
 | New offer or discount | Eligible audience | In-app promotional notification | Email only to opted-in learners |
