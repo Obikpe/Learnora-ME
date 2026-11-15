@@ -3850,6 +3850,17 @@ def reset_password(
             ),
         },
     )
+    if account_type == "learner":
+        try:
+            from services.notification_service import notify_security_event
+            notify_security_event(
+                user_id=str(account_id),
+                event_key=f"security:password-reset:{datetime.now(timezone.utc).isoformat()}",
+                title="Your Learnora password was reset",
+                body="The password for your Learnora account was successfully reset.",
+            )
+        except Exception:
+            logging.getLogger(__name__).exception("Password-reset security notification failed")
 
     return {
         "status": "success",
@@ -4118,6 +4129,17 @@ def change_password(
         email=user.email,
         request=request,
     )
+    if user.account_type == "learner" and user.id:
+        try:
+            from services.notification_service import notify_security_event
+            notify_security_event(
+                user_id=str(user.id),
+                event_key=f"security:password-change:{datetime.now(timezone.utc).isoformat()}",
+                title="Your Learnora password was changed",
+                body="The password for your Learnora account was successfully changed.",
+            )
+        except Exception:
+            logging.getLogger(__name__).exception("Password-change security notification failed")
 
     return {
         "status": "success",
