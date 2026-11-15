@@ -159,6 +159,8 @@ if __name__ == "__main__":
         self.assertIn('@router.get("/process-automation")', router)
         self.assertIn("CRON_SECRET", router)
         self.assertIn("send_post_setup_welcome", service)
+        self.assertIn('"event_key", "welcome:initial-setup:v1"', service)
+        self.assertIn("welcome_retries", service)
         self.assertIn("_process_deadline_reminders", service)
         self.assertIn("_process_inactivity_reminders", service)
         self.assertIn("send_marketing_campaign_email_once", service)
