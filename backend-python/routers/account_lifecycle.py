@@ -192,6 +192,19 @@ def request_account_deletion(
             detail="We could not send the confirmation email. Your account has not been deleted. Please try again.",
         ) from None
 
+    try:
+        from services.notification_service import create_account_event_notification
+        create_account_event_notification(
+            user_id=str(user.id),
+            event_key=f"account-deletion-request:{now.isoformat()}",
+            title="Account deletion requested",
+            body="We sent a confirmation link to your email. Your account remains active until you confirm the request.",
+            action_url="/dashboard/settings",
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Account deletion in-app notification failed")
+
     auth.log_audit_event(
         action="learner_account_deletion_requested",
         email=user.email,
@@ -452,6 +465,18 @@ def reactivate_account(payload: ReactivateAccountRequest, request: Request):
         raise HTTPException(status_code=409, detail="This reactivation link has already been used or the recovery period has ended.")
 
     restored = updated[0]
+    try:
+        from services.notification_service import create_account_event_notification
+        create_account_event_notification(
+            user_id=str(restored["id"]),
+            event_key=f"account-reactivated:{now.isoformat()}",
+            title="Your Learnora account is active again",
+            body="Your account has been reactivated. Your courses and learning records are available again.",
+            action_url="/dashboard",
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Account reactivation in-app notification failed")
     auth.log_audit_event(
         action="learner_account_reactivated",
         email=restored.get("email"),
