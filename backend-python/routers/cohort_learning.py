@@ -373,6 +373,12 @@ def assign_course_to_learner(
             "status": "active",
             "updated_at": now,
         }, on_conflict="course_assignment_id,lesson_id").execute()
+    _notify_cohort_member(
+        str(member.get("user_id")) if member.get("user_id") else None,
+        f"cohort-course-assigned:{assignment['id']}",
+        "New course assigned",
+        "A course has been assigned to your learning programme.",
+    )
     audit(
         actor_user_id=context.user_id,
         action="cohort_learner_course_assigned",
