@@ -111,12 +111,12 @@ export default function AccountSettings({ user }: { user: any }) {
     {user?.account_type === "learner" && user?.role === "normal" && <section className="xl:col-span-2 rounded-2xl border border-white/[.08] bg-[#0e1319] p-5 sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-2xl">
-          <h2 className="font-semibold">Marketing updates</h2>
+          <h2 className="font-semibold">Marketing emails</h2>
           <p className="mt-2 text-sm leading-6 text-slate-400">Choose whether Learnora can send promotional emails about new learning tracks, learning opportunities, offers and discounts. This preference does not affect in-app notifications or essential account and security emails.</p>
           {marketingMessage && <p role="status" className="mt-2 text-xs text-slate-300">{marketingMessage}</p>}
         </div>
         <button type="button" disabled={marketingBusy} onClick={() => void updateMarketingPreference(!marketingOptIn)} className={`inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold transition disabled:opacity-50 ${marketingOptIn ? "border border-white/15 text-slate-300 hover:bg-white/5" : "bg-[#d7ad35] text-black hover:bg-[#e4c56e]"}`}>
-          {marketingBusy ? "Saving…" : marketingOptIn ? "Unsubscribe from marketing" : "Opt in to marketing updates"}
+          {marketingBusy ? "Saving…" : marketingOptIn ? "Unsubscribe from marketing emails" : "Opt in to marketing emails"}
         </button>
       </div>
     </section>}
