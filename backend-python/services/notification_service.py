@@ -626,7 +626,7 @@ def _process_weekly_in_app_summaries(now: datetime) -> int:
     activity_rows = (
         supabase.table("learner_learning_days")
         .select("learner_id,activity_date,activity_count,timezone")
-        .eq("account_type", "individual")
+        .in_("account_type", ["individual", "cohort"])
         .gte("activity_date", (now.date() - timedelta(days=8)).isoformat())
         .lte("activity_date", now.date().isoformat())
         .order("activity_date", desc=True)
@@ -639,8 +639,23 @@ def _process_weekly_in_app_summaries(now: datetime) -> int:
         if user_id:
             by_user.setdefault(user_id, []).append(row)
 
+    active_user_ids: set[str] = set()
+    candidate_ids = list(by_user)
+    for batch in _chunks(candidate_ids):
+        active_rows = (
+            supabase.table("users")
+            .select("id")
+            .in_("id", batch)
+            .eq("account_status", "active")
+            .limit(100)
+            .execute()
+        ).data or []
+        active_user_ids.update(str(row["id"]) for row in active_rows if row.get("id"))
+
     delivered = 0
     for user_id, rows in by_user.items():
+        if user_id not in active_user_ids:
+            continue
         timezone_name = next(
             (str(row.get("timezone")) for row in rows if row.get("timezone")),
             "Africa/Lagos",
