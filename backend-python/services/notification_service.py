@@ -147,3 +147,384 @@ def notify_course_updated(course: dict, changed_fields: list[str] | None = None)
         f"There is a new update to {title}. Open the course to review the latest details.",
         f"/courses/{course.get('id')}",
     )
+
+
+
+def _claim_delivery(user_id: str, event_key: str, channel: str, now: datetime) -> bool:
+    result = supabase.rpc("claim_learner_notification_delivery", {
+        "p_user_id": str(user_id),
+        "p_event_key": event_key,
+        "p_channel": channel,
+        "p_now": now.isoformat(),
+    }).execute()
+    value = result.data
+    if isinstance(value, list) and value:
+        value = next(iter(value[0].values()), False) if isinstance(value[0], dict) else value[0]
+    if isinstance(value, dict):
+        value = next(iter(value.values()), False)
+    return value is True
+
+
+def _finish_delivery(
+    user_id: str,
+    event_key: str,
+    channel: str,
+    success: bool,
+    now: datetime,
+    error: str | None = None,
+) -> None:
+    try:
+        supabase.rpc("finish_learner_notification_delivery", {
+            "p_user_id": str(user_id),
+            "p_event_key": event_key,
+            "p_channel": channel,
+            "p_success": success,
+            "p_error": (error or "")[:500] if error else None,
+            "p_now": now.isoformat(),
+        }).execute()
+    except Exception:
+        logger.exception("Could not finalise notification delivery state")
+
+
+def _create_in_app_once(
+    *,
+    user_id: str,
+    event_key: str,
+    notification_type: str,
+    title: str,
+    body: str,
+    action_url: str,
+    now: datetime,
+    organisation_id: str | None = None,
+) -> bool:
+    if not _claim_delivery(user_id, event_key, "in_app", now):
+        return False
+    try:
+        supabase.table("learnora_notifications").insert({
+            "user_id": str(user_id),
+            "organisation_id": organisation_id,
+            "notification_type": notification_type,
+            "title": title,
+            "body": body,
+            "action_url": action_url,
+            "data": {"event_key": event_key, "automated": True},
+            "created_at": now.isoformat(),
+        }).execute()
+        _finish_delivery(user_id, event_key, "in_app", True, now)
+        return True
+    except Exception as exc:
+        logger.exception("In-app notification insert failed for %s", event_key)
+        _finish_delivery(user_id, event_key, "in_app", False, now, type(exc).__name__)
+        return False
+
+
+def _send_automated_email_once(
+    *,
+    user_id: str,
+    email: str,
+    event_key: str,
+    subject: str,
+    text_body: str,
+    html_body: str,
+    now: datetime,
+) -> bool:
+    if not _claim_delivery(user_id, event_key, "email", now):
+        return False
+    try:
+        from routers import auth
+        auth._send_email(
+            recipient=email,
+            subject=subject,
+            text_body=text_body,
+            html_body=html_body,
+        )
+        _finish_delivery(user_id, event_key, "email", True, now)
+        return True
+    except Exception as exc:
+        logger.exception("Automated email delivery failed for %s", event_key)
+        _finish_delivery(user_id, event_key, "email", False, now, type(exc).__name__)
+        return False
+
+
+def send_post_setup_welcome(user_id: str) -> dict[str, bool]:
+    """Create the one-time in-app welcome and send its matching email."""
+    from html import escape
+    from routers import auth
+
+    now = datetime.now(timezone.utc)
+    rows = (
+        supabase.table("users")
+        .select("id,name,email,account_status,email_verified")
+        .eq("id", str(user_id))
+        .eq("account_status", "active")
+        .eq("email_verified", True)
+        .limit(1)
+        .execute()
+    ).data or []
+    if not rows:
+        return {"in_app": False, "email": False}
+    user = rows[0]
+    name = str(user.get("name") or "there").strip()
+    safe_name = escape(name)
+    event_key = "welcome:initial-setup:v1"
+    title = "Welcome to Learnora ME"
+    body = "Your learning journey starts here. Explore your dashboard, access your courses and begin learning at your own pace."
+    in_app = _create_in_app_once(
+        user_id=str(user_id),
+        event_key=event_key,
+        notification_type="welcome",
+        title=title,
+        body=body,
+        action_url="/dashboard",
+        now=now,
+    )
+    text_body = (
+        f"Hi {name},\n\n"
+        "Welcome to Learnora ME. Your learning journey starts here. "
+        "Explore your dashboard, access your courses and begin learning at your own pace.\n\n"
+        f"Open your dashboard: {auth.FRONTEND_URL}/dashboard\n\n"
+        "Learnora ME"
+    )
+    html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
+<div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
+<h1 style="margin:0 0 16px">Welcome to Learnora ME</h1><p>Hi {safe_name},</p>
+<p>Your learning journey starts here. Explore your dashboard, access your courses and begin learning at your own pace.</p>
+<p style="margin:28px 0"><a href="{auth.FRONTEND_URL}/dashboard" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#5b4bdb;color:#fff;text-decoration:none;font-weight:bold">Go to my dashboard</a></p>
+<p style="font-size:13px;color:#64748b">Learnora ME · Learn. Practise. Build. Prove.</p>
+</div></body></html>"""
+    email_sent = _send_automated_email_once(
+        user_id=str(user_id),
+        email=str(user["email"]),
+        event_key=event_key,
+        subject="Welcome to Learnora ME",
+        text_body=text_body,
+        html_body=html_body,
+        now=now,
+    )
+    return {"in_app": in_app, "email": email_sent}
+
+
+def _process_deadline_reminders(now: datetime) -> int:
+    from html import escape
+    from routers import auth
+
+    window_end = now + __import__("datetime").timedelta(hours=24)
+    assignments = (
+        supabase.table("assignments")
+        .select("id,course_id,title,due_date")
+        .eq("is_published", True)
+        .gt("due_date", now.isoformat())
+        .lte("due_date", window_end.isoformat())
+        .limit(500)
+        .execute()
+    ).data or []
+    delivered = 0
+    for assignment in assignments:
+        assignment_id = str(assignment.get("id") or "")
+        course_id = str(assignment.get("course_id") or "")
+        due_value = assignment.get("due_date")
+        if not assignment_id or not course_id or not due_value:
+            continue
+        enrolments = (
+            supabase.table("learnora_enrolments")
+            .select("user_id")
+            .eq("course_id", course_id)
+            .eq("status", "active")
+            .limit(5000)
+            .execute()
+        ).data or []
+        user_ids = list({str(row["user_id"]) for row in enrolments if row.get("user_id")})
+        if not user_ids:
+            continue
+        submitted = (
+            supabase.table("assignment_submissions")
+            .select("user_id")
+            .eq("assignment_id", assignment_id)
+            .in_("user_id", user_ids)
+            .limit(5000)
+            .execute()
+        ).data or []
+        completed_ids = {str(row["user_id"]) for row in submitted if row.get("user_id")}
+        pending_ids = [user_id for user_id in user_ids if user_id not in completed_ids]
+        if not pending_ids:
+            continue
+        users = (
+            supabase.table("users")
+            .select("id,name,email,email_verified,account_status")
+            .in_("id", pending_ids)
+            .eq("account_status", "active")
+            .limit(5000)
+            .execute()
+        ).data or []
+        title = str(assignment.get("title") or "Your assignment")
+        safe_title = escape(title)
+        due_text = str(due_value)
+        event_key = f"deadline:assignment:{assignment_id}:{due_text}"
+        for user in users:
+            user_id = str(user.get("id") or "")
+            if not user_id:
+                continue
+            body = f"{title} is due within the next 24 hours. Submit your work before the deadline."
+            if _create_in_app_once(
+                user_id=user_id,
+                event_key=event_key,
+                notification_type="deadline_reminder",
+                title=f"Upcoming deadline: {title}",
+                body=body,
+                action_url="/dashboard",
+                now=now,
+            ):
+                delivered += 1
+            if not user.get("email_verified") or not user.get("email"):
+                continue
+            text_body = (
+                f"Hi {user.get('name') or 'there'},\n\n"
+                f"{title} is due within the next 24 hours. Please submit your work before the deadline.\n\n"
+                f"Open Learnora: {auth.FRONTEND_URL}/dashboard\n\nLearnora ME"
+            )
+            html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
+<div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
+<h1>Upcoming assignment deadline</h1><p>Hi {escape(str(user.get('name') or 'there'))},</p>
+<p><strong>{safe_title}</strong> is due within the next 24 hours. Submit your work before the deadline.</p>
+<p style="margin:28px 0"><a href="{auth.FRONTEND_URL}/dashboard" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#5b4bdb;color:#fff;text-decoration:none;font-weight:bold">Continue learning</a></p>
+</div></body></html>"""
+            if _send_automated_email_once(
+                user_id=user_id,
+                email=str(user["email"]),
+                event_key=event_key,
+                subject=f"Upcoming deadline: {title}",
+                text_body=text_body,
+                html_body=html_body,
+                now=now,
+            ):
+                delivered += 1
+    return delivered
+
+
+def _process_inactivity_reminders(now: datetime) -> int:
+    from html import escape
+    from datetime import timedelta
+    from routers import auth
+
+    cutoff = now - timedelta(days=7)
+    profiles = (
+        supabase.table("learner_onboarding_profiles")
+        .select("user_id,onboarding_completed_at")
+        .eq("onboarding_completed", True)
+        .limit(5000)
+        .execute()
+    ).data or []
+    user_ids = list({str(row["user_id"]) for row in profiles if row.get("user_id")})
+    if not user_ids:
+        return 0
+    users = (
+        supabase.table("users")
+        .select("id,name,email,email_verified,account_status,created_at,last_inactivity_email_at")
+        .in_("id", user_ids)
+        .eq("account_status", "active")
+        .limit(5000)
+        .execute()
+    ).data or []
+    activity_rows = (
+        supabase.table("learner_learning_days")
+        .select("learner_id,last_activity_at")
+        .in_("learner_id", user_ids)
+        .eq("account_type", "individual")
+        .order("last_activity_at", desc=True)
+        .limit(20000)
+        .execute()
+    ).data or []
+    latest_activity: dict[str, str] = {}
+    for row in activity_rows:
+        learner_id = str(row.get("learner_id") or "")
+        value = str(row.get("last_activity_at") or "")
+        if learner_id and value and learner_id not in latest_activity:
+            latest_activity[learner_id] = value
+    profile_map = {str(row["user_id"]): row for row in profiles if row.get("user_id")}
+    delivered = 0
+    for user in users:
+        user_id = str(user.get("id") or "")
+        if not user_id:
+            continue
+        profile = profile_map.get(user_id) or {}
+        last_activity_value = latest_activity.get(user_id) or profile.get("onboarding_completed_at") or user.get("created_at")
+        if not last_activity_value:
+            continue
+        try:
+            last_activity = datetime.fromisoformat(str(last_activity_value).replace("Z", "+00:00"))
+            if last_activity.tzinfo is None:
+                last_activity = last_activity.replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if last_activity > cutoff:
+            continue
+        event_key = f"inactivity:{last_activity.isoformat()}"
+        name = str(user.get("name") or "there")
+        body = "It has been a little while since your last completed learning activity. Your courses are ready whenever you are."
+        if _create_in_app_once(
+            user_id=user_id,
+            event_key=event_key,
+            notification_type="learning_inactivity",
+            title="Ready to continue learning?",
+            body=body,
+            action_url="/dashboard",
+            now=now,
+        ):
+            delivered += 1
+        last_email_value = user.get("last_inactivity_email_at")
+        if last_email_value:
+            try:
+                last_email = datetime.fromisoformat(str(last_email_value).replace("Z", "+00:00"))
+                if last_email.tzinfo is None:
+                    last_email = last_email.replace(tzinfo=timezone.utc)
+                if last_email > now - timedelta(days=30):
+                    continue
+            except ValueError:
+                pass
+        if not user.get("email_verified") or not user.get("email"):
+            continue
+        safe_name = escape(name)
+        text_body = (
+            f"Hi {name},\n\n"
+            "It has been 7 days since your last completed lesson, quiz or assessment. "
+            "Your learning is ready when you are.\n\n"
+            f"Continue learning: {auth.FRONTEND_URL}/dashboard\n\nLearnora ME"
+        )
+        html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
+<div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
+<h1>Ready to continue learning?</h1><p>Hi {safe_name},</p>
+<p>It has been 7 days since your last completed lesson, quiz or assessment. Your learning is ready whenever you are.</p>
+<p style="margin:28px 0"><a href="{auth.FRONTEND_URL}/dashboard" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#5b4bdb;color:#fff;text-decoration:none;font-weight:bold">Continue learning</a></p>
+</div></body></html>"""
+        if _send_automated_email_once(
+            user_id=user_id,
+            email=str(user["email"]),
+            event_key=event_key,
+            subject="Your Learnora learning is ready when you are",
+            text_body=text_body,
+            html_body=html_body,
+            now=now,
+        ):
+            try:
+                supabase.table("users").update({
+                    "last_inactivity_email_at": now.isoformat(),
+                }).eq("id", user_id).eq("account_status", "active").execute()
+            except Exception:
+                logger.exception("Could not update inactivity email throttle for %s", user_id)
+            delivered += 1
+    return delivered
+
+
+def process_automated_learner_notifications() -> dict[str, int]:
+    """Hourly worker for due-date and inactivity notifications."""
+    now = datetime.now(timezone.utc)
+    results = {"deadlines": 0, "inactivity": 0}
+    try:
+        results["deadlines"] = _process_deadline_reminders(now)
+    except Exception:
+        logger.exception("Deadline notification batch failed")
+    try:
+        results["inactivity"] = _process_inactivity_reminders(now)
+    except Exception:
+        logger.exception("Inactivity notification batch failed")
+    return results
