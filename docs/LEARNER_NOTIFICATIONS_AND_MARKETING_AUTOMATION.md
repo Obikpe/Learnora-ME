@@ -145,7 +145,7 @@ The following is the approved product policy. Items marked **planned** are not r
 | Learning inactivity | After 7 consecutive days without meaningful learning activity | Individual learner with completed onboarding | No repeat email within 30 days; suppresses a reminder if meaningful activity resumes before the send check | Implemented in source; requires the new delivery migration and automation flag before production use |
 | Marketing campaign | Only when an authorised campaign is scheduled and approved | Eligible opted-in learners | Explicit email opt-in required; per-message unsubscribe link and consent recheck | Per-recipient consent-gated sender helper implemented; campaign authoring, audience selection, scheduling and admin UI remain future messaging-platform work |
 
-Meaningful learning activity means completing a lesson, quiz or assessment. Merely signing in does not reset the inactivity clock. Weekly progress summaries remain in-app initially and are not part of the email catalogue.
+Meaningful learning activity means completing a lesson, quiz or assessment. Merely signing in does not reset the inactivity clock. Weekly progress summaries are in-app only: Monday morning in the learner's recorded timezone, with a three-hour delivery window, and only when meaningful activity occurred in the previous Monday–Sunday period. No weekly summary email is sent.
 
 ### 3.5 Email exclusions
 
@@ -166,8 +166,8 @@ Every learner-facing notification is created in the in-app notification centre. 
 | Account deletion / reactivation | The account owner | Relevant account status notification where appropriate | Send only the requested transactional lifecycle email |
 | Course enrolled | The enrolling learner | In-app confirmation | No routine email by default |
 | Enrolled course materially updated | Current learners enrolled in that course | In-app notification | No automatic email by default; an authorised sender may choose email in the future messaging platform |
-| New course published | Relevant eligible learners | In-app notification under the approved targeting rules | Marketing email only with explicit email consent and approved campaign delivery |
-| Lesson, quiz or assessment completion | The learner | In-app acknowledgement/progress update where useful | No email |
+| New course/lesson published or materially updated | Relevant enrolled learners and matching eligible learners | In-app notification under the approved targeting rules | No automatic email; promotional campaigns require explicit email consent |
+| Lesson completion, passed quiz, assignment submission, course completion and certificate issuance | The learner | In-app event notification; one per meaningful event (course completion/certificate are deduplicated) | No email |
 | Important deadline approaching | Learner with incomplete activity | In-app reminder | One email 24 hours before deadline if still incomplete |
 | Learning inactivity | Learner with no meaningful activity for 7 days | In-app reminder | One email at the approved threshold; repeat no more than every 30 days |
 | New offer or discount | Eligible audience | In-app promotional notification | Email only to opted-in learners |
@@ -221,6 +221,7 @@ Important transactional email templates must be separate from campaign templates
 
 - Deadline email: the hourly worker sends once when a published assignment enters its 24-hour due window, only if the learner has an active enrolment and no submission exists at send time. Do not send a second reminder for the same assignment/deadline. Quiz-specific deadline reminders remain unavailable until quizzes have an explicit due-date field.
 - Inactivity email: trigger after 7 consecutive days without a completed lesson, quiz or assessment, using `learner_learning_days` as the activity source. Login alone is not meaningful activity. The worker checks `last_inactivity_email_at` and will not repeat an inactivity email within 30 days.
+- Weekly in-app summary: on Monday between 9:00 and 11:59 in the learner's stored timezone, summarise the previous Monday–Sunday activity. Do not create an empty weekly summary and never email this digest.
 - Cancel/suppress a pending inactivity email if the learner completes meaningful learning activity before it is sent.
 - Cancel/suppress a pending deadline email if the relevant activity is completed before it is sent.
 - Welcome email and welcome in-app notification: one delivery per account after initial setup completes; registration or verification alone is not the welcome trigger.
