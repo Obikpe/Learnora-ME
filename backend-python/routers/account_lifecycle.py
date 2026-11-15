@@ -523,9 +523,10 @@ def update_marketing_preferences(
     if user.account_type != "learner" or user.role != "normal" or not user.id:
         raise HTTPException(status_code=403, detail="Marketing preferences are available for individual learner accounts.")
     now = datetime.now(timezone.utc).isoformat()
+    # Marketing preference and unsubscribe apply to email only. In-app
+    # notifications remain enabled and visible to every learner.
     updates = {
         "marketing_email_opt_in": payload.enabled,
-        "marketing_in_app_opt_in": payload.enabled,
     }
     if payload.enabled:
         updates.update({
@@ -586,7 +587,6 @@ def unsubscribe_from_marketing(
         auth.supabase.table("users")
         .update({
             "marketing_email_opt_in": False,
-            "marketing_in_app_opt_in": False,
             "marketing_unsubscribed_at": now,
         })
         .eq("id", user_id)
