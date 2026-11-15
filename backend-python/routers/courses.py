@@ -727,6 +727,13 @@ def self_enrol_in_free_course(
         enrolment = existing_rows[0]
         enrolment_status = str(enrolment.get("status") or "").lower()
         if enrolment_status in {"active", "completed"}:
+            if enrolment_status == "active":
+                _notify_course_enrolment(
+                    str(user.id),
+                    course_id,
+                    str(course.get("title") or "your course"),
+                    f"course-enrolment:{enrolment['id']}:{enrolment.get('enrolled_at')}",
+                )
             return {"success": True, "already_enrolled": True, "enrolment": enrolment}
         if enrolment_status != "withdrawn":
             raise HTTPException(
@@ -757,7 +764,7 @@ def self_enrol_in_free_course(
             str(user.id),
             course_id,
             str(course.get("title") or "your course"),
-            f"course-enrolment:{course_id}:{now}",
+            f"course-enrolment:{reactivated.data[0]['id']}:{reactivated.data[0].get('enrolled_at')}",
         )
         return {
             "success": True,
@@ -786,7 +793,7 @@ def self_enrol_in_free_course(
         str(user.id),
         course_id,
         str(course.get("title") or "your course"),
-        f"course-enrolment:{course_id}:{now}",
+        f"course-enrolment:{inserted.data[0]['id']}:{inserted.data[0].get('enrolled_at')}",
     )
     return {"success": True, "already_enrolled": False, "enrolment": inserted.data[0]}
 
