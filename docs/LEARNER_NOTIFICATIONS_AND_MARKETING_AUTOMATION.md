@@ -170,8 +170,8 @@ Every automated learner notification is created in the in-app notification centr
 | Lesson completion, passed quiz, assignment submission, course completion and certificate issuance | The learner | In-app event notification; one per meaningful event (course completion/certificate are deduplicated) | No email |
 | Discussion reply or accepted answer | Discussion author / reply author | In-app notification to the affected learner | No email |
 | Cohort course or lesson assignment/completion | Affected user-backed cohort member | In-app notification | No email |
-| Weekly learning summary | Learners with meaningful activity in the previous week | One in-app summary on Monday morning in the learner's timezone | Never email |
-| Important deadline approaching | Learner with incomplete activity | In-app reminder | One email 24 hours before deadline if still incomplete |
+| Weekly learning summary | Learners with meaningful activity in the previous week | One in-app summary on Monday in the learner's timezone | Never email |
+| Important deadline approaching | Learner with incomplete activity | In-app reminder | One email when the assignment is due within 48 hours if still incomplete |
 | Learning inactivity | Learner with no meaningful activity for 7 days | In-app reminder | One email at the approved threshold; repeat no more than every 30 days |
 | New offer or discount | Eligible audience | In-app promotional notification | Email only to opted-in learners |
 | Platform-wide essential incident | Accounts materially affected | In-app notice | Email only when necessary to provide or secure the service |
@@ -222,7 +222,7 @@ Important transactional email templates must be separate from campaign templates
 
 ### 4.6 Reminder timing, deduplication and suppression
 
-- Deadline email: the daily worker sends once when a published assignment enters its 24-hour due window, only if the learner has an active enrolment and no submission exists at send time. Do not send a second reminder for the same assignment/deadline. Quiz-specific deadline reminders remain unavailable until quizzes have an explicit due-date field.
+- Deadline email: the daily worker sends once when a published assignment enters its 48-hour due window, only if the learner has an active enrolment and no submission exists at send time. Do not send a second reminder for the same assignment/deadline. Quiz-specific deadline reminders remain unavailable until quizzes have an explicit due-date field.
 - Inactivity email: trigger after 7 consecutive days without a completed lesson, quiz or assessment, using `learner_learning_days` as the activity source. Login alone is not meaningful activity. The worker checks `last_inactivity_email_at` and will not repeat an inactivity email within 30 days.
 - Weekly in-app summary: on Monday in the learner's stored timezone, summarise the previous Monday–Sunday activity. Do not create an empty weekly summary and never email this digest.
 - Cancel/suppress a pending inactivity email if the learner completes meaningful learning activity before it is sent.
@@ -287,7 +287,7 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 
 ### Not yet released / must be completed before production use
 - Apply `20261116120000_notification_email_automation.sql` to the active Pheonix Supabase project before deploying the new onboarding, delivery or reminder code. This migration has been committed but not applied.
-- Set `LEARNORA_NOTIFICATION_AUTOMATION_ENABLED=true` only after that migration is applied and the worker is verified. It defaults to `false`. Configure `CRON_SECRET` so Vercel can authenticate the hourly worker.
+- Set `LEARNORA_NOTIFICATION_AUTOMATION_ENABLED=true` only after that migration is applied and the worker is verified. It defaults to `false`. Configure `CRON_SECRET` so Vercel can authenticate the daily worker.
 - Both `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql` have been applied to the active Pheonix Supabase project and are recorded in migration history.
 - Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until the full production erasure test suite and cleanup verification pass. The migrations being applied is necessary but not sufficient to enable automatic finalisation. Confirm `CRON_SECRET`, cron execution and failure alerting before enabling the finaliser.
 - Run backend tests, frontend typecheck/build and browser acceptance on phone/tablet/desktop.
