@@ -148,7 +148,7 @@ if __name__ == "__main__":
         self.assertIn("Your in-app notifications will remain available", unsubscribe_page)
         self.assertNotIn("promotional in-app notifications", unsubscribe_page)
 
-    def test_notification_automation_has_a_protected_hourly_worker_and_durable_delivery_log(self):
+    def test_notification_automation_has_a_protected_daily_worker_and_durable_delivery_log(self):
         migration = (ROOT / "supabase/migrations/20261116120000_notification_email_automation.sql").read_text(encoding="utf-8")
         router = (ROOT / "backend-python/routers/notifications.py").read_text(encoding="utf-8")
         service = (ROOT / "backend-python/services/notification_service.py").read_text(encoding="utf-8")
@@ -187,4 +187,4 @@ if __name__ == "__main__":
         self.assertIn("security:password-change", auth_source)
         self.assertIn("security:password-reset", auth_source)
         self.assertIn("/api/notifications/process-automation", vercel)
-        self.assertIn('"schedule": "0 * * * *"', vercel)
+        self.assertIn('"schedule": "0 8 * * *"', vercel)
