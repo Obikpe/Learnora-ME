@@ -93,8 +93,8 @@ def mark_all_notifications_read(user: CurrentUser = Depends(get_current_user)):
 def process_learner_notification_automation(
     authorization: str | None = Header(default=None),
 ):
-    """Hourly Vercel cron for welcome retries and approved learner reminders."""
-    enabled = os.getenv("LEARNER_NOTIFICATION_AUTOMATION_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
+    """Daily Vercel cron for welcome retries and approved learner reminders."""
+    enabled = os.getenv("LEARNORA_NOTIFICATION_AUTOMATION_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
     if not enabled:
         return {"success": True, "enabled": False, "processed": {}}
     expected = os.getenv("CRON_SECRET", "").strip()
