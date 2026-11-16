@@ -122,7 +122,7 @@ Store auditable email consent evidence using `marketing_email_opt_in`, `marketin
 | Welcome after initial setup | In-app and email, once | No; onboarding/service communication |
 | Important platform/service incident | In-app; email only when necessary | No, when genuinely required to provide or secure the service |
 | Course/lesson activity, routine updates, comments and replies | In-app only | No email is sent |
-| Upcoming important deadline | In-app; one email 24 hours before if still incomplete | No; learning-service reminder |
+| Upcoming important deadline | In-app; one email when the assignment is due within 48 hours if still incomplete | No; learning-service reminder |
 | Inactivity reminder | In-app; limited email reminder under section 4.6 | No; learning-service reminder |
 | New courses, general programme launches, offers and promotions | In-app; marketing email only with consent | Yes for email |
 | Interest-based promotional recommendations | In-app; marketing email only with consent | Yes for email |
@@ -141,11 +141,11 @@ The following is the approved product policy. Items marked **planned** are not r
 | Account deletion confirmation | After the learner explicitly requests deletion | Account owner | Transactional; confirmation link expires after 60 minutes | Implemented |
 | Account reactivation link | Only after a deactivated learner explicitly requests it | Account owner | Transactional; link expires after 24 hours or the end of the 30-day recovery window, whichever comes first | Implemented |
 | Welcome to Learnora ME | On the learner's first successful completion of initial account setup | New learner | One time per account; no retroactive welcome for existing completed profiles; send both in-app and email | Implemented in source; requires the new delivery migration and automation flag before production use |
-| Upcoming deadline | First hourly automation run after a published assignment enters its 24-hour due window, if no submission exists | Affected learner with an active course enrolment | At most one email per assignment/deadline; in-app notification also created | Implemented for published assignments with `due_date`; quiz-specific deadlines are not represented in the current quiz schema |
+| Upcoming deadline | First daily automation run after a published assignment enters its 48-hour due window, if no submission exists | Affected learner with an active course enrolment | At most one email per assignment/deadline; in-app notification also created | Implemented for published assignments with `due_date`; quiz-specific deadlines are not represented in the current quiz schema |
 | Learning inactivity | After 7 consecutive days without meaningful learning activity | Individual learner with completed onboarding | No repeat email within 30 days; suppresses a reminder if meaningful activity resumes before the send check | Implemented in source; requires the new delivery migration and automation flag before production use |
 | Marketing campaign | Only when an authorised campaign is scheduled and approved | Eligible opted-in learners | Explicit email opt-in required; per-message unsubscribe link and consent recheck | Per-recipient consent-gated sender helper implemented; campaign authoring, audience selection, scheduling and admin UI remain future messaging-platform work |
 
-Meaningful learning activity means completing a lesson, quiz or assessment. Merely signing in does not reset the inactivity clock. Weekly progress summaries are in-app only: Monday morning in the learner's recorded timezone, with a three-hour delivery window, and only when meaningful activity occurred in the previous Monday–Sunday period. No weekly summary email is sent.
+Meaningful learning activity means completing a lesson, quiz or assessment. Merely signing in does not reset the inactivity clock. Weekly progress summaries are in-app only: on Monday in the learner's recorded timezone, and only when meaningful activity occurred in the previous Monday–Sunday period. No weekly summary email is sent.
 
 ### 3.5 Email exclusions
 
@@ -200,7 +200,7 @@ The signal should store the learner ID, topic ID, source, confidence/weight, fir
 
 ### 4.4 Delivery architecture
 
-The current implementation uses `learner_notification_deliveries` as a durable, service-role-only delivery ledger. Each recipient/event/channel pair is unique; the database claim function leases a delivery, recovers stale `sending` claims after 15 minutes and schedules failed attempts for retry after one hour. The hourly protected worker creates in-app notifications and sends eligible reminder emails. This is an initial durable delivery mechanism, not yet a general event bus or full campaign outbox.
+The current implementation uses `learner_notification_deliveries` as a durable, service-role-only delivery ledger. Each recipient/event/channel pair is unique; the database claim function leases a delivery, recovers stale `sending` claims after 15 minutes and schedules failed attempts for retry after one hour. The daily protected worker creates in-app notifications and sends eligible reminder emails. This is an initial durable delivery mechanism, not yet a general event bus or full campaign outbox.
 
 - Use stable event keys and one delivery record per recipient/channel.
 - Claim work atomically in Postgres to prevent overlapping cron invocations from sending duplicates.
@@ -222,9 +222,9 @@ Important transactional email templates must be separate from campaign templates
 
 ### 4.6 Reminder timing, deduplication and suppression
 
-- Deadline email: the hourly worker sends once when a published assignment enters its 24-hour due window, only if the learner has an active enrolment and no submission exists at send time. Do not send a second reminder for the same assignment/deadline. Quiz-specific deadline reminders remain unavailable until quizzes have an explicit due-date field.
+- Deadline email: the daily worker sends once when a published assignment enters its 24-hour due window, only if the learner has an active enrolment and no submission exists at send time. Do not send a second reminder for the same assignment/deadline. Quiz-specific deadline reminders remain unavailable until quizzes have an explicit due-date field.
 - Inactivity email: trigger after 7 consecutive days without a completed lesson, quiz or assessment, using `learner_learning_days` as the activity source. Login alone is not meaningful activity. The worker checks `last_inactivity_email_at` and will not repeat an inactivity email within 30 days.
-- Weekly in-app summary: on Monday between 9:00 and 11:59 in the learner's stored timezone, summarise the previous Monday–Sunday activity. Do not create an empty weekly summary and never email this digest.
+- Weekly in-app summary: on Monday in the learner's stored timezone, summarise the previous Monday–Sunday activity. Do not create an empty weekly summary and never email this digest.
 - Cancel/suppress a pending inactivity email if the learner completes meaningful learning activity before it is sent.
 - Cancel/suppress a pending deadline email if the relevant activity is completed before it is sent.
 - Welcome email and welcome in-app notification: one delivery per account after initial setup completes; registration or verification alone is not the welcome trigger.
@@ -276,7 +276,7 @@ Security controls: opaque random, single-use unsubscribe tokens stored as hashes
 - Notification preview remains a compact dropdown beneath the bell; selecting an item opens the full two-column notifications page.
 - Signup and Account Settings marketing consent now controls email marketing only. Email unsubscribe changes only `marketing_email_opt_in`; it does not disable or hide in-app notifications.
 - Password change and password reset create one-time in-app security alerts and send transactional security emails.
-- The first successful completion of individual learner onboarding creates a one-time welcome notification and sends a welcome email. Existing completed profiles are not bulk-emailed; only failed/pending welcome deliveries are retried by the hourly worker.
+- The first successful completion of individual learner onboarding creates a one-time welcome notification and sends a welcome email. Existing completed profiles are not bulk-emailed; only failed/pending welcome deliveries are retried by the daily worker.
 - Published assignments with due dates generate one in-app reminder and one email within the 24-hour due window when the learner has an active enrolment and no submission.
 - Individual learners with completed onboarding receive an in-app inactivity reminder after 7 days without meaningful activity and, subject to the 30-day cap, one email.
 - A per-recipient marketing email delivery helper checks current opt-in, creates a per-message unsubscribe token and rechecks consent before sending.
