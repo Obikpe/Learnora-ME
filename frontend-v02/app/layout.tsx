@@ -28,12 +28,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
-  colorScheme: "light dark",
+  themeColor: "#0f1020",
+  colorScheme: "dark",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  // No explicit theme is set here: CSS follows the operating-system preference
-  // until the learner chooses a theme in the dashboard.
   return <html lang="en"><body>{children}</body></html>;
 }
