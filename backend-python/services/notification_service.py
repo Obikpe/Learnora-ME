@@ -394,7 +394,7 @@ def _process_deadline_reminders(now: datetime) -> int:
             html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
 <div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
 <h1>Upcoming assignment deadline</h1><p>Hi {escape(str(user.get('name') or 'there'))},</p>
-<p><strong>{safe_title}</strong> is due within the next 24 hours. Submit your work before the deadline.</p>
+<p><strong>{safe_title}</strong> is due within the next 48 hours. Submit your work before the deadline.</p>
 <p style="margin:28px 0"><a href="{auth.FRONTEND_URL}/dashboard" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#5b4bdb;color:#fff;text-decoration:none;font-weight:bold">Continue learning</a></p>
 </div></body></html>"""
             if _send_automated_email_once(
