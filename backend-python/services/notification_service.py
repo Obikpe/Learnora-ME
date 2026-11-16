@@ -313,7 +313,7 @@ def _process_deadline_reminders(now: datetime) -> int:
     from html import escape
     from routers import auth
 
-    window_end = now + timedelta(hours=24)
+    window_end = now + timedelta(hours=48)
     assignments = (
         supabase.table("assignments")
         .select("id,course_id,title,due_date")
@@ -373,7 +373,7 @@ def _process_deadline_reminders(now: datetime) -> int:
             user_id = str(user.get("id") or "")
             if not user_id:
                 continue
-            body = f"{title} is due within the next 24 hours. Submit your work before the deadline."
+            body = f"{title} is due within the next 48 hours. Submit your work before the deadline."
             if _create_in_app_once(
                 user_id=user_id,
                 event_key=event_key,
@@ -388,7 +388,7 @@ def _process_deadline_reminders(now: datetime) -> int:
                 continue
             text_body = (
                 f"Hi {user.get('name') or 'there'},\n\n"
-                f"{title} is due within the next 24 hours. Please submit your work before the deadline.\n\n"
+                f"{title} is due within the next 48 hours. Please submit your work before the deadline.\n\n"
                 f"Open Learnora: {auth.FRONTEND_URL}/dashboard\n\nLearnora ME"
             )
             html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
@@ -665,9 +665,10 @@ def _process_weekly_in_app_summaries(now: datetime) -> int:
         except (ZoneInfoNotFoundError, ValueError):
             local_now = now.astimezone(ZoneInfo("Africa/Lagos"))
             timezone_name = "Africa/Lagos"
-        # One quiet weekly digest, Monday morning in the learner's timezone.
-        # A three-hour window tolerates a delayed hourly cron without duplicates.
-        if local_now.weekday() != 0 or not (9 <= local_now.hour < 12):
+        # The worker runs once daily. Deliver on the learner's local Monday,
+        # regardless of hour, so every timezone is reached without an hourly cron.
+        # The event key below prevents duplicate summaries if the worker is retried.
+        if local_now.weekday() != 0:
             continue
         week_end = local_now.date()
         week_start = week_end - timedelta(days=7)
@@ -703,7 +704,7 @@ def _process_weekly_in_app_summaries(now: datetime) -> int:
 
 
 def process_automated_learner_notifications() -> dict[str, int]:
-    """Hourly worker for welcome retries, security alerts and learning reminders."""
+    """Daily worker for welcome retries, security alerts and learning reminders."""
     now = datetime.now(timezone.utc)
     results = {"welcome": 0, "security": 0, "deadlines": 0, "inactivity": 0, "weekly_summaries": 0}
     try:
