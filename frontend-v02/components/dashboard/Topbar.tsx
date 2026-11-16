@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, Check, X, Sun, Moon, Headset, CircleUserRound, LogOut } from "lucide-react";
+import { Bell, Check, X, Headset, CircleUserRound, LogOut } from "lucide-react";
 import { clearToken } from "../../lib/api";
 import { request } from "../../lib/api/client";
 
@@ -25,7 +25,6 @@ function safeInternalPath(value?: string | null) {
 export default function Topbar({ admin = false }: { admin?: boolean }) {
   const router = useRouter();
   const [unread, setUnread] = useState(0);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [toast, setToast] = useState<ToastNotice | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewItems, setPreviewItems] = useState<NoticePreview[]>([]);
@@ -38,33 +37,9 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const root = document.documentElement;
     const saved = window.localStorage.getItem("learnora_theme");
-    if (saved === "light" || saved === "dark") {
-      root.dataset.theme = saved;
-      setTheme(saved);
-    } else {
-      root.removeAttribute("data-theme");
-      const media = window.matchMedia("(prefers-color-scheme: dark)");
-      setTheme(media.matches ? "dark" : "light");
-      const updateFromSystem = (event: MediaQueryListEvent) => {
-        if (!root.hasAttribute("data-theme")) setTheme(event.matches ? "dark" : "light");
-      };
-      media.addEventListener?.("change", updateFromSystem);
-      return () => { media.removeEventListener?.("change", updateFromSystem); };
-    }
+    document.documentElement.dataset.theme = saved === "light" ? "light" : "dark";
   }, []);
-
-  const toggleTheme = () => {
-    if (window.matchMedia("(max-width: 1023px)").matches) {
-      setPreviewOpen(false);
-      setAccountOpen(false);
-    }
-    const next = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    document.documentElement.dataset.theme = next;
-    window.localStorage.setItem("learnora_theme", next);
-  };
 
   const showToast = useCallback((notice: ToastNotice) => {
     setToast(notice);
@@ -208,11 +183,6 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
   return <>
     <div className="flex shrink-0 items-center gap-2">
       {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" onClick={() => { if (window.matchMedia("(max-width: 1023px)").matches) { setPreviewOpen(false); setAccountOpen(false); } }} aria-label="Customer support" title="Customer support" className={actionClass}><Headset size={17}/></a>}
-      <button type="button" onClick={toggleTheme}
-        aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
-        title={theme === "light" ? "Switch to dark theme" : "Switch to light theme"} className={actionClass}>
-        {theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}
-      </button>
       {!admin && <div className="relative" ref={notificationMenuRef}>
         <button type="button" onClick={() => { if (window.matchMedia("(max-width: 1023px)").matches) setAccountOpen(false); setPreviewOpen(value => !value); }} aria-expanded={previewOpen} aria-label={unread ? `Notifications preview, ${unread} unread` : "Notifications preview"} className={`relative ${actionClass}`}>
           <Bell size={17}/>
