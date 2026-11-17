@@ -2,9 +2,10 @@ import "./globals.css";
 import "./landing.css";
 import "./organisation.css";
 import type { Metadata, Viewport } from "next";
+import { getSiteUrl } from "../lib/server/catalogue";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://learnora-me.vercel.app"),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "Learnora ME — Learn. Practise. Build. Prove.",
     template: "%s | Learnora ME",
@@ -17,10 +18,11 @@ export const metadata: Metadata = {
     siteName: "Learnora ME",
     title: "Learnora ME — Learn. Practise. Build. Prove.",
     description: "Connect learning with practice, projects, feedback and skills evidence.",
-    url: "https://learnora-me.vercel.app",
+    url: "/",
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/og?title=Learn%20Learnora%20ME&kind=Learnora%20ME"],
     title: "Learnora ME — Learn. Practise. Build. Prove.",
     description: "Connect learning with practice, projects, feedback and skills evidence.",
   },
