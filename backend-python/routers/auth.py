@@ -137,7 +137,7 @@ supabase: Client = create_client(
 FRONTEND_URL = (
     os.getenv(
         "FRONTEND_URL",
-        "https://learnora-me.vercel.app",
+        "https://learnora-me-v02.vercel.app",
     )
     .strip()
     .rstrip("/")
@@ -150,8 +150,6 @@ TEAM_COOKIE_NAME = "learnora_team_token"
 def _cookie_auth_origins() -> set[str]:
     """Return the explicit frontend origins allowed to establish cookie sessions."""
     origins = {
-        "https://learnora-taupe.vercel.app",
-        "https://learnora-me.vercel.app",
         "https://learnora-me-v02.vercel.app",
         "https://teamslearnora.vercel.app",
         "https://thepheonixanalytics.com",
