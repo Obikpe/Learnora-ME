@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import CoursesClient from "./CoursesClient";
-import { getPublicCourses } from "../../lib/server/catalogue";
+import { getPublicCourses, getSiteUrl } from "../../lib/server/catalogue";
 
 export const revalidate = 60;
 
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default async function CoursesPage() {
   const result = await getPublicCourses<any>();
-  const siteUrl = "https://learnora-me-v02.vercel.app";
+  const siteUrl = getSiteUrl();
   const courseListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
