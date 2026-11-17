@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import {
@@ -51,11 +51,11 @@ type PublicTrack = {
 const heroSlides = [
   {
     eyebrow: "Learn · Practise · Build · Prove",
-    title: <>Make learning <span className="landing-accent">count</span> beyond the classroom.</>,
-    body: "Connect lessons to practice, projects and feedback. Build skills you can use, explain and keep developing.",
+    title: <>Learn data, design and tech skills. <span className="landing-accent">Build real projects.</span></>,
+    body: "Learn practical skills, practise with guided work and build projects that show what you can do.",
     image: IMAGES.hero,
     alt: "Learners collaborating around a table",
-    action: "Explore courses",
+    action: "Browse courses",
     href: "/courses",
   },
   {
@@ -187,15 +187,6 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
 
   return (
     <main className="landing-page">
-      <div className="landing-audience-strip">
-        <div className="landing-wrap">
-          <Link href="/for-learners" aria-current="page">For individuals</Link>
-          <Link href="/for-instructors">For instructors</Link>
-          <Link href="/for-organisations">For organisations</Link>
-          <span>Learning that connects to real work</span>
-        </div>
-      </div>
-
       <section className="landing-wrap landing-hero" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
           <h1>{slide.title}</h1>
@@ -307,7 +298,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
 
       <section className="landing-wrap landing-final-cta">
         <div><h2>Your next step does not have to be your whole future.</h2><p>Explore a course, follow a learning track or find out how Learnora can support your teaching or organisation.</p></div>
-        <div className="landing-final-actions"><Link className="landing-button landing-button-primary" href="/courses">Explore courses <ArrowRight size={16}/></Link><Link className="landing-button landing-button-outline" href="/get-started">Get started <ArrowUpRight size={16}/></Link></div>
+        <div className="landing-final-actions"><Link className="landing-button landing-button-primary" href="/courses">Explore courses <ArrowRight size={16}/></Link><Link className="landing-button landing-button-outline" href="/get-started">Choose your path <ArrowUpRight size={16}/></Link></div>
       </section>
     </main>
   );
