@@ -34,6 +34,7 @@ class MigrationInventoryTests(unittest.TestCase):
             "20261021220333_cohort_login_rate_limits.sql",
             "20261021220849_revoke_trigger_function_browser_execute.sql",
             "20261026153000_revoke_browser_privileges_and_defaults.sql",
+            "20261117110000_password_change_session_revocation.sql",
         )
         for name in expected:
             with self.subTest(migration=name):
@@ -137,6 +138,19 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("DROP TABLE IF EXISTS public.learner_notification_deliveries", rollback_sql)
         self.assertIn("DROP COLUMN IF EXISTS last_inactivity_email_at", rollback_sql)
         self.assertIn("DROP COLUMN IF EXISTS onboarding_completed_at", rollback_sql)
+
+    def test_password_change_session_revocation_migration_is_non_destructive(self):
+        migration = ACTIVE_DIR / "20261117110000_password_change_session_revocation.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261117110000_password_change_session_revocation.rollback.sql"
+        self.assertTrue(migration.is_file())
+        self.assertTrue(rollback.is_file())
+        sql = migration.read_text(encoding="utf-8")
+        self.assertIn("ALTER TABLE public.users", sql)
+        self.assertIn("ALTER TABLE public.admins", sql)
+        self.assertIn("password_changed_at timestamptz", sql)
+        self.assertIn("SET DEFAULT now()", sql)
+        self.assertIn("SET NOT NULL", sql)
+        self.assertNotIn("DROP COLUMN", rollback.read_text(encoding="utf-8"))
 
     def test_quota_fix_preserves_unlimited_monthly_limit_contract(self):
         sql = (ACTIVE_DIR / "20261020232148_allow_unlimited_monthly_ai_quota.sql").read_text(
