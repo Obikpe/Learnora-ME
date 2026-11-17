@@ -15,6 +15,8 @@ Flow:
 
 import logging
 import os
+import re
+from urllib.parse import quote
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -50,16 +52,14 @@ PAYSTACK_BASE = "https://api.paystack.co"
 # These values must match the prices configured in Paystack
 # and the prices presented by the Learnora frontend.
 
-ALLOWED_CHARGES = {
-    # NGN
-    ("NGN", 1_200_000),      # ₦12,000
-    ("NGN", 12_000_000),     # ₦120,000
-
-    # USD
-    ("USD", 1_000),          # $10
-    ("USD", 10_000),         # $100
-    ("USD", 1_500),          # $15
-    ("USD", 15_000),         # $150
+CHARGE_INTERVALS = {
+    # Paystack minor units: kobo for NGN, cents for USD.
+    ("NGN", 1_200_000): "monthly",
+    ("NGN", 12_000_000): "yearly",
+    ("USD", 1_000): "monthly",
+    ("USD", 10_000): "yearly",
+    ("USD", 1_500): "monthly",
+    ("USD", 15_000): "yearly",
 }
 
 
@@ -128,14 +128,13 @@ def verify_paystack_transaction(
     reference = (reference or "").strip()
 
     if not reference:
-        raise HTTPException(
-            status_code=400,
-            detail="Payment reference is required",
-        )
+        raise HTTPException(status_code=400, detail="Payment reference is required")
+    if not re.fullmatch(r"[A-Za-z0-9_.=-]{4,100}", reference) or ".." in reference:
+        raise HTTPException(status_code=400, detail="Invalid payment reference")
 
     try:
         response = httpx.get(
-            f"{PAYSTACK_BASE}/transaction/verify/{reference}",
+            f"{PAYSTACK_BASE}/transaction/verify/{quote(reference, safe='')}",
             headers={
                 "Authorization": f"Bearer {secret}",
                 "Content-Type": "application/json",
@@ -200,10 +199,10 @@ def verify_paystack_transaction(
     return data
 
 
-def validate_payment_amount(data: dict) -> None:
+def validate_payment_amount(data: dict) -> str:
     """
-    Make sure the verified Paystack transaction matches one of the
-    prices Learnora actually accepts.
+    Return the subscription interval authorised by the verified amount.
+    The request body is never authoritative for subscription duration.
     """
 
     currency = str(
@@ -212,17 +211,11 @@ def validate_payment_amount(data: dict) -> None:
 
     amount = data.get("amount")
 
-    if (currency, amount) not in ALLOWED_CHARGES:
-        log.warning(
-            "Unexpected Paystack payment amount: currency=%s amount=%s",
-            currency,
-            amount,
-        )
-
-        raise HTTPException(
-            status_code=402,
-            detail="Unexpected payment amount",
-        )
+    paid_interval = CHARGE_INTERVALS.get((currency, amount))
+    if not paid_interval:
+        log.warning("Unexpected Paystack payment amount: currency=%s amount=%s", currency, amount)
+        raise HTTPException(status_code=402, detail="Unexpected payment amount")
+    return paid_interval
 
 
 def calculate_subscription_expiry(
@@ -389,7 +382,7 @@ def verify_payment(body: VerifyPaymentRequest):
     # 6. Confirm amount and currency
     # -----------------------------------------------------------------------
 
-    validate_payment_amount(payment)
+    paid_interval = validate_payment_amount(payment)
 
     # -----------------------------------------------------------------------
     # 7. Get authoritative Paystack reference
@@ -460,23 +453,15 @@ def verify_payment(body: VerifyPaymentRequest):
 
     # -----------------------------------------------------------------------
 
-    billing_interval = (
-        body.billing_interval or "monthly"
-    ).strip().lower()
-
-    if billing_interval not in (
-        "monthly",
-        "yearly",
-        "annual",
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid billing interval",
-        )
-
-    # Normalize annual -> yearly for database consistency.
-    if billing_interval == "annual":
-        billing_interval = "yearly"
+    requested_interval = (body.billing_interval or paid_interval).strip().lower()
+    if requested_interval == "annual":
+        requested_interval = "yearly"
+    if requested_interval not in {"monthly", "yearly"}:
+        raise HTTPException(status_code=400, detail="Invalid billing interval")
+    if requested_interval != paid_interval:
+        log.warning("Billing interval mismatch for verified Paystack reference %s", verified_reference)
+        raise HTTPException(status_code=400, detail="Billing interval does not match the amount paid")
+    billing_interval = paid_interval
 
     # -----------------------------------------------------------------------
     # 10. Determine subscription expiry
