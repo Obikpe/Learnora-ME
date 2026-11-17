@@ -253,6 +253,10 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
               const imageKey = candidate ? candidate.split("?")[0] : "";
               const image = imageKey && !usedImages.has(imageKey) ? candidate : "";
               if (image) usedImages.add(imageKey);
+              const category = Array.isArray(course.settings?.topics) ? course.settings.topics[0] : course.tracks?.[0]?.name;
+              const instructorName = course.instructor?.name || course.instructor_name || course.creator_name;
+              const ratingValue = Number(course.average_rating ?? course.rating);
+              const learnerCount = Number(course.learner_count ?? course.enrolment_count);
               return (
                 <Link key={course.id} href={"/courses/" + course.id} className="landing-course-card group min-w-0">
                   <div className="landing-course-image relative">
@@ -272,11 +276,13 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
                     )}
                   </div>
                   <div className="landing-course-copy">
-                    <h2 className="font-display text-2xl leading-snug">{course.title}</h2>
+                    {category && <span className="inline-flex border border-white/[.12] px-2.5 py-1 text-[10px] uppercase tracking-[.12em] text-slate-400">{category}</span>}
+                    <h2 className="mt-2 font-display text-2xl leading-snug">{course.title}</h2>
                     {(course.settings?.is_free === true || course.settings?.access_type === "free") && (
                       <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-[#f2d477]">Free for individual learners</p>
                     )}
                     <p className="mt-3 min-h-12 text-sm leading-6 text-slate-400">{course.short_description || course.description || "Explore the curriculum and available access options."}</p>
+                    {(instructorName || Number.isFinite(ratingValue) || Number.isFinite(learnerCount)) && <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">{instructorName && <span>By {instructorName}</span>}{Number.isFinite(ratingValue) && ratingValue > 0 && <span aria-label={"Rating " + ratingValue.toFixed(1) + " out of 5"}>★ {ratingValue.toFixed(1)}</span>}{Number.isFinite(learnerCount) && learnerCount > 0 && <span>{learnerCount.toLocaleString()} learners</span>}</div>}
                     <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/[.08] pt-4 text-xs text-slate-500">
                       <span className="inline-flex items-center gap-2"><Clock3 size={14} />{course.estimated_hours ? course.estimated_hours + " hours" : "Self-paced"}</span>
                       <span className="inline-flex items-center gap-2 font-semibold text-[#f2d477]">View course <ArrowRight size={14} /></span>
