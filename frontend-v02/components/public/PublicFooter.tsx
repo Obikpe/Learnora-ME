@@ -3,7 +3,7 @@ import Logo from "../brand/Logo";
 import Link from "next/link";
 
 const groups=[
-  {title:"Explore",links:[["Explore tracks","/tracks"],["Explore courses","/courses"],["How it works","/how-it-works"],["For learners","/for-learners"]]},
+  {title:"Explore",links:[["See career tracks","/tracks"],["Browse all courses","/courses"],["How it works","/how-it-works"],["For learners","/for-learners"]]},
   {title:"Work with Learnora",links:[["For instructors","/for-instructors"],["For organisations","/for-organisations"],["Choose your path","/get-started"]]},
   {title:"Your account",links:[["Sign in","/login"],["Create account","/register"],["About Learnora","/about"]]},
   {title:"Policies",links:[["Privacy policy","/privacy"],["Terms of use","/terms"],["Cookies & storage","/cookies"]]}
