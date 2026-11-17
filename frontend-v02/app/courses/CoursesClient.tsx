@@ -171,7 +171,8 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
         <div className="flex flex-col flex-wrap gap-3 md:flex-row md:items-center">
           <label className="flex min-h-12 flex-1 items-center gap-3 border border-white/10 bg-[#10151b] px-4 focus-within:border-[#d7ad35]/60">
             <Search size={17} className="shrink-0 text-slate-500"/>
-            <input aria-label="Search courses" value={query} onChange={e => { setPage(1); setQuery(e.target.value); }} placeholder="Search skills, topics or course names" className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-600"/>
+            <input aria-label="Search courses" list="course-search-suggestions" value={query} onChange={e => { setPage(1); setQuery(e.target.value); }} placeholder="Search skills, topics or course names" className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-600"/>
+            <datalist id="course-search-suggestions">{[...topics.slice(1), ...tracks.slice(1), ...levels.slice(1)].map(value => <option key={value} value={value}/>)}</datalist>
           </label>
           <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
             <SlidersHorizontal size={16} className="text-slate-500"/>
@@ -296,10 +297,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
         {!loading && !error && filtered.length > pageSize && <nav aria-label="Course catalogue pages" className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.1] pt-5"><span className="text-xs text-slate-500">Page {page} of {totalPages}</span><div className="flex items-center gap-2"><button type="button" disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))} className="min-h-11 border border-white/15 px-4 text-sm disabled:opacity-40">Previous</button><button type="button" disabled={page >= totalPages} onClick={() => setPage(value => Math.min(totalPages, value + 1))} className="min-h-11 border border-white/15 px-4 text-sm disabled:opacity-40">Next</button></div></nav>}
 
         {!loading && !error && filtered.length === 0 && (
-          <EmptyState
-            title={query || level !== "all" || track !== "all" ? "No courses match those filters" : "No published courses yet"}
-            message={query || level !== "all" || track !== "all" ? "Try a broader search, another level or a different learning track." : "Learnora has not returned published courses from the backend yet. Draft content is intentionally not shown as available learning."}
-          />
+          <div><EmptyState title={query || level !== "all" || track !== "all" || topic !== "all" || duration !== "all" || price !== "all" ? "No courses match those filters" : "No published courses yet"} message={query || level !== "all" || track !== "all" || topic !== "all" || duration !== "all" || price !== "all" ? "Try a broader search or explore one of the available topics below." : "There are no published courses available to browse at the moment. Draft courses are not shown as available learning."}/>{topics.length > 1 && <div className="mt-5 flex flex-wrap gap-2">{topics.slice(1,6).map(value=><button key={value} type="button" onClick={()=>{setTopic(value);setPage(1);}} className="min-h-11 border border-white/15 px-3 text-xs text-slate-300 hover:border-[var(--gold)]">{value}</button>)}</div>}</div>
         )}
       </section>
     </main>;
