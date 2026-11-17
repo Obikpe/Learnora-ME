@@ -1,3 +1,5 @@
+import { publicPageMetadata } from "../../lib/seo";
+export const metadata = publicPageMetadata("Explore organisations", "Discover organisations and learning communities listed on Learnora ME.", "/organisations");
 "use client";
 import { useEffect, useState } from "react";
 import { ArrowRight, Building2, Search } from "lucide-react";
