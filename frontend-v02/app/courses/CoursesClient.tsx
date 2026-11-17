@@ -7,7 +7,8 @@ import { ArrowRight, BookOpen, Clock3, Search, SlidersHorizontal } from "lucide-
 import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
 import EmptyState from "../../components/feedback/EmptyState";
-import { courses, currentUser } from "../../lib/api";
+import { currentUser } from "../../lib/api";
+import { request } from "../../lib/api/client";
 import Shell from "../../components/dashboard/Shell";
 import { IMAGES } from "../../lib/constants";
 
@@ -33,8 +34,8 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
     setLoading(true);
     setError("");
     try {
-      const result = await courses();
-      setItems(result.data || result.courses || []);
+      const result = await request<any>("/public/courses");
+      setItems(Array.isArray(result.courses) ? result.courses : []);
     } catch (e: any) {
       setError(e.message || "Courses could not be loaded.");
     } finally {
