@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CourseDetailPage({ params, searchParams }: Props) {
   const { item } = await getPublicCourse<any>(params.id);
-  const { data: initialStructure } = await getPublicCourseStructure<any>(params.id);
+  const [{ data: initialStructure }, initialPreview] = await Promise.all([getPublicCourseStructure<any>(params.id), getPublicCoursePreview<any>(params.id)]);
   const siteUrl = getSiteUrl();
   const jsonLd = item ? {
     "@context": "https://schema.org",
@@ -52,6 +52,6 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
   } : null;
   return <>
     {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
-    <CourseDetailClient params={params} searchParams={searchParams} initialCourse={item} initialStructure={initialStructure} />
+    <CourseDetailClient params={params} searchParams={searchParams} initialCourse={item} initialStructure={initialStructure} initialPreview={initialPreview} />
   </>;
 }
