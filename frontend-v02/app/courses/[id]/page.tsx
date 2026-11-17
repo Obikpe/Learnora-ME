@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import CourseDetailClient from "./CourseDetailClient";
-import { getPublicCourse, getSiteUrl } from "../../../lib/server/catalogue";
+import { getPublicCourse } from "../../../lib/server/catalogue";
 
 export const revalidate = 60;
 
@@ -36,6 +36,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CourseDetailPage({ params, searchParams }: Props) {
-  const { item, error } = await getPublicCourse<any>(params.id);
+  const { item } = await getPublicCourse<any>(params.id);
   return <CourseDetailClient params={params} searchParams={searchParams} initialCourse={item} />;
 }
