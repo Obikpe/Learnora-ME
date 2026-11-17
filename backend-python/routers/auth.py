@@ -3807,7 +3807,6 @@ def reset_password(
             .update(
                 {
                     "password_hash": new_hash,
-                    "password_changed_at": datetime.now(timezone.utc).isoformat(),
                     "password_changed_at": now.isoformat(),
                 }
             )
@@ -4123,6 +4122,7 @@ def change_password(
             .update(
                 {
                     "password_hash": new_hash,
+                    "password_changed_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
             .eq(
