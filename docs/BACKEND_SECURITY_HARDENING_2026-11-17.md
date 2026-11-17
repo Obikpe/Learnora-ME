@@ -26,13 +26,13 @@ Project: `gihfupzvdpyrmynqgukz`.
 
 - All 108 public tables have Row Level Security enabled.
 - There are no public-schema RLS policies. This is deny-by-default and matches the current architecture: browser clients do not query the database directly; FastAPI uses the service-role key.
-- Direct grants to `anon` and `authenticated` were not found on public tables, functions or sequences.
+- Direct grants to `anon` and `authenticated` were not found on public tables, functions or sequences: the live checks returned 0 table grants, 0 routine grants and 0 sequence grants.
 - The live `learnora-course-media` bucket is private, has a 2 GiB size limit and allows only the five video MIME types used by the upload API.
 - The live `learnora-resources` bucket is private, but currently has no file-size limit and no MIME allow-list. The endpoint now points to this bucket, so the storage hardening script must be applied before enabling staff resource uploads.
 
 ### Managed-role default privileges remain open
 
-The live `supabase_admin` default ACLs still grant browser-role privileges on future objects. This does not mean the current public tables are directly exposed: current direct grants are absent and RLS is enabled with no policies. It does mean a future object created under `supabase_admin` could inherit unsafe defaults.
+The live `supabase_admin` default ACLs still grant browser-role privileges on future objects: 16 table-default entries, 6 sequence-default entries and 2 function-default entries were returned by the live check. This does not mean the current public tables are directly exposed: current direct grants are absent and RLS is enabled with no policies. It does mean a future object created under `supabase_admin` could inherit unsafe defaults.
 
 The existing manual script is `supabase/ops/revoke_supabase_admin_browser_defaults.sql`. The current project connection is not a member of `supabase_admin`, so this session cannot apply it. Run it only from a database session authorised to alter defaults for that managed role, then run `supabase/ops/verify_live_schema.sql` and recheck default ACLs. Do not treat this item as resolved until the verification query returns no browser-role defaults.
 
