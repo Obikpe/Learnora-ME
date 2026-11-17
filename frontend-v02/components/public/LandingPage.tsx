@@ -107,7 +107,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
           <span><Layers3 size={14}/> {track.required_course_count} required</span>
         </div>
         {track.courses?.length > 0 && <ol aria-label="Track course sequence" className="mt-5 grid gap-2 border-l border-[var(--gold)]/40 pl-4">{track.courses.slice(0,3).map((item,index)=><li key={item.id || item.course_id || index} className="flex items-start gap-3 text-xs text-slate-400"><span className="grid size-5 shrink-0 place-items-center rounded-full border border-white/15 text-[10px] tabular-nums">{index+1}</span><span>{item.course?.title || "Published course"}</span></li>)}</ol>}
-        {track.self_enrol_available && <span className="landing-availability">Available for self-enrolment</span>}
+        {track.self_enrol_available && <span className="landing-availability">Open for enrolment</span>}
         <Link className="landing-text-link" href={"/tracks/" + encodeURIComponent(track.id)}>Explore track <ArrowRight size={15}/></Link>
       </div>
     </article>
@@ -129,7 +129,7 @@ function CourseCard({ course, index }: { course: PublicCourse; index: number }) 
         <p>{course.short_description || course.description || "Explore the course outline and learning content."}</p>
         <div className="landing-meta">
           {typeof course.estimated_hours === "number" && course.estimated_hours > 0
-            ? <span><Clock3 size={14}/> {course.estimated_hours} hours</span>
+            ? <span><Clock3 size={14}/> {course.estimated_hours < 1 ? Math.round(course.estimated_hours * 60) + " min" : course.estimated_hours + " hours"}</span>
             : null}
           {course.tracks?.slice(0, 1).map(track => <span key={track.id}><Route size={14}/>{track.name}</span>)}
         </div>
@@ -230,7 +230,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
               <h2>{courses[0].title}</h2>
               <p className="landing-hero-product-description">{courses[0].short_description || courses[0].description || "Explore the published curriculum and available learning access."}</p>
               <div className="landing-hero-product-topics">{(courses[0].settings?.topics || []).slice(0,3).map(topic=><span key={topic}>{topic}</span>)}</div>
-              <div className="landing-hero-product-footer"><span>{courses[0].level || "All levels"}</span><span>{courses[0].estimated_hours ? courses[0].estimated_hours + " hours" : "Self-paced"}</span><Link href={courseHref(courses[0])}>View course <ArrowRight size={15}/></Link></div>
+              <div className="landing-hero-product-footer"><span>{courses[0].level || "All levels"}</span><span>{courses[0].estimated_hours ? (courses[0].estimated_hours < 1 ? Math.round(courses[0].estimated_hours * 60) + " min" : courses[0].estimated_hours + " hours") : "Self-paced"}</span><Link href={courseHref(courses[0])}>View course <ArrowRight size={15}/></Link></div>
             </> : <><div className="landing-hero-product-icon"><BookOpen size={28}/></div><p className="landing-hero-product-kicker">Learnora catalogue</p><h2>Explore practical learning.</h2><p className="landing-hero-product-description">Published courses will appear here when they are ready to explore.</p><Link href="/courses">Browse courses <ArrowRight size={15}/></Link></>}
           </div>
           <div className="landing-slide-controls" aria-label="Featured messages">
@@ -285,15 +285,6 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
           <div><h2>Explore learning areas</h2><p>These topics are drawn from the published course catalogue.</p></div>
         </div>
         {categories.length ? <div className="landing-category-list">{categories.map(category => <Link key={category} href={"/courses?search=" + encodeURIComponent(category)}><span/>{category}<ArrowUpRight size={14}/></Link>)}</div> : <div className="landing-empty"><Compass size={24}/><h3>Explore courses by topic</h3><p>Topic collections will appear when published courses include topic information.</p></div>}
-      </section>
-
-      <section className="landing-career-band">
-        <div className="landing-wrap landing-career-inner">
-          <div><h2>Build a learning journey around what you want to do next.</h2><p>Start with a published track, explore its courses and decide whether the sequence fits your goals.</p><Link className="landing-button landing-button-light" href="/tracks">Explore learning tracks <ArrowRight size={16}/></Link></div>
-          <div className="landing-career-list">
-            {featuredTracks.length ? featuredTracks.slice(0, 3).map(track => <Link key={track.id} href={"/tracks/" + encodeURIComponent(track.id)}><span><Layers3 size={18}/></span><strong>{track.name}</strong><small>{track.course_count} {track.course_count === 1 ? "course" : "courses"}</small><ArrowUpRight size={17}/></Link>) : <div className="landing-career-placeholder"><GraduationCap size={28}/><p>There are no published tracks to feature right now.</p></div>}
-          </div>
-        </div>
       </section>
 
       <section className="landing-wrap landing-principles-section">
