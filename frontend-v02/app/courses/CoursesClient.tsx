@@ -146,6 +146,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
   const usedImages = new Set<string>();
   [
