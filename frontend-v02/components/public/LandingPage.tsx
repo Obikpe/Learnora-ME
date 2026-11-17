@@ -187,7 +187,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
   const slide = heroSlides[activeSlide];
 
   return (
-    <main className="landing-page">
+    <main id="main-content" className="landing-page">
       <section className="landing-wrap landing-hero" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
           <h1>{slide.title}</h1>
