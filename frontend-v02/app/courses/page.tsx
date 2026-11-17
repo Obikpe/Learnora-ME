@@ -19,6 +19,27 @@ export const metadata: Metadata = {
 };
 
 export default async function CoursesPage() {
-  const result = await getPublicCourses();
-  return <CoursesClient initialCourses={result.items} initialError={result.error} />;
+  const result = await getPublicCourses<any>();
+  const siteUrl = "https://learnora-me-v02.vercel.app";
+  const courseListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Learnora ME published courses",
+    itemListElement: result.items.map((course: any, index: number) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Course",
+        name: course.title,
+        description: course.short_description || course.description || undefined,
+        url: siteUrl + "/courses/" + encodeURIComponent(String(course.id)),
+        provider: { "@type": "Organization", name: "Learnora ME", url: siteUrl },
+        educationalLevel: course.level || undefined,
+      },
+    })),
+  };
+  return <>
+    {result.items.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseListJsonLd).replace(/</g, "\\u003c") }} />}
+    <CoursesClient initialCourses={result.items} initialError={result.error} />
+  </>;
 }
