@@ -15,9 +15,9 @@ export const metadata: Metadata = {
     url: "/",
     title: "Learn practical skills and build real projects | Learnora ME",
     description: "Explore courses and learning tracks that connect lessons with practice and projects.",
-    images: [{ url: "/api/og?title=Learn%20practical%20skills%20and%20build%20real%20projects&kind=Learnora%20ME", width: 1200, height: 630, alt: "Learnora ME — Learn, practise, build and prove" }],
+    images: [{ url: "/og?title=Learn%20practical%20skills%20and%20build%20real%20projects&kind=Learnora%20ME", width: 1200, height: 630, alt: "Learnora ME — Learn, practise, build and prove" }],
   },
-  twitter: { card: "summary_large_image", images: ["/api/og?title=Learn%20practical%20skills%20and%20build%20real%20projects&kind=Learnora%20ME"] },
+  twitter: { card: "summary_large_image", images: ["/og?title=Learn%20practical%20skills%20and%20build%20real%20projects&kind=Learnora%20ME"] },
 };
 
 export default async function Home() {
