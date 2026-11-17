@@ -1,3 +1,7 @@
+import { publicPageMetadata } from "../../lib/seo";
+
+export const metadata = publicPageMetadata("Terms of use", "Read the terms that apply when you access and use Learnora ME.", "/terms");
+
 import Logo from "../../components/brand/Logo";
 const sections=[
 ["1. About these terms","These Terms of Use apply when you access or use Learnora ME, including accounts, courses, practice tools, AI features, portfolios, creator tools and organisation workspaces. Learnora's legal entity and formal notice details will be added by the platform owner before public launch."],
