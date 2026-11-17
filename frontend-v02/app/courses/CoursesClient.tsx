@@ -153,7 +153,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
     IMAGES.learnerPage, IMAGES.instructorPage, IMAGES.organisationPage, IMAGES.login,
   ].forEach(url => usedImages.add(url.split("?")[0]));
 
-  const catalogue = <main className={"mx-auto max-w-7xl px-5 pb-24 " + (signedIn ? "pt-8" : "pt-32") + " lg:px-8"}>
+  const catalogue = <main id="main-content" className={"mx-auto max-w-7xl px-5 pb-24 " + (signedIn ? "pt-8" : "pt-32") + " lg:px-8"}>
       <section className="grid gap-10 border-b border-white/[.1] pb-12 lg:grid-cols-[1fr_.6fr] lg:items-end">
         <div>
           <p className="section-kicker">The Learnora catalogue</p>
