@@ -48,14 +48,13 @@ def _trusted_rate_limit_ip(request: Request) -> str:
 # serverless instance churn. Local development remains deterministic.
 API_RATE_LIMIT_REQUESTS = max(1, int(os.getenv("API_RATE_LIMIT_REQUESTS", "60")))
 API_RATE_LIMIT_WINDOW_SECONDS = max(1, int(os.getenv("API_RATE_LIMIT_WINDOW_SECONDS", "60")))
-_RATE_LIMIT_EXEMPT_PATHS = {"/", "/api/health", "/api/ready"}
+_RATE_LIMIT_EXEMPT_PATHS = {"/", "/api/health"}
 
 
 # CORS Middleware (Correctly placed to handle preflight OPTIONS requests)
 origins = [
     "https://thepheonixanalytics.com",
     "https://www.thepheonixanalytics.com",
-    "https://learnora-me.vercel.app",
     "https://teamslearnora.vercel.app",
     "https://learnora-me-v02.vercel.app",
 ]
