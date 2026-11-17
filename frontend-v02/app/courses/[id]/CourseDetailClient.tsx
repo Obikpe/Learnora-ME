@@ -11,11 +11,13 @@ import Shell from "../../../components/dashboard/Shell";
 import EmptyState from "../../../components/feedback/EmptyState";
 import Skeleton from "../../../components/feedback/Skeleton";
 import CourseWorkspace from "../../../components/course/CourseWorkspace";
+import { lessonContentToHtml } from "../../../lib/rich-content";
 
-export default function CourseDetailClient({params,searchParams,initialCourse,initialStructure}:{params:{id:string};searchParams:{enrol?:string};initialCourse?:any;initialStructure?:any}) {
+export default function CourseDetailClient({params,searchParams,initialCourse,initialStructure,initialPreview}:{params:{id:string};searchParams:{enrol?:string};initialCourse?:any;initialStructure?:any;initialPreview?:any}) {
   const enrolIntent=searchParams?.enrol==="1";
   const [c,setC]=useState<any>(initialCourse),[s,setS]=useState<any>(initialStructure),[structureLoading,setStructureLoading]=useState(!initialStructure),[freeMode,setFreeMode]=useState(false),[user,setUser]=useState<any>(()=>getCachedCurrentUser()),[authResolved,setAuthResolved]=useState(Boolean(getCachedCurrentUser())),[hasOrganisationContext,setHasOrganisationContext]=useState(false),[error,setError]=useState(""),[enrolError,setEnrolError]=useState(""),[enrolling,setEnrolling]=useState(false),[enrolled,setEnrolled]=useState(false);
   const autoEnrolStarted=useRef(false);
+  const [showPreview,setShowPreview]=useState(false);
   const [showWorkspace,setShowWorkspace]=useState(false),[enrolmentResolved,setEnrolmentResolved]=useState(false);
   const explicitlyFree=Boolean(c?.settings?.is_free===true||c?.settings?.access_type==="free"||c?.settings?.price===0);
   const freeLaunchCourse=Boolean(freeMode&&c?.ownership==="learnora"&&!c?.organisation_id);
@@ -64,6 +66,18 @@ export default function CourseDetailClient({params,searchParams,initialCourse,in
           </div>
         </aside>
       </section>
+
+      {initialPreview && <section className="mt-16 border border-white/[.12] bg-[#11171e] p-6 sm:p-8" aria-labelledby="course-preview-heading">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div><p className="section-kicker">Try a lesson</p><h2 id="course-preview-heading" className="mt-3 font-display text-3xl">Preview this course</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Read a published preview lesson before deciding whether to enrol.</p></div>
+          <span className="border border-[var(--gold)]/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--gold-light)]">Free preview</span>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[.1] pt-5">
+          <div><h3 className="text-lg font-semibold">{initialPreview.title}</h3><p className="mt-1 text-xs text-slate-500">{initialPreview.duration_minutes ? initialPreview.duration_minutes + " minutes" : "Preview lesson"} · {initialPreview.lesson_type || "Lesson"}</p>{initialPreview.description && <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">{initialPreview.description}</p>}</div>
+          <button type="button" aria-expanded={showPreview} aria-controls="course-preview-content" onClick={()=>setShowPreview(value=>!value)} className="inline-flex min-h-11 items-center gap-2 border border-white/[.18] px-4 text-sm font-semibold hover:border-[var(--gold)]">{showPreview ? "Hide lesson" : "Read preview lesson"} <ChevronDown size={15} className={showPreview ? "rotate-180 transition-transform" : "transition-transform"}/></button>
+        </div>
+        {showPreview && <article id="course-preview-content" className="rich-content mt-6 border-t border-white/[.1] pt-6" dangerouslySetInnerHTML={{__html:lessonContentToHtml(initialPreview.content)}}/>}
+      </section>}
 
       <section className="mt-20 grid gap-10 lg:grid-cols-[.72fr_1.28fr] lg:gap-16">
         <div><p className="section-kicker">Course outline</p><h2 className="mt-4 max-w-md font-display text-4xl leading-tight sm:text-5xl">What you will work through.</h2></div>
