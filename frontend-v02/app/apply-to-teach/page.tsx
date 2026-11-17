@@ -1,3 +1,5 @@
+import { publicPageMetadata } from "../../lib/seo";
+export const metadata = publicPageMetadata("Apply to teach on Learnora", "Learn how to contribute as an instructor or creator on Learnora ME.", "/apply-to-teach");
 "use client";
 
 import { useState } from "react";
