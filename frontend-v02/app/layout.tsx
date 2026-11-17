@@ -10,7 +10,8 @@ export const metadata: Metadata = {
     default: "Learnora ME — Learn. Practise. Build. Prove.",
     template: "%s | Learnora ME",
   },
-  description: "A connected learning experience for learners, instructors and organisations. Learn useful skills, practise, build real work and keep evidence of your progress.",
+  description: "Explore practical courses and structured learning tracks. Learn useful skills, practise, build real projects and keep evidence of your progress.",
+  alternates: { canonical: "/" },
   applicationName: "Learnora ME",
   icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
   openGraph: {
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
     title: "Learnora ME — Learn. Practise. Build. Prove.",
     description: "Connect learning with practice, projects, feedback and skills evidence.",
     url: "/",
+    images: [{ url: "/og?title=Learn%20skills.%20Build%20real%20projects.&kind=Learnora%20ME", width: 1200, height: 630, alt: "Learnora ME — Learn, practise, build and prove" }],
   },
   twitter: {
     card: "summary_large_image",
