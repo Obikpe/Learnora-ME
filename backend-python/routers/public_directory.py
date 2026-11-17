@@ -95,6 +95,10 @@ def _public_track_memberships(course_ids: list[str]) -> dict:
 def _public_course_payload(course: dict) -> dict:
     settings = course.get("settings") or {}
     topics = settings.get("topics") if isinstance(settings.get("topics"), list) else []
+    outcomes_source = settings.get("learning_outcomes", settings.get("outcomes", []))
+    requirements_source = settings.get("requirements", [])
+    learning_outcomes = [value.strip()[:500] for value in outcomes_source if isinstance(value, str) and value.strip()][:20] if isinstance(outcomes_source, list) else []
+    requirements = [value.strip()[:500] for value in requirements_source if isinstance(value, str) and value.strip()][:20] if isinstance(requirements_source, list) else []
     is_free = ((free_access_mode_enabled() and course.get("ownership") == "learnora" and not course.get("organisation_id")) or settings.get("is_free") is True or settings.get("access_type") == "free" or settings.get("price") == 0)
     return {
         "id": course.get("id"),
@@ -117,6 +121,8 @@ def _public_course_payload(course: dict) -> dict:
             "access_type": "free" if is_free else "restricted",
             "track": str(settings.get("track") or "").strip() or None,
             "topics": [topic.strip()[:100] for topic in topics if isinstance(topic, str) and topic.strip()][:20],
+            "learning_outcomes": learning_outcomes,
+            "requirements": requirements,
         },
     }
 
