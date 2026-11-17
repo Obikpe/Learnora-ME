@@ -59,16 +59,17 @@ DUMMY_COHORT_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
 # Persistent cohort-login throttling: shared across serverless instances.
 COHORT_LOGIN_MAX_FAILS = 5
 COHORT_LOGIN_WINDOW_SECONDS = 300
+COHORT_LOGIN_IP_MAX_FAILS = 20
 
 
 def _cohort_rate_hash(key: str) -> str:
     return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
-def _cohort_rate_limited(key: str) -> bool:
+def _cohort_rate_limited(key: str, max_failures: int = COHORT_LOGIN_MAX_FAILS) -> bool:
     result = supabase.rpc("cohort_login_is_limited", {
         "p_key_hash": _cohort_rate_hash(key),
-        "p_max_failures": COHORT_LOGIN_MAX_FAILS,
+        "p_max_failures": max_failures,
         "p_window_seconds": COHORT_LOGIN_WINDOW_SECONDS,
     }).execute()
     value = result.data
@@ -79,10 +80,10 @@ def _cohort_rate_limited(key: str) -> bool:
     return bool(value)
 
 
-def _cohort_record_failure(key: str) -> None:
+def _cohort_record_failure(key: str, max_failures: int = COHORT_LOGIN_MAX_FAILS) -> None:
     supabase.rpc("cohort_login_record_failure", {
         "p_key_hash": _cohort_rate_hash(key),
-        "p_max_failures": COHORT_LOGIN_MAX_FAILS,
+        "p_max_failures": max_failures,
         "p_window_seconds": COHORT_LOGIN_WINDOW_SECONDS,
     }).execute()
 
@@ -677,7 +678,7 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
     if (
         _cohort_rate_limited(account_rate_key)
         or _cohort_rate_limited(rate_key)
-        or _cohort_rate_limited(ip_rate_key)
+        or _cohort_rate_limited(ip_rate_key, max_failures=COHORT_LOGIN_IP_MAX_FAILS)
     ):
         raise HTTPException(429, "Too many failed login attempts. Try again later.")
 
@@ -685,7 +686,7 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
         verify_password(body.password, DUMMY_COHORT_PASSWORD_HASH)
         _cohort_record_failure(account_rate_key)
         _cohort_record_failure(rate_key)
-        _cohort_record_failure(ip_rate_key)
+        _cohort_record_failure(ip_rate_key, max_failures=COHORT_LOGIN_IP_MAX_FAILS)
         raise HTTPException(401, "Invalid username or password.")
 
     result = (
