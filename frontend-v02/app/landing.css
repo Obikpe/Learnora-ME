@@ -159,7 +159,7 @@
   .landing-hero-image { aspect-ratio:1.2/1; }
   .landing-section { padding-block:45px; }
   .landing-section-heading { align-items:flex-start; flex-direction:column; gap:12px; }
-  .landing-course-grid { gap:10px; }
+  .landing-course-grid { grid-template-columns:1fr; gap:12px; }
   .landing-course-copy,.landing-card-content { padding:11px; }
   .landing-course-copy h3 { font-size:12px; }
   .landing-course-copy > p { font-size:10px; }
