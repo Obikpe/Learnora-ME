@@ -75,7 +75,7 @@ async def paystack_webhook(request: Request):
     secret = (os.getenv("PAYSTACK_SECRET_KEY") or "").strip().strip('"').strip("'")
     expected = hmac.new(secret.encode(), raw, hashlib.sha512).hexdigest()
     signature = request.headers.get("x-paystack-signature", "")
-    if not secret or not hmac.compare_digest(signature, expected):
+    if not secret or not hmac.compare_digest(signature.encode("utf-8"), expected.encode("ascii")):
         raise HTTPException(401, "Invalid signature")
 
     try:
