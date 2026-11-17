@@ -335,22 +335,41 @@ def norm_email(
     return normalized
 
 
-def check_password_rules(
-    password: str,
-):
-
+def check_password_rules(password: str):
     if len(password) < 12:
         raise HTTPException(status_code=400, detail="Password must be at least 12 characters long.")
-
     if len(password.encode("utf-8")) > 72:
+        raise HTTPException(status_code=400, detail="Password is too long (72 bytes maximum for this password hashing scheme).")
 
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Password is too long "
-                "(72 bytes maximum)"
-            ),
+    common_passwords = {
+        "password123!", "password1234", "qwerty123456", "123456789012",
+        "letmein123456", "welcome12345", "admin1234567", "iloveyou1234",
+        "learnora1234", "changeme1234",
+    }
+    if password.casefold() in common_passwords:
+        raise HTTPException(status_code=400, detail="Choose a less common password.")
+
+    # Have I Been Pwned k-anonymity range lookup: only the first five SHA-1
+    # characters leave this service; the full password/hash is never sent.
+    digest = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
+    prefix, suffix = digest[:5], digest[5:]
+    try:
+        response = httpx.get(
+            f"https://api.pwnedpasswords.com/range/{prefix}",
+            headers={"Add-Padding": "true", "User-Agent": "Learnora-Password-Check"},
+            timeout=httpx.Timeout(3.0, connect=2.0),
         )
+        response.raise_for_status()
+        compromised = any(
+            line.partition(":")[0].strip().upper() == suffix
+            and int(line.partition(":")[2].strip() or "0") > 0
+            for line in response.text.splitlines()
+        )
+    except (httpx.HTTPError, ValueError):
+        log.exception("Compromised-password check unavailable")
+        raise HTTPException(status_code=503, detail="Password security checks are temporarily unavailable. Please try again.") from None
+    if compromised:
+        raise HTTPException(status_code=400, detail="This password has appeared in known data breaches. Choose a different password.")
 
 
 # ---------------------------------------------------------------------------
