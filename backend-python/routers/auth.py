@@ -2649,69 +2649,33 @@ def register(
         or None
     )
 
-    if _find_admin(email):
+    # Keep registration responses indistinguishable for existing individual,
+    # administrator and organisation-managed identities. Account recovery and
+    # sign-in provide the appropriate next step without exposing email presence.
+    generic_registration_response = {
+        "status": "accepted",
+        "message": (
+            "If this email can be used for a Learnora account, verification "
+            "instructions will be sent. If you already have an account, sign in "
+            "or use password recovery."
+        ),
+    }
 
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "An account with this "
-                "email already exists"
-            ),
-        )
-
+    existing_admin = _find_admin(email)
     reserved_cohort_accounts = _find_cohort_accounts_by_email(email)
-    if reserved_cohort_accounts:
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "This email is reserved for an organisation-managed account. "
-                "Ask the organisation to release the account before creating "
-                "an individual Learnora account."
-            ),
-        )
-
     existing_user = _find_user(email)
-    now = datetime.now(timezone.utc)
-
-    if existing_user and existing_user.get("account_status") == "deactivation_pending":
-        recovery_until = _parse_datetime(existing_user.get("account_deactivation_until"))
-        if recovery_until and recovery_until > now:
-            raise HTTPException(
-                status_code=409,
-                detail="ACCOUNT_DEACTIVATED: This Learnora account is deactivated but can still be reactivated within its 30-day recovery period. Continue to the account reactivation page.",
-            )
-        finalizer_enabled = os.getenv("ACCOUNT_DELETION_FINALIZER_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
-        if not finalizer_enabled:
-            raise HTTPException(
-                status_code=503,
-                detail="This account has reached the end of its recovery period and is awaiting permanent closure. Please try again later.",
-            )
-        try:
-            supabase.rpc(
-                "finalize_expired_learner_account_deletions",
-                {"p_now": now.isoformat()},
-            ).execute()
-            existing_user = _find_user(email)
-        except Exception as exc:
-            print(f"Expired account finalisation during registration failed: {type(exc).__name__}")
-            raise HTTPException(
-                status_code=503,
-                detail="We are preparing this account for a new registration. Please try again shortly.",
-            ) from None
-
-    if existing_user:
-        if existing_user.get("sub_status") == "pending":
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "An account with this email already exists but has not been verified. "
-                    "Please use the verification email or request a new one."
-                ),
-            )
-        raise HTTPException(
-            status_code=400,
-            detail="An account with this email already exists",
+    if existing_admin or reserved_cohort_accounts or existing_user:
+        log_security_event(
+            action="registration_for_existing_identity",
+            email=email,
+            request=request,
+            metadata={
+                "has_admin": bool(existing_admin),
+                "has_individual_user": bool(existing_user),
+                "cohort_account_count": len(reserved_cohort_accounts),
+            },
         )
+        return generic_registration_response
 
     # ---------------------------------------------------------------
     # CREATE PENDING ACCOUNT
@@ -2849,28 +2813,18 @@ def register(
         )
 
     except Exception as exc:
-
-        print(
-            "Verification email failed: "
-            f"{exc}"
+        log.exception(
+            "Verification email delivery failed for a newly created account (%s)",
+            type(exc).__name__,
         )
-
         log_security_event(
-            action=(
-                "verification_email_failed"
-            ),
+            action="verification_email_failed",
             email=email,
             request=request,
         )
+        # Return the same generic registration response. The learner can use
+        # the resend-verification page; the API does not disclose account state.
 
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Your account was created, "
-                "but we could not send the verification "
-                "email. Please request a new verification email."
-            ),
-        )
 
     log_audit_event(
         action="learner_registered",
@@ -2881,20 +2835,7 @@ def register(
         metadata={"marketing_email_opt_in": bool(payload.marketing_email_opt_in)},
     )
 
-    return {
-        "status": "success",
-        "message": (
-            "Account created. "
-            "Please check your email and verify "
-            "your account before logging in."
-        ),
-        "email": email,
-        "name": name,
-        "role": "normal",
-        "account_type": "learner",
-        "sub_status": "pending",
-        "verification_required": True,
-    }
+    return generic_registration_response
 
 
 # ---------------------------------------------------------------------------
