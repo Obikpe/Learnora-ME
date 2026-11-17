@@ -229,3 +229,8 @@
 .landing-hero-product-footer{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:auto;padding-top:22px;border-top:1px solid var(--border);color:var(--text-muted);font-size:10px}
 .landing-hero-product-footer a,.landing-hero-product>a{display:inline-flex;min-height:42px;align-items:center;gap:8px;margin-left:auto;background:var(--primary);padding:0 14px;border-radius:7px;color:var(--on-primary);font-size:11px;font-weight:750}
 @media(max-width:700px){.landing-hero-product{min-height:360px;padding:22px}.landing-hero-product-icon{margin-top:20px}.landing-hero-product-footer a{margin-left:0}}
+
+.landing-popular-topics{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:12px}
+.landing-popular-topics>span{margin-right:3px;color:var(--text-muted);font-size:9px;font-weight:750;letter-spacing:.1em;text-transform:uppercase}
+.landing-popular-topics a{display:inline-flex;min-height:32px;align-items:center;border:1px solid var(--border);border-radius:999px;padding:0 10px;color:var(--text-body);font-size:10px;transition:border-color .16s,color .16s}
+.landing-popular-topics a:hover{border-color:var(--primary);color:var(--primary)}
