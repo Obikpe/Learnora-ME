@@ -58,7 +58,7 @@ DUMMY_COHORT_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
 
 # Persistent cohort-login throttling: shared across serverless instances.
 COHORT_LOGIN_MAX_FAILS = 5
-COHORT_LOGIN_WINDOW_SECONDS = 900
+COHORT_LOGIN_WINDOW_SECONDS = 300
 
 
 def _cohort_rate_hash(key: str) -> str:
