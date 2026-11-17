@@ -978,9 +978,9 @@ def make_token(
     account_type: str,
 ) -> str:
 
-    now = int(
-        time.time()
-    )
+    # Keep sub-second precision so a password change invalidates every
+    # previously issued token, including one created in the same second.
+    now = time.time()
 
     return jwt.encode(
         {
@@ -1008,7 +1008,7 @@ def _assert_session_not_before_password_change(payload: dict, account: dict) -> 
         return  # Existing accounts/tokens remain compatible until their next password change.
     try:
         changed_ts = datetime.fromisoformat(str(changed_at).replace("Z", "+00:00")).timestamp()
-        if int(issued_at) < int(changed_ts):
+        if float(issued_at) < changed_ts:
             raise HTTPException(status_code=401, detail="Session expired after a password change. Please sign in again.")
     except (TypeError, ValueError, OverflowError):
         raise HTTPException(status_code=401, detail="Session could not be validated. Please sign in again.")
