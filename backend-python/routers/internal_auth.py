@@ -230,7 +230,7 @@ def require_internal_permission(permission: str):
 def internal_login(
     payload: InternalLoginRequest,
     request: Request,
-    response: Response = None,
+    response: Response,
 ):
     email = norm_email(payload.email)
     rate_keys = auth._login_rate_keys(email, request)
