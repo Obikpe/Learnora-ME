@@ -267,7 +267,11 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
 
       <section className="landing-image-band">
         <div className="landing-wrap landing-image-band-inner">
-          <div className="landing-band-image"><Image src={IMAGES.workshop} alt="A group learning together in a workshop" width={1000} height={700} quality={75} sizes="(max-width: 1024px) 100vw, 50vw"/></div>
+          <div className="landing-evidence-preview" aria-label="How Learnora distinguishes learning progress, assessment and reviewed evidence">
+            <article><span className="landing-evidence-number">01</span><div><strong>Course progress</strong><p>Records lessons and learning activity.</p></div><span className="landing-evidence-type">Learning record</span></article>
+            <article><span className="landing-evidence-number">02</span><div><strong>Assessment result</strong><p>Records performance against an assessment.</p></div><span className="landing-evidence-type">Assessment</span></article>
+            <article><span className="landing-evidence-number">03</span><div><strong>Instructor-reviewed evidence</strong><p>Records work that has been reviewed by an instructor.</p></div><span className="landing-evidence-type">Human review</span></article>
+          </div>
           <div><h2>Progress should mean more than a percentage.</h2><p>Finishing a course tells you that you reached the end of its material. Practice, projects, assessment and feedback help tell a fuller story of what you can do.</p><Link className="landing-button landing-button-light" href="/how-it-works">See how it works <ArrowRight size={16}/></Link></div>
         </div>
       </section>
