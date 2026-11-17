@@ -91,6 +91,16 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIn('(authorization or "").encode("utf-8")', notifications)
         self.assertIn('(authorization or "").encode("utf-8")', lifecycle)
 
+    def test_rate_limiter_uses_only_vercel_normalised_client_ip(self):
+        auth_source = read("routers/auth.py")
+        main_source = read("main.py")
+        self.assertIn('os.getenv("VERCEL", "").strip() == "1"', auth_source)
+        self.assertIn('request.headers.get("x-real-ip")', auth_source)
+        self.assertIn('os.getenv("VERCEL", "").strip() == "1"', main_source)
+        self.assertIn('request.headers.get("x-real-ip")', main_source)
+        self.assertNotIn('request.headers.get("x-forwarded-for")', auth_source)
+        self.assertNotIn('request.headers.get("x-forwarded-for")', main_source)
+
     def test_ready_endpoint_is_not_exempt_from_global_rate_limiting(self):
         source = read("main.py")
         match = re.search(r"_RATE_LIMIT_EXEMPT_PATHS\s*=\s*\{([^}]+)\}", source)
