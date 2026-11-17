@@ -282,7 +282,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         <div className="landing-wrap landing-career-inner">
           <div><h2>Build a learning journey around what you want to do next.</h2><p>Start with a published track, explore its courses and decide whether the sequence fits your goals.</p><Link className="landing-button landing-button-light" href="/tracks">Explore learning tracks <ArrowRight size={16}/></Link></div>
           <div className="landing-career-list">
-            {featuredTracks.length ? featuredTracks.slice(0, 3).map(track => <Link key={track.id} href={"/tracks/" + encodeURIComponent(track.id)}><span><Layers3 size={18}/></span><strong>{track.name}</strong><small>{track.course_count} {track.course_count === 1 ? "course" : "courses"}</small><ArrowUpRight size={17}/></Link>) : <div className="landing-career-placeholder"><GraduationCap size={28}/><p>Published learning tracks will be shown here.</p></div>}
+            {featuredTracks.length ? featuredTracks.slice(0, 3).map(track => <Link key={track.id} href={"/tracks/" + encodeURIComponent(track.id)}><span><Layers3 size={18}/></span><strong>{track.name}</strong><small>{track.course_count} {track.course_count === 1 ? "course" : "courses"}</small><ArrowUpRight size={17}/></Link>) : <div className="landing-career-placeholder"><GraduationCap size={28}/><p>There are no published tracks to feature right now.</p></div>}
           </div>
         </div>
       </section>
