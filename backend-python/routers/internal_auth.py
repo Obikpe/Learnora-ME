@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel, Field
-from .auth import ALGORITHM, JWT_SECRET, TEAM_COOKIE_NAME, _request_auth_token, clear_auth_cookie, deliver_auth_token, hash_password, log_audit_event, norm_email, supabase, verify_password
+from .auth import ALGORITHM, JWT_SECRET, TEAM_COOKIE_NAME, _request_auth_token, clear_auth_cookie, deliver_auth_token, hash_password, log_audit_event, norm_email, supabase, verify_password, _legacy_password_login_allowed
 
 router=APIRouter(prefix="/api/internal/auth",tags=["Internal Auth"])
 bearer=HTTPBearer(auto_error=False)
