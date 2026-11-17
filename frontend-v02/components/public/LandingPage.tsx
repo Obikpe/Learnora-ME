@@ -210,9 +210,10 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
           <div className="landing-actions"><Link className="landing-button landing-button-outline" href="/how-it-works">How Learnora works <ArrowUpRight size={16}/></Link></div>
           <form className="landing-search" onSubmit={submitSearch}>
             <Search size={18} aria-hidden="true"/>
-            <input aria-label="Search courses and skills" value={search} onChange={event => setSearch(event.target.value)} placeholder="What do you want to learn?"/>
+            <input aria-label="Search courses and skills" list="landing-search-suggestions" value={search} onChange={event => setSearch(event.target.value)} placeholder="What do you want to learn?"/>
             <button type="submit">Find courses</button>
           </form>
+          <datalist id="landing-search-suggestions">{categories.map(topic=><option key={topic} value={topic}/>)}</datalist>
           {categories.length > 0 && <div className="landing-popular-topics"><span>Popular topics</span>{categories.slice(0,5).map(topic=><Link key={topic} href={"/courses?search="+encodeURIComponent(topic)}>{topic}</Link>)}</div>}
           <div className="landing-hero-points">
             <span><BookOpen size={17}/> Learn clearly</span>
