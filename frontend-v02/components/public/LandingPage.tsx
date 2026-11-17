@@ -223,11 +223,16 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
           </div>
         </div>
         <div className="landing-hero-visual">
-          <div className="landing-hero-image">
-            <Image src={slide.image} alt={slide.alt} width={1800} height={1200} priority={activeSlide === 0} quality={75} sizes="(max-width: 1024px) 100vw, 55vw" />
-            <div className="landing-image-caption">
-                            <strong>A course is a beginning. What you do with it is the story.</strong>
-            </div>
+          <div className="landing-hero-product">
+            {courses[0] ? <>
+              <div className="landing-hero-product-top"><span>Published course</span><span>{courses[0].settings?.is_free || courses[0].settings?.access_type === "free" ? "Free to start" : "Course details"}</span></div>
+              <div className="landing-hero-product-icon"><BookOpen size={28}/></div>
+              <p className="landing-hero-product-kicker">{courses[0].tracks?.[0]?.name || courses[0].settings?.topics?.[0] || "Learnora course"}</p>
+              <h2>{courses[0].title}</h2>
+              <p className="landing-hero-product-description">{courses[0].short_description || courses[0].description || "Explore the published curriculum and available learning access."}</p>
+              <div className="landing-hero-product-topics">{(courses[0].settings?.topics || []).slice(0,3).map(topic=><span key={topic}>{topic}</span>)}</div>
+              <div className="landing-hero-product-footer"><span>{courses[0].level || "All levels"}</span><span>{courses[0].estimated_hours ? courses[0].estimated_hours + " hours" : "Self-paced"}</span><Link href={courseHref(courses[0])}>View course <ArrowRight size={15}/></Link></div>
+            </> : <><div className="landing-hero-product-icon"><BookOpen size={28}/></div><p className="landing-hero-product-kicker">Learnora catalogue</p><h2>Explore practical learning.</h2><p className="landing-hero-product-description">Published courses will appear here when they are ready to explore.</p><Link href="/courses">Browse courses <ArrowRight size={15}/></Link></>}
           </div>
           <div className="landing-slide-controls" aria-label="Featured messages">
             <span>{String(activeSlide + 1).padStart(2, "0")} / 03</span>
