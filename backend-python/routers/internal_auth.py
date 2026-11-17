@@ -165,8 +165,8 @@ def _record_failed_login(email: str, request: Request, rate_keys: tuple[str, str
 
 
 def get_current_staff(
+    request: Request,
     creds: Optional[HTTPAuthorizationCredentials] = Depends(bearer),
-    request: Request = None,
 ):
     token_value = _request_auth_token(request, creds, TEAM_COOKIE_NAME)
     if not token_value:
@@ -409,7 +409,7 @@ def internal_login(
         }).eq("id", staff["id"]).execute()
 
     auth._clear_login_failures(rate_keys)
-    now = int(time.time())
+    now = time.time()
     token = jwt.encode(
         {
             "sub": email,
