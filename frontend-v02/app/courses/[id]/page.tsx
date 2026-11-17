@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CourseDetailClient from "./CourseDetailClient";
+import { getSiteUrl } from "../../../lib/server/catalogue";
 import { getPublicCourse } from "../../../lib/server/catalogue";
 
 export const revalidate = 60;
@@ -37,5 +38,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CourseDetailPage({ params, searchParams }: Props) {
   const { item } = await getPublicCourse<any>(params.id);
-  return <CourseDetailClient params={params} searchParams={searchParams} initialCourse={item} />;
+  const siteUrl = getSiteUrl();
+  const jsonLd = item ? {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: item.title,
+    description: item.short_description || item.description || undefined,
+    provider: { "@type": "Organization", name: "Learnora ME", url: siteUrl },
+    url: siteUrl + "/courses/" + encodeURIComponent(String(item.id)),
+    educationalLevel: item.level || undefined,
+    courseMode: "online",
+  } : null;
+  return <>
+    {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
+    <CourseDetailClient params={params} searchParams={searchParams} initialCourse={item} />
+  </>;
 }
