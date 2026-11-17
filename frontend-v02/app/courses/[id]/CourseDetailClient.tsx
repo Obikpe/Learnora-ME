@@ -38,6 +38,8 @@ export default function CourseDetailClient({params,searchParams,initialCourse,in
   if(pageContent)return signedIn?<Shell active="discover">{pageContent}</Shell>:<><PublicNav/>{pageContent}<PublicFooter/></>;
   const modules=s?.modules||s?.structure?.modules||[];
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
+  const outcomes=Array.isArray(c?.settings?.learning_outcomes)?c.settings.learning_outcomes:[];
+  const requirements=Array.isArray(c?.settings?.requirements)?c.settings.requirements:[];
   const pageBody=<main id="main-content" className={`mx-auto max-w-[82rem] px-5 pb-24 ${signedIn?"pt-8":"pt-32"} lg:px-8`}>
       <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-600"><a href="/" className="hover:text-slate-300">Home</a><span>/</span><a href="/courses" className="hover:text-slate-300">Courses</a><span>/</span><span className="max-w-[18rem] truncate text-slate-400">{c.title}</span></nav>
       <section className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_23rem] xl:gap-16">
@@ -66,6 +68,11 @@ export default function CourseDetailClient({params,searchParams,initialCourse,in
           </div>
         </aside>
       </section>
+
+      {(outcomes.length > 0 || requirements.length > 0) && <section className="mt-14 grid gap-8 border-y border-white/[.1] py-10 md:grid-cols-2">
+        {outcomes.length > 0 && <div><p className="section-kicker">Learning outcomes</p><h2 className="mt-3 font-display text-2xl">What you will learn</h2><ul className="mt-5 space-y-3">{outcomes.map((value:string,index:number)=><li key={index} className="flex gap-3 text-sm leading-6 text-slate-300"><Check size={16} className="mt-1 shrink-0 text-[var(--gold-light)]"/><span>{value}</span></li>)}</ul></div>}
+        {requirements.length > 0 && <div><p className="section-kicker">Before you begin</p><h2 className="mt-3 font-display text-2xl">What you will need</h2><ul className="mt-5 space-y-3">{requirements.map((value:string,index:number)=><li key={index} className="flex gap-3 text-sm leading-6 text-slate-300"><BookOpen size={16} className="mt-1 shrink-0 text-[var(--gold-light)]"/><span>{value}</span></li>)}</ul></div>}
+      </section>}
 
       {initialPreview && <section className="mt-16 border border-white/[.12] bg-[#11171e] p-6 sm:p-8" aria-labelledby="course-preview-heading">
         <div className="flex flex-wrap items-start justify-between gap-5">
