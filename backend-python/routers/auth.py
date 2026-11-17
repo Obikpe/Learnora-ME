@@ -404,7 +404,7 @@ def verify_password(
         valid, True
     """
 
-    if not stored:
+    if not stored or len(password.encode("utf-8")) > 72:
         return False, False
 
     if stored.startswith("$2"):
@@ -2251,10 +2251,8 @@ def login(
 
         raise HTTPException(
             status_code=429,
-            detail=(
-                "Too many failed login attempts. "
-                "Try again later."
-            ),
+            detail="Too many failed login attempts. Try again in five minutes.",
+            headers={"Retry-After": str(WINDOW)},
         )
 
     # Resolve every legacy identity source before choosing an authentication
