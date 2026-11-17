@@ -48,6 +48,8 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
     provider: { "@type": "Organization", name: "Learnora ME", url: siteUrl },
     url: siteUrl + "/courses/" + encodeURIComponent(String(item.id)),
     educationalLevel: item.level || undefined,
+    teaches: Array.isArray(item.settings?.learning_outcomes) ? item.settings.learning_outcomes : undefined,
+    coursePrerequisites: Array.isArray(item.settings?.requirements) ? item.settings.requirements.join("; ") : undefined,
     courseMode: "online",
   } : null;
   return <>
