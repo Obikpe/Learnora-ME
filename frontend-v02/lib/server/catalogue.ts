@@ -33,6 +33,23 @@ async function fetchPublic<T>(path: string, key: string): Promise<PublicCatalogu
   }
 }
 
+export async function getPublicCourse<T = any>(id: string): Promise<{ item: T | null; error: string | null }> {
+  try {
+    const response = await fetch(`${API_ORIGIN}/api/public/courses/${encodeURIComponent(id)}`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 60, tags: [`public-course-${id}`] },
+    });
+    if (!response.ok) return { item: null, error: response.status === 404 ? "Course not found." : "Course details are temporarily unavailable." };
+    const body = await response.json();
+    const item = body?.course || body;
+    if (!item || typeof item !== "object" || !item.id) return { item: null, error: "Course not found." };
+    return { item: item as T, error: null };
+  } catch (error) {
+    console.error("[public-catalogue] course fetch failed", error);
+    return { item: null, error: "Course details are temporarily unavailable." };
+  }
+}
+
 export function getPublicCourses<T = any>() {
   return fetchPublic<T>("/public/courses", "courses");
 }
