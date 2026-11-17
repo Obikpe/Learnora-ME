@@ -668,16 +668,22 @@ def activate_cohort_account(body: CohortActivation):
 def login_cohort_account(body: CohortLogin, request: Request, response: Response = None):
     username = body.username.strip().lower()
     client_ip = _get_client_ip(request) or "unknown"
+    account_rate_key = f"cohort-account:{username}"
     rate_key = f"cohort:{username}:{client_ip}"
     ip_rate_key = f"cohort-ip:{client_ip}"
 
-    # A client-wide bucket prevents username rotation from bypassing the
-    # per-account bucket. Both checks run before any account lookup.
-    if _cohort_rate_limited(rate_key) or _cohort_rate_limited(ip_rate_key):
+    # Account, account/IP, and IP-wide buckets stop IP rotation and username
+    # spraying. All checks run before any account lookup.
+    if (
+        _cohort_rate_limited(account_rate_key)
+        or _cohort_rate_limited(rate_key)
+        or _cohort_rate_limited(ip_rate_key)
+    ):
         raise HTTPException(429, "Too many failed login attempts. Try again later.")
 
     if not re.fullmatch(r"[a-z0-9.-]{2,160}", username):
         verify_password(body.password, DUMMY_COHORT_PASSWORD_HASH)
+        _cohort_record_failure(account_rate_key)
         _cohort_record_failure(rate_key)
         _cohort_record_failure(ip_rate_key)
         raise HTTPException(401, "Invalid username or password.")
@@ -696,10 +702,12 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
         (account.get("password_hash") or "") if account else DUMMY_COHORT_PASSWORD_HASH,
     )
     if not account or not valid:
+        _cohort_record_failure(account_rate_key)
         _cohort_record_failure(rate_key)
         _cohort_record_failure(ip_rate_key)
         raise HTTPException(401, "Invalid username or password.")
     if account.get("status") != "active":
+        _cohort_record_failure(account_rate_key)
         _cohort_record_failure(rate_key)
         _cohort_record_failure(ip_rate_key)
         raise HTTPException(403, "This cohort account is not active. Activate it or contact your organisation.")
@@ -711,6 +719,7 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
         or len(reserved_accounts) != 1
         or str(reserved_accounts[0].get("id")) != str(account["id"])
     ):
+        _cohort_record_failure(account_rate_key)
         _cohort_record_failure(rate_key)
         _cohort_record_failure(ip_rate_key)
         raise HTTPException(
@@ -722,6 +731,7 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
         raise HTTPException(403, "This cohort has ended and the account is no longer available.")
     # Clear only this account's bucket. The client-wide bucket intentionally
     # remains so successful login to another account cannot reset spray limits.
+    _cohort_clear_failures(account_rate_key)
     _cohort_clear_failures(rate_key)
     now = datetime.now(timezone.utc).isoformat()
     supabase.table("cohort_accounts").update({"last_login_at": now}).eq("id", account["id"]).execute()
