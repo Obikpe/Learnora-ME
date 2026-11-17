@@ -1,3 +1,7 @@
+import { publicPageMetadata } from "../../lib/seo";
+
+export const metadata = publicPageMetadata("How Learnora works", "See how Learnora connects structured courses, practice, assessment, guidance and evidence of skills.", "/how-it-works");
+
 import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
 import Journey from "../../components/public/Journey";
