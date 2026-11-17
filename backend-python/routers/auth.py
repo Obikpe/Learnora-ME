@@ -2272,10 +2272,9 @@ def login(
                 "cohort_account_count": len(cohort_accounts),
             },
         )
-        raise HTTPException(
-            status_code=409,
-            detail="This email has conflicting account records. Contact Learnora support before signing in.",
-        )
+        verify_password(payload.password, DUMMY_LOGIN_PASSWORD_HASH)
+        _record_login_failure(rate_keys)
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if cohort_accounts and not admin and not user:
         # Organisation/cohort identities must not authenticate through the
@@ -2297,9 +2296,6 @@ def login(
     # ---------------------------------------------------------------
 
     if admin:
-        if not _legacy_password_login_allowed(str(admin.get("password_hash") or "")):
-            raise HTTPException(403, "Your password needs to be reset before you can sign in. Use Forgot password to set a new password.")
-
         valid, needs_rehash = verify_password(
             payload.password,
             admin.get("password_hash") or DUMMY_LOGIN_PASSWORD_HASH,
@@ -2319,6 +2315,9 @@ def login(
                 status_code=401,
                 detail="Invalid email or password",
             )
+
+        if not _legacy_password_login_allowed(str(admin.get("password_hash") or "")):
+            raise HTTPException(403, "Your password needs to be reset before you can sign in. Use Forgot password to set a new password.")
 
         if not admin.get("is_active", False):
 
@@ -2448,21 +2447,7 @@ def login(
             ),
         )
 
-    if user.get("account_status") == "deactivation_pending":
-        recovery_until = _parse_datetime(user.get("account_deactivation_until"))
-        if recovery_until and recovery_until > datetime.now(timezone.utc):
-            raise HTTPException(
-                status_code=403,
-                detail="ACCOUNT_DEACTIVATED: This Learnora account is deactivated but can still be reactivated within its 30-day recovery period. Continue to the account reactivation page.",
-            )
-        raise HTTPException(
-            status_code=403,
-            detail="This account's 30-day recovery period has ended and it is awaiting permanent closure.",
-        )
-
     stored_password_hash = str(user.get("password_hash") or "")
-    if not _legacy_password_login_allowed(stored_password_hash):
-        raise HTTPException(403, "Your password needs to be reset before you can sign in. Use Forgot password to set a new password.")
     valid, needs_rehash = verify_password(payload.password, stored_password_hash)
 
     if not valid:
@@ -2480,6 +2465,23 @@ def login(
             detail=(
                 "Invalid email or password"
             ),
+        )
+
+    if not _legacy_password_login_allowed(stored_password_hash):
+        raise HTTPException(403, "Your password needs to be reset before you can sign in. Use Forgot password to set a new password.")
+
+    if user.get("account_status") == "deactivation_pending":
+        recovery_until = _parse_datetime(user.get("account_deactivation_until"))
+        if recovery_until and recovery_until > datetime.now(timezone.utc):
+            _clear_login_failures(rate_keys)
+            raise HTTPException(
+                status_code=403,
+                detail="ACCOUNT_DEACTIVATED: This Learnora account is deactivated but can still be reactivated within its 30-day recovery period. Continue to the account reactivation page.",
+            )
+        _clear_login_failures(rate_keys)
+        raise HTTPException(
+            status_code=403,
+            detail="This account's 30-day recovery period has ended and it is awaiting permanent closure.",
         )
 
     _clear_login_failures(rate_keys)
