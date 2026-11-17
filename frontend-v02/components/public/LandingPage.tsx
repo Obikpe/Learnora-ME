@@ -106,6 +106,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
           <span><BookOpen size={14}/> {track.course_count} {track.course_count === 1 ? "course" : "courses"}</span>
           <span><Layers3 size={14}/> {track.required_course_count} required</span>
         </div>
+        {track.courses?.length > 0 && <ol aria-label="Track course sequence" className="mt-5 grid gap-2 border-l border-[var(--gold)]/40 pl-4">{track.courses.slice(0,3).map((item,index)=><li key={item.id || item.course_id || index} className="flex items-start gap-3 text-xs text-slate-400"><span className="grid size-5 shrink-0 place-items-center rounded-full border border-white/15 text-[10px] tabular-nums">{index+1}</span><span>{item.course?.title || "Published course"}</span></li>)}</ol>}
         {track.self_enrol_available && <span className="landing-availability">Available for self-enrolment</span>}
         <Link className="landing-text-link" href={"/tracks/" + encodeURIComponent(track.id)}>Explore track <ArrowRight size={15}/></Link>
       </div>
