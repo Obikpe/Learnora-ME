@@ -1,0 +1,3 @@
+-- Intentionally non-destructive rollback.
+-- Removing password_changed_at would disable password-change session revocation
+-- and could make previously issued JWTs valid again. Keep both columns in place.
