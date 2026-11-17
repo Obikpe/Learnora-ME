@@ -103,7 +103,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
     return ["all", ...Array.from(new Set(values.map((value: any) => String(value).trim()).filter(Boolean))).sort((a,b) => a.localeCompare(b))];
   }, [items]);
 
-  const hasRatings = items.some(course => Number.isFinite(Number(course.average_rating ?? course.rating)));
+  const hasRatings = items.some(course => (course.average_rating != null || course.rating != null) && Number.isFinite(Number(course.average_rating ?? course.rating)));
   const filtered = useMemo(() => {
     const result = items.filter(course => {
       const courseTracks = Array.isArray(course.tracks) ? course.tracks.map((item: any) => String(item.name || "")) : [];
@@ -111,13 +111,14 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
       const searchable = [course.title, course.short_description, course.description, course.level, courseTracks.join(" "), courseTopics.join(" ")].filter(Boolean).join(" ").toLowerCase();
       const hours = Number(course.estimated_hours || 0);
       const isFree = course.settings?.is_free === true || course.settings?.access_type === "free" || course.settings?.price === 0;
+      const isPaid = course.settings?.access_type === "paid" || Number(course.settings?.price) > 0;
       const score = Number(course.average_rating ?? course.rating);
       return searchable.includes(query.trim().toLowerCase())
         && (level === "all" || course.level === level)
         && (track === "all" || courseTracks.includes(track))
         && (topic === "all" || courseTopics.includes(topic))
         && (duration === "all" || (duration === "under-2" && hours > 0 && hours < 2) || (duration === "2-5" && hours >= 2 && hours <= 5) || (duration === "over-5" && hours > 5))
-        && (price === "all" || (price === "free" && isFree) || (price === "paid" && !isFree))
+        && (price === "all" || (price === "free" && isFree) || (price === "paid" && isPaid))
         && (rating === "all" || (rating === "4" && score >= 4));
     });
     return result.sort((a,b) => {
