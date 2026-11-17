@@ -10,7 +10,7 @@ import { ArrowRight, Compass, HeartHandshake, Layers3, ShieldCheck } from "lucid
 export default function Page() {
   return <>
     <PublicNav />
-    <main className="pt-20">
+    <main id="main-content" className="pt-20">
       <section className="border-b border-white/[.1]">
         <div className="mx-auto grid max-w-[82rem] gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:gap-16 lg:px-8 lg:py-24">
           <div><p className="inline-flex items-center gap-3 text-[10px] font-bold uppercase tracking-[.2em] text-[var(--gold-light)]"><span className="h-px w-7 bg-[var(--gold)]"/>About Learnora ME</p>
