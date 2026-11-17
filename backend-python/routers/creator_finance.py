@@ -1,6 +1,7 @@
 """Creator marketplace settlement and payout workflow."""
 
 from datetime import datetime, timezone
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -28,6 +29,10 @@ class SaleIn(BaseModel):
 class PayoutIn(BaseModel):
     amount_minor: int = Field(..., gt=0)
     currency: str = Field(..., min_length=3, max_length=10)
+
+
+class PayoutProcessIn(BaseModel):
+    status: Literal["processing", "paid", "failed", "cancelled"]
 
 
 def _require_creator_finance_permission(context: PermissionContext) -> None:
@@ -408,18 +413,12 @@ def payouts(
 @router.post("/admin/payouts/{payout_id}/process")
 def process_payout(
     payout_id: str,
-    status: str,
+    body: PayoutProcessIn,
     context: PermissionContext = Depends(
         require_permission("creator_payouts.process")
     ),
 ):
-    if status not in {
-        "processing",
-        "paid",
-        "failed",
-        "cancelled",
-    }:
-        raise HTTPException(400, "Invalid payout status.")
+    status = body.status
 
     # The SQL RPC locks the payout row and writes its ledger entry in the same
     # transaction. A ledger failure rolls back the status transition.
