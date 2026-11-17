@@ -276,16 +276,15 @@ def internal_login(
             raise HTTPException(401, "Invalid email or password")
 
         legacy_hash = str(legacy.get("password_hash") or "")
-        if not auth._legacy_password_login_allowed(legacy_hash):
-            verify_password(payload.password, auth.DUMMY_LOGIN_PASSWORD_HASH)
-            raise HTTPException(
-                403,
-                "Your password needs to be reset before you can sign in. Use Forgot password.",
-            )
         valid, _needs_rehash = verify_password(payload.password, legacy_hash)
         if not valid:
             _record_failed_login(email, request, rate_keys)
             raise HTTPException(401, "Invalid email or password")
+        if not auth._legacy_password_login_allowed(legacy_hash):
+            raise HTTPException(
+                403,
+                "Your password needs to be reset before you can sign in. Use Forgot password.",
+            )
 
         try:
             existing_user = (
@@ -379,23 +378,21 @@ def internal_login(
         raise HTTPException(401, "Invalid email or password")
 
     user, staff = found["user"], found["staff"]
-    if user.get("account_status") == "deactivation_pending":
-        raise HTTPException(403, "This staff account is deactivated.")
-    if staff.get("status") not in {"active", "pending_activation"}:
-        raise HTTPException(403, "This staff account is not available for login.")
-
     stored_hash = str(user.get("password_hash") or "")
-    if not auth._legacy_password_login_allowed(stored_hash):
-        verify_password(payload.password, auth.DUMMY_LOGIN_PASSWORD_HASH)
-        raise HTTPException(
-            403,
-            "Your password needs to be reset before you can sign in. Use Forgot password.",
-        )
-
     valid, needs_rehash = verify_password(payload.password, stored_hash)
     if not valid:
         _record_failed_login(email, request, rate_keys)
         raise HTTPException(401, "Invalid email or password")
+
+    if not auth._legacy_password_login_allowed(stored_hash):
+        raise HTTPException(
+            403,
+            "Your password needs to be reset before you can sign in. Use Forgot password.",
+        )
+    if user.get("account_status") == "deactivation_pending":
+        raise HTTPException(403, "This staff account is deactivated.")
+    if staff.get("status") not in {"active", "pending_activation"}:
+        raise HTTPException(403, "This staff account is not available for login.")
 
     if needs_rehash:
         supabase.table("users").update({
