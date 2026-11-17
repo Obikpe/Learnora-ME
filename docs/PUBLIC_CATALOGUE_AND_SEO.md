@@ -57,13 +57,16 @@ Queried the connected production Supabase project on 17 November 2026:
 
 - 1 published global Learnora course: **Introduction to Data Analytics**
 - 1 published global learning track: **Data Analytics**
-- 1 published module and 1 published lesson in that course
+- 1 published module and 1 published lesson in the published course
 - The lesson **What Is Data Analytics?** is explicitly marked as a preview lesson
+- 201 global Learnora courses remain in draft status in Supabase; across those drafts, only 1 course currently has a module and 1 lesson
+- The repository's existing `frontend/data/courses.json` contains 200 course records and `frontend/data/lessons_index.json` contains 3,756 lesson-index records with corresponding Markdown lesson files
+- 12 of the 200 static course records have `witstart=true`; they are part of the historical catalogue data, not grounds for a role-based public-catalogue filter
 - 0 approved creator accounts
 - 0 skill-evidence records
 - No public review/rating/testimonial tables were found in the inspected public schema
 
-This inventory is why the public site does not fabricate 6–12 courses, ratings, learner counts, instructor profiles, testimonials or certificate examples. More real course content and approved instructors must be published before those social-proof sections can be populated honestly. Google sign-in is also not configured: no Google sign-in OAuth client credentials or provider setup were found in the inspected Vercel environment/project configuration. A custom domain is not attached to either Vercel project; the current canonical domain remains the project production domain.
+The catalogue is therefore not short of authored source material; it is short of content that has been imported, structured and published in Supabase. The 200 course records and 3,756 lesson files need a controlled import/readiness process before they can appear in the production public catalogue. Do not expose draft courses or bypass the database publication rules as a frontend fallback. The existing public-library decision is to include all `courses.json` courses regardless of learner role; `witstart` filtering belongs only to the separate WitStart dashboard. Google sign-in is also not configured: no Google sign-in OAuth client credentials or provider setup were found in the inspected Vercel environment/project configuration. A custom domain is not attached to either Vercel project; the current canonical domain remains the project production domain.
 
 ## Remaining verification
 
