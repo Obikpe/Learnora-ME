@@ -36,5 +36,5 @@ export const viewport: Viewport = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: '(function(){try{var t=localStorage.getItem("learnora_theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}})();' }} /></head><body>{children}</body></html>;
 }
