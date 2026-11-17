@@ -13,7 +13,7 @@ This review covers the connected production Supabase project and repository conf
 - No direct table grants to `anon` or `authenticated` were found in the public schema.
 - The inspected public security-definer functions were not executable by `anon` or `authenticated`.
 - Inspected security-definer functions have pinned search paths.
-- The only browser-role sequence privilege found was USAGE on `public.admins_id_seq`. A migration to revoke that unnecessary privilege has been committed but is pending application.
+- An unnecessary USAGE privilege on `public.admins_id_seq` was found and revoked. The migration was applied to production and a follow-up grant query returned no sequence privileges for `anon` or `authenticated`.
 - API-wide shared PostgreSQL throttling is configured for 60 requests per IP per 60 seconds in production and fails closed if the shared limiter is unavailable.
 - Individual login now uses five failures in a five-minute window, then a five-minute lockout. It counts by account across IPs, account/IP, and IP-wide (20 failures per five minutes) to reduce credential stuffing and password spraying.
 - Cohort login uses five failures per username in five minutes, a username/IP bucket, and a separate IP-wide threshold of 20 per five minutes.
@@ -29,14 +29,14 @@ This review covers the connected production Supabase project and repository conf
 - Five-attempt / five-minute individual login lockout and account/IP/IP-wide buckets.
 - Five-attempt / five-minute cohort account lockout and separate IP-wide spray threshold.
 - Regression contract tests for the lockout policy.
-- Migration `20261117100000_revoke_admin_sequence_browser_access.sql` to remove browser-role access to the admin identity sequence.
+- Migration `20261117100000_revoke_admin_sequence_browser_access.sql` to remove browser-role access to the admin identity sequence (applied and verified in production).
 
 ## Items not yet verified or completed
 
 1. **Automated repository scan:** Daybreak denied access in this workspace; no scan findings can be claimed.
 2. **Runtime tests:** the backend test suite and build were not run in this environment. The new regression tests are committed but unexecuted.
 3. **Deployment:** login changes are not active in production until the backend is deployed.
-4. **Pending migration:** apply `20261117100000_revoke_admin_sequence_browser_access.sql` only after explicit production-migration approval, then verify the sequence grants are gone.
+4. **Sequence access:** completed; the migration is applied and the browser-role sequence grants are absent.
 5. **SQL injection and XSS:** no complete route-by-route/source-to-sink audit or dynamic attack testing was performed. Supabase query-builder use is not by itself proof that every query is safe.
 6. **Backups and restore:** provider backup availability, retention, point-in-time recovery and a restore drill were not verifiable from the connected project tools.
 7. **Dependency vulnerabilities:** no complete lockfile/SCA scan was run. The frontend package manifest has no frontend lockfile in the inspected project path.
