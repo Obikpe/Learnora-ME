@@ -75,11 +75,12 @@ export default function TrackDetailClient({params,initialTrack}:{params:{id:stri
         return;
       }
       setUser(me);
-      void loadTrack();
+      if (initialTrack) void loadProgress();
+      else void loadTrack();
     }).catch(() => {
       if (active) {
         setUser(null);
-        void loadTrack();
+        if (!initialTrack) void loadTrack();
       }
     });
     return () => { active = false; };
