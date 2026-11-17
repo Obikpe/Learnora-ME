@@ -100,7 +100,9 @@ def process_learner_notification_automation(
     expected = os.getenv("CRON_SECRET", "").strip()
     if not expected:
         raise HTTPException(status_code=503, detail="Notification automation is not configured.")
-    if not hmac.compare_digest(authorization or "", f"Bearer {expected}"):
+    supplied = (authorization or "").encode("utf-8")
+    expected_header = f"Bearer {expected}".encode("utf-8")
+    if not hmac.compare_digest(supplied, expected_header):
         raise HTTPException(status_code=401, detail="Unauthorised.")
     try:
         from services.notification_service import process_automated_learner_notifications
