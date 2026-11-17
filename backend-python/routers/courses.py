@@ -1,3 +1,4 @@
+import logging
 """
 Learnora ME — Course Management API
 
@@ -68,6 +69,8 @@ def _notify_course_enrolment(user_id: str, course_id: str, course_title: str, ev
     except Exception as exc:
         print(f"Course enrolment notification failed ({type(exc).__name__})")
 
+
+log = logging.getLogger("courses")
 
 router = APIRouter(
     prefix="/api/courses",
@@ -1092,14 +1095,11 @@ def create_course(
             .execute()
         )
 
-    except Exception as exc:
-
-        # Return the actual database failure instead of allowing
-        # it to surface as a misleading browser CORS error.
-
+    except Exception:
+        log.exception("Course creation failed")
         raise HTTPException(
             status_code=400,
-            detail=f"Course creation failed: {str(exc)}",
+            detail="Course creation failed. Please try again.",
         )
 
     course = (
@@ -1251,12 +1251,9 @@ def update_course(
             .execute()
         )
 
-    except Exception as exc:
-
-        raise HTTPException(
-            status_code=400,
-            detail=f"Course update failed: {str(exc)}",
-        )
+    except Exception:
+        log.exception("Course update failed")
+        raise HTTPException(status_code=500, detail="Course update failed. Please try again.")
 
     updated_course = (
         result.data[0]
@@ -1344,12 +1341,9 @@ def publish_course(
             .execute()
         )
 
-    except Exception as exc:
-
-        raise HTTPException(
-            status_code=400,
-            detail=f"Course publishing failed: {str(exc)}",
-        )
+    except Exception:
+        log.exception("Course publishing failed")
+        raise HTTPException(status_code=500, detail="Course publishing failed. Please try again.")
 
     updated_course = (
         result.data[0]
@@ -1420,12 +1414,9 @@ def archive_course(
             .execute()
         )
 
-    except Exception as exc:
-
-        raise HTTPException(
-            status_code=400,
-            detail=f"Course archiving failed: {str(exc)}",
-        )
+    except Exception:
+        log.exception("Course archiving failed")
+        raise HTTPException(status_code=500, detail="Course archiving failed. Please try again.")
 
     updated_course = (
         result.data[0]
@@ -1492,12 +1483,9 @@ def delete_course(
             .execute()
         )
 
-    except Exception as exc:
-
-        raise HTTPException(
-            status_code=400,
-            detail=f"Course deletion failed: {str(exc)}",
-        )
+    except Exception:
+        log.exception("Course deletion failed")
+        raise HTTPException(status_code=500, detail="Course deletion failed. Please try again.")
 
     deleted = result.data or []
 
