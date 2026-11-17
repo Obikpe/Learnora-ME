@@ -11,7 +11,6 @@ export const metadata: Metadata = {
     template: "%s | Learnora ME",
   },
   description: "Explore practical courses and structured learning tracks. Learn useful skills, practise, build real projects and keep evidence of your progress.",
-  alternates: { canonical: "/" },
   applicationName: "Learnora ME",
   icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
   openGraph: {
@@ -33,7 +32,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0f1020",
-  colorScheme: "dark",
+  colorScheme: "light dark",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
