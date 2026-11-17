@@ -97,6 +97,19 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIsNotNone(match)
         self.assertNotIn("/api/ready", match.group(1))
 
+    def test_registration_does_not_disclose_existing_email_addresses(self):
+        source = read("routers/auth.py")
+        self.assertIn("generic_registration_response", source)
+        self.assertIn("return generic_registration_response", source)
+        self.assertNotIn("Email already registered", source)
+        self.assertNotIn("This email is already registered", source)
+
+    def test_password_change_migration_supplies_the_live_session_timestamp_column(self):
+        migration = (REPO / "supabase/migrations/20261117110000_password_change_session_revocation.sql").read_text()
+        self.assertIn("ALTER TABLE public.users", migration)
+        self.assertIn("ALTER TABLE public.admins", migration)
+        self.assertIn("password_changed_at", migration)
+
     def test_vulnerable_direct_dependencies_are_removed_or_upgraded(self):
         requirements = read("requirements.txt")
         self.assertIn("fastapi==0.142.4", requirements)
