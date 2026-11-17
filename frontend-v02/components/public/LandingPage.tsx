@@ -55,28 +55,16 @@ const heroSlides = [
     eyebrow: "Learn · Practise · Build · Prove",
     title: <>Learn data, design and tech skills. <span className="landing-accent">Build real projects.</span></>,
     body: "Learn practical skills, practise with guided work and build projects that show what you can do.",
-    image: IMAGES.hero,
-    alt: "Learners collaborating around a table",
-    action: "Browse courses",
-    href: "/courses",
   },
   {
     eyebrow: "A clearer learning journey",
     title: <>Turn what you learn into <span className="landing-accent">work you can show.</span></>,
     body: "Learning is more meaningful when you can apply an idea, build something and reflect on what the work taught you.",
-    image: IMAGES.practice,
-    alt: "A learner working through material on a laptop",
-    action: "Explore learning tracks",
-    href: "/tracks",
   },
   {
     eyebrow: "Progress with context",
     title: <>Keep moving from curiosity to <span className="landing-accent">capability.</span></>,
     body: "Follow structured learning, practise deliberately and keep a clearer record of the work behind your progress.",
-    image: IMAGES.projects,
-    alt: "A team collaborating on a practical project",
-    action: "How Learnora works",
-    href: "/how-it-works",
   },
 ];
 
