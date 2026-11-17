@@ -372,6 +372,42 @@ def public_course_structure(course_id: str, user=Depends(get_optional_current_us
     return {"success": True, "course": _public_course_payload(course), "modules": shaped}
 
 
+@router.get("/courses/{course_id}/preview")
+def public_course_preview(course_id: str, user=Depends(get_optional_current_user)):
+    """Expose only the first explicitly previewable lesson in a public course."""
+    _guard_public_discovery(user)
+    course = _public_course_lookup(course_id)
+    modules = (
+        supabase.table("course_modules")
+        .select("id")
+        .eq("course_id", course_id)
+        .eq("status", "published")
+        .order("order_index")
+        .execute()
+    ).data or []
+    module_ids = [str(row["id"]) for row in modules if row.get("id")]
+    if not module_ids:
+        raise HTTPException(404, "No preview lesson is available for this course.")
+    lessons = (
+        supabase.table("learnora_lessons")
+        .select("id,module_id,title,slug,description,lesson_type,content,duration_minutes,is_preview,status")
+        .in_("module_id", module_ids)
+        .eq("status", "published")
+        .eq("is_preview", True)
+        .order("order_index")
+        .limit(1)
+        .execute()
+    ).data or []
+    if not lessons:
+        raise HTTPException(404, "No preview lesson is available for this course.")
+    lesson = lessons[0]
+    return {
+        "success": True,
+        "course": {"id": course.get("id"), "title": course.get("title"), "slug": course.get("slug")},
+        "preview": lesson,
+    }
+
+
 @router.get("/tutors")
 def public_tutors(user=Depends(get_optional_current_user)):
     _guard_public_discovery(user)
