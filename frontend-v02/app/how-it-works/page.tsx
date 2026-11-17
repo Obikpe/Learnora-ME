@@ -17,7 +17,7 @@ const capabilities=[
 export default function Page() {
   return <>
     <PublicNav/>
-    <main className="pt-20">
+    <main id="main-content" className="pt-20">
       <section className="border-b border-white/[.1]">
         <div className="mx-auto max-w-[82rem] px-5 py-16 sm:py-24 lg:px-8 lg:py-28">
           <p className="inline-flex items-center gap-3 text-[10px] font-bold uppercase tracking-[.2em] text-[var(--gold-light)]"><span className="h-px w-7 bg-[var(--gold)]"/>How Learnora works</p>
