@@ -13,9 +13,9 @@ export const metadata: Metadata = {
     url: "/tracks",
     title: "Explore learning tracks | Learnora ME",
     description: "Follow structured learning journeys and build connected skills.",
-    images: [{ url: "/api/og?title=Explore%20structured%20learning%20tracks&kind=Learnora%20learning%20journeys", width: 1200, height: 630, alt: "Explore learning tracks on Learnora ME" }],
+    images: [{ url: "/og?title=Explore%20structured%20learning%20tracks&kind=Learnora%20learning%20journeys", width: 1200, height: 630, alt: "Explore learning tracks on Learnora ME" }],
   },
-  twitter: { card: "summary_large_image", images: ["/api/og?title=Explore%20structured%20learning%20tracks&kind=Learnora%20learning%20journeys"] },
+  twitter: { card: "summary_large_image", images: ["/og?title=Explore%20structured%20learning%20tracks&kind=Learnora%20learning%20journeys"] },
 };
 
 export default async function TracksPage() {
