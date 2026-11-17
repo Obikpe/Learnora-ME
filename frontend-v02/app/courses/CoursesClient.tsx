@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, BookOpen, Clock3, Search, SlidersHorizontal } from "lucide-react";
 import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
@@ -253,7 +254,8 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
             {pageItems.map(course => {
               const candidate = typeof course.thumbnail_url === "string" ? course.thumbnail_url.trim() : "";
               const imageKey = candidate ? candidate.split("?")[0] : "";
-              const image = imageKey && !usedImages.has(imageKey) ? candidate : "";
+              const imageAllowed = candidate.startsWith("https://images.unsplash.com/") || candidate.startsWith("https://gihfupzvdpyrmynqgukz.supabase.co/");
+              const image = imageAllowed && imageKey && !usedImages.has(imageKey) ? candidate : "";
               if (image) usedImages.add(imageKey);
               const category = Array.isArray(course.settings?.topics) ? course.settings.topics[0] : course.tracks?.[0]?.name;
               const instructorName = course.instructor?.name || course.instructor_name || course.creator_name;
@@ -263,7 +265,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
                 <Link key={course.id} href={"/courses/" + course.id} className="landing-course-card group min-w-0">
                   <div className="landing-course-image relative">
                     {image ? (
-                      <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />
+                      <Image src={image} alt="" width={800} height={450} quality={75} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]" />
                     ) : (
                       <div className="flex h-full items-end justify-between p-5">
                         <BookOpen size={42} className="text-white/30" />
