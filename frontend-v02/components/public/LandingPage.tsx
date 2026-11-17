@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,6 +9,7 @@ import {
   GraduationCap, Layers3, RefreshCw, Search, Sparkles, Route,
 } from "lucide-react";
 import { request } from "../../lib/api/client";
+import { currentUser } from "../../lib/api";
 import { IMAGES } from "../../lib/constants";
 
 type PublicCourse = {
@@ -144,6 +145,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
   const [retrying, setRetrying] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [search, setSearch] = useState("");
+  const [continueCourses, setContinueCourses] = useState<any[]>([]);
 
   async function loadCatalogue() {
     setRetrying(true);
@@ -161,6 +163,18 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
       setRetrying(false);
     }
   }
+
+  useEffect(() => {
+    let active = true;
+    currentUser().then(async me => {
+      if (!active || me.account_type !== "learner" || me.role !== "normal" || me.organisation_id || me.cohort_id || me.organisation_role) return;
+      const progress = await request<any>("/progress/me");
+      if (!active) return;
+      const rows = Array.isArray(progress.courses) ? progress.courses : [];
+      setContinueCourses(rows.filter((row: any) => row.course?.id && !row.progress?.completed).slice(0, 4));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const categories = useMemo(() => {
     const values = new Set<string>();
@@ -221,6 +235,11 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
           </div>
         </div>
       </section>
+
+      {continueCourses.length > 0 && <section className="landing-wrap py-10" aria-labelledby="continue-learning-heading">
+        <div className="landing-section-heading"><div><h2 id="continue-learning-heading">Continue learning</h2><p>Pick up where you left off.</p></div><Link className="landing-text-link" href="/dashboard">Open My Learning <ArrowRight size={15}/></Link></div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{continueCourses.map((row:any) => <Link key={row.course.id} href={"/dashboard/learning/"+encodeURIComponent(row.course.id)} className="border border-white/[.1] bg-[#10151b] p-5 transition-colors hover:border-[var(--gold)]/50"><p className="text-[10px] uppercase tracking-[.16em] text-slate-500">In progress</p><h3 className="mt-3 font-display text-xl">{row.course.title}</h3><div className="mt-5 h-1.5 overflow-hidden bg-white/[.08]"><div className="h-full bg-[var(--gold)]" style={{width:Math.max(0,Math.min(100,Number(row.progress?.progress_percent||0)))+"%"}}/></div><p className="mt-2 text-xs text-slate-500">{Number(row.progress?.progress_percent||0)}% complete</p></Link>)}</div>
+      </section>}
 
       <section className="landing-section landing-soft-section">
         <div className="landing-wrap">
