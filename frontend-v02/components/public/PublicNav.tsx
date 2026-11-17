@@ -21,7 +21,6 @@ export default function PublicNav() {
   const [audienceOpen, setAudienceOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -87,7 +86,7 @@ export default function PublicNav() {
           <a href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]">Get started <ArrowRight size={15}/></a>
         </div>
 
-        <button ref={menuButtonRef} type="button" className="grid size-11 place-items-center rounded-xl border border-white/[.12] text-slate-200 transition-colors hover:bg-white/[.05] lg:hidden" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-controls="public-mobile-nav" aria-expanded={open} onClick={() => setOpen(v => !v)}>
+        <button type="button" className="grid size-11 place-items-center rounded-xl border border-white/[.12] text-slate-200 transition-colors hover:bg-white/[.05] lg:hidden" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-controls="public-mobile-nav" aria-expanded={open} onClick={() => setOpen(v => !v)}>
           {open ? <X size={20}/> : <Menu size={20}/>}
         </button>
       </div>
