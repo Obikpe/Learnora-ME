@@ -496,7 +496,9 @@ def finalize_expired_account_deletions(authorization: str | None = Header(defaul
     expected = os.getenv("CRON_SECRET", "").strip()
     if not expected:
         raise HTTPException(status_code=503, detail="Account finalisation is not configured.")
-    if not hmac.compare_digest(authorization or "", f"Bearer {expected}"):
+    supplied = (authorization or "").encode("utf-8")
+    expected_header = f"Bearer {expected}".encode("utf-8")
+    if not hmac.compare_digest(supplied, expected_header):
         raise HTTPException(status_code=401, detail="Unauthorised.")
     now = datetime.now(timezone.utc)
     try:
