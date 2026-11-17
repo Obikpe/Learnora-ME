@@ -114,7 +114,7 @@ export default function TrackDetailClient({params,initialTrack}:{params:{id:stri
     }
   }
 
-  if (loading) return <><PublicNav/><main className="mx-auto max-w-7xl px-5 pb-24 pt-32 lg:px-8"><Skeleton variant="course" label="Loading track"/></main><PublicFooter/></>;
+  if (loading) return <><PublicNav/><main id="main-content" className="mx-auto max-w-7xl px-5 pb-24 pt-32 lg:px-8"><Skeleton variant="course" label="Loading track"/></main><PublicFooter/></>;
   if (error && !track) return <><PublicNav/><main className="mx-auto max-w-5xl px-5 pb-24 pt-36"><EmptyState title="Track unavailable" message={error}/><Link href="/tracks" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold gold"><ArrowLeft size={15}/>Back to tracks</Link></main><PublicFooter/></>;
 
   const requiredCount = progress?.required_courses ?? track?.required_course_count ?? 0;
