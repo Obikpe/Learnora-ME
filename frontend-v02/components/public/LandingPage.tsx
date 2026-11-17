@@ -136,16 +136,16 @@ function CourseCard({ course, index }: { course: PublicCourse; index: number }) 
   );
 }
 
-export default function LandingPage() {
-  const [courses, setCourses] = useState<PublicCourse[]>([]);
-  const [tracks, setTracks] = useState<PublicTrack[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default function LandingPage({ initialCourses, initialTracks, initialError }: { initialCourses: PublicCourse[]; initialTracks: PublicTrack[]; initialError?: string | null }) {
+  const [courses, setCourses] = useState<PublicCourse[]>(initialCourses);
+  const [tracks, setTracks] = useState<PublicTrack[]>(initialTracks);
+  const [error, setError] = useState(initialError || "");
+  const [retrying, setRetrying] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [search, setSearch] = useState("");
 
   async function loadCatalogue() {
-    setLoading(true);
+    setRetrying(true);
     setError("");
     try {
       const [courseResult, trackResult] = await Promise.all([
@@ -157,11 +157,9 @@ export default function LandingPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "The Learnora catalogue could not be loaded.");
     } finally {
-      setLoading(false);
+      setRetrying(false);
     }
   }
-
-  useEffect(() => { void loadCatalogue(); }, []);
 
   const categories = useMemo(() => {
     const values = new Set<string>();
@@ -238,10 +236,10 @@ export default function LandingPage() {
             <div><h2>New and available to explore</h2></div>
             <Link className="landing-text-link" href="/courses">Browse all courses <ArrowRight size={15}/></Link>
           </div>
-          {error && <div role="alert" className="landing-error"><span>{error}</span><button type="button" onClick={() => void loadCatalogue()}><RefreshCw size={14}/> Try again</button></div>}
-          {loading ? <div className="landing-loading" role="status">Loading published courses and tracks…</div> : newestCourses.length ? (
+          {error && <div role="alert" className="landing-error"><span>{error}</span><button type="button" disabled={retrying} onClick={() => void loadCatalogue()}><RefreshCw size={14}/> {retrying ? "Retrying…" : "Try again"}</button></div>}
+          {newestCourses.length ? (
             <div className="landing-course-grid">{newestCourses.slice(0, 4).map((course, index) => <CourseCard key={course.id} course={course} index={index}/>)}</div>
-          ) : !error ? <div className="landing-empty"><BookOpen size={24}/><h3>New courses are on the way</h3><p>Published courses will appear here when they are available in the Learnora catalogue.</p></div> : null}
+          ) : !error ? <div className="landing-empty"><BookOpen size={24}/><h3>Explore the Learnora catalogue</h3><p>There are no published courses available to browse at the moment. Check back soon.</p></div> : null}
         </div>
       </section>
 
@@ -250,9 +248,9 @@ export default function LandingPage() {
           <div><h2>Follow a path, not just a playlist</h2><p>Tracks bring related courses together in an intentional sequence.</p></div>
           <Link className="landing-text-link" href="/tracks">Explore all tracks <ArrowRight size={15}/></Link>
         </div>
-        {loading ? <div className="landing-loading" role="status">Loading published tracks…</div> : featuredTracks.length ? (
+        {featuredTracks.length ? (
           <div className="landing-track-grid">{featuredTracks.map((track, index) => <TrackCard key={track.id} track={track} index={index}/>)}</div>
-        ) : !error ? <div className="landing-empty"><Route size={24}/><h3>No published tracks yet</h3><p>Structured learning tracks will appear here once they are published.</p></div> : null}
+        ) : !error ? <div className="landing-empty"><Route size={24}/><h3>No tracks available yet</h3><p>There are no published learning tracks to explore right now.</p></div> : null}
       </section>
 
       <section className="landing-image-band">
@@ -266,7 +264,7 @@ export default function LandingPage() {
         <div className="landing-section-heading">
           <div><h2>Explore learning areas</h2><p>These topics are drawn from the published course catalogue.</p></div>
         </div>
-        {categories.length ? <div className="landing-category-list">{categories.map(category => <Link key={category} href={"/courses?search=" + encodeURIComponent(category)}><span/>{category}<ArrowUpRight size={14}/></Link>)}</div> : <div className="landing-empty"><Compass size={24}/><h3>Learning areas will appear here</h3><p>As courses are published with topics and track relationships, you can explore them here.</p></div>}
+        {categories.length ? <div className="landing-category-list">{categories.map(category => <Link key={category} href={"/courses?search=" + encodeURIComponent(category)}><span/>{category}<ArrowUpRight size={14}/></Link>)}</div> : <div className="landing-empty"><Compass size={24}/><h3>Explore courses by topic</h3><p>Topic collections will appear when published courses include topic information.</p></div>}
       </section>
 
       <section className="landing-career-band">
@@ -299,8 +297,8 @@ export default function LandingPage() {
         <div className="landing-faq-intro"><h2>Before you begin.</h2><p>Know what you can explore and how learning works on Learnora.</p></div>
         <div className="landing-faq-list">
           <details><summary>What makes Learnora different from a course library?</summary><p>A course is one part of the journey. Learnora connects lessons with practice, projects, feedback and a record of what you have demonstrated.</p></details>
-          <details><summary>Can I browse courses before creating an account?</summary><p>Yes. Published courses and tracks can be explored from the public catalogue. Enrolment and learning activities follow the access rules returned by the platform.</p></details>
-          <details><summary>Do I need to pay to get started?</summary><p>Course and track availability is determined by the live catalogue and your account permissions. The course page shows the access information supplied by Learnora before you enrol.</p></details>
+          <details><summary>Can I browse courses before creating an account?</summary><p>Yes. You can browse published courses and learning tracks before creating an account. You will need an account to enrol and save your progress.</p></details>
+          <details><summary>Do I need to pay to get started?</summary><p>Many courses are free to start. If a course has a fee, you will see its price before you enrol.</p></details>
           <details><summary>Does completing a course mean a skill is verified?</summary><p>Not automatically. Course progress, assessment results and instructor-reviewed evidence are different things. Learnora is designed to keep that distinction clear.</p></details>
           <details><summary>Can my school or organisation use Learnora?</summary><p>Organisations can enquire about a workspace shaped around their people, programmes, courses and agreed outcomes.</p></details>
           <details><summary>I teach or have expertise to share. Can I contribute?</summary><p>Instructors and creators can explore the teaching pathway and apply to contribute. Access to creator tools follows the approval and permission process.</p></details>
