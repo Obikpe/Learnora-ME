@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import CourseDetailClient from "./CourseDetailClient";
-import { getSiteUrl } from "../../../lib/server/catalogue";
-import { getPublicCourse, getPublicCoursePreview, getPublicCourseStructure } from "../../../lib/server/catalogue";
+import { getPublicCourse, getPublicCoursePreview, getPublicCourseStructure, getSiteUrl } from "../../../lib/server/catalogue";
 
 export const revalidate = 60;
 
