@@ -96,7 +96,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
   return (
     <article className="landing-track-card">
       <Link href={"/tracks/" + encodeURIComponent(track.id)} className="landing-image-link" aria-label={"View " + track.name + " track"}>
-        <img src={image} alt="" loading="lazy" />
+        <Image src={image} alt="" width={800} height={450} quality={75} sizes="(max-width: 768px) 100vw, 33vw" />
         <span className="landing-image-label"><Route size={13}/> Learning track</span>
       </Link>
       <div className="landing-card-content">
@@ -119,7 +119,7 @@ function CourseCard({ course, index }: { course: PublicCourse; index: number }) 
   return (
     <article className="landing-course-card">
       <Link href={courseHref(course)} className="landing-course-image" aria-label={"View " + course.title}>
-        <img src={courseImage(course, index)} alt="" loading="lazy" />
+        <Image src={courseImage(course, index)} alt="" width={800} height={450} quality={75} sizes="(max-width: 768px) 100vw, 33vw" />
         {free && <span className="landing-free-label">Free access</span>}
       </Link>
       <div className="landing-course-copy">
@@ -266,7 +266,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
 
       <section className="landing-image-band">
         <div className="landing-wrap landing-image-band-inner">
-          <div className="landing-band-image"><img src={IMAGES.workshop} alt="A group learning together in a workshop" loading="lazy"/></div>
+          <div className="landing-band-image"><Image src={IMAGES.workshop} alt="A group learning together in a workshop" width={1000} height={700} quality={75} sizes="(max-width: 1024px) 100vw, 50vw"/></div>
           <div><h2>Progress should mean more than a percentage.</h2><p>Finishing a course tells you that you reached the end of its material. Practice, projects, assessment and feedback help tell a fuller story of what you can do.</p><Link className="landing-button landing-button-light" href="/how-it-works">See how it works <ArrowRight size={16}/></Link></div>
         </div>
       </section>
@@ -298,9 +298,9 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
       <section className="landing-wrap landing-audience-section">
         <div className="landing-section-heading"><div><h2>Different journeys. One shared foundation.</h2></div></div>
         <div className="landing-audience-grid">
-          <Link href="/for-learners"><img src={IMAGES.learners} alt="Learners working together" loading="lazy"/><div><GraduationCap size={20}/><h3>For learners</h3><p>Build useful skills through lessons, practice, projects and an honest record of progress.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
-          <Link href="/for-instructors"><img src={IMAGES.instructors} alt="An instructor supporting a class" loading="lazy"/><div><BookOpen size={20}/><h3>For instructors</h3><p>Create practical learning, support learners and review work.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
-          <Link href="/for-organisations"><img src={IMAGES.organisations} alt="Colleagues collaborating in a meeting" loading="lazy"/><div><Layers3 size={20}/><h3>For organisations</h3><p>Shape learning around your people, programmes, teams and agreed outcomes.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
+          <Link href="/for-learners"><Image src={IMAGES.learners} alt="Learners working together" width={700} height={500} quality={75} sizes="(max-width: 768px) 100vw, 33vw"/><div><GraduationCap size={20}/><h3>For learners</h3><p>Build useful skills through lessons, practice, projects and an honest record of progress.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
+          <Link href="/for-instructors"><Image src={IMAGES.instructors} alt="An instructor supporting a class" width={700} height={500} quality={75} sizes="(max-width: 768px) 100vw, 33vw"/><div><BookOpen size={20}/><h3>For instructors</h3><p>Create practical learning, support learners and review work.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
+          <Link href="/for-organisations"><Image src={IMAGES.organisations} alt="Colleagues collaborating in a meeting" width={700} height={500} quality={75} sizes="(max-width: 768px) 100vw, 33vw"/><div><Layers3 size={20}/><h3>For organisations</h3><p>Shape learning around your people, programmes, teams and agreed outcomes.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
         </div>
       </section>
 
