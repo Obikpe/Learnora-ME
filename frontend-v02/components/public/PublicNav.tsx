@@ -11,8 +11,8 @@ const audiences = [
   { href: "/for-organisations", title: "For organisations", detail: "Develop people and capability." },
 ];
 const links = [
-  { href: "/tracks", title: "Explore tracks" },
-  { href: "/courses", title: "Explore courses" },
+  { href: "/tracks", title: "Learning tracks" },
+  { href: "/courses", title: "Browse courses" },
   { href: "/how-it-works", title: "How it works" },
   { href: "/about", title: "About Learnora" },
 ];
