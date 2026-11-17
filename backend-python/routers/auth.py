@@ -462,12 +462,13 @@ def _hash_token(
 # LOGIN RATE LIMITING
 # ---------------------------------------------------------------------------
 
-# Local counters are for development/unit tests only. Production authentication
-# counters are persisted in PostgreSQL so serverless instances share lockouts.
+# Five failed attempts within five minutes trigger a five-minute lockout.
+# Separate account and IP buckets prevent IP rotation and password spraying.
 _FAILS: dict[str, deque] = defaultdict(deque)
 
 MAX_FAILS = 5
-WINDOW = 900
+WINDOW = 300
+IP_MAX_FAILS = 20
 
 # Match the expensive password-verification path for unknown email addresses.
 # The dummy secret is generated per process and is never associated with an account.
@@ -482,18 +483,18 @@ def _rate_limit_digest(key: str) -> str:
     return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
-def _rate_limit_rpc(name: str, key: str):
+def _rate_limit_rpc(name: str, key: str, max_attempts: int = MAX_FAILS, window_seconds: int = WINDOW):
     return supabase.rpc(name, {
         "p_bucket_key": _rate_limit_digest(key),
-        "p_max_attempts": MAX_FAILS,
-        "p_window_seconds": WINDOW,
+        "p_max_attempts": max_attempts,
+        "p_window_seconds": window_seconds,
     }).execute()
 
 
-def _limited(key: str) -> bool:
+def _limited(key: str, max_attempts: int = MAX_FAILS, window_seconds: int = WINDOW) -> bool:
     if _persistent_rate_limits_enabled():
         try:
-            response = _rate_limit_rpc("check_auth_rate_limit", key)
+            response = _rate_limit_rpc("check_auth_rate_limit", key, max_attempts, window_seconds)
             data = getattr(response, "data", False)
             if isinstance(data, bool):
                 return data
@@ -508,24 +509,55 @@ def _limited(key: str) -> bool:
             print(f"Persistent auth rate-limit check failed: {type(exc).__name__}")
             return True
     queue = _FAILS[key]
-    cutoff = time.time() - WINDOW
+    cutoff = time.time() - window_seconds
     while queue and queue[0] < cutoff:
         queue.popleft()
     if not queue:
         _FAILS.pop(key, None)
         return False
-    return len(queue) >= MAX_FAILS
+    return len(queue) >= max_attempts
 
 
-def _record_failure(key: str):
+def _record_failure(key: str, max_attempts: int = MAX_FAILS, window_seconds: int = WINDOW):
     if _persistent_rate_limits_enabled():
         try:
-            _rate_limit_rpc("record_auth_rate_failure", key)
+            _rate_limit_rpc("record_auth_rate_failure", key, max_attempts, window_seconds)
             return
         except Exception as exc:
             print(f"Persistent auth rate-limit record failed: {type(exc).__name__}")
             raise RuntimeError("Persistent authentication rate limiting is unavailable.") from exc
     _FAILS[key].append(time.time())
+
+
+def _login_rate_keys(email: str, request: Request) -> tuple[str, str, str]:
+    client_ip = _get_client_ip(request) or "unknown"
+    return (
+        f"login-account:{email}",
+        f"login-account-ip:{email}:{client_ip}",
+        f"login-ip:{client_ip}",
+    )
+
+
+def _login_is_limited(keys: tuple[str, str, str]) -> bool:
+    account_key, account_ip_key, ip_key = keys
+    return (
+        _limited(account_key)
+        or _limited(account_ip_key)
+        or _limited(ip_key, max_attempts=IP_MAX_FAILS)
+    )
+
+
+def _record_login_failure(keys: tuple[str, str, str]) -> None:
+    account_key, account_ip_key, ip_key = keys
+    _record_failure(account_key)
+    _record_failure(account_ip_key)
+    _record_failure(ip_key, max_attempts=IP_MAX_FAILS)
+
+
+def _clear_login_failures(keys: tuple[str, str, str]) -> None:
+    account_key, account_ip_key, _ip_key = keys
+    _clear_failures(account_key)
+    _clear_failures(account_ip_key)
 
 
 def _clear_failures(key: str):
@@ -2167,12 +2199,9 @@ def login(
         payload.email
     )
 
-    rate_key = (
-        f"{email}:"
-        f"{_get_client_ip(request) or 'unknown'}"
-    )
+    rate_keys = _login_rate_keys(email, request)
 
-    if _limited(rate_key):
+    if _login_is_limited(rate_keys):
 
         log_security_event(
             action="login_rate_limited",
@@ -2214,7 +2243,7 @@ def login(
         # Organisation/cohort identities must not authenticate through the
         # public individual learner endpoint.
         verify_password(payload.password, DUMMY_LOGIN_PASSWORD_HASH)
-        _record_failure(rate_key)
+        _record_login_failure(rate_keys)
         log_security_event(
             action="reserved_organisation_email_login_attempt",
             email=email,
@@ -2238,9 +2267,7 @@ def login(
 
         if not valid:
 
-            _record_failure(
-                rate_key
-            )
+            _record_login_failure(rate_keys)
 
             log_security_event(
                 action="failed_admin_login",
@@ -2255,9 +2282,7 @@ def login(
 
         if not admin.get("is_active", False):
 
-            _record_failure(
-                rate_key
-            )
+            _record_login_failure(rate_keys)
 
             log_security_event(
                 action="disabled_admin_login_attempt",
@@ -2270,9 +2295,7 @@ def login(
                 detail="This administrator account is disabled.",
             )
 
-        _clear_failures(
-            rate_key
-        )
+        _clear_login_failures(rate_keys)
 
         role = admin["role"]
 
@@ -2368,9 +2391,7 @@ def login(
             DUMMY_LOGIN_PASSWORD_HASH,
         )
 
-        _record_failure(
-            rate_key
-        )
+        _record_login_failure(rate_keys)
 
         log_security_event(
             action=(
@@ -2411,9 +2432,7 @@ def login(
 
     if not valid:
 
-        _record_failure(
-            rate_key
-        )
+        _record_login_failure(rate_keys)
 
         log_security_event(
             action="failed_learner_login",
@@ -2428,9 +2447,7 @@ def login(
             ),
         )
 
-    _clear_failures(
-        rate_key
-    )
+    _clear_login_failures(rate_keys)
 
     role = (
         user.get("role")
