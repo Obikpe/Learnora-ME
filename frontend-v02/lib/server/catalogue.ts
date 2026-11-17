@@ -54,6 +54,21 @@ export function getPublicCourses<T = any>() {
   return fetchPublic<T>("/public/courses", "courses");
 }
 
+export async function getPublicCoursePreview<T = any>(id: string): Promise<T | null> {
+  try {
+    const response = await fetch(`${API_ORIGIN}/api/public/courses/${encodeURIComponent(id)}/preview`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 60, tags: [`public-course-preview-${id}`] },
+    });
+    if (!response.ok) return null;
+    const body = await response.json();
+    return body?.preview || null;
+  } catch (error) {
+    console.error("[public-catalogue] course preview fetch failed", error);
+    return null;
+  }
+}
+
 export async function getPublicCourseStructure<T = any>(id: string): Promise<{ data: T | null; error: string | null }> {
   try {
     const response = await fetch(`${API_ORIGIN}/api/public/courses/${encodeURIComponent(id)}/structure`, {
