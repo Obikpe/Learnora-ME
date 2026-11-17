@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel, Field
 from .auth import ALGORITHM, JWT_SECRET, TEAM_COOKIE_NAME, _request_auth_token, clear_auth_cookie, deliver_auth_token, hash_password, log_audit_event, norm_email, supabase, verify_password
 
@@ -27,7 +28,7 @@ class InternalStaffContext(BaseModel):
     team_ids:list[str]=Field(default_factory=list)
 
 def _staff_by_email(email):
-    u=supabase.table("users").select("id,email,name,password_hash,role").eq("email",email).limit(1).execute()
+    u=supabase.table("users").select("id,email,name,password_hash,role,password_changed_at").eq("email",email).limit(1).execute()
     if not u.data:return None
     s=supabase.table("learnora_staff_accounts").select("id,user_id,job_title,status,employee_code").eq("user_id",u.data[0]["id"]).limit(1).execute()
     return {"user":u.data[0],"staff":s.data[0]} if s.data else None
@@ -56,10 +57,21 @@ def get_current_staff(creds:Optional[HTTPAuthorizationCredentials]=Depends(beare
     if not token_value:raise HTTPException(401,"Not authenticated")
     if len(JWT_SECRET)<32:raise HTTPException(500,"Internal authentication is not configured")
     try:p=jwt.decode(token_value,JWT_SECRET,algorithms=[ALGORITHM])
-    except JWTError:raise HTTPException(401,"Invalid or expired internal token")
+    except InvalidTokenError:raise HTTPException(401,"Invalid or expired internal token")
     if p.get("context")!="internal" or p.get("account_type")!="staff":raise HTTPException(403,"Internal staff token required")
     email=(p.get("email") or p.get("sub") or "").lower().strip()
     if not email:raise HTTPException(401,"Invalid internal token")
+    found = _staff_by_email(email)
+    if not found:
+        raise HTTPException(401, "Staff identity is no longer active")
+    changed_at = found["user"].get("password_changed_at")
+    if changed_at and p.get("iat"):
+        try:
+            changed_ts = datetime.fromisoformat(str(changed_at).replace("Z", "+00:00")).timestamp()
+            if int(p["iat"]) < int(changed_ts):
+                raise HTTPException(401, "Session expired after a password change. Please sign in again.")
+        except (TypeError, ValueError, OverflowError):
+            raise HTTPException(401, "Session could not be validated. Please sign in again.")
     return _load_staff_context(email)
 
 
@@ -83,7 +95,8 @@ def internal_login(payload:InternalLoginRequest,request:Request,response:Respons
         if legacy.data and legacy.data[0].get("role")=="super_admin" and legacy.data[0].get("is_active"):
             a=legacy.data[0]
             valid,_=verify_password(payload.password,a.get("password_hash",""))
-            if not valid:raise HTTPException(401,"Invalid email or password")
+            if not u.get("password_hash","").startswith("$2") and not _legacy_password_login_allowed(u.get("password_hash","")):raise HTTPException(403,"Your password needs to be reset before you can sign in. Use Forgot password.")
+    if not valid:raise HTTPException(401,"Invalid email or password")
             existing=supabase.table("users").select("id").eq("email",email).limit(1).execute()
             if existing.data:raise HTTPException(409,"This email already belongs to a learner identity; internal identity migration requires manual reconciliation")
             ur=supabase.table("users").insert({"email":email,"name":a.get("name"),"password_hash":a.get("password_hash"),"role":"staff","is_paid":False,"sub_status":"active","email_verified":True}).execute()
