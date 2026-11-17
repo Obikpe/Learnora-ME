@@ -83,7 +83,9 @@ const heroSlides = [
 const imageFallbacks = [IMAGES.practice, IMAGES.projects, IMAGES.library, IMAGES.workshop];
 
 function courseImage(course: PublicCourse, index: number) {
-  return course.thumbnail_url || imageFallbacks[index % imageFallbacks.length];
+  const candidate = typeof course.thumbnail_url === "string" ? course.thumbnail_url.trim() : "";
+  const trusted = candidate.startsWith("https://images.unsplash.com/") || candidate.startsWith("https://gihfupzvdpyrmynqgukz.supabase.co/");
+  return trusted ? candidate : imageFallbacks[index % imageFallbacks.length];
 }
 
 function courseHref(course: PublicCourse) {
@@ -92,7 +94,7 @@ function courseHref(course: PublicCourse) {
 
 function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
   const firstCourse = track.courses?.find(item => item.course)?.course;
-  const image = firstCourse?.thumbnail_url || [IMAGES.practice, IMAGES.projects, IMAGES.library][index % 3];
+  const image = firstCourse ? courseImage(firstCourse, index) : [IMAGES.practice, IMAGES.projects, IMAGES.library][index % 3];
   return (
     <article className="landing-track-card">
       <Link href={"/tracks/" + encodeURIComponent(track.id)} className="landing-image-link" aria-label={"View " + track.name + " track"}>
