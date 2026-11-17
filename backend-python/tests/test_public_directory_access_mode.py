@@ -62,6 +62,22 @@ class PublicDirectoryAccessModeTests(unittest.TestCase):
             result = public_directory._public_track_payload_from_rows(track, links, course_map)
         self.assertFalse(result["self_enrol_available"])
 
+    def test_public_course_payload_exposes_only_curated_outcomes_and_requirements(self):
+        course = {
+            "id": "course-1",
+            "ownership": "learnora",
+            "organisation_id": None,
+            "settings": {
+                "learning_outcomes": ["Explain a concept", "Apply a method", 42],
+                "requirements": ["Basic computer literacy"],
+                "internal_flag": "do-not-expose",
+            },
+        }
+        payload = public_directory._public_course_payload(course)
+        self.assertEqual(payload["settings"]["learning_outcomes"], ["Explain a concept", "Apply a method"])
+        self.assertEqual(payload["settings"]["requirements"], ["Basic computer literacy"])
+        self.assertNotIn("internal_flag", payload["settings"])
+
     def test_explicitly_free_course_remains_free_when_launch_mode_is_disabled(self):
         course = {"id": "free-1", "ownership": "creator", "organisation_id": None, "settings": {"is_free": True}}
         with patch.dict(os.environ, {"FREE_ACCESS_MODE": "false"}):
