@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronDown, Menu, X, Headset } from "lucide-react";
 import Logo from "../brand/Logo";
 
@@ -19,6 +19,7 @@ const links = [
 export default function PublicNav() {
   const [open, setOpen] = useState(false);
   const [audienceOpen, setAudienceOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -27,9 +28,29 @@ export default function PublicNav() {
   }, []);
   const close = () => { setOpen(false); setAudienceOpen(false); };
 
+  useEffect(() => {
+    if (!open) return;
+    const menu = mobileMenuRef.current;
+    if (!menu) return;
+    const getFocusable = () => Array.from(menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
+    getFocusable()[0]?.focus();
+    function trapFocus(event: KeyboardEvent) {
+      if (event.key !== "Tab") return;
+      const focusable = getFocusable();
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+    document.addEventListener("keydown", trapFocus);
+    return () => document.removeEventListener("keydown", trapFocus);
+  }, [open]);
+
   return (
     <header onKeyDown={e=>{if(e.key==="Escape")close()}} className="fixed inset-x-0 top-0 z-50 border-b border-white/[.09] bg-[#090b0e]/95 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-[82rem] items-center justify-between px-5 lg:px-8">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-white focus:px-4 focus:py-3 focus:text-black" onClick={close}>Skip to content</a>
         <a href="/" aria-label="Learnora ME home" onClick={close} className="shrink-0"><Logo /></a>
 
         <nav aria-label="Main navigation" className="hidden items-center gap-7 lg:flex">
@@ -55,12 +76,12 @@ export default function PublicNav() {
           <a href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]">Get started <ArrowRight size={15}/></a>
         </div>
 
-        <button type="button" className="grid size-11 place-items-center rounded-xl border border-white/[.12] text-slate-200 transition-colors hover:bg-white/[.05] lg:hidden" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} onClick={() => setOpen(v => !v)}>
+        <button type="button" className="grid size-11 place-items-center rounded-xl border border-white/[.12] text-slate-200 transition-colors hover:bg-white/[.05] lg:hidden" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-controls="public-mobile-nav" aria-expanded={open} onClick={() => setOpen(v => !v)}>
           {open ? <X size={20}/> : <Menu size={20}/>}
         </button>
       </div>
 
-      {open && <div className="border-t border-white/[.08] bg-[#090b0e] px-5 pb-6 pt-3 lg:hidden">
+      {open && <div id="public-mobile-nav" ref={mobileMenuRef} role="dialog" aria-modal="true" aria-label="Mobile navigation" className="border-t border-white/[.08] bg-[#090b0e] px-5 pb-6 pt-3 lg:hidden">
         <nav aria-label="Mobile navigation" className="mx-auto grid max-w-[82rem]">
           <p className="px-3 pb-2 pt-3 text-[10px] font-bold uppercase tracking-[.18em] text-slate-600">Explore Learnora</p>
           {links.map(item => <a key={item.href} href={item.href} onClick={close} className="flex min-h-12 items-center justify-between border-b border-white/[.06] px-3 text-sm text-slate-200">{item.title}<ArrowRight size={15} className="text-slate-600"/></a>)}
