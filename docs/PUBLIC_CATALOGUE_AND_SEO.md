@@ -63,7 +63,7 @@ Queried the connected production Supabase project on 17 November 2026:
 - 0 skill-evidence records
 - No public review/rating/testimonial tables were found in the inspected public schema
 
-This inventory is why the public site does not fabricate 6–12 courses, ratings, learner counts, instructor profiles, testimonials or certificate examples. More real course content and approved instructors must be published before those social-proof sections can be populated honestly.
+This inventory is why the public site does not fabricate 6–12 courses, ratings, learner counts, instructor profiles, testimonials or certificate examples. More real course content and approved instructors must be published before those social-proof sections can be populated honestly. Google sign-in is also not configured: no Google sign-in OAuth client credentials or provider setup were found in the inspected Vercel environment/project configuration. A custom domain is not attached to either Vercel project; the current canonical domain remains the project production domain.
 
 ## Remaining verification
 
@@ -74,3 +74,4 @@ This inventory is why the public site does not fabricate 6–12 courses, ratings
 - Run Lighthouse mobile and axe checks.
 - Confirm a preview lesson is readable without enrolment while non-preview lesson content remains protected.
 - No production deployment was initiated for these repository changes.
+- Automated build, responsive browser, Lighthouse and axe verification remain outstanding; do not mark those checks as passed.
