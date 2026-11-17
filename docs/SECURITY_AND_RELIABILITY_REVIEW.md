@@ -29,7 +29,7 @@ This review covers the connected production Supabase project and repository conf
 - Five-attempt / five-minute individual login lockout and account/IP/IP-wide buckets.
 - Five-attempt / five-minute cohort account lockout and separate IP-wide spray threshold.
 - Regression contract tests for the lockout policy.
-- Migration `20261117100000_revoke_admin_sequence_browser_access.sql` to remove browser-role access to the admin identity sequence (applied and verified in production).
+- Migration `20261117204703_revoke_admin_sequence_browser_access.sql` to remove browser-role access to the admin identity sequence (applied and verified in production).
 
 ## Items not yet verified or completed
 
