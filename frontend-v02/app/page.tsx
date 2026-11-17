@@ -25,8 +25,18 @@ export default async function Home() {
   const initialError = courseResult.error && trackResult.error
     ? "The course and track catalogues are temporarily unavailable."
     : courseResult.error || trackResult.error;
+  const siteUrl = getSiteUrl();
+  const organizationJsonLd = { "@context": "https://schema.org", "@type": "Organization", name: "Learnora ME", url: siteUrl };
+  const faqJsonLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: [
+    { "@type": "Question", name: "What makes Learnora different from a course library?", acceptedAnswer: { "@type": "Answer", text: "A course is one part of the journey. Learnora connects lessons with practice, projects, feedback and a record of what you have demonstrated." } },
+    { "@type": "Question", name: "Can I browse courses before creating an account?", acceptedAnswer: { "@type": "Answer", text: "Yes. You can browse published courses and learning tracks before creating an account. You will need an account to enrol and save your progress." } },
+    { "@type": "Question", name: "Do I need to pay to get started?", acceptedAnswer: { "@type": "Answer", text: "Many courses are free to start. If a course has a fee, you will see its price before you enrol." } },
+    { "@type": "Question", name: "Does completing a course mean a skill is verified?", acceptedAnswer: { "@type": "Answer", text: "Not automatically. Course progress, assessment results and instructor-reviewed evidence are different things." } },
+  ] };
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }} />
       <PublicNav />
       <LandingPage initialCourses={courseResult.items} initialTracks={trackResult.items} initialError={initialError} />
       <PublicFooter />
