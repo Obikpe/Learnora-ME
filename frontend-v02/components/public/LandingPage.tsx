@@ -207,15 +207,13 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         <div className="landing-hero-copy">
           <h1>{slide.title}</h1>
           <p className="landing-hero-description">{slide.body}</p>
-          <div className="landing-actions">
-            <Link className="landing-button landing-button-primary" href={slide.href}>{slide.action} <ArrowRight size={16}/></Link>
-            <Link className="landing-button landing-button-outline" href="/how-it-works">How it works <ArrowUpRight size={16}/></Link>
-          </div>
+          <div className="landing-actions"><Link className="landing-button landing-button-outline" href="/how-it-works">How Learnora works <ArrowUpRight size={16}/></Link></div>
           <form className="landing-search" onSubmit={submitSearch}>
             <Search size={18} aria-hidden="true"/>
             <input aria-label="Search courses and skills" value={search} onChange={event => setSearch(event.target.value)} placeholder="What do you want to learn?"/>
-            <button type="submit">Search</button>
+            <button type="submit">Find courses</button>
           </form>
+          {categories.length > 0 && <div className="landing-popular-topics"><span>Popular topics</span>{categories.slice(0,5).map(topic=><Link key={topic} href={"/courses?search="+encodeURIComponent(topic)}>{topic}</Link>)}</div>}
           <div className="landing-hero-points">
             <span><BookOpen size={17}/> Learn clearly</span>
             <span><Compass size={17}/> Practise deeply</span>
