@@ -13,9 +13,9 @@ export const metadata: Metadata = {
     url: "/courses",
     title: "Browse courses | Learnora ME",
     description: "Find practical courses by skill, topic, level and learning track.",
-    images: [{ url: "/api/og?title=Browse%20practical%20courses&kind=Learnora%20course%20catalogue", width: 1200, height: 630, alt: "Browse courses on Learnora ME" }],
+    images: [{ url: "/og?title=Browse%20practical%20courses&kind=Learnora%20course%20catalogue", width: 1200, height: 630, alt: "Browse courses on Learnora ME" }],
   },
-  twitter: { card: "summary_large_image", images: ["/api/og?title=Browse%20practical%20courses&kind=Learnora%20course%20catalogue"] },
+  twitter: { card: "summary_large_image", images: ["/og?title=Browse%20practical%20courses&kind=Learnora%20course%20catalogue"] },
 };
 
 export default async function CoursesPage() {
