@@ -87,7 +87,8 @@ import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel
 from supabase import Client, create_client
 
@@ -338,19 +339,10 @@ def check_password_rules(
     password: str,
 ):
 
-    if len(password) < 8:
+    if len(password) < 12:
+        raise HTTPException(status_code=400, detail="Password must be at least 12 characters long.")
 
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Password must be at least "
-                "8 characters long"
-            ),
-        )
-
-    if len(
-        password.encode("utf-8")
-    ) > 72:
+    if len(password.encode("utf-8")) > 72:
 
         raise HTTPException(
             status_code=400,
@@ -368,7 +360,8 @@ def check_password_rules(
 def hash_password(
     password: str,
 ) -> str:
-
+    if len(password.encode("utf-8")) > 72:
+        raise ValueError("Password exceeds bcrypt's 72-byte input limit")
     return bcrypt.hashpw(
         password.encode("utf-8"),
         bcrypt.gensalt(12),
@@ -987,6 +980,32 @@ def make_token(
     )
 
 
+
+
+def _assert_session_not_before_password_change(payload: dict, account: dict) -> None:
+    changed_at = account.get("password_changed_at")
+    issued_at = payload.get("iat")
+    if not changed_at or not issued_at:
+        return  # Existing accounts/tokens remain compatible until their next password change.
+    try:
+        changed_ts = datetime.fromisoformat(str(changed_at).replace("Z", "+00:00")).timestamp()
+        if int(issued_at) < int(changed_ts):
+            raise HTTPException(status_code=401, detail="Session expired after a password change. Please sign in again.")
+    except (TypeError, ValueError, OverflowError):
+        raise HTTPException(status_code=401, detail="Session could not be validated. Please sign in again.")
+
+
+def _legacy_password_login_allowed(stored_hash: str) -> bool:
+    if stored_hash.startswith("$2"):
+        return True
+    raw_deadline = os.getenv("LEGACY_SHA256_LOGIN_DEADLINE", "2027-01-01T00:00:00Z").strip()
+    try:
+        deadline = datetime.fromisoformat(raw_deadline.replace("Z", "+00:00"))
+    except ValueError:
+        log.error("LEGACY_SHA256_LOGIN_DEADLINE is invalid")
+        return False
+    return datetime.now(timezone.utc) < deadline
+
 # ---------------------------------------------------------------------------
 # ACCOUNT PERMISSIONS
 # ---------------------------------------------------------------------------
@@ -1238,7 +1257,7 @@ def _find_admin(
         .table("admins")
         .select(
             "id, email, name, password_hash, role, "
-            "is_active, last_login_at"
+            "is_active, last_login_at, password_changed_at"
         )
         .ilike(
             "email",
@@ -1275,7 +1294,7 @@ def _find_user(
             "sub_status, is_paid, subscription_tier, "
             "expires_at, trial_ends_at, email_verified_at, "
             "account_status, account_deactivation_until, marketing_email_opt_in, "
-            "marketing_in_app_opt_in"
+            "marketing_in_app_opt_in, password_changed_at"
         )
         .ilike(
             "email",
@@ -1562,7 +1581,7 @@ def get_current_user(
             algorithms=[ALGORITHM],
         )
 
-    except JWTError:
+    except InvalidTokenError:
 
         raise HTTPException(
             status_code=401,
@@ -1690,6 +1709,7 @@ def get_current_user(
     # ---------------------------------------------------------------
 
     if admin:
+        _assert_session_not_before_password_change(payload, admin)
 
         if not admin.get(
             "is_active",
@@ -1774,6 +1794,7 @@ def get_current_user(
             status_code=401,
             detail="User account not found",
         )
+    _assert_session_not_before_password_change(payload, user)
 
     if user.get("account_status") == "deactivation_pending":
         raise HTTPException(
@@ -2259,6 +2280,8 @@ def login(
     # ---------------------------------------------------------------
 
     if admin:
+        if not _legacy_password_login_allowed(str(admin.get("password_hash") or "")):
+            raise HTTPException(403, "Your password needs to be reset before you can sign in. Use Forgot password to set a new password.")
 
         valid, needs_rehash = verify_password(
             payload.password,
@@ -2420,15 +2443,10 @@ def login(
             detail="This account's 30-day recovery period has ended and it is awaiting permanent closure.",
         )
 
-    valid, needs_rehash = (
-        verify_password(
-            payload.password,
-            user.get(
-                "password_hash",
-                "",
-            ),
-        )
-    )
+    stored_password_hash = str(user.get("password_hash") or "")
+    if not _legacy_password_login_allowed(stored_password_hash):
+        raise HTTPException(403, "Your password needs to be reset before you can sign in. Use Forgot password to set a new password.")
+    valid, needs_rehash = verify_password(payload.password, stored_password_hash)
 
     if not valid:
 
@@ -3789,6 +3807,8 @@ def reset_password(
             .update(
                 {
                     "password_hash": new_hash,
+                    "password_changed_at": datetime.now(timezone.utc).isoformat(),
+                    "password_changed_at": now.isoformat(),
                 }
             )
             .eq(
