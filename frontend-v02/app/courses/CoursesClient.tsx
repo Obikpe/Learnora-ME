@@ -19,6 +19,12 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("all");
   const [track, setTrack] = useState("all");
+  const [topic, setTopic] = useState("all");
+  const [duration, setDuration] = useState("all");
+  const [price, setPrice] = useState("all");
+  const [rating, setRating] = useState("all");
+  const [sort, setSort] = useState("newest");
+  const [filtersReady, setFiltersReady] = useState(false);
 
   async function loadCourses() {
     setLoading(true);
@@ -37,6 +43,15 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
     let active = true;
     const initialSearch = new URLSearchParams(window.location.search).get("search") || "";
     if (initialSearch) setQuery(initialSearch);
+    const params = new URLSearchParams(window.location.search);
+    setLevel(params.get("level") || "all");
+    setTrack(params.get("track") || "all");
+    setTopic(params.get("topic") || "all");
+    setDuration(params.get("duration") || "all");
+    setPrice(params.get("price") || "all");
+    setRating(params.get("rating") || "all");
+    setSort(params.get("sort") || "newest");
+    setFiltersReady(true);
     currentUser().then(me => {
       if (!active) return;
       const memberships = me.organisation_memberships || [];
@@ -80,25 +95,48 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
     return ["all", ...Array.from(new Set(values)).sort((a, b) => a.localeCompare(b))];
   }, [items]);
 
+  const topics = useMemo(() => {
+    const values = items.flatMap(course => Array.isArray(course.settings?.topics) ? course.settings.topics : []);
+    return ["all", ...Array.from(new Set(values.map((value: any) => String(value).trim()).filter(Boolean))).sort((a,b) => a.localeCompare(b))];
+  }, [items]);
+
+  const hasRatings = items.some(course => Number.isFinite(Number(course.average_rating ?? course.rating)));
   const filtered = useMemo(() => {
-    return items.filter(course => {
-      const courseTracks = Array.isArray(course.tracks)
-        ? course.tracks.map((item: any) => String(item.name || ""))
-        : [];
-      const topics = Array.isArray(course.settings?.topics) ? course.settings.topics.join(" ") : "";
-      const searchable = [
-        course.title,
-        course.short_description,
-        course.description,
-        course.level,
-        courseTracks.join(" "),
-        topics,
-      ].filter(Boolean).join(" ").toLowerCase();
+    const result = items.filter(course => {
+      const courseTracks = Array.isArray(course.tracks) ? course.tracks.map((item: any) => String(item.name || "")) : [];
+      const courseTopics = Array.isArray(course.settings?.topics) ? course.settings.topics.map((value: any) => String(value)) : [];
+      const searchable = [course.title, course.short_description, course.description, course.level, courseTracks.join(" "), courseTopics.join(" ")].filter(Boolean).join(" ").toLowerCase();
+      const hours = Number(course.estimated_hours || 0);
+      const isFree = course.settings?.is_free === true || course.settings?.access_type === "free" || course.settings?.price === 0;
+      const score = Number(course.average_rating ?? course.rating);
       return searchable.includes(query.trim().toLowerCase())
         && (level === "all" || course.level === level)
-        && (track === "all" || courseTracks.includes(track));
+        && (track === "all" || courseTracks.includes(track))
+        && (topic === "all" || courseTopics.includes(topic))
+        && (duration === "all" || (duration === "under-2" && hours > 0 && hours < 2) || (duration === "2-5" && hours >= 2 && hours <= 5) || (duration === "over-5" && hours > 5))
+        && (price === "all" || (price === "free" && isFree) || (price === "paid" && !isFree))
+        && (rating === "all" || (rating === "4" && score >= 4));
     });
-  }, [items, query, level, track]);
+    return result.sort((a,b) => {
+      if (sort === "title") return String(a.title || "").localeCompare(String(b.title || ""));
+      if (sort === "shortest") return Number(a.estimated_hours || Infinity) - Number(b.estimated_hours || Infinity);
+      if (sort === "longest") return Number(b.estimated_hours || 0) - Number(a.estimated_hours || 0);
+      if (sort === "rating") return Number(b.average_rating ?? b.rating ?? 0) - Number(a.average_rating ?? a.rating ?? 0);
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+  }, [items, query, level, track, topic, duration, price, rating, sort]);
+
+  useEffect(() => {
+    if (!filtersReady) return;
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("search", query.trim());
+    for (const [key, value] of [["level",level],["track",track],["topic",topic],["duration",duration],["price",price],["rating",rating],["sort",sort]] as const) {
+      if (value !== "all" && !(key === "sort" && value === "newest")) params.set(key, value);
+    }
+    const next = params.toString();
+    const url = next ? window.location.pathname + "?" + next : window.location.pathname;
+    window.history.replaceState(null, "", url);
+  }, [filtersReady, query, level, track, topic, duration, price, rating, sort]);
 
   const usedImages = new Set<string>();
   [
@@ -123,7 +161,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
       </section>
 
       <section className="mt-8" aria-label="Course search and filters">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="flex flex-col flex-wrap gap-3 md:flex-row md:items-center">
           <label className="flex min-h-12 flex-1 items-center gap-3 border border-white/10 bg-[#10151b] px-4 focus-within:border-[#d7ad35]/60">
             <Search size={17} className="shrink-0 text-slate-500"/>
             <input aria-label="Search courses" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search skills, topics or course names" className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-600"/>
@@ -141,9 +179,39 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
               {tracks.map(x => <option key={x} value={x} className="bg-[#10151b]">{x === "all" ? "All tracks" : x}</option>)}
             </select>
           </label>
+          <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
+            <span className="text-xs text-slate-500">Topic</span>
+            <select aria-label="Filter by topic" value={topic} onChange={e => setTopic(e.target.value)} className="max-w-48 bg-transparent py-3 text-sm text-slate-200 outline-none">
+              {topics.map(x => <option key={x} value={x}>{x === "all" ? "All topics" : x}</option>)}
+            </select>
+          </label>
+          <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
+            <span className="text-xs text-slate-500">Duration</span>
+            <select aria-label="Filter by duration" value={duration} onChange={e => setDuration(e.target.value)} className="max-w-40 bg-transparent py-3 text-sm text-slate-200 outline-none">
+              <option value="all">Any length</option><option value="under-2">Under 2 hours</option><option value="2-5">2–5 hours</option><option value="over-5">Over 5 hours</option>
+            </select>
+          </label>
+          <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
+            <span className="text-xs text-slate-500">Price</span>
+            <select aria-label="Filter by price" value={price} onChange={e => setPrice(e.target.value)} className="max-w-32 bg-transparent py-3 text-sm text-slate-200 outline-none">
+              <option value="all">Any price</option><option value="free">Free</option><option value="paid">Paid</option>
+            </select>
+          </label>
+          {hasRatings && <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
+            <span className="text-xs text-slate-500">Rating</span>
+            <select aria-label="Filter by rating" value={rating} onChange={e => setRating(e.target.value)} className="max-w-32 bg-transparent py-3 text-sm text-slate-200 outline-none">
+              <option value="all">Any rating</option><option value="4">4.0 and above</option>
+            </select>
+          </label>}
+          <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
+            <span className="text-xs text-slate-500">Sort</span>
+            <select aria-label="Sort courses" value={sort} onChange={e => setSort(e.target.value)} className="max-w-40 bg-transparent py-3 text-sm text-slate-200 outline-none">
+              <option value="newest">Newest</option><option value="title">Title</option><option value="shortest">Shortest</option><option value="longest">Longest</option>{hasRatings && <option value="rating">Top rated</option>}
+            </select>
+          </label>
           <div className="flex items-center gap-3">
-            <span className="text-xs tabular-nums text-slate-500">{loading ? "Loading catalogue…" : `${filtered.length} ${filtered.length === 1 ? "course" : "courses"}`}</span>
-            {(query || level !== "all" || track !== "all") && <button type="button" onClick={() => {setQuery("");setLevel("all");setTrack("all");}} className="text-xs font-semibold text-[#f2d477] hover:text-white">Clear filters</button>}
+            <span className="text-xs tabular-nums text-slate-500">{loading ? "Updating…" : `${filtered.length} of ${items.length} ${items.length === 1 ? "course" : "courses"}`}</span>
+            {(query || level !== "all" || track !== "all" || topic !== "all" || duration !== "all" || price !== "all" || rating !== "all" || sort !== "newest") && <button type="button" onClick={() => {setQuery("");setLevel("all");setTrack("all");setTopic("all");setDuration("all");setPrice("all");setRating("all");setSort("newest");}} className="min-h-11 text-xs font-semibold text-[#f2d477] hover:text-white">Clear filters</button>}
           </div>
         </div>
       </section>
