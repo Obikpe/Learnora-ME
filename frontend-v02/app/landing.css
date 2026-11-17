@@ -238,3 +238,8 @@
 .landing-popular-topics>span{margin-right:3px;color:var(--text-muted);font-size:9px;font-weight:750;letter-spacing:.1em;text-transform:uppercase}
 .landing-popular-topics a{display:inline-flex;min-height:32px;align-items:center;border:1px solid var(--border);border-radius:999px;padding:0 10px;color:var(--text-body);font-size:10px;transition:border-color .16s,color .16s}
 .landing-popular-topics a:hover{border-color:var(--primary);color:var(--primary)}
+
+.landing-slide-controls > div button{width:44px;height:44px}
+.landing-next{width:44px;height:44px}
+.landing-category-list a{min-height:44px}
+.landing-faq-list summary{min-height:48px;padding-block:10px}
