@@ -97,6 +97,14 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIsNotNone(match)
         self.assertNotIn("/api/ready", match.group(1))
 
+    def test_login_does_not_disclose_deactivated_or_disabled_account_state_before_password(self):
+        auth_source = read("routers/auth.py")
+        learner = auth_source.split("# LEARNER", 1)[1].split("# EMAIL VERIFICATION", 1)[0]
+        self.assertLess(learner.index("valid, needs_rehash"), learner.index('if user.get("account_status")'))
+        internal = read("routers/internal_auth.py")
+        existing_staff = internal.split('    user, staff = found["user"], found["staff"]', 1)[1]
+        self.assertLess(existing_staff.index("valid, needs_rehash"), existing_staff.index('if user.get("account_status")'))
+
     def test_registration_does_not_disclose_existing_email_addresses(self):
         source = read("routers/auth.py")
         self.assertIn("generic_registration_response", source)
