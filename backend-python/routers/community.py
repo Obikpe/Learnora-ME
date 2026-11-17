@@ -1,9 +1,11 @@
-import os, httpx
+import logging
+import os
+from html import escape
 from datetime import datetime, timezone
 from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException
-from routers.auth import LEGACY_ASSIGNED_LEARNER_ROLE, require_active, CurrentUser, get_current_user, supabase
+from routers.auth import LEGACY_ASSIGNED_LEARNER_ROLE, require_active, CurrentUser, get_current_user, supabase, _send_email
 
 def _notify_discussion_user(
     *,
@@ -258,18 +260,20 @@ def mark_discussion_answer(discussion_id: str, reply_id: str, user: CurrentUser 
 
 
 @router.post("/question")
-async def community_question(body: Question, user: CurrentUser = Depends(require_active)):
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.post(
-            "https://api.resend.com/emails",
-            headers={"Authorization": f"Bearer {os.getenv('RESEND_API_KEY', '')}"},
-            json={
-                "from": os.getenv("EMAIL_FROM"),
-                "to": [os.getenv("ADMIN_NOTIFY_EMAIL")],
-                "subject": f"New question in {body.lesson}",
-                "text": f"From: {user.email}\n\n{body.question}",  # plain text, no HTML injection
-            },
+def community_question(body: Question, user: CurrentUser = Depends(require_active)):
+    recipient = os.getenv("ADMIN_NOTIFY_EMAIL", "").strip()
+    if not recipient:
+        raise HTTPException(503, "Question delivery is not configured. Please try again later.")
+    try:
+        _send_email(
+            recipient=recipient,
+            subject=f"New question in {body.lesson}",
+            text_body=f"From: {user.email}\\n\\n{body.question}",
+            html_body=f"<p>From: {escape(user.email)}</p><p>{escape(body.question)}</p>",
         )
-    if r.status_code >= 300:
-        raise HTTPException(502, "Could not send your question. Try again later.")
+    except Exception as exc:
+        logging.getLogger("community").exception(
+            "Community question notification failed (%s)", type(exc).__name__
+        )
+        raise HTTPException(503, "Question delivery is temporarily unavailable. Please try again later.") from None
     return {"ok": True}
