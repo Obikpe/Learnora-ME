@@ -1,3 +1,5 @@
+import { publicPageMetadata } from "../../lib/seo";
+export const metadata = publicPageMetadata("Find instructors and tutors", "Explore instructor profiles and teaching expertise listed on Learnora ME.", "/tutors");
 "use client";
 import { useEffect, useState } from "react";
 import { ArrowRight, BookOpen, Search, Users } from "lucide-react";
