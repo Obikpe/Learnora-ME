@@ -54,6 +54,21 @@ export function getPublicCourses<T = any>() {
   return fetchPublic<T>("/public/courses", "courses");
 }
 
+export async function getPublicCourseStructure<T = any>(id: string): Promise<{ data: T | null; error: string | null }> {
+  try {
+    const response = await fetch(`${API_ORIGIN}/api/public/courses/${encodeURIComponent(id)}/structure`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 60, tags: [`public-course-structure-${id}`] },
+    });
+    if (!response.ok) return { data: null, error: "The course outline is temporarily unavailable." };
+    const body = await response.json();
+    return { data: body as T, error: null };
+  } catch (error) {
+    console.error("[public-catalogue] course structure fetch failed", error);
+    return { data: null, error: "The course outline is temporarily unavailable." };
+  }
+}
+
 export async function getPublicTrack<T = any>(id: string): Promise<{ item: T | null; error: string | null }> {
   try {
     const response = await fetch(`${API_ORIGIN}/api/public/tracks/${encodeURIComponent(id)}`, {
