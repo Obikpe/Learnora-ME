@@ -1,3 +1,7 @@
+import { publicPageMetadata } from "../../lib/seo";
+
+export const metadata = publicPageMetadata("Privacy policy", "Read how Learnora ME handles account information, learning records and personal data.", "/privacy");
+
 import Logo from "../../components/brand/Logo";
 
 const sections = [
