@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   const title = String(item.title || "Learnora course");
   const description = String(item.short_description || item.description || `Explore ${title} on Learnora ME. Review the course outline and available learning access.`).slice(0, 300);
-  const image = item.thumbnail_url || `/og?title=${encodeURIComponent(title)}&kind=${encodeURIComponent("Learnora course")}`;
+  const image = `/og?title=${encodeURIComponent(title)}&kind=${encodeURIComponent("Learnora course")}`;
   const canonical = `/courses/${encodeURIComponent(params.id)}`;
   return {
     title,
