@@ -142,8 +142,6 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
     window.history.replaceState(null, "", url);
   }, [filtersReady, query, level, track, topic, duration, price, rating, sort, page]);
 
-  useEffect(() => { setPage(1); }, [query, level, track, topic, duration, price, rating, sort]);
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
 
