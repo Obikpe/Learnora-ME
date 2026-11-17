@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/og?title=Learn%20Learnora%20ME&kind=Learnora%20ME"],
+    images: ["/og?title=Learn%20skills.%20Build%20real%20projects.&kind=Learnora%20ME"],
     title: "Learnora ME — Learn. Practise. Build. Prove.",
     description: "Connect learning with practice, projects, feedback and skills evidence.",
   },
