@@ -1,3 +1,7 @@
+import { publicPageMetadata } from "../../lib/seo";
+
+export const metadata = publicPageMetadata("About Learnora ME", "Learn about Learnora ME and its approach to practical learning, projects, feedback and skills evidence.", "/about");
+
 import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
 import { IMAGES } from "../../lib/constants";
