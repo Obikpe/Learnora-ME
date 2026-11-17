@@ -171,48 +171,48 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
         <div className="flex flex-col flex-wrap gap-3 md:flex-row md:items-center">
           <label className="flex min-h-12 flex-1 items-center gap-3 border border-white/10 bg-[#10151b] px-4 focus-within:border-[#d7ad35]/60">
             <Search size={17} className="shrink-0 text-slate-500"/>
-            <input aria-label="Search courses" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search skills, topics or course names" className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-600"/>
+            <input aria-label="Search courses" value={query} onChange={e => { setPage(1); setQuery(e.target.value); }} placeholder="Search skills, topics or course names" className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-600"/>
           </label>
           <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
             <SlidersHorizontal size={16} className="text-slate-500"/>
             <span className="text-xs text-slate-500">Level</span>
-            <select aria-label="Filter by level" value={level} onChange={e => setLevel(e.target.value)} className="max-w-40 bg-transparent py-3 text-sm text-slate-200 outline-none">
+            <select aria-label="Filter by level" value={level} onChange={e => { setPage(1); setLevel(e.target.value); }} className="max-w-40 bg-transparent py-3 text-sm text-slate-200 outline-none">
               {levels.map(x => <option key={x} value={x} className="bg-[#10151b]">{x === "all" ? "All levels" : x}</option>)}
             </select>
           </label>
           <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
             <span className="text-xs text-slate-500">Track</span>
-            <select aria-label="Filter by learning track" value={track} onChange={e => setTrack(e.target.value)} className="max-w-52 bg-transparent py-3 text-sm text-slate-200 outline-none">
+            <select aria-label="Filter by learning track" value={track} onChange={e => { setPage(1); setTrack(e.target.value); }} className="max-w-52 bg-transparent py-3 text-sm text-slate-200 outline-none">
               {tracks.map(x => <option key={x} value={x} className="bg-[#10151b]">{x === "all" ? "All tracks" : x}</option>)}
             </select>
           </label>
           <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
             <span className="text-xs text-slate-500">Topic</span>
-            <select aria-label="Filter by topic" value={topic} onChange={e => setTopic(e.target.value)} className="max-w-48 bg-transparent py-3 text-sm text-slate-200 outline-none">
+            <select aria-label="Filter by topic" value={topic} onChange={e => { setPage(1); setTopic(e.target.value); }} className="max-w-48 bg-transparent py-3 text-sm text-slate-200 outline-none">
               {topics.map(x => <option key={x} value={x}>{x === "all" ? "All topics" : x}</option>)}
             </select>
           </label>
           <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
             <span className="text-xs text-slate-500">Duration</span>
-            <select aria-label="Filter by duration" value={duration} onChange={e => setDuration(e.target.value)} className="max-w-40 bg-transparent py-3 text-sm text-slate-200 outline-none">
+            <select aria-label="Filter by duration" value={duration} onChange={e => { setPage(1); setDuration(e.target.value); }} className="max-w-40 bg-transparent py-3 text-sm text-slate-200 outline-none">
               <option value="all">Any length</option><option value="under-2">Under 2 hours</option><option value="2-5">2–5 hours</option><option value="over-5">Over 5 hours</option>
             </select>
           </label>
           <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
             <span className="text-xs text-slate-500">Price</span>
-            <select aria-label="Filter by price" value={price} onChange={e => setPrice(e.target.value)} className="max-w-32 bg-transparent py-3 text-sm text-slate-200 outline-none">
+            <select aria-label="Filter by price" value={price} onChange={e => { setPage(1); setPrice(e.target.value); }} className="max-w-32 bg-transparent py-3 text-sm text-slate-200 outline-none">
               <option value="all">Any price</option><option value="free">Free</option><option value="paid">Paid</option>
             </select>
           </label>
           {hasRatings && <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
             <span className="text-xs text-slate-500">Rating</span>
-            <select aria-label="Filter by rating" value={rating} onChange={e => setRating(e.target.value)} className="max-w-32 bg-transparent py-3 text-sm text-slate-200 outline-none">
+            <select aria-label="Filter by rating" value={rating} onChange={e => { setPage(1); setRating(e.target.value); }} className="max-w-32 bg-transparent py-3 text-sm text-slate-200 outline-none">
               <option value="all">Any rating</option><option value="4">4.0 and above</option>
             </select>
           </label>}
           <label className="flex min-h-12 items-center gap-3 border border-white/10 bg-[#10151b] px-4">
             <span className="text-xs text-slate-500">Sort</span>
-            <select aria-label="Sort courses" value={sort} onChange={e => setSort(e.target.value)} className="max-w-40 bg-transparent py-3 text-sm text-slate-200 outline-none">
+            <select aria-label="Sort courses" value={sort} onChange={e => { setPage(1); setSort(e.target.value); }} className="max-w-40 bg-transparent py-3 text-sm text-slate-200 outline-none">
               <option value="newest">Newest</option><option value="title">Title</option><option value="shortest">Shortest</option><option value="longest">Longest</option>{hasRatings && <option value="rating">Top rated</option>}
             </select>
           </label>
