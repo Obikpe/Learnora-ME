@@ -596,7 +596,7 @@ def create_resource_upload(
     safe_name = re.sub(r"[^A-Za-z0-9._-]+", "-", payload.filename.strip()).strip(".-") or "resource"
     path = f"courses/{course_id}/lessons/{lesson_id}/resources/{secrets.token_hex(12)}-{safe_name}"
     try:
-        response = supabase.storage.from_("learnora-course-media").create_signed_upload_url(
+        response = supabase.storage.from_("learnora-course-resources").create_signed_upload_url(
             path,
             options={"upsert": "false"},
         )
@@ -613,7 +613,7 @@ def create_resource_upload(
             raise RuntimeError("Supabase did not return a signed resource upload URL.")
         return {
             "success": True,
-            "bucket": "learnora-course-media",
+            "bucket": "learnora-course-resources",
             "path": response_path,
             "token": token,
             "signed_url": signed_url,
