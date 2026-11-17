@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight, ArrowUpRight, BookOpen, CheckCircle2, Clock3, Compass,
   GraduationCap, Layers3, RefreshCw, Search, Sparkles, Route,
@@ -208,7 +209,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         </div>
         <div className="landing-hero-visual">
           <div className="landing-hero-image">
-            <img src={slide.image} alt={slide.alt} fetchPriority="high" />
+            <Image src={slide.image} alt={slide.alt} width={1800} height={1200} priority={activeSlide === 0} quality={75} sizes="(max-width: 1024px) 100vw, 55vw" />
             <div className="landing-image-caption">
                             <strong>A course is a beginning. What you do with it is the story.</strong>
             </div>
