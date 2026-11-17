@@ -25,6 +25,8 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
   const [rating, setRating] = useState("all");
   const [sort, setSort] = useState("newest");
   const [filtersReady, setFiltersReady] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
 
   async function loadCourses() {
     setLoading(true);
@@ -51,6 +53,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
     setPrice(params.get("price") || "all");
     setRating(params.get("rating") || "all");
     setSort(params.get("sort") || "newest");
+    setPage(Math.max(1, Number(params.get("page") || 1)));
     setFiltersReady(true);
     currentUser().then(me => {
       if (!active) return;
@@ -130,13 +133,19 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
     if (!filtersReady) return;
     const params = new URLSearchParams();
     if (query.trim()) params.set("search", query.trim());
+    if (page > 1) params.set("page", String(page));
     for (const [key, value] of [["level",level],["track",track],["topic",topic],["duration",duration],["price",price],["rating",rating],["sort",sort]] as const) {
       if (value !== "all" && !(key === "sort" && value === "newest")) params.set(key, value);
     }
     const next = params.toString();
     const url = next ? window.location.pathname + "?" + next : window.location.pathname;
     window.history.replaceState(null, "", url);
-  }, [filtersReady, query, level, track, topic, duration, price, rating, sort]);
+  }, [filtersReady, query, level, track, topic, duration, price, rating, sort, page]);
+
+  useEffect(() => { setPage(1); }, [query, level, track, topic, duration, price, rating, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   const usedImages = new Set<string>();
   [
@@ -241,7 +250,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
 
         {!loading && !error && filtered.length > 0 && (
           <div className="landing-course-grid">
-            {filtered.map(course => {
+            {pageItems.map(course => {
               const candidate = typeof course.thumbnail_url === "string" ? course.thumbnail_url.trim() : "";
               const imageKey = candidate ? candidate.split("?")[0] : "";
               const image = imageKey && !usedImages.has(imageKey) ? candidate : "";
@@ -280,6 +289,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
             })}
           </div>
         )}
+        {!loading && !error && filtered.length > pageSize && <nav aria-label="Course catalogue pages" className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.1] pt-5"><span className="text-xs text-slate-500">Page {page} of {totalPages}</span><div className="flex items-center gap-2"><button type="button" disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))} className="min-h-11 border border-white/15 px-4 text-sm disabled:opacity-40">Previous</button><button type="button" disabled={page >= totalPages} onClick={() => setPage(value => Math.min(totalPages, value + 1))} className="min-h-11 border border-white/15 px-4 text-sm disabled:opacity-40">Next</button></div></nav>}
 
         {!loading && !error && filtered.length === 0 && (
           <EmptyState
