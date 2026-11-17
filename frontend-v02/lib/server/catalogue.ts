@@ -54,6 +54,23 @@ export function getPublicCourses<T = any>() {
   return fetchPublic<T>("/public/courses", "courses");
 }
 
+export async function getPublicTrack<T = any>(id: string): Promise<{ item: T | null; error: string | null }> {
+  try {
+    const response = await fetch(`${API_ORIGIN}/api/public/tracks/${encodeURIComponent(id)}`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 60, tags: [`public-track-${id}`] },
+    });
+    if (!response.ok) return { item: null, error: response.status === 404 ? "Track not found." : "Track details are temporarily unavailable." };
+    const body = await response.json();
+    const item = body?.track || body;
+    if (!item || typeof item !== "object" || !item.id) return { item: null, error: "Track not found." };
+    return { item: item as T, error: null };
+  } catch (error) {
+    console.error("[public-catalogue] track fetch failed", error);
+    return { item: null, error: "Track details are temporarily unavailable." };
+  }
+}
+
 export function getPublicTracks<T = any>() {
   return fetchPublic<T>("/public/tracks", "tracks");
 }
