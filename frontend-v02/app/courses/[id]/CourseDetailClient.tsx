@@ -36,7 +36,7 @@ export default function CourseDetailClient({params,searchParams,initialCourse}:{
   if(pageContent)return signedIn?<Shell active="discover">{pageContent}</Shell>:<><PublicNav/>{pageContent}<PublicFooter/></>;
   const modules=s?.modules||s?.structure?.modules||[];
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
-  const pageBody=<main className={`mx-auto max-w-[82rem] px-5 pb-24 ${signedIn?"pt-8":"pt-32"} lg:px-8`}>
+  const pageBody=<main id="main-content" className={`mx-auto max-w-[82rem] px-5 pb-24 ${signedIn?"pt-8":"pt-32"} lg:px-8`}>
       <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-600"><a href="/" className="hover:text-slate-300">Home</a><span>/</span><a href="/courses" className="hover:text-slate-300">Courses</a><span>/</span><span className="max-w-[18rem] truncate text-slate-400">{c.title}</span></nav>
       <section className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_23rem] xl:gap-16">
         <div className="min-w-0">
