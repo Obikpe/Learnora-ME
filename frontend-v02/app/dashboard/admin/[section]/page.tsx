@@ -1,5 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
+import { useParams } from "next/navigation";
 import {currentUser} from "../../../../lib/api";
 import Skeleton from "../../../../components/feedback/Skeleton";
 import {adminCourses,organisations,organisationRequests,creatorApplications,aiProviders,adminUsers,adminAccountLifecycle,adminActivity} from "../../../../lib/api/admin";
@@ -13,7 +14,8 @@ function dateLabel(value:any) {
  const date=new Date(value);
  return Number.isNaN(date.getTime())?"—":date.toLocaleString();
 }
-export default function AdminSection({params}:{params:{section:string}}){
+export default function AdminSection(){
+ const params = useParams<{section:string}>();
  const[u,setU]=useState<any>(null),[data,setData]=useState<any>(null),[err,setErr]=useState("");
  useEffect(()=>{currentUser().then(x=>{if(x.account_type!=="admin")location.href="/dashboard";else setU(x)}).catch(()=>location.href="/login")},[]);
  useEffect(()=>{

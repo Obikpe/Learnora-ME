@@ -1,5 +1,6 @@
 "use client";
 import { useEffect,useState } from "react";
+import { useParams } from "next/navigation";
 import { ArrowRight, BookOpen, FileCheck2, Sparkles } from "lucide-react";
 import { currentUser } from "../../../lib/api";
 import { courses,progress,evidence } from "../../../lib/api/learning";
@@ -25,7 +26,8 @@ const descriptions:any={
  community:"Ask questions and connect learning to the people who can support you.",
  settings:"Manage the profile and preferences currently available to your account."
 };
-export default function Page({params}:{params:{section:string}}){
+export default function Page(){
+ const params = useParams<{section:string}>();
  const [u,setU]=useState<any>(null),[data,setData]=useState<any>(null),[err,setErr]=useState(""),[loading,setLoading]=useState(true);
  useEffect(()=>{currentUser().then(me=>{
   if(me.role==="organisation_prospect"){location.href="/organisation-portal";return;}

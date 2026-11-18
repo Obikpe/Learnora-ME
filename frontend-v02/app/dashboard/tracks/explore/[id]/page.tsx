@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Circle, LockKeyhole } from "lucide-react";
 import Shell from "../../../../../components/dashboard/Shell";
 import EmptyState from "../../../../../components/feedback/EmptyState";
@@ -10,7 +10,8 @@ import Skeleton from "../../../../../components/feedback/Skeleton";
 import { currentUser, organisationContext } from "../../../../../lib/api";
 import { request } from "../../../../../lib/api/client";
 
-export default function SignedInTrackDetailPage({ params }: { params: { id: string } }) {
+export default function SignedInTrackDetailPage() {
+  const params = useParams<{id:string}>();
   const router = useRouter();
   const [track, setTrack] = useState<any>(null);
   const [progress, setProgress] = useState<any>(null);

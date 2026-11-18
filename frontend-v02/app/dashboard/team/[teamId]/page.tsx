@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Users } from "lucide-react";
 import { request } from "../../../../lib/api/client";
 import Logo from "../../../../components/brand/Logo";
 import EmptyState from "../../../../components/feedback/EmptyState";
 import Skeleton from "../../../../components/feedback/Skeleton";
 
-export default function TeamWorkspace({ params }: { params: { teamId: string } }) {
+export default function TeamWorkspace() {
+  const params = useParams<{teamId:string}>();
   const [data, setData] = useState<any>(null);
   const [userId, setUserId] = useState("");
   const [role, setRole] = useState("member");
