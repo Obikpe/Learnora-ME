@@ -32,6 +32,7 @@ export default function CookiesPage() {
                   <tr className="border-b border-[var(--border)]"><td className="p-3 font-mono">phx_logged_out</td><td className="p-3">Prevents a signed-out session from being treated as active.</td><td className="p-3">Local and session storage</td></tr>
                   <tr className="border-b border-[var(--border)]"><td className="p-3 font-mono">phx_session_epoch, phx_token</td><td className="p-3">Session markers used by the browser client to coordinate the current authenticated session.</td><td className="p-3">Session storage</td></tr>
                   <tr className="border-b border-[var(--border)]"><td className="p-3 font-mono">learnora_organisation_id</td><td className="p-3">Remembers the active organisation context selected by an authorised user.</td><td className="p-3">Local storage</td></tr>
+                  <tr className="border-b border-[var(--border)]"><td className="p-3 font-mono">learnora_cookie_consent_v1</td><td className="p-3">Stores your cookie category choices so Learnora can remember and respect them.</td><td className="p-3">Local storage</td></tr>
                   <tr><td className="p-3 font-mono">learnora_api_cache_v1:*, learnora_current_user_cache:*</td><td className="p-3">Temporarily caches session-scoped API responses and the current user record to avoid unnecessary repeat requests.</td><td className="p-3">Session storage</td></tr>
                 </tbody>
               </table>
@@ -39,11 +40,11 @@ export default function CookiesPage() {
           </section>
           <section>
             <h2 className="text-xl font-semibold text-[var(--text-heading)]">Functional preference storage</h2>
-            <p className="mt-3 leading-7">When you choose a theme, Learnora stores your appearance preference as <code className="font-mono">learnora_theme</code> in local storage. Your cookie choices are stored as <code className="font-mono">learnora_cookie_consent_v1</code> so the site can remember and respect them. These items are not advertising cookies.</p>
+            <p className="mt-3 leading-7">If you accept the optional Functional preferences category, Learnora stores your appearance choice as <code className="font-mono">learnora_theme</code> in local storage. If you decline that category, your theme choice applies only until you leave the current session. Your consent record is stored separately as <code className="font-mono">learnora_cookie_consent_v1</code> so the site can remember and respect your choices.</p>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-[var(--text-heading)]">Optional technologies</h2>
-            <p className="mt-3 leading-7">Analytics and marketing preferences are available in the cookie controls. No optional analytics or advertising tags are currently configured in this Learnora ME frontend. If optional technologies are introduced, they must remain disabled until you actively opt in. You can reject optional categories without losing access to the core service.</p>
+            <p className="mt-3 leading-7">Functional preferences, analytics and marketing preferences are available in the cookie controls. No optional analytics or advertising tags are currently configured in this Learnora ME frontend. If optional technologies are introduced, they must remain disabled until you actively opt in. You can reject optional categories without losing access to the core service.</p>
           </section>
           <section>
             <h2 className="text-xl font-semibold text-[var(--text-heading)]">Change or withdraw your choices</h2>

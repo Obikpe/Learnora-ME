@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Award, BookOpen, CheckCircle2, Clock3, FileText, GraduationCap, RefreshCw, Sun, Moon } from "lucide-react";
 import { currentUser, getCachedCurrentUser } from "../../lib/api";
 import { request } from "../../lib/api/client";
+import { hasFunctionalCookieConsent } from "../../lib/cookie-consent";
 import Shell from "../../components/dashboard/Shell";
 import Skeleton from "../../components/feedback/Skeleton";
 import LearnerAssistant from "../../components/dashboard/LearnerAssistant";
@@ -91,7 +92,7 @@ export default function MyLearningPage() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("learnora_theme");
+    const saved = hasFunctionalCookieConsent() ? window.localStorage.getItem("learnora_theme") : null;
     const initial = saved === "dark" ? "dark" : "light";
     setTheme(initial);
     document.documentElement.dataset.theme = initial;
@@ -101,7 +102,8 @@ export default function MyLearningPage() {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
     document.documentElement.dataset.theme = next;
-    window.localStorage.setItem("learnora_theme", next);
+    if (hasFunctionalCookieConsent()) window.localStorage.setItem("learnora_theme", next);
+    else window.localStorage.removeItem("learnora_theme");
   }
 
   async function load(me?: any) {

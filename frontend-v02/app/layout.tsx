@@ -37,5 +37,5 @@ export const viewport: Viewport = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: '(function(){try{var t=localStorage.getItem("learnora_theme");document.documentElement.dataset.theme=t==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}})();' }} /></head><body>{children}<CookieConsent /></body></html>;
+  return <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: '(function(){try{var c=JSON.parse(localStorage.getItem("learnora_cookie_consent_v1")||"null");var t=c&&c.version===1&&c.functional===true?localStorage.getItem("learnora_theme"):null;document.documentElement.dataset.theme=t==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}})();' }} /></head><body>{children}<CookieConsent /></body></html>;
 }
