@@ -443,3 +443,37 @@ button:active:not(:disabled), [role="button"]:active { transform:scale(.975); }
   html { scroll-behavior:auto; }
   *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 }
+
+/* Animated landing hero layers and dashboard feedback. */
+@keyframes learnora-slide-enter {
+  from { opacity:0; transform:translate3d(0,14px,0); filter:blur(3px); }
+  to { opacity:1; transform:translate3d(0,0,0); filter:blur(0); }
+}
+.landing-slide-copy { animation:learnora-slide-enter 520ms cubic-bezier(.2,.75,.25,1) both; }
+.landing-hero-visual { position:relative; isolation:isolate; }
+.landing-hero-visual:before,
+.landing-hero-visual:after {
+  content:""; position:absolute; z-index:-1; pointer-events:none; border-radius:999px;
+  background:radial-gradient(circle,var(--primary-tint),transparent 68%);
+}
+.landing-hero-visual:before { width:220px; height:220px; top:-48px; right:-38px; animation:learnora-float 7s ease-in-out infinite; }
+.landing-hero-visual:after { width:170px; height:170px; bottom:-42px; left:-42px; animation:learnora-float 8s 1s ease-in-out infinite reverse; }
+.landing-hero-product { position:relative; }
+.landing-hero-product:after {
+  content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+  background:linear-gradient(115deg,transparent 25%,color-mix(in srgb,var(--primary) 7%,transparent) 48%,transparent 70%);
+  background-size:220% 100%; animation:learnora-shimmer 7s ease-in-out infinite;
+}
+.landing-page .landing-search button { transition:transform 180ms ease,box-shadow 180ms ease,background-color 180ms ease; }
+.landing-page .landing-search button:hover { transform:translateY(-2px); box-shadow:0 8px 18px color-mix(in srgb,var(--primary) 22%,transparent); }
+.landing-page .landing-button svg { transition:transform 220ms ease; }
+.landing-page .landing-button:hover svg { transform:translateX(3px); }
+.dashboard-page main > * { animation:learnora-rise-in .42s both; }
+.dashboard-page main > *:nth-child(2) { animation-delay:45ms; }
+.dashboard-page main > *:nth-child(3) { animation-delay:90ms; }
+.dashboard-page main > *:nth-child(4) { animation-delay:135ms; }
+[aria-busy="true"] .progress > span,
+[aria-busy="true"] [role="progressbar"] > span { animation:learnora-progress-glow 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion:reduce) {
+  .landing-slide-copy,.landing-hero-visual:before,.landing-hero-visual:after,.landing-hero-product:after { animation:none !important; }
+}
