@@ -477,3 +477,33 @@ button:active:not(:disabled), [role="button"]:active { transform:scale(.975); }
 @media (prefers-reduced-motion:reduce) {
   .landing-slide-copy,.landing-hero-visual:before,.landing-hero-visual:after,.landing-hero-product:after { animation:none !important; }
 }
+
+
+/* Dashboard motion details: short, low-amplitude feedback rather than constant movement. */
+@keyframes dashboard-stat-in {
+  from { opacity:0; transform:translate3d(0,10px,0) scale(.985); }
+  to { opacity:1; transform:translate3d(0,0,0) scale(1); }
+}
+.dashboard-page main section[aria-label="Learning summary"] > div {
+  animation:dashboard-stat-in .5s cubic-bezier(.2,.75,.25,1) both;
+}
+.dashboard-page main section[aria-label="Learning summary"] > div:nth-child(2) { animation-delay:55ms; }
+.dashboard-page main section[aria-label="Learning summary"] > div:nth-child(3) { animation-delay:110ms; }
+.dashboard-page main section[aria-label="Learning summary"] > div:nth-child(4) { animation-delay:165ms; }
+@media (hover:hover) and (pointer:fine) {
+  .dashboard-page main section[aria-label="Learning summary"] > div:hover {
+    transform:translateY(-3px);
+    border-color:var(--primary);
+    box-shadow:0 12px 28px color-mix(in srgb,var(--primary) 9%,transparent);
+  }
+  .dashboard-page main article:hover { border-color:color-mix(in srgb,var(--primary) 48%,var(--border)); }
+}
+.dashboard-page main [role="progressbar"] > span,
+.dashboard-page main .h-2 > div { transition:width 900ms cubic-bezier(.2,.75,.25,1); }
+.dashboard-page main [role="tablist"] button { transition:color 180ms ease,border-color 220ms ease,background-color 180ms ease; }
+.dashboard-page main [role="tablist"] button[aria-selected="true"] { text-shadow:0 0 18px color-mix(in srgb,var(--primary) 18%,transparent); }
+@media (prefers-reduced-motion:reduce) {
+  .dashboard-page main section[aria-label="Learning summary"] > div { animation:none!important; }
+  .dashboard-page main [role="progressbar"] > span,
+  .dashboard-page main .h-2 > div { transition:none!important; }
+}
