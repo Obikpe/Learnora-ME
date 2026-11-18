@@ -192,7 +192,7 @@ jobs:
 
           STAGING_SERVICE_KEY="$(python - <<'PY'
           import os, time
-          from jose import jwt
+          import jwt
           now = int(time.time())
           print(jwt.encode(
               {"role": "service_role", "iss": "supabase", "iat": now, "exp": now + 3600},
@@ -230,7 +230,7 @@ jobs:
           python -m pip install "httpx<0.28"
           export SUPABASE_SERVICE_ROLE_KEY="$(python - <<'PY'
           import os, time
-          from jose import jwt
+          import jwt
           now = int(time.time())
           print(jwt.encode(
               {"role": "service_role", "iss": "supabase", "iat": now, "exp": now + 3600},
