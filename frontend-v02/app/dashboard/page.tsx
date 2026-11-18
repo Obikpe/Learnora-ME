@@ -106,6 +106,7 @@ export default function MyLearningPage() {
       setLearning(progressData);
       setError("");
     } else {
+      // Keep the last successful dashboard data when a refresh fails transiently.
       const failure = (progressResponse as PromiseRejectedResult).reason as (Error & { status?: number }) | undefined;
       if (failure?.status === 401) {
         if (typeof window !== "undefined") window.location.replace("/login");
