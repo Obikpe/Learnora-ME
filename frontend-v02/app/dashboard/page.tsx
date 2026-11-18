@@ -24,14 +24,20 @@ function dateLabel(value?: string | null) {
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function apiErrorStatus(error: unknown): number {
+  return typeof error === "object" && error !== null && "status" in error
+    ? Number((error as { status?: unknown }).status || 0)
+    : 0;
+}
+
 async function loadCoreProgress() {
-  let lastError: any;
+  let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      return await request<any>("/progress/me");
-    } catch (error: any) {
+      return await request<Record<string, unknown>>("/progress/me");
+    } catch (error: unknown) {
       lastError = error;
-      const status = Number(error?.status || 0);
+      const status = apiErrorStatus(error);
       const transient = !status || [429, 500, 502, 503, 504].includes(status);
       if (!transient || attempt === 2) break;
       await new Promise(resolve => window.setTimeout(resolve, attempt === 0 ? 350 : 900));
