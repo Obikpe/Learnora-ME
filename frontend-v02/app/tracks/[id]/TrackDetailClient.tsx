@@ -26,7 +26,7 @@ export default function TrackDetailClient({params,initialTrack}:{params:{id:stri
     } catch {
       setProgress(null);
     }
-  }, [params.id, initialTrack, loadProgress]);
+  }, [params.id]);
 
   useEffect(() => {
     let active = true;
@@ -89,7 +89,7 @@ export default function TrackDetailClient({params,initialTrack}:{params:{id:stri
       }
     });
     return () => { active = false; };
-  }, [params.id]);
+  }, [params.id, initialTrack, loadProgress]);
 
   const nextCourse = useMemo(() => {
     const courses = progress?.courses || [];
