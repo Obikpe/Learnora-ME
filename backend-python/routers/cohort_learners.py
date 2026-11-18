@@ -67,6 +67,7 @@ def _cohort_rate_hash(key: str) -> str:
 
 
 def _cohort_rate_limited(key: str, max_failures: int = COHORT_LOGIN_MAX_FAILS) -> bool:
+    """Check one persistent bucket using its own account or IP threshold."""
     result = supabase.rpc("cohort_login_is_limited", {
         "p_key_hash": _cohort_rate_hash(key),
         "p_max_failures": max_failures,
