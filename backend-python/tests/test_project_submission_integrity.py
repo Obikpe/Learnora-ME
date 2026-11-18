@@ -54,7 +54,7 @@ class ProjectSubmissionIntegrityTests(unittest.TestCase):
         self.staff=SimpleNamespace(user_id="staff-1",staff_id="staff-1",email="staff@example.test")
 
     def test_project_brief_and_skill_mapping_freeze_after_first_submission(self):
-        db=FakeSupabase({"project_submissions":[{"id":"submission-1"}]})
+        db=FakeSupabase({"project_submissions":[{"id":"submission-1","project_id":"project-1"}]})
         with patch.object(internal_projects,"_project",return_value={"id":"project-1","is_published":False}), patch.object(internal_projects,"supabase",db):
             with self.assertRaises(HTTPException) as raised:
                 internal_projects.update_project("project-1",internal_projects.ProjectWrite(title="Changed brief"),self.staff)
@@ -62,7 +62,7 @@ class ProjectSubmissionIntegrityTests(unittest.TestCase):
         self.assertFalse(any(table=="projects" and operation=="update" for table,operation,_ in db.calls))
 
     def test_failed_evidence_write_does_not_approve_submission(self):
-        db=FakeSupabase({"project_submissions":[{"id":"submission-1","user_id":"learner-1","status":"submitted"}]},fail_evidence_insert=True)
+        db=FakeSupabase({"project_submissions":[{"id":"submission-1","project_id":"project-1","user_id":"learner-1","status":"submitted"}]},fail_evidence_insert=True)
         review=internal_projects.ProjectReviewIn(score=90,feedback="Strong work",decision="approved")
         with patch.object(internal_projects,"_project",return_value={"id":"project-1","skills":["skill-1"]}), patch.object(internal_projects,"supabase",db), patch.object(internal_projects,"log_audit_event"):
             with self.assertRaises(HTTPException) as raised:

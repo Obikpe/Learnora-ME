@@ -112,6 +112,7 @@ class ProgressIdentityScopeTests(unittest.TestCase):
         db = FakeSupabase({
             "cohort_members": [{
                 "id": "membership-1",
+                "user_id": "user-1",
                 "cohort_id": "cohort-1",
                 "status": "withdrawn",
             }],

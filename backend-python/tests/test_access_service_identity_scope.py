@@ -71,7 +71,7 @@ class AccessIdentityScopeTests(unittest.TestCase):
         db = FakeSupabase({
             "learnora_courses": self._course(),
             "organisation_members": [{
-                "organisation_id": "org-1", "role": "learner", "status": "suspended",
+                "organisation_id": "org-1", "user_id": "user-1", "role": "learner", "status": "suspended",
             }],
             "learnora_course_purchases": [{
                 "id": "purchase-1", "user_id": "user-1",
@@ -105,7 +105,7 @@ class AccessIdentityScopeTests(unittest.TestCase):
         db = FakeSupabase({
             "learnora_courses": self._course(),
             "organisation_members": [{
-                "organisation_id": "org-1", "role": "learner", "status": "active",
+                "organisation_id": "org-1", "user_id": "user-1", "role": "learner", "status": "active",
             }],
             "course_access": [{
                 "id": "grant-1", "organisation_id": "org-1",

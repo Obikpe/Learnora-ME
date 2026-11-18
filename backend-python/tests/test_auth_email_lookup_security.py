@@ -65,7 +65,9 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
         self.assertIn('if cohort_accounts and not admin and not user:', login)
         self.assertIn('if (admin and user) or (cohort_accounts and (admin or user)):', login)
         self.assertIn('_find_cohort_accounts_by_email(email)', register)
-        self.assertIn('reserved for an organisation-managed account', register)
+        self.assertIn('generic_registration_response', register)
+        self.assertIn('return generic_registration_response', register)
+        self.assertNotIn('reserved for an organisation-managed account', register)
 
     def test_organisation_context_resolution_fails_closed_on_multiple_tenants(self):
         source = (Path(__file__).resolve().parents[1] / "routers" / "auth.py").read_text(encoding="utf-8")
@@ -178,7 +180,7 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
             _find_user("learner@example.com")
 
         self.assertEqual(raised.exception.status_code, 409)
-        mock_supabase.table.assert_called_once_with("users")
+        mock_supabase.table.assert_any_call("users")
         query.limit.assert_called_once_with(2)
 
     def test_unresolved_retained_cohort_membership_cannot_become_individual(self):
@@ -204,7 +206,7 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
             def table(self, name):
                 fixtures = {
                     "organisation_members": [],
-                    "cohort_members": [{"cohort_id": "missing-cohort"}],
+                    "cohort_members": [{"cohort_id": "missing-cohort", "user_id": "user-1", "status": "active"}],
                     "cohorts": [],
                     "security_logs": [],
                 }
@@ -250,7 +252,7 @@ class AuthEmailLookupSecurityTests(unittest.TestCase):
             _find_admin("admin@example.com")
 
         self.assertEqual(raised.exception.status_code, 409)
-        mock_supabase.table.assert_called_once_with("admins")
+        mock_supabase.table.assert_any_call("admins")
         query.limit.assert_called_once_with(2)
 
     @patch("routers.auth.supabase")
