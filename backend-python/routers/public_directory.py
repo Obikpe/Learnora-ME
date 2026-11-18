@@ -31,6 +31,25 @@ def _guard_public_discovery(user) -> None:
         )
 
 
+def _is_public_course(course: dict, organisation_map: dict, creator_map: dict) -> bool:
+    """Apply the same explicit publication opt-in rules to a single course."""
+    ownership = course.get("ownership")
+    if ownership == "learnora":
+        return not course.get("organisation_id")
+    if ownership == "creator":
+        creator = creator_map.get(str(course.get("creator_id") or ""))
+        return bool(creator and creator.get("status") in {"approved", "active"})
+    if ownership == "organisation":
+        settings = course.get("settings") or {}
+        if settings.get("public_catalogue") is not True:
+            return False
+        organisation = organisation_map.get(str(course.get("organisation_id") or ""))
+        if not organisation or organisation.get("is_active") is not True:
+            return False
+        return (organisation.get("settings") or {}).get("public_directory") is True
+    return False
+
+
 def _public_track_memberships(course_ids: list[str]) -> dict:
     """Return actual published global track relationships for catalogue courses."""
     ids = list({str(value) for value in course_ids if value})
