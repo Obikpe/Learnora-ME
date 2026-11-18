@@ -321,7 +321,7 @@ main :where(p,li) a:not([class*="button"]):hover { text-decoration-thickness:2px
   border-color: var(--border) !important;
   color: var(--text-body);
 }
-.public-nav nav a,
+.public-nav a:not(.public-nav-primary),
 .public-nav nav button,
 .public-nav button:not(.public-nav-primary) {
   color: var(--text-body) !important;
