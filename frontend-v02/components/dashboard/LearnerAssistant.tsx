@@ -60,12 +60,12 @@ export default function LearnerAssistant({ courses, goal, learning = [] }: { cou
   return <>
     {open && <section className="fixed right-4 top-[5.25rem] z-[70] flex h-[min(36rem,calc(100vh-7rem))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl sm:right-6" aria-label="Learnora AI assistant">
       <header className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-        <div className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded-full bg-[var(--primary-tint)] text-[var(--primary)]"><Sparkles size={17}/></span><div><h2 className="text-sm font-bold text-[var(--text-heading)]">Learnora assistant</h2><p className="text-[10px] text-[var(--text-muted)]">Course guidance</p></div></div>
+        <div className="flex items-center gap-2"><span className={"ai-bot " + (busy ? "is-thinking" : "")} aria-hidden="true"><span className="ai-bot-face"><i className="ai-bot-eye"/><i className="ai-bot-eye"/></span></span><div><h2 className="text-sm font-bold text-[var(--text-heading)]">Learnora assistant</h2><p className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]"><span className="size-1.5 rounded-full bg-[var(--success)]"/>{busy ? "Thinking through your question" : "Ready to help"}</p></div></div>
         <button type="button" aria-label="Close assistant" onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-lg hover:bg-[var(--bg-soft)]"><X size={17}/></button>
       </header>
       <div className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
         {messages.map((message, index) => <div key={index} className={"max-w-[90%] rounded-xl px-3 py-2.5 text-sm leading-6 " + (message.role === "user" ? "ml-auto bg-[var(--primary)] text-[var(--on-primary)]" : "bg-[var(--bg-soft)] text-[var(--text-body)]")}>{message.content}{message.courses?.map(course => { const free = course.settings?.is_free === true || course.settings?.access_type === "free"; const href = "/courses/" + encodeURIComponent(course.id) + (free ? "?enrol=1" : ""); return <a key={course.id} href={href} className="mt-2 block font-semibold text-[var(--primary)] underline">{course.title} <span aria-hidden="true">→</span></a>; })}</div>)}
-        {busy && <p className="text-xs text-[var(--text-muted)]">Thinking…</p>}
+        {busy && <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]" role="status" aria-label="Learnora AI is thinking"><span className="ai-bot is-thinking size-7"><span className="ai-bot-face"><i className="ai-bot-eye"/><i className="ai-bot-eye"/></span></span><span>Thinking <span className="ai-thinking-dots"><i/><i/><i/></span></span></div>}
         {error && <p role="alert" className="text-xs text-[var(--warning)]">{error}</p>}
         {messages.length === 1 && <div className="flex flex-wrap gap-2 pt-1">
           <button type="button" onClick={() => void send("Plan my week using my enrolled courses and suggest realistic study sessions.")} className="rounded-full border border-[var(--border)] px-3 py-2 text-xs text-[var(--primary)]">Plan my week</button>
@@ -79,7 +79,7 @@ export default function LearnerAssistant({ courses, goal, learning = [] }: { cou
       </form>
     </section>}
     <button id="aib" type="button" onClick={() => setOpen(value => !value)} aria-label={open ? "Close Learnora assistant" : "Open Learnora AI assistant"} aria-expanded={open} className={"grid size-10 place-items-center rounded-lg border border-[var(--border)] transition " + (open ? "bg-[var(--primary-tint)] text-[var(--primary)]" : "bg-[var(--card)] text-[var(--text-body)] hover:bg-[var(--bg-soft)]")}>
-      {open ? <X size={19}/> : <Sparkles size={19}/>}
+      {open ? <X size={19}/> : <span className="ai-bot" aria-hidden="true"><span className="ai-bot-face"><i className="ai-bot-eye"/><i className="ai-bot-eye"/></span></span>}
     </button>
   </>;
 }
