@@ -214,12 +214,32 @@ jobs:
         env:
           NODE_OPTIONS: --trace-deprecation
         run: |
-          npm install --no-audit --no-fund
+          if [ ! -f package-lock.json ]; then
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          fi
+          npm ci --no-audit --no-fund
+          echo "::group::Deprecated dependency paths"
+          npm ls inflight rimraf glob @humanwhocodes/config-array @humanwhocodes/object-schema eslint --all || true
+          echo "::endgroup::"
           npm run lint
           npm run build
 
       - name: Build Teams website
         working-directory: frontend-team
         run: |
-          npm install --no-audit --no-fund
+          if [ ! -f package-lock.json ]; then
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          fi
+          npm ci --no-audit --no-fund
           npm run build
+
+      - name: Upload generated dependency lockfiles for review
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: learnora-generated-lockfiles
+          path: |
+            frontend-v02/package-lock.json
+            frontend-team/package-lock.json
+          if-no-files-found: warn
+          retention-days: 1
