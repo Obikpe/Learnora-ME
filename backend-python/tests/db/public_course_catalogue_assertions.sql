@@ -85,6 +85,28 @@ BEGIN
   IF NOT has_function_privilege('service_role', 'public.get_public_course_catalogue()', 'EXECUTE') THEN
     RAISE EXCEPTION 'service_role must execute the public catalogue RPC';
   END IF;
+
+  SELECT catalogue.courses
+    INTO v_tracks
+    FROM public.get_public_track_catalogue() AS catalogue
+   WHERE catalogue.id = v_path_id;
+
+  IF jsonb_array_length(COALESCE(v_tracks, '[]'::jsonb)) <> 1 THEN
+    RAISE EXCEPTION 'Published global track must include its published global course';
+  END IF;
+
+  IF v_tracks -> 0 -> 'course' ->> 'id' <> v_course_id::text THEN
+    RAISE EXCEPTION 'Track catalogue returned the wrong course membership';
+  END IF;
+
+  IF has_function_privilege('anon', 'public.get_public_track_catalogue()', 'EXECUTE')
+     OR has_function_privilege('authenticated', 'public.get_public_track_catalogue()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Browser roles must not execute the public track RPC directly';
+  END IF;
+
+  IF NOT has_function_privilege('service_role', 'public.get_public_track_catalogue()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'service_role must execute the public track RPC';
+  END IF;
 END;
 $$;
 

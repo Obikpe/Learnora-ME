@@ -79,6 +79,58 @@ class PublicDirectoryAccessModeTests(unittest.TestCase):
         self.assertEqual(response["count"], 1)
         self.assertEqual(response["courses"][0]["tracks"][0]["id"], "track-1")
 
+    def test_public_track_catalogue_uses_one_server_side_rpc(self):
+        class FakeSupabase:
+            def __init__(self):
+                self.rpc_calls = []
+                self.table_calls = []
+
+            def rpc(self, name):
+                self.rpc_calls.append(name)
+
+                class Query:
+                    def execute(self):
+                        return SimpleNamespace(data=[{
+                            "id": "track-1",
+                            "name": "Public track",
+                            "slug": "public-track",
+                            "description": "Track description",
+                            "status": "published",
+                            "created_at": "2026-11-18T00:00:00Z",
+                            "courses": [{
+                                "id": "link-1",
+                                "path_id": "track-1",
+                                "course_id": "course-1",
+                                "order_index": 0,
+                                "required": True,
+                                "course": {
+                                    "id": "course-1",
+                                    "title": "Public course",
+                                    "slug": "public-course",
+                                    "settings": {"is_free": True},
+                                },
+                            }],
+                        }])
+
+                return Query()
+
+            def table(self, name):
+                self.table_calls.append(name)
+                raise AssertionError("Public track catalogue must not make follow-up table requests")
+
+        fake = FakeSupabase()
+        with patch.object(public_directory, "supabase", fake), patch.object(
+            public_directory, "free_access_mode_enabled", return_value=False
+        ):
+            response = public_directory.public_tracks(user=None)
+
+        self.assertEqual(fake.rpc_calls, ["get_public_track_catalogue"])
+        self.assertEqual(fake.table_calls, [])
+        self.assertEqual(response["count"], 1)
+        self.assertEqual(response["tracks"][0]["course_count"], 1)
+        self.assertEqual(response["tracks"][0]["self_enrol_available"], True)
+        self.assertNotIn("settings", response["tracks"][0]["courses"][0]["course"])
+
     def test_free_launch_labels_only_global_learnora_courses_as_free(self):
         global_course = {"id": "global-1", "ownership": "learnora", "organisation_id": None, "settings": {}}
         tenant_course = {"id": "tenant-1", "ownership": "learnora", "organisation_id": "org-1", "settings": {}}

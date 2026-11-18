@@ -251,53 +251,48 @@ def _public_track_payload(track: dict) -> dict:
 @router.get("/tracks")
 def public_tracks(user=Depends(get_optional_current_user)):
     _guard_public_discovery(user)
-    tracks = (
-        supabase.table("learnora_learning_paths")
-        .select("id,name,slug,description,status,owner_user_id,organisation_id,created_at")
-        .is_("owner_user_id", "null")
-        .is_("organisation_id", "null")
-        .eq("status", "published")
-        .order("created_at", desc=True)
-        .execute()
-    ).data or []
-    track_ids = [str(row["id"]) for row in tracks if row.get("id")]
-    links = []
-    if track_ids:
-        links = (
-            supabase.table("learnora_learning_path_courses")
-            .select("id,path_id,course_id,order_index,required")
-            .in_("path_id", track_ids)
-            .order("order_index")
-            .execute()
-        ).data or []
-    course_ids = list({str(row["course_id"]) for row in links if row.get("course_id")})
-    course_map = {}
-    if course_ids:
-        rows = (
-            supabase.table("learnora_courses")
-            .select("id,title,slug,short_description,level,status,ownership,organisation_id,thumbnail_url,estimated_hours,settings")
-            .in_("id", course_ids)
-            .eq("status", "published")
-            .eq("ownership", "learnora")
-            .is_("organisation_id", "null")
-            .execute()
-        ).data or []
-        course_map = {str(row["id"]): row for row in rows}
-    links_by_track = {}
-    for link in links:
-        links_by_track.setdefault(str(link.get("path_id")), []).append(link)
-
+    result = supabase.rpc("get_public_track_catalogue").execute()
+    free_mode = free_access_mode_enabled()
     visible = []
-    for track in tracks:
-        try:
-            visible.append(_public_track_payload_from_rows(
-                track,
-                links_by_track.get(str(track.get("id")), []),
-                course_map,
-            ))
-        except HTTPException as exc:
-            if exc.status_code != 404:
-                raise
+
+    for row in result.data or []:
+        links = row.get("courses") or []
+        public_links = []
+        required_courses = []
+
+        for link in links:
+            course = link.get("course") or {}
+            if link.get("required") is not False:
+                required_courses.append(course)
+            public_course = {key: value for key, value in course.items() if key != "settings"}
+            public_links.append({
+                **{key: value for key, value in link.items() if key != "course"},
+                "course": public_course,
+            })
+
+        if not public_links or not required_courses:
+            continue
+
+        self_enrol_available = all(
+            free_mode
+            or (course.get("settings") or {}).get("is_free") is True
+            or (course.get("settings") or {}).get("access_type") == "free"
+            or (course.get("settings") or {}).get("price") == 0
+            for course in required_courses
+        )
+        visible.append({
+            "id": row.get("id"),
+            "name": row.get("name"),
+            "slug": row.get("slug"),
+            "description": row.get("description"),
+            "status": row.get("status"),
+            "created_at": row.get("created_at"),
+            "courses": public_links,
+            "course_count": len(public_links),
+            "required_course_count": len(required_courses),
+            "self_enrol_available": self_enrol_available,
+        })
+
     return {"success": True, "count": len(visible), "tracks": visible}
 
 

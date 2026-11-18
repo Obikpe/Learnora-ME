@@ -39,8 +39,8 @@ The backend's deployed region was **Washington (`iad1`)**, while the Supabase pr
 
 - The synchronous shared rate-limit RPC is now offloaded from the ASGI event loop to Starlette's thread pool. This prevents the synchronous network wait from blocking unrelated coroutines in the same instance; it does not remove the RPC round trip.
 - Learner session heartbeat and dashboard summary refresh intervals were increased from 30 to 60 seconds to reduce background request volume.
-- The public course catalogue now calls a single service-role-only Postgres RPC instead of performing several sequential PostgREST requests for courses, organisations, creators and track memberships. The SQL preserves the existing rules: published Learnora global courses, approved/active creators, and organisations that explicitly opt into both public catalogue and public directory visibility.
-- The new RPC migration also adds a course-first index to `learnora_learning_path_courses`, which the catalogue membership query filters by `course_id`.
+- The public course and track catalogues now each call a single service-role-only Postgres RPC instead of performing several sequential PostgREST requests. The course RPC preserves published-course visibility, approved/active creator status, organisation opt-in and global track membership. The track RPC preserves global-track visibility, required-course integrity and public course shaping; internal course access settings are removed before returning the response.
+- The new RPC migration also adds a course-first index to `learnora_learning_path_courses`, which the course catalogue membership query filters by `course_id`.
 - CI now uses `npm ci`, generates missing lockfiles for review, prints deprecated dependency paths, and is configured not to cancel an in-flight main-branch validation when a newer commit arrives.
 
 **These changes are repository changes, not production changes.** The catalogue RPC migration has not been applied to the live database, and the backend code/Paris region have not been deployed.
