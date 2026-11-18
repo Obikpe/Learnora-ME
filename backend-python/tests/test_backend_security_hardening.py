@@ -64,6 +64,9 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIn('("NGN", 12_000_000): "yearly"', source)
         self.assertIn("paid_interval = validate_payment_amount(payment)", source)
         self.assertIn("billing_interval = paid_interval", source)
+        interval_section = source.split("# 9. Derive the billing interval", 1)[1].split("# 10. Determine subscription expiry", 1)[0]
+        self.assertNotIn("body.billing_interval", interval_section)
+        self.assertIn("validate_payment_amount(payment)", source)
         self.assertIn(r'[A-Za-z0-9_.=-]{4,100}', source)
         self.assertIn("quote(reference, safe='')", source)
 
@@ -121,6 +124,19 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIn("return generic_registration_response", source)
         self.assertNotIn("Email already registered", source)
         self.assertNotIn("This email is already registered", source)
+
+    def test_admin_password_creation_and_reset_update_session_revocation_timestamp(self):
+        source = read("routers/admin.py")
+        self.assertIn('"password_changed_at": now.isoformat()', source)
+        self.assertIn('updates["password_changed_at"] = datetime.now(timezone.utc).isoformat()', source)
+        auth_source = read("routers/auth.py")
+        self.assertIn('"password_changed_at": now.isoformat()', auth_source)
+        self.assertIn('"password_changed_at": datetime.now(timezone.utc).isoformat()', auth_source)
+
+    def test_session_with_missing_issue_time_is_rejected_after_migration(self):
+        source = read("routers/auth.py")
+        self.assertIn('if issued_at is None:', source)
+        self.assertIn('if not changed_at:', source)
 
     def test_password_change_migration_supplies_the_live_session_timestamp_column(self):
         migration = (REPO / "supabase/migrations/20261117110000_password_change_session_revocation.sql").read_text()

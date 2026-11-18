@@ -1002,8 +1002,10 @@ def make_token(
 def _assert_session_not_before_password_change(payload: dict, account: dict) -> None:
     changed_at = account.get("password_changed_at")
     issued_at = payload.get("iat")
-    if not changed_at or not issued_at:
-        return  # Existing accounts/tokens remain compatible until their next password change.
+    if not changed_at:
+        return  # The session-revocation migration has not been applied yet.
+    if issued_at is None:
+        raise HTTPException(status_code=401, detail="Session could not be validated. Please sign in again.")
     try:
         changed_ts = datetime.fromisoformat(str(changed_at).replace("Z", "+00:00")).timestamp()
         if float(issued_at) < changed_ts:
@@ -2687,6 +2689,7 @@ def register(
         "password_hash": hash_password(
             payload.password
         ),
+        "password_changed_at": now.isoformat(),
         "role": "normal",
         "sub_status": "pending",
         "is_paid": False,

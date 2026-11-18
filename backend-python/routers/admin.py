@@ -536,6 +536,7 @@ def create_user(
         "password_hash": hash_password(
             payload.password
         ),
+        "password_changed_at": now.isoformat(),
         "role": role,
         "sub_status": "active",
         "is_paid": True,
@@ -840,6 +841,7 @@ def create_admin(
         "password_hash": hash_password(
             payload.password
         ),
+        "password_changed_at": now.isoformat(),
         "role": role,
         "is_active": True,
         "created_at": now.isoformat(),
@@ -1019,6 +1021,7 @@ def update_admin(
         updates["password_hash"] = hash_password(
             payload.password
         )
+        updates["password_changed_at"] = datetime.now(timezone.utc).isoformat()
 
     if not updates:
         raise HTTPException(

@@ -448,19 +448,11 @@ def verify_payment(body: VerifyPaymentRequest):
         )
 
     # -----------------------------------------------------------------------
-    # 9. Validate billing interval
+    # 9. Derive the billing interval exclusively from the verified charge
     # -----------------------------------------------------------------------
 
-    # -----------------------------------------------------------------------
-
-    requested_interval = (body.billing_interval or paid_interval).strip().lower()
-    if requested_interval == "annual":
-        requested_interval = "yearly"
-    if requested_interval not in {"monthly", "yearly"}:
-        raise HTTPException(status_code=400, detail="Invalid billing interval")
-    if requested_interval != paid_interval:
-        log.warning("Billing interval mismatch for verified Paystack reference %s", verified_reference)
-        raise HTTPException(status_code=400, detail="Billing interval does not match the amount paid")
+    # body.billing_interval is retained only for request compatibility. It is
+    # client-controlled and must never decide the subscription duration.
     billing_interval = paid_interval
 
     # -----------------------------------------------------------------------
