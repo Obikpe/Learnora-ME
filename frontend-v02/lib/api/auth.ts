@@ -27,6 +27,10 @@ function activeToken() {
   if (sessionStorage.getItem("phx_logged_out") === "1" || localStorage.getItem("phx_logged_out") === "1") return "";
   const stored = sessionStorage.getItem("phx_token") || "";
   if (stored && stored !== "cookie-session") sessionStorage.removeItem("phx_token");
+  // The local hint survives opening Learnora in another tab. It is set only
+  // after login and cleared on logout or when the API rejects an expired cookie.
+  const hasSessionHint = stored === "cookie-session" || localStorage.getItem("phx_session_hint") === "1";
+  if (!hasSessionHint) return "";
   return "cookie-session:" + (sessionStorage.getItem("phx_session_epoch") || "implicit");
 }
 

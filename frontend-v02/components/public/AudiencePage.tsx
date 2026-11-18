@@ -28,7 +28,7 @@ export default function AudiencePage({type}:{type:"learner"|"instructor"|"organi
         <div className="relative">
           <div className="mb-3 flex items-center justify-between border-b border-white/[.12] pb-3 text-[10px] uppercase tracking-[.18em] text-slate-500"><span>Designed around your work</span></div>
           <div className="relative aspect-[4/4.3] overflow-hidden border border-white/[.12] bg-[#151c24]">
-            <img src={d.image} alt={type==="learner"?"A learner studying and developing practical skills":type==="instructor"?"An instructor preparing and sharing learning": "A collaborative professional workspace"} loading="lazy" decoding="async" className="h-full w-full object-cover"/>
+            <img width={700} height={500} src={d.image} alt={type==="learner"?"A learner studying and developing practical skills":type==="instructor"?"An instructor preparing and sharing learning": "A collaborative professional workspace"} loading="lazy" decoding="async" className="h-full w-full object-cover"/>
             <div className="absolute inset-x-0 bottom-0 border-t border-white/20 bg-[#090b0e]/95 p-5 sm:p-6"><Icon className="gold" size={21}/><p className="mt-3 max-w-md font-display text-2xl leading-snug sm:text-3xl">{d.promise}</p></div>
           </div>
           <p className="mt-3 text-xs leading-5 text-slate-600">One experience, shaped by your role and access.</p>

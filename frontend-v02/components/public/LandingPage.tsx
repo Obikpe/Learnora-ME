@@ -85,7 +85,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
   const image = firstCourse ? courseImage(firstCourse, index) : [IMAGES.practice, IMAGES.projects, IMAGES.library][index % 3];
   return (
     <article className="landing-track-card">
-      <Link href={"/tracks/" + encodeURIComponent(track.id)} className="landing-image-link" aria-label={"View " + track.name + " track"}>
+      <Link href={"/tracks/" + encodeURIComponent(track.id)} className="landing-image-link" aria-hidden="true" tabIndex={-1}>
         <Image src={image} alt="" width={800} height={450} quality={75} sizes="(max-width: 768px) 100vw, 33vw" />
         <span className="landing-image-label"><Route size={13}/> Learning track</span>
       </Link>
@@ -98,7 +98,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
         </div>
         {track.courses?.length > 0 && <ol aria-label="Track course sequence" className="mt-5 grid gap-2 border-l border-[var(--gold)]/40 pl-4">{track.courses.slice(0,3).map((item,index)=><li key={item.id || item.course_id || index} className="flex items-start gap-3 text-xs text-slate-400"><span className="grid size-5 shrink-0 place-items-center rounded-full border border-white/15 text-[10px] tabular-nums">{index+1}</span><span>{item.course?.title || "Published course"}</span></li>)}</ol>}
         {track.self_enrol_available && <span className="landing-availability">Open for enrolment</span>}
-        <Link className="landing-text-link" href={"/tracks/" + encodeURIComponent(track.id)}>Explore track <ArrowRight size={15}/></Link>
+        <Link className="landing-text-link" aria-label={"Explore " + track.name + " learning track"} href={"/tracks/" + encodeURIComponent(track.id)}>Explore track <ArrowRight size={15}/></Link>
       </div>
     </article>
   );
@@ -109,7 +109,7 @@ function CourseCard({ course, index }: { course: PublicCourse; index: number }) 
   const selfEnrolAvailable = free;
   return (
     <article className="landing-course-card">
-      <Link href={courseHref(course)} className="landing-course-image" aria-label={"View " + course.title}>
+      <Link href={courseHref(course)} className="landing-course-image" aria-hidden="true" tabIndex={-1}>
         <Image src={courseImage(course, index)} alt="" width={800} height={450} quality={75} sizes="(max-width: 768px) 100vw, 33vw" />
         {free && <span className="landing-free-label">Free access</span>}
       </Link>
@@ -123,7 +123,7 @@ function CourseCard({ course, index }: { course: PublicCourse; index: number }) 
             : null}
           {course.tracks?.slice(0, 1).map(track => <span key={track.id}><Route size={14}/>{track.name}</span>)}
         </div>
-        <Link className="landing-text-link" href={selfEnrolAvailable ? courseHref(course) + "?enrol=1" : courseHref(course)}>{selfEnrolAvailable ? "Enrol for free" : "View course"} <ArrowRight size={15}/></Link>
+        <Link className="landing-text-link" aria-label={(selfEnrolAvailable ? "Enrol in " : "View ") + course.title} href={selfEnrolAvailable ? courseHref(course) + "?enrol=1" : courseHref(course)}>{selfEnrolAvailable ? "Enrol for free" : "View course"} <ArrowRight size={15}/></Link>
       </div>
     </article>
   );
@@ -200,7 +200,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
           <div className="landing-actions"><Link className="landing-button landing-button-outline" href="/how-it-works">How Learnora works <ArrowUpRight size={16}/></Link></div>
           <form className="landing-search" onSubmit={submitSearch}>
             <Search size={18} aria-hidden="true"/>
-            <input aria-label="Search courses and skills" list="landing-search-suggestions" value={search} onChange={event => setSearch(event.target.value)} placeholder="What do you want to learn?"/>
+            <input aria-label="Search courses and skills" list="landing-search-suggestions" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search courses"/>
             <button type="submit">Find courses</button>
           </form>
           <datalist id="landing-search-suggestions">{categories.map(topic=><option key={topic} value={topic}/>)}</datalist>
