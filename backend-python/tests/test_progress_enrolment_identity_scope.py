@@ -80,6 +80,27 @@ class ProgressIdentityScopeTests(unittest.TestCase):
             result = progress._enrolment("user-1", "course-1")
         self.assertEqual(result["id"], "enrolment-1")
 
+    def test_dashboard_individual_access_checks_are_batched_not_per_course(self):
+        second = {**self._personal_enrolment(), "id": "enrolment-2", "course_id": "course-2"}
+        db = FakeSupabase({
+            "users": [{"id": "user-1", "role": "normal"}],
+            "learnora_courses": [
+                {"id": "course-1", "status": "published"},
+                {"id": "course-2", "status": "archived"},
+            ],
+        })
+        with patch.object(progress, "supabase", db), patch.object(progress, "_enrolment", side_effect=AssertionError("per-course resolver should not run")):
+            result = progress._dashboard_accessible_enrolments("user-1", [self._personal_enrolment(), second])
+        self.assertEqual([row["id"] for row in result], ["enrolment-1", "enrolment-2"])
+
+    def test_dashboard_excludes_unpublished_courses_for_individuals(self):
+        db = FakeSupabase({
+            "users": [{"id": "user-1", "role": "normal"}],
+            "learnora_courses": [{"id": "course-1", "status": "draft"}],
+        })
+        with patch.object(progress, "supabase", db), patch.object(progress, "_enrolment", side_effect=AssertionError("per-course resolver should not run")):
+            result = progress._dashboard_accessible_enrolments("user-1", [self._personal_enrolment()])
+        self.assertEqual(result, [])
     def test_suspended_organisation_membership_cannot_fall_through_to_personal_enrolment(self):
         db = FakeSupabase({
             "organisation_members": [{
