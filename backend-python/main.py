@@ -57,6 +57,7 @@ origins = [
     "https://www.thepheonixanalytics.com",
     "https://teamslearnora.vercel.app",
     "https://learnora-me-v02.vercel.app",
+    "https://learnorame.vercel.app",
 ]
 
 if os.getenv("APP_ENV", "production").strip().lower() != "production":
