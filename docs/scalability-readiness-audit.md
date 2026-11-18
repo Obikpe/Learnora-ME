@@ -26,6 +26,8 @@ The active Supabase database currently occupies approximately **19 MB**. The rat
 
 ## Production observations
 
+The GitHub production build also exposed a cold-cache failure: both public catalogue requests returned HTTP 500 during static generation, while the frontend helper swallowed the errors and produced empty course/track arrays. The frontend now retries transient network/5xx failures and throws in production if a catalogue is still unavailable, preventing a new build or ISR revalidation from replacing valid catalogue HTML with an empty result. The backend catalogue RPC changes are not yet deployed, so this gate may remain red until the backend release is authorised.
+
 The sampled Supabase edge logs show:
 
 - The rate-limit RPC had an average origin time around 486 ms and a 95th percentile around 1.13 seconds.

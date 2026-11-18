@@ -45,22 +45,36 @@ export const options = {
 };
 
 export default function () {
-  const response = http.get(`${API_BASE_URL}/api/public/courses`, {
-    headers: { Accept: 'application/json' },
-    timeout: '10s',
-    tags: { endpoint: 'public-course-catalogue' },
+  const responses = http.batch([
+    ['GET', `${API_BASE_URL}/api/public/courses`, null, {
+      headers: { Accept: 'application/json' },
+      timeout: '10s',
+      tags: { endpoint: 'public-course-catalogue' },
+    }],
+    ['GET', `${API_BASE_URL}/api/public/tracks`, null, {
+      headers: { Accept: 'application/json' },
+      timeout: '10s',
+      tags: { endpoint: 'public-track-catalogue' },
+    }],
+  ]);
+
+  const [coursesResponse, tracksResponse] = responses;
+  let coursesPayload = null;
+  let tracksPayload = null;
+  try { coursesPayload = coursesResponse.json(); } catch (_) { coursesPayload = null; }
+  try { tracksPayload = tracksResponse.json(); } catch (_) { tracksPayload = null; }
+
+  check(coursesResponse, {
+    'courses endpoint returns HTTP 200': (res) => res.status === 200,
   });
-
-  let payload = null;
-  try {
-    payload = response.json();
-  } catch (_) {
-    payload = null;
-  }
-
-  check(response, {
-    'catalogue returns HTTP 200': (res) => res.status === 200,
-    'catalogue response is successful JSON': () => Boolean(payload && payload.success === true && Array.isArray(payload.courses)),
+  check(tracksResponse, {
+    'tracks endpoint returns HTTP 200': (res) => res.status === 200,
+  });
+  check(coursesPayload, {
+    'courses payload is valid': (body) => Boolean(body && body.success === true && Array.isArray(body.courses)),
+  });
+  check(tracksPayload, {
+    'tracks payload is valid': (body) => Boolean(body && body.success === true && Array.isArray(body.tracks)),
   });
 
   sleep(1);
