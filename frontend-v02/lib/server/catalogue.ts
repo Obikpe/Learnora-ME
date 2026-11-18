@@ -10,27 +10,65 @@ export type PublicCatalogueResult<T> = {
 };
 
 async function fetchPublic<T>(path: string, key: string): Promise<PublicCatalogueResult<T>> {
-  try {
-    const response = await fetch(`${API_ORIGIN}/api${path}`, {
-      headers: { Accept: "application/json" },
-      next: { revalidate: 60, tags: [`public-catalogue-${key}`] },
-    });
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    let response: Response;
+    try {
+      response = await fetch(`${API_ORIGIN}/api${path}`, attempt === 0
+        ? {
+            headers: { Accept: "application/json" },
+            next: { revalidate: 60, tags: [`public-catalogue-${key}`] },
+          }
+        : {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+          });
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) {
+        await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+        continue;
+      }
+      break;
+    }
+
     if (!response.ok) {
-      throw new Error(`Catalogue request failed (${response.status}).`);
+      lastError = new Error(`Catalogue request failed (${response.status}).`);
+      if (response.status >= 500 && attempt < 2) {
+        await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+        continue;
+      }
+      break;
     }
-    const body = await response.json();
-    const value = body?.[key];
-    if (!Array.isArray(value)) {
-      throw new Error("The catalogue returned an unexpected response.");
+
+    try {
+      const body = await response.json();
+      const value = body?.[key];
+      if (!Array.isArray(value)) {
+        lastError = new Error("The catalogue returned an unexpected response.");
+        break;
+      }
+      return { items: value as T[], error: null };
+    } catch (error) {
+      lastError = error;
+      break;
     }
-    return { items: value as T[], error: null };
-  } catch (error) {
-    console.error(`[public-catalogue] ${key} fetch failed`, error);
-    return {
-      items: [],
-      error: "We couldn't load the catalogue right now. Please try again in a moment.",
-    };
   }
+
+  console.error(`[public-catalogue] ${key} fetch failed after retries`, lastError);
+  const message = "We couldn't load the catalogue right now. Please try again in a moment.";
+
+  // A production build must never silently publish an empty course/track
+  // catalogue. Throwing also makes ISR revalidation fail safely, preserving
+  // the previous generated page rather than replacing it with empty content.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(`Public ${key} catalogue is unavailable; refusing to publish an empty catalogue.`, {
+      cause: lastError,
+    });
+  }
+
+  return { items: [], error: message };
 }
 
 export async function getPublicCourse<T = any>(id: string): Promise<{ item: T | null; error: string | null }> {
