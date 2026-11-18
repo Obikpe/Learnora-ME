@@ -95,31 +95,28 @@ export default function MyLearningPage() {
   async function load(me?: any) {
     setRefreshing(true);
     setError("");
-    const timezone = typeof Intl !== "undefined" ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos") : "Africa/Lagos";
     const progressResult = await Promise.allSettled([
       request<any>("/progress/me"),
-      request<any>("/progress/learning-summary?timezone=" + encodeURIComponent(timezone)),
-      request<any>("/learner/learning-plan"),
     ]);
     const progressResponse = progressResult[0];
     const progressLoaded = progressResponse.status === "fulfilled";
-    const progressData = progressResponse.status === "fulfilled" ? progressResponse.value : null;
-    if (progressResult[1].status === "fulfilled") setActivitySummary(progressResult[1].value);
-    if (progressResult[2].status === "fulfilled") setLearningPlan(progressResult[2].value?.plan || null);
+    const progressData = progressLoaded ? progressResponse.value : null;
 
     if (progressData) {
       setLearning(progressData);
+      setError("");
     } else {
       const failure = (progressResponse as PromiseRejectedResult).reason as (Error & { status?: number }) | undefined;
       if (failure?.status === 401) {
         if (typeof window !== "undefined") window.location.replace("/login");
+        setRefreshing(false);
         return;
       }
-      // Keep the last successful dashboard data during a refresh failure.
-      // On first load, leave it null so the page can show a real retry state
-      // instead of presenting an API failure as an empty learning account.
       setError("Your learning records could not be loaded. Please try again.");
     }
+
+    // The core learning view should not wait for optional summary, plan,
+    // recommendations, evidence or certificate requests.
     setLoading(false);
 
     const hasOrganisationMembership = (me?.organisation_memberships || []).some((membership:any) => membership.status === "active");
@@ -134,29 +131,33 @@ export default function MyLearningPage() {
       )
     );
     const allowPublicRecommendations = !assignedOnlyAccount && !hasOrganisationMembership;
+
+    const backgroundTasks: Promise<unknown>[] = [
+      request<any>("/learner/learning-plan")
+        .then(result => setLearningPlan(result?.plan || null))
+        .catch(() => {}),
+      request<any>("/evidence/me")
+        .then(result => { setEvidence(result); setEvidenceError(false); })
+        .catch(() => setEvidenceError(true)),
+      request<any>("/credentials/me")
+        .then(result => { setCredentials(result); setCertificateError(false); })
+        .catch(() => setCertificateError(true)),
+    ];
+
     if (progressLoaded && allowPublicRecommendations) {
       setCatalogueLoading(true);
-      try {
-        const result = await request<any>("/public/courses");
-        setCatalogue(Array.isArray(result.courses) ? result.courses : Array.isArray(result.data) ? result.data : []);
-      } catch {
-        // Retain previously loaded recommendations if a refresh temporarily fails.
-      } finally {
-        setCatalogueLoading(false);
-      }
+      backgroundTasks.push(
+        request<any>("/public/courses")
+          .then(result => setCatalogue(Array.isArray(result.courses) ? result.courses : Array.isArray(result.data) ? result.data : []))
+          .catch(() => {})
+          .finally(() => setCatalogueLoading(false))
+      );
     } else {
       setCatalogue([]);
       setCatalogueLoading(false);
     }
 
-    const [evidenceResult, credentialResult] = await Promise.allSettled([
-      request<any>("/evidence/me"),
-      request<any>("/credentials/me"),
-    ]);
-    setEvidenceError(evidenceResult.status === "rejected");
-    setCertificateError(credentialResult.status === "rejected");
-    if (evidenceResult.status === "fulfilled") setEvidence(evidenceResult.value);
-    if (credentialResult.status === "fulfilled") setCredentials(credentialResult.value);
+    await Promise.allSettled(backgroundTasks);
     setRefreshing(false);
   }
 
