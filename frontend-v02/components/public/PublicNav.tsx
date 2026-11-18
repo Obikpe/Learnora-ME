@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronDown, Menu, X, Headset, Sun, Moon } from "lucide-react";
 import Logo from "../brand/Logo";
 import Link from "next/link";
-import { hasFunctionalCookieConsent } from "../../lib/cookie-consent";
+import { useTheme } from "../providers/ThemeProvider";
 
 const audiences = [
   { href: "/for-learners", title: "For learners", detail: "Build skills, projects and evidence." },
@@ -21,33 +21,16 @@ const links = [
 export default function PublicNav() {
   const [open, setOpen] = useState(false);
   const [audienceOpen, setAudienceOpen] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">("light");
+  const { theme, toggleTheme } = useTheme();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    const saved = hasFunctionalCookieConsent() ? window.localStorage.getItem("learnora_theme") : null;
-    const nextTheme = saved === "dark" ? "dark" : "light";
-    root.dataset.theme = nextTheme;
-    setTheme(nextTheme);
-  }, []);
   const close = (restoreFocus = false) => {
     setOpen(false);
     setAudienceOpen(false);
     if (restoreFocus) menuTriggerRef.current?.focus();
   };
-  const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = nextTheme;
-    try {
-      if (hasFunctionalCookieConsent()) window.localStorage.setItem("learnora_theme", nextTheme);
-      else window.localStorage.removeItem("learnora_theme");
-    } catch {}
-    setTheme(nextTheme);
-  };
-
   useEffect(() => {
     if (!open) return;
     const menu = mobileMenuRef.current;
