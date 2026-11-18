@@ -1,7 +1,6 @@
 "use client";
 
-import { publicPageMetadata } from "../../lib/seo";
-"use client";
+import { useEffect, useState } from "react";
 import { ArrowRight, BookOpen, Search, Users } from "lucide-react";
 import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
@@ -23,3 +22,4 @@ export default function TutorsPage() {
     <div className="mt-12 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[#d7ad35]/20 bg-[#10151b] p-6"><div><h2 className="font-semibold">Interested in teaching on Learnora?</h2><p className="mt-2 text-sm text-slate-400">Start with an account and follow the instructor application path as it becomes available.</p></div><a href="/apply-to-teach" className="inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black">Apply to teach <ArrowRight size={15}/></a></div>
   </main><PublicFooter/></>;
 }
+

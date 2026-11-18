@@ -1,7 +1,6 @@
 "use client";
 
-import { publicPageMetadata } from "../../lib/seo";
-"use client";
+import { useEffect, useState } from "react";
 import { ArrowRight, Building2, Search } from "lucide-react";
 import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
@@ -24,3 +23,4 @@ export default function OrganisationsPage() {
     <div className="mt-12 border border-white/[.12] border-l-2 border-l-[var(--gold)] bg-[#11171e] p-8 sm:p-10"><p className="text-xs font-bold uppercase tracking-[.22em] gold">For your organisation</p><h2 className="mt-4 max-w-2xl font-display text-3xl sm:text-4xl">Build a learning workspace around the way your people work.</h2><p className="mt-4 max-w-2xl leading-7 text-slate-400">Tell us about your organisation, the people you want to support and the outcomes you want learning to contribute to.</p><a href="/get-started" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-5 py-3.5 font-bold text-black">Start an enquiry <ArrowRight size={16}/></a></div>
   </main><PublicFooter/></>;
 }
+

@@ -1,7 +1,5 @@
 "use client";
 
-import { publicPageMetadata } from "../../lib/seo";
-"use client";
 import { useState } from "react";
 import { ArrowRight, BookOpenCheck } from "lucide-react";
 import Logo from "../../components/brand/Logo";
@@ -69,3 +67,4 @@ const inputClass = "mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] p
 function Field({ label, children }: { label: string; children: any }) {
   return <label className="block text-xs text-slate-400">{label}{children}</label>;
 }
+
