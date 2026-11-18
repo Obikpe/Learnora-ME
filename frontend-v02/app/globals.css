@@ -375,6 +375,12 @@ html { scroll-behavior:smooth; }
 .theme-toggle-labelled { min-height:40px; }
 .public-nav-mobile { transform-origin:top center; animation:learnora-menu-in 220ms cubic-bezier(.2,.75,.25,1) both; }
 .public-nav-panel-content { animation:learnora-menu-in 180ms ease both; }
+.ai-bot {
+  position:relative; display:grid; place-items:center; width:34px; height:34px;
+  border:1px solid color-mix(in srgb,var(--primary) 35%,var(--border));
+  border-radius:12px; background:linear-gradient(145deg,var(--primary-tint),var(--card));
+  color:var(--primary); box-shadow:0 4px 14px color-mix(in srgb,var(--primary) 12%,transparent);
+}
 .ai-bot:before { content:""; position:absolute; width:5px; height:5px; top:-4px; left:50%; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent); }
 .ai-bot-face { display:flex; align-items:center; justify-content:center; gap:6px; width:23px; height:16px; border-radius:7px; background:var(--primary); }
 .ai-bot-eye { width:3px; height:5px; border-radius:5px; background:var(--on-primary); transform-origin:center; animation:learnora-blink 4.2s infinite; }
