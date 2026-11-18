@@ -114,6 +114,7 @@ jobs:
             supabase/migrations/20261102100000_quiz_active_sessions.sql \
             supabase/migrations/20261102110000_certificate_revocation.sql \
             supabase/migrations/20261102120000_project_submission_integrity.sql \
+            supabase/migrations/20261102130000_learner_account_deletion.sql \
             supabase/migrations/20261117110000_password_change_session_revocation.sql
           do
             psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
@@ -122,6 +123,7 @@ jobs:
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/quiz_active_sessions_assertions.sql
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT revoked_at, revoked_by, revocation_reason FROM public.certificates LIMIT 0"
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/project_submission_integrity_assertions.sql
+          psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT account_status, account_deactivation_until FROM public.users LIMIT 0"
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT password_changed_at FROM public.users LIMIT 0"
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT password_changed_at FROM public.admins LIMIT 0"
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
