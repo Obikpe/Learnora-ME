@@ -5,9 +5,8 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  BookOpen, Compass, Target, FolderKanban, Sparkles, FileCheck2, Award,
-  MessageCircle, BrainCircuit, LayoutDashboard, Users, Building2,
-  Activity, ShieldCheck, CircleDollarSign, Layers3, LineChart, LockKeyhole, Settings,
+  BookOpen, Compass, Target, FolderKanban, Sparkles, Award,
+  BrainCircuit, LayoutDashboard, Users, Building2, Activity, CircleDollarSign,
   Menu, X, ChevronDown, Route, Search, GraduationCap, CalendarDays
 } from "lucide-react";
 import { currentUser } from "../../lib/api";
@@ -22,26 +21,19 @@ const learnerItems: NavItem[] = [
   { key: "projects", label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
   { key: "skills", label: "Skills", href: "/dashboard/skills", icon: Sparkles },
   { key: "portfolio", label: "Portfolio", href: "/dashboard/portfolio", icon: FolderKanban },
-  { key: "evidence", label: "Evidence", href: "/dashboard/evidence", icon: FileCheck2 },
   { key: "certificates", label: "Certificates", href: "/dashboard/certificates", icon: Award },
-  { key: "community", label: "Community", href: "/dashboard/community", icon: MessageCircle },
   { key: "ai", label: "AI tutor", href: "/dashboard/ai", icon: BrainCircuit },
   { key: "calendar", label: "Learning calendar", href: "/dashboard/calendar", icon: CalendarDays },
 ];
 const adminItems: NavItem[] = [
-  { key: "overview", label: "Overview", href: "/dashboard/admin/overview", icon: LayoutDashboard },
+  { key: "overview", label: "Overview", href: "/dashboard/admin", icon: LayoutDashboard },
   { key: "users", label: "Users", href: "/dashboard/admin/users", icon: Users },
   { key: "organisations", label: "Organisations", href: "/dashboard/admin/organisations", icon: Building2 },
   { key: "courses", label: "Courses", href: "/dashboard/admin/courses", icon: BookOpen },
-  { key: "content", label: "Content", href: "/dashboard/admin/content", icon: Layers3 },
   { key: "commercial", label: "Commerce", href: "/dashboard/admin/commercial", icon: CircleDollarSign },
   { key: "creators", label: "Creators", href: "/dashboard/admin/creators", icon: Users },
-  { key: "analytics", label: "Analytics", href: "/dashboard/admin/analytics", icon: LineChart },
   { key: "ai", label: "AI operations", href: "/dashboard/admin/ai", icon: BrainCircuit },
   { key: "activity", label: "Activity", href: "/dashboard/admin/activity", icon: Activity },
-  { key: "security", label: "Security", href: "/dashboard/admin/security", icon: LockKeyhole },
-  { key: "admins", label: "Admins", href: "/dashboard/admin/admins", icon: ShieldCheck },
-  { key: "settings", label: "Settings", href: "/dashboard/admin/settings", icon: Settings },
 ];
 
 export default function Sidebar({ admin = false, role = "", active, hideTutor = false, restricted = false }: {
