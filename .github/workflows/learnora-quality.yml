@@ -21,10 +21,10 @@ on:
 permissions:
   contents: read
 
-# One in-flight validation for main: newer commits supersede stale queued builds.
+# Keep validations queued so a newer main commit cannot cancel an in-flight required check.
 concurrency:
   group: learnora-production-checks-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   production-checks:
