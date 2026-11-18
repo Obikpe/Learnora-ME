@@ -115,6 +115,14 @@ jobs:
             supabase/migrations/20261102110000_certificate_revocation.sql \
             supabase/migrations/20261102120000_project_submission_integrity.sql \
             supabase/migrations/20261102130000_learner_account_deletion.sql \
+            supabase/migrations/20261103155243_learner_learning_sessions_and_streaks.sql \
+            supabase/migrations/20261103155546_atomic_learner_learning_session_accounting.sql \
+            supabase/migrations/20261103155555_fix_atomic_learner_session_elapsed_accounting.sql \
+            supabase/migrations/20261103160004_use_wall_clock_for_learner_session_elapsed_time.sql \
+            supabase/migrations/20261109180000_learner_deletion_grace_and_marketing_consent.sql \
+            supabase/migrations/20261109190000_erase_learner_records_after_recovery.sql \
+            supabase/migrations/20261116120000_notification_email_automation.sql \
+            supabase/migrations/20261117204703_revoke_admin_sequence_browser_access.sql \
             supabase/migrations/20261117210000_password_session_invalidation.sql
           do
             psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
