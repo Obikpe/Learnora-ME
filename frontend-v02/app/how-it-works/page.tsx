@@ -34,7 +34,7 @@ export default function Page() {
       </section>
       <section className="mx-auto max-w-[82rem] px-5 py-16 sm:py-20 lg:px-8">
         <div className="grid gap-8 border border-white/[.12] bg-[#11171e] p-7 sm:p-10 lg:grid-cols-[.8fr_1.2fr] lg:items-start">
-          <div><p className="section-kicker">A principle we will not compromise</p><h2 className="mt-4 max-w-lg font-display text-4xl leading-tight sm:text-5xl">What you see should reflect what is real.</h2></div>
+          <div><h2 className="mt-4 max-w-lg font-display text-4xl leading-tight sm:text-5xl">What you see should reflect what is real.</h2></div>
           <div><p className="text-sm leading-7 text-slate-300">Learnora should not turn an unfinished feature into a promise, course completion into a verified skill, or an AI suggestion into a human review. Dashboards and reports should use live records and clearly distinguish what is self-reported, automatically assessed or instructor-reviewed.</p><a href="/about" className="mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold gold hover:underline">Read our principles <ArrowRight size={16}/></a></div>
         </div>
       </section>
