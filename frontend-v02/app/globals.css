@@ -381,14 +381,14 @@ button:active:not(:disabled), [role="button"]:active { transform:scale(.975); }
   background-size:220% 100%;
   animation:learnora-shimmer 1.7s linear infinite;
 }
-:where(.dashboard-card,.stat-card,.card,.surface,.surface-raised) { transition:transform 220ms ease,border-color 220ms ease,box-shadow 220ms ease,background-color 260ms ease; }
+.dashboard-page :where(.dashboard-card,.stat-card,.card,.surface,.surface-raised) { transition:transform 220ms ease,border-color 220ms ease,box-shadow 220ms ease,background-color 260ms ease; }
 @media (hover:hover) and (pointer:fine) {
-  :where(.dashboard-card,.stat-card,.interactive-lift):hover { transform:translateY(-3px); }
+  .dashboard-page :where(.dashboard-card,.stat-card,.interactive-lift):hover { transform:translateY(-3px); }
 }
-:where(.dashboard-card,.stat-card,.card,.surface,.surface-raised) { animation:learnora-rise-in .48s both; }
-:where(.dashboard-card,.stat-card,.card,.surface,.surface-raised):nth-child(2) { animation-delay:45ms; }
-:where(.dashboard-card,.stat-card,.card,.surface,.surface-raised):nth-child(3) { animation-delay:90ms; }
-:where(.dashboard-card,.stat-card,.card,.surface,.surface-raised):nth-child(4) { animation-delay:135ms; }
+.dashboard-page :where(.dashboard-card,.stat-card,.card,.surface,.surface-raised) { animation:learnora-rise-in .48s both; }
+.dashboard-page :where(.dashboard-card,.stat-card,.card,.surface,.surface-raised):nth-child(2) { animation-delay:45ms; }
+.dashboard-page :where(.dashboard-card,.stat-card,.card,.surface,.surface-raised):nth-child(3) { animation-delay:90ms; }
+.dashboard-page :where(.dashboard-card,.stat-card,.card,.surface,.surface-raised):nth-child(4) { animation-delay:135ms; }
 .theme-switch { position:relative; overflow:hidden; }
 .theme-switch-icon { display:grid; place-items:center; animation:learnora-theme-spin 320ms cubic-bezier(.2,.8,.2,1); }
 .theme-switch:hover { border-color:var(--primary) !important; background:var(--primary-tint) !important; }
