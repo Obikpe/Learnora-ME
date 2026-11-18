@@ -45,6 +45,39 @@ def _trusted_rate_limit_ip(request: Request) -> str:
             pass
     return "unknown"
 
+
+def _api_rate_limit_bucket_key(request: Request, client_ip: str) -> str:
+    """Give verified sessions per-account buckets; keep anonymous traffic IP-bucketed.
+
+    This prevents learners sharing a school or office NAT from consuming one
+    another's normal authenticated API allowance. Invalid/expired tokens never
+    grant a per-account bucket and fall back to the trusted IP.
+    """
+    token = (request.cookies.get(auth.AUTH_COOKIE_NAME) or "").strip()
+    if not token:
+        authorization = request.headers.get("authorization", "")
+        scheme, separator, credentials = authorization.partition(" ")
+        if separator and scheme.lower() == "bearer":
+            token = credentials.strip()
+
+    if token:
+        try:
+            payload = auth.jwt.decode(
+                token,
+                auth.JWT_SECRET,
+                algorithms=[auth.ALGORITHM],
+            )
+            subject = auth.norm_email(str(payload.get("sub") or payload.get("email") or ""))
+            account_type = str(payload.get("account_type") or "account").strip().lower()
+            if subject:
+                return auth._rate_limit_digest(f"api:user:{account_type}:{subject}")
+        except Exception:
+            # An invalid token is not trusted for identity-based rate limiting.
+            pass
+
+    return auth._rate_limit_digest(f"api:ip:{client_ip}")
+
+
 # Shared PostgreSQL rate limiting is used in production so counters survive
 # serverless instance churn. Local development remains deterministic.
 API_RATE_LIMIT_REQUESTS = max(1, int(os.getenv("API_RATE_LIMIT_REQUESTS", "60")))
@@ -106,7 +139,7 @@ async def distributed_api_rate_limit(request: Request, call_next):
         return await call_next(request)
 
     client_ip = _trusted_rate_limit_ip(request)
-    bucket_key = auth._rate_limit_digest(f"api:{client_ip}")
+    bucket_key = _api_rate_limit_bucket_key(request, client_ip)
     try:
         # The shared Supabase client is synchronous. Keep its network wait off
         # the ASGI event loop so one slow rate-limit RPC cannot stall unrelated
