@@ -358,7 +358,7 @@ export default function MyLearningPage() {
               </section>
             : <div className="empty">{assignedLearner ? "Your assigned courses are complete. Your organisation will provide the next learning activity." : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div>)}
         {tab === "completed" && (!learning
-          ? <div className="empty">Your learning records are unavailable right now. Use “Try again” above to reload them.</div>
+          ? <div className="empty">Your learning records are temporarily unavailable. Learnora will keep trying automatically.</div>
           : completed.length
           ? <div className="space-y-4">{completed.map((row: any) => <CourseCard key={row.enrolment?.id || row.course?.id} row={row} completed/>)}</div>
           : <div className="py-2"><h2 className="mb-3 text-base font-semibold text-[var(--text-heading)]">No completed courses</h2><div className="empty">{assignedLearner ? "You have no completed assigned courses yet." : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div></div>)}
