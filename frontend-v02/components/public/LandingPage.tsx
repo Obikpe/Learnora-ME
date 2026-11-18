@@ -96,7 +96,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
           <span><BookOpen size={14}/> {track.course_count} {track.course_count === 1 ? "course" : "courses"}</span>
           <span><Layers3 size={14}/> {track.required_course_count} required</span>
         </div>
-        {track.courses?.length > 0 && <ol aria-label="Track course sequence" className="mt-5 grid gap-2 border-l border-[var(--gold)]/40 pl-4">{track.courses.slice(0,3).map((item,index)=><li key={item.id || item.course_id || index} className="flex items-start gap-3 text-xs text-slate-400"><span className="grid size-5 shrink-0 place-items-center rounded-full border border-white/15 text-[10px] tabular-nums">{index+1}</span><span>{item.course?.title || "Published course"}</span></li>)}</ol>}
+        {track.courses?.length > 0 && <ul aria-label="Courses in this track" className="mt-5 grid gap-2 border-l border-[var(--gold)]/40 pl-4">{track.courses.slice(0,3).map((item,index)=><li key={item.id || item.course_id || index} className="text-xs text-slate-400">{item.course?.title || "Published course"}</li>)}</ul>}
         {track.self_enrol_available && <span className="landing-availability">Open for enrolment</span>}
         <Link className="landing-text-link" aria-label={"Explore " + track.name + " learning track"} href={"/tracks/" + encodeURIComponent(track.id)}>Explore track <ArrowRight size={15}/></Link>
       </div>
@@ -135,6 +135,13 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
   const [error, setError] = useState(initialError || "");
   const [retrying, setRetrying] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") setActiveSlide(value => (value + 1) % heroSlides.length);
+    }, 7000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [search, setSearch] = useState("");
   const [continueCourses, setContinueCourses] = useState<any[]>([]);
 
@@ -223,17 +230,13 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
               <div className="landing-hero-product-footer"><span>{courses[0].level || "All levels"}</span><span>{courses[0].estimated_hours ? (courses[0].estimated_hours < 1 ? Math.round(courses[0].estimated_hours * 60) + " min" : courses[0].estimated_hours + " hours") : "Self-paced"}</span><Link href={courseHref(courses[0])}>View course <ArrowRight size={15}/></Link></div>
             </> : <><div className="landing-hero-product-icon"><BookOpen size={28}/></div><p className="landing-hero-product-kicker">Learnora catalogue</p><h2>Explore practical learning.</h2><p className="landing-hero-product-description">Published courses will appear here when they are ready to explore.</p><Link href="/courses">Browse courses <ArrowRight size={15}/></Link></>}
           </div>
-          <div className="landing-slide-controls" aria-label="Featured messages">
-            <span>{String(activeSlide + 1).padStart(2, "0")} / 03</span>
-            <div>{heroSlides.map((item, index) => <button key={item.eyebrow} type="button" aria-label={"Show slide " + (index + 1)} aria-pressed={activeSlide === index} onClick={() => setActiveSlide(index)} className={activeSlide === index ? "active" : ""}/>)}</div>
-            <button type="button" className="landing-next" aria-label="Next featured message" onClick={() => setActiveSlide(value => (value + 1) % heroSlides.length)}><ArrowRight size={17}/></button>
-          </div>
+
         </div>
       </section>
 
       {continueCourses.length > 0 && <section className="landing-wrap py-10" aria-labelledby="continue-learning-heading">
         <div className="landing-section-heading"><div><h2 id="continue-learning-heading">Continue learning</h2><p>Pick up where you left off.</p></div><Link className="landing-text-link" href="/dashboard">Open My Learning <ArrowRight size={15}/></Link></div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{continueCourses.map((row:any) => <Link key={row.course.id} href={"/dashboard/learning/"+encodeURIComponent(row.course.id)} className="border border-white/[.1] bg-[#10151b] p-5 transition-colors hover:border-[var(--gold)]/50"><p className="text-[10px] uppercase tracking-[.16em] text-slate-500">In progress</p><h3 className="mt-3 font-display text-xl">{row.course.title}</h3><div className="mt-5 h-1.5 overflow-hidden bg-white/[.08]"><div className="h-full bg-[var(--gold)]" style={{width:Math.max(0,Math.min(100,Number(row.progress?.progress_percent||0)))+"%"}}/></div><p className="mt-2 text-xs text-slate-500">{Number(row.progress?.progress_percent||0)}% complete</p></Link>)}</div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{continueCourses.map((row:any) => <Link key={row.course.id} href={"/dashboard/learning/"+encodeURIComponent(row.course.id)} className="border border-[var(--border)] bg-[var(--card)] p-5 transition-colors hover:border-[var(--gold)]/50"><p className="text-[10px] uppercase tracking-[.16em] text-slate-500">In progress</p><h3 className="mt-3 font-display text-xl">{row.course.title}</h3><div className="mt-5 h-1.5 overflow-hidden bg-[var(--border)]"><div className="h-full bg-[var(--gold)]" style={{width:Math.max(0,Math.min(100,Number(row.progress?.progress_percent||0)))+"%"}}/></div><p className="mt-2 text-xs text-slate-500">{Number(row.progress?.progress_percent||0)}% complete</p></Link>)}</div>
       </section>}
 
       <section className="landing-section landing-soft-section">
@@ -262,9 +265,9 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
       <section className="landing-image-band">
         <div className="landing-wrap landing-image-band-inner">
           <div className="landing-evidence-preview" aria-label="How Learnora distinguishes learning progress, assessment and reviewed evidence">
-            <article><span className="landing-evidence-number">01</span><div><strong>Course progress</strong><p>Records lessons and learning activity.</p></div><span className="landing-evidence-type">Learning record</span></article>
-            <article><span className="landing-evidence-number">02</span><div><strong>Assessment result</strong><p>Records performance against an assessment.</p></div><span className="landing-evidence-type">Assessment</span></article>
-            <article><span className="landing-evidence-number">03</span><div><strong>Instructor-reviewed evidence</strong><p>Records work that has been reviewed by an instructor.</p></div><span className="landing-evidence-type">Human review</span></article>
+            <article><div><strong>Course progress</strong><p>Records lessons and learning activity.</p></div><span className="landing-evidence-type">Learning record</span></article>
+            <article><div><strong>Assessment result</strong><p>Records performance against an assessment.</p></div><span className="landing-evidence-type">Assessment</span></article>
+            <article><div><strong>Instructor-reviewed evidence</strong><p>Records work that has been reviewed by an instructor.</p></div><span className="landing-evidence-type">Human review</span></article>
           </div>
           <div><h2>Progress should mean more than a percentage.</h2><p>Finishing a course tells you that you reached the end of its material. Practice, projects, assessment and feedback help tell a fuller story of what you can do.</p><Link className="landing-button landing-button-light" href="/how-it-works">See how it works <ArrowRight size={16}/></Link></div>
         </div>
@@ -279,9 +282,9 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
 
       <section className="landing-wrap landing-principles-section">
         <div className="landing-principles-grid">
-          <article><span>01</span><h3>Practice matters</h3><p>Understanding grows when people use ideas, make decisions and learn from feedback.</p></article>
-          <article><span>02</span><h3>Evidence should be honest</h3><p>Course completion, assessment results and instructor-reviewed evidence are different things.</p></article>
-          <article><span>03</span><h3>People learn together</h3><p>Tutors, peers and teams can make learning more supported and connected to real needs.</p></article>
+          <article><h3>Practice matters</h3><p>Understanding grows when people use ideas, make decisions and learn from feedback.</p></article>
+          <article><h3>Evidence should be honest</h3><p>Course completion, assessment results and instructor-reviewed evidence are different things.</p></article>
+          <article><h3>People learn together</h3><p>Tutors, peers and teams can make learning more supported and connected to real needs.</p></article>
         </div>
       </section>
 

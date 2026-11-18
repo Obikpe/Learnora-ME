@@ -10,7 +10,7 @@ const groups=[
 ];
 
 export default function PublicFooter() {
-  return <footer className="border-t border-white/[.1] bg-[#07090c]">
+  return <footer className="public-footer border-t border-white/[.1] bg-[#07090c]">
     <div className="mx-auto max-w-[82rem] px-5 py-12 sm:py-16 lg:px-8">
       <div className="grid gap-10 border-b border-white/[.1] pb-10 lg:grid-cols-[1.25fr_2fr] lg:gap-16">
         <div><Logo/><p className="mt-5 max-w-sm text-sm leading-7 text-slate-400">Practical learning, evidence and opportunity in one connected experience.</p><p className="mt-4 max-w-sm text-[11px] leading-6 text-slate-400">Need a hand? <Link className="underline hover:text-white" href="/help">Visit Help</Link> or email <a className="underline hover:text-white" href="mailto:learnorame@gmail.com">learnorame@gmail.com</a>.</p></div>

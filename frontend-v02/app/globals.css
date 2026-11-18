@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 /* Learnora ME theme */
+:root,
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: #ffffff;
@@ -50,7 +51,6 @@
   --content-width: 82rem;
   --nav-height: 4.5rem;
 }
-:root,
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f1020;
@@ -313,3 +313,46 @@ main :where(p,li) a:not([class*="button"]):hover { text-decoration-thickness:2px
 
 .course-detail-cover { width:100%; aspect-ratio:16/7; max-height:340px; border-radius:12px; background:var(--bg-soft); }
 @media(max-width:700px) { .course-detail-cover { aspect-ratio:16/9; max-height:220px; } }
+
+
+/* Theme-aware public navigation and footer */
+.public-nav {
+  background: color-mix(in srgb, var(--bg) 95%, transparent) !important;
+  border-color: var(--border) !important;
+  color: var(--text-body);
+}
+.public-nav nav a,
+.public-nav nav button,
+.public-nav button:not(.public-nav-primary) {
+  color: var(--text-body) !important;
+}
+.public-nav .public-nav-panel,
+.public-nav .public-nav-panel-content,
+.public-nav .public-nav-mobile {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+}
+.public-nav .public-nav-panel a span span:first-child {
+  color: var(--text-heading) !important;
+}
+.public-nav .public-nav-panel a span span:last-child {
+  color: var(--text-muted) !important;
+}
+.public-nav .public-nav-primary {
+  color: var(--on-accent) !important;
+}
+.public-footer {
+  background: var(--bg-soft) !important;
+  border-color: var(--border) !important;
+}
+.public-footer p,
+.public-footer span,
+.public-footer a {
+  color: var(--text-muted);
+}
+.public-footer h2 {
+  color: var(--text-heading);
+}
+.public-footer a:hover {
+  color: var(--primary);
+}

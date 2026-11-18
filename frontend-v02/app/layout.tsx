@@ -3,6 +3,7 @@ import "./landing.css";
 import "./organisation.css";
 import type { Metadata, Viewport } from "next";
 import { getSiteUrl } from "../lib/server/catalogue";
+import CookieConsent from "../components/public/CookieConsent";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
@@ -31,10 +32,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f1020",
+  themeColor: "#ffffff",
   colorScheme: "light dark",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: '(function(){try{var t=localStorage.getItem("learnora_theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}})();' }} /></head><body>{children}</body></html>;
+  return <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: '(function(){try{var t=localStorage.getItem("learnora_theme");document.documentElement.dataset.theme=t==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}})();' }} /></head><body>{children}<CookieConsent /></body></html>;
 }

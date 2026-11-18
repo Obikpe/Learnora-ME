@@ -88,11 +88,11 @@ export default function MyLearningPage() {
   const [certificateError, setCertificateError] = useState(false);
   const [evidenceError, setEvidenceError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const saved = window.localStorage.getItem("learnora_theme");
-    const initial = saved === "light" ? "light" : "dark";
+    const initial = saved === "dark" ? "dark" : "light";
     setTheme(initial);
     document.documentElement.dataset.theme = initial;
   }, []);

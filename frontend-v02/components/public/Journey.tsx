@@ -12,7 +12,7 @@ export default function Journey() {
   return <section className="site-section">
     <div className="mx-auto max-w-[82rem] px-5 lg:px-8">
       <div className="grid gap-8 lg:grid-cols-[.82fr_1.18fr] lg:items-end">
-        <div><p className="section-kicker">The Learnora loop</p><h2 className="mt-5 max-w-xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">Learning should leave a <span className="gold">trace.</span></h2></div>
+        <div><h2 className="mt-5 max-w-xl font-display text-4xl leading-[1.04] sm:text-5xl lg:text-6xl">Learning should leave a <span className="gold">trace.</span></h2></div>
         <p className="max-w-xl text-base leading-7 text-slate-400 lg:justify-self-end">A connected journey from understanding an idea to using it, reflecting on it and keeping a record of the work. Each stage has a purpose; none is a substitute for the next.</p>
       </div>
       <div className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
