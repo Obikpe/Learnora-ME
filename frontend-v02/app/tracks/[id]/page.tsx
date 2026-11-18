@@ -4,21 +4,22 @@ import { getPublicTrack } from "../../../lib/server/catalogue";
 
 export const revalidate = 60;
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { item } = await getPublicTrack<any>(params.id);
+  const { id } = await params;
+  const { item } = await getPublicTrack<any>(id);
   if (!item) {
     return {
       title: "Learning track unavailable",
       description: "This Learnora learning track could not be found or is no longer published.",
-      alternates: { canonical: `/tracks/${encodeURIComponent(params.id)}` },
+      alternates: { canonical: `/tracks/${encodeURIComponent(id)}` },
       robots: { index: false, follow: true },
     };
   }
   const title = String(item.name || "Learning track");
   const description = String(item.description || `Explore the ${title} learning track on Learnora ME.`).slice(0, 300);
-  const canonical = `/tracks/${encodeURIComponent(params.id)}`;
+  const canonical = `/tracks/${encodeURIComponent(id)}`;
   const image = `/og?title=${encodeURIComponent(title)}&kind=${encodeURIComponent("Learnora learning track")}`;
   return {
     title,
@@ -30,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function TrackDetailPage({ params }: Props) {
-  const { item } = await getPublicTrack<any>(params.id);
-  return <TrackDetailClient params={params} initialTrack={item} />;
+  const { id } = await params;
+  const { item } = await getPublicTrack<any>(id);
+  return <TrackDetailClient params={{ id }} initialTrack={item} />;
 }

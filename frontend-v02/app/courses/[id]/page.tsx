@@ -4,22 +4,23 @@ import { getPublicCourse, getPublicCoursePreview, getPublicCourseStructure, getS
 
 export const revalidate = 60;
 
-type Props = { params: { id: string }; searchParams: { enrol?: string } };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ enrol?: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { item } = await getPublicCourse<any>(params.id);
+  const { id } = await params;
+  const { item } = await getPublicCourse<any>(id);
   if (!item) {
     return {
       title: "Course unavailable",
       description: "This Learnora course could not be found or is no longer published.",
-      alternates: { canonical: `/courses/${encodeURIComponent(params.id)}` },
+      alternates: { canonical: `/courses/${encodeURIComponent(id)}` },
       robots: { index: false, follow: true },
     };
   }
   const title = String(item.title || "Learnora course");
   const description = String(item.short_description || item.description || `Explore ${title} on Learnora ME. Review the course outline and available learning access.`).slice(0, 300);
   const image = `/og?title=${encodeURIComponent(title)}&kind=${encodeURIComponent("Learnora course")}`;
-  const canonical = `/courses/${encodeURIComponent(params.id)}`;
+  const canonical = `/courses/${encodeURIComponent(id)}`;
   return {
     title,
     description,
@@ -36,8 +37,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CourseDetailPage({ params, searchParams }: Props) {
-  const { item } = await getPublicCourse<any>(params.id);
-  const [{ data: initialStructure }, initialPreview] = await Promise.all([getPublicCourseStructure<any>(params.id), getPublicCoursePreview<any>(params.id)]);
+  const [{ id }, resolvedSearchParams] = await Promise.all([params, searchParams]);
+  const { item } = await getPublicCourse<any>(id);
+  const [{ data: initialStructure }, initialPreview] = await Promise.all([getPublicCourseStructure<any>(id), getPublicCoursePreview<any>(id)]);
   const siteUrl = getSiteUrl();
   const jsonLd = item ? {
     "@context": "https://schema.org",
@@ -53,6 +55,6 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
   } : null;
   return <>
     {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
-    <CourseDetailClient params={params} searchParams={searchParams} initialCourse={item} initialStructure={initialStructure} initialPreview={initialPreview} />
+    <CourseDetailClient params={{ id }} searchParams={resolvedSearchParams} initialCourse={item} initialStructure={initialStructure} initialPreview={initialPreview} />
   </>;
 }
