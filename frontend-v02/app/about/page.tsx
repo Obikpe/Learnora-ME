@@ -27,7 +27,7 @@ export default function Page() {
         <div className="space-y-5 text-base leading-8 text-slate-400">
           <p>Learning today can happen almost anywhere, but the journey is often fragmented. A lesson lives on one platform, practice files somewhere else, feedback in a message, a project on a drive, and a certificate in an inbox. The learner is left to connect the story alone.</p>
           <p>At the same time, a completed course and a demonstrated skill are not identical. Employers, clients, instructors and teams need context to understand what someone can do; learners need feedback that helps them recognise what they have learned and what they should practise next.</p>
-          <p>Learnora's purpose is to make that journey more connected. The platform is designed to bring learning, deliberate practice, practical work, assessment, feedback, skills evidence and a portfolio closer together.</p>
+          <p>Learnora&apos;s purpose is to make that journey more connected. The platform is designed to bring learning, deliberate practice, practical work, assessment, feedback, skills evidence and a portfolio closer together.</p>
         </div>
       </section>
 
