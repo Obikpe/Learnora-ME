@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowRight, ArrowUpRight, BookOpen, CheckCircle2, Clock3, Compass,
-  GraduationCap, Layers3, RefreshCw, Search, Sparkles, Route,
+  GraduationCap, Layers3, RefreshCw, Search, Route,
 } from "lucide-react";
 import { request } from "../../lib/api/client";
 import { currentUser } from "../../lib/api";
@@ -227,17 +227,6 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
               <div className="landing-hero-product-footer"><span>{courses[0].level || "All levels"}</span><span>{courses[0].estimated_hours ? (courses[0].estimated_hours < 1 ? Math.round(courses[0].estimated_hours * 60) + " min" : courses[0].estimated_hours + " hours") : "Self-paced"}</span><Link href={courseHref(courses[0])}>View course <ArrowRight size={15}/></Link></div>
             </> : <><div className="landing-hero-product-icon"><BookOpen size={28}/></div><h2>Explore practical learning.</h2><p className="landing-hero-product-description">Published courses will appear here when they are ready to explore.</p><Link href="/courses">Browse courses <ArrowRight size={15}/></Link></>}
           </div>
-          <div className="landing-hero-path-card" aria-hidden="true">
-            <div className="landing-hero-path-heading"><span className="landing-hero-path-spark"><Sparkles size={13}/></span><span>YOUR LEARNING PATH</span><span className="landing-hero-path-live">IN MOTION</span></div>
-            <div className="landing-hero-path-steps">
-              <span className="is-active"><i/><b>Learn</b></span>
-              <span><i/><b>Practise</b></span>
-              <span><i/><b>Build</b></span>
-            </div>
-            <div className="landing-hero-path-line"><span/></div>
-            <p>Turn knowledge into work you can show.</p>
-          </div>
-          <div className="landing-hero-float-chip" aria-hidden="true"><span><CheckCircle2 size={14}/></span>Progress with purpose</div>
         </div>
       </section>
 
