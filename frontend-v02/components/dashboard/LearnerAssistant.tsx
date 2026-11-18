@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send, Sparkles, X } from "lucide-react";
+import { Send, X } from "lucide-react";
 import { askAI } from "../../lib/api/ai";
 
 type ChatMessage = { role: "user" | "assistant"; content: string; courses?: any[] };
