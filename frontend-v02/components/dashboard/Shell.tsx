@@ -8,7 +8,7 @@ import LearningSessionTracker from "./LearningSessionTracker";
 export default function Shell({ children, admin, role, active, hideTutor = false, restricted = false, trackLearning = false }: {
   children: React.ReactNode; admin?: boolean; role?: string; active: string; hideTutor?: boolean; restricted?: boolean; trackLearning?: boolean;
 }) {
-  return <div className="min-h-screen bg-[var(--bg)] text-[var(--text-body)]">
+  return <div className="dashboard-page min-h-screen bg-[var(--bg)] text-[var(--text-body)]">
     {!admin && trackLearning && <LearningSessionTracker/>}
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-xl">
       <div className="relative mx-auto flex h-[4.5rem] max-w-[1280px] items-center gap-3 px-4 sm:px-6 lg:px-8">
