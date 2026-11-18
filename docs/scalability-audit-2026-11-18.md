@@ -44,7 +44,7 @@ Vercel runtime logs showed very little recent traffic. There is no meaningful co
 
 ### 1. Database-backed rate limiting is on the hot path
 
-The FastAPI middleware calls `consume_api_rate_limit` for each non-exempt production API request. The configured default is **60 requests per minute per client IP**; no production override for that setting was present in the Vercel environment-variable inventory.
+The FastAPI middleware calls `consume_api_rate_limit` for each non-exempt production API request. The configured default is **60 requests per minute per bucket**; no production override for that setting was present in the Vercel environment-variable inventory. A verified session uses an account bucket; anonymous or invalid-token traffic uses an IP bucket.
 
 The rate-limit function locks and updates a bucket row. The middleware now verifies a signed JWT and uses a hashed per-account bucket for authenticated users; anonymous or invalid-token requests remain IP-bucketed. This prevents ordinary learners behind the same school, office or mobile-carrier NAT from consuming one another's 60-request allowance. It does not provide a coarse IP-wide cap for authenticated traffic, so edge/WAF protection still needs to be configured and reviewed. Requests from one account still contend on that account's bucket row.
 
