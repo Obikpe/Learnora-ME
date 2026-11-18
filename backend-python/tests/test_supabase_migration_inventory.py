@@ -8,8 +8,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ACTIVE_MIGRATIONS = REPO_ROOT / "supabase" / "migrations"
 LEGACY_MIGRATIONS = REPO_ROOT / "supabase" / "legacy_migrations"
 
-# Applied versions match the verified live ledger. Pending versions are reviewed
-# release candidates and must not be described as applied until their migrations run.
+# Applied versions are the repository migration files confirmed in the live ledger.
+# Pending files are release candidates; some replace catalog-equivalent changes made
+# under different live version IDs and must be reconciled before production replay.
 APPLIED_VERSIONS = [
     "20261008100924",
     "20261009225421",

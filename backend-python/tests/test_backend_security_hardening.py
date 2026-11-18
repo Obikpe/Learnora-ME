@@ -77,8 +77,11 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIn("file_size_bytes: int = Field(..., gt=0, le=2147483648)", source)
         self.assertIn("file_size_bytes: int = Field(..., gt=0, le=104857600)", source)
         ops = (REPO / "supabase/ops/harden_course_upload_buckets.sql").read_text()
+        migration = (REPO / "supabase/migrations/20261117220000_private_course_resources_bucket.sql").read_text()
         self.assertIn("SET public = false", ops)
         self.assertIn("file_size_limit = 104857600", ops)
+        self.assertIn("'learnora-resources'", migration)
+        self.assertNotIn("'learnora-course-resources'", migration)
 
     def test_payout_status_is_a_typed_request_body(self):
         source = read("routers/creator_finance.py")
