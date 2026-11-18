@@ -167,17 +167,23 @@ class PublicTrackProgressTests(unittest.TestCase):
                 {"id": "enrol-1", "user_id": "learner-1", "course_id": "course-1", "status": "active"}
             ],
             "course_modules": [
-                {"id": "module-1", "course_id": "course-1", "status": "archived", "order_index": 0}
+                {"id": "module-1", "course_id": "course-1", "status": "archived", "order_index": 0},
+                {"id": "module-2", "course_id": "course-1", "status": "archived", "order_index": 1},
             ],
             "learnora_lessons": [
-                {"id": "lesson-1", "module_id": "module-1", "status": "archived", "order_index": 0}
+                {"id": "lesson-1", "module_id": "module-1", "status": "archived", "order_index": 0},
+                {"id": "lesson-2", "module_id": "module-2", "status": "archived", "order_index": 0},
             ],
+            "quizzes": [
+                {"id": "quiz-1", "course_id": "course-1", "module_id": "module-1", "passing_score": 70, "is_published": True}
+            ],
+            "quiz_attempts": [],
             "learnora_lesson_progress": [],
         }
-        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)), patch.object(progress, "_assert_module_unlocked") as lock_check:
+        with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
             result = progress._course_summary("learner-1", "course-1", include_archived=True)
-        lock_check.assert_called_once_with("learner-1", "module-1", include_archived=True)
-        self.assertEqual(result["total_lessons"], 1)
+        self.assertEqual(result["total_lessons"], 2)
+        self.assertFalse(result["modules"][1]["locked"])
 
     def test_organisation_learner_cannot_use_individual_public_track_progress(self):
         user = SimpleNamespace(id="learner-2", role="witstart", account_type="learner")
@@ -189,6 +195,7 @@ class PublicTrackProgressTests(unittest.TestCase):
 
     def test_module_without_published_quiz_does_not_deadlock_the_track(self):
         fixtures = {
+            "learnora_courses": [{"id": "course-1", "status": "published"}],
             "course_modules": [
                 {"id": "module-1", "course_id": "course-1", "order_index": 1, "status": "published"},
                 {"id": "module-2", "course_id": "course-1", "order_index": 2, "status": "published"},
@@ -201,6 +208,7 @@ class PublicTrackProgressTests(unittest.TestCase):
 
     def test_module_unlock_respects_quiz_configured_threshold(self):
         fixtures = {
+            "learnora_courses": [{"id": "course-1", "status": "published"}],
             "course_modules": [
                 {"id": "module-1", "course_id": "course-1", "order_index": 1, "status": "published"},
                 {"id": "module-2", "course_id": "course-1", "order_index": 2, "status": "published"},
