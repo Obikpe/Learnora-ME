@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  BookOpen, Compass, Target, FolderKanban, Sparkles, Award,
-  BrainCircuit, LayoutDashboard, Users, Building2, Activity, CircleDollarSign,
+  BookOpen, Compass, Target, FolderKanban, Sparkles, FileCheck2, Award,
+  MessageCircle, BrainCircuit, LayoutDashboard, Users, Building2, Activity, CircleDollarSign,
   Menu, X, ChevronDown, Route, Search, GraduationCap, CalendarDays
 } from "lucide-react";
 import { currentUser } from "../../lib/api";
@@ -21,7 +21,9 @@ const learnerItems: NavItem[] = [
   { key: "projects", label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
   { key: "skills", label: "Skills", href: "/dashboard/skills", icon: Sparkles },
   { key: "portfolio", label: "Portfolio", href: "/dashboard/portfolio", icon: FolderKanban },
+  { key: "evidence", label: "Evidence", href: "/dashboard/evidence", icon: FileCheck2 },
   { key: "certificates", label: "Certificates", href: "/dashboard/certificates", icon: Award },
+  { key: "community", label: "Community", href: "/dashboard/community", icon: MessageCircle },
   { key: "ai", label: "AI tutor", href: "/dashboard/ai", icon: BrainCircuit },
   { key: "calendar", label: "Learning calendar", href: "/dashboard/calendar", icon: CalendarDays },
 ];
