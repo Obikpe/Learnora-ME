@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronDown, Menu, X, Headset, Sun, Moon } from "lucide-react";
 import Logo from "../brand/Logo";
 import Link from "next/link";
+import { hasFunctionalCookieConsent } from "../../lib/cookie-consent";
 
 const audiences = [
   { href: "/for-learners", title: "For learners", detail: "Build skills, projects and evidence." },
@@ -27,7 +28,7 @@ export default function PublicNav() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const saved = window.localStorage.getItem("learnora_theme");
+    const saved = hasFunctionalCookieConsent() ? window.localStorage.getItem("learnora_theme") : null;
     const nextTheme = saved === "dark" ? "dark" : "light";
     root.dataset.theme = nextTheme;
     setTheme(nextTheme);
@@ -40,7 +41,8 @@ export default function PublicNav() {
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = nextTheme;
-    window.localStorage.setItem("learnora_theme", nextTheme);
+    if (hasFunctionalCookieConsent()) window.localStorage.setItem("learnora_theme", nextTheme);
+    else window.localStorage.removeItem("learnora_theme");
     setTheme(nextTheme);
   };
 
