@@ -98,7 +98,7 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertTrue(rollback.is_file())
         sql = migration.read_text(encoding="utf-8")
         self.assertIn("create table if not exists public.learning_sessions", sql.lower())
-        self.assertIn("CREATE TABLE IF NOT EXISTS public.learner_learning_days", sql)
+        self.assertIn("create table if not exists public.learner_learning_days", sql.lower())
         self.assertIn("ENABLE ROW LEVEL SECURITY", sql)
         self.assertIn("REVOKE ALL ON public.learning_sessions FROM anon, authenticated", sql)
         self.assertIn("REVOKE ALL ON public.learner_learning_days FROM anon, authenticated", sql)

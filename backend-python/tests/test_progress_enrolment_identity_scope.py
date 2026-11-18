@@ -84,6 +84,7 @@ class ProgressIdentityScopeTests(unittest.TestCase):
         db = FakeSupabase({
             "organisation_members": [{
                 "organisation_id": "org-1",
+                "user_id": "user-1",
                 "role": "learner",
                 "status": "suspended",
             }],
@@ -98,6 +99,7 @@ class ProgressIdentityScopeTests(unittest.TestCase):
         db = FakeSupabase({
             "organisation_members": [{
                 "organisation_id": "org-1",
+                "user_id": "user-1",
                 "role": "instructor",
                 "status": "active",
             }],

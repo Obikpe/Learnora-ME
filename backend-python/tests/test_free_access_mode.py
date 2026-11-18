@@ -164,7 +164,7 @@ class FreeAccessModeTests(unittest.TestCase):
             user=SimpleNamespace(role="normal", account_type="learner"),
         )
         course = {"id": "course-1", "ownership": "learnora", "status": "published"}
-        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(course_content, "supabase", Mock()):
+        with patch.dict(os.environ, {"FREE_ACCESS_MODE": "true"}), patch.object(course_content, "supabase", EmptySupabase()):
             self.assertIsNone(course_content._check_course_view_access(context, course))
 
     def test_free_mode_does_not_grant_unpublished_or_creator_content(self):
