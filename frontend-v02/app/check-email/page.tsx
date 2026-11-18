@@ -70,7 +70,7 @@ export default function CheckEmailPage() {
           </label>
         )}
         <div className="mt-7 border-t border-white/[.08] pt-6">
-          <p className="text-sm font-semibold text-white">Didn't receive the email?</p>
+          <p className="text-sm font-semibold text-white">Didn&apos;t receive the email?</p>
           <p className="mt-2 text-xs leading-6 text-slate-400">Check your spam or promotions folder. You can request another verification email when the security countdown finishes.</p>
           <button
             type="button"
