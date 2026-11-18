@@ -81,7 +81,7 @@ jobs:
             supabase/migrations/20261102110000_certificate_revocation.sql \
             supabase/migrations/20261102120000_project_submission_integrity.sql \
             supabase/migrations/20261116120000_notification_email_automation.sql \
-            supabase/migrations/20261117110000_password_change_session_revocation.sql
+            supabase/migrations/20261117210000_password_session_invalidation.sql
           do
             psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done

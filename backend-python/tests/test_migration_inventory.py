@@ -34,7 +34,7 @@ class MigrationInventoryTests(unittest.TestCase):
             "20261021220333_cohort_login_rate_limits.sql",
             "20261021220849_revoke_trigger_function_browser_execute.sql",
             "20261026153000_revoke_browser_privileges_and_defaults.sql",
-            "20261117110000_password_change_session_revocation.sql",
+            "20261117210000_password_session_invalidation.sql",
         )
         for name in expected:
             with self.subTest(migration=name):
@@ -140,8 +140,8 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("DROP COLUMN IF EXISTS onboarding_completed_at", rollback_sql)
 
     def test_password_change_session_revocation_migration_is_non_destructive(self):
-        migration = ACTIVE_DIR / "20261117110000_password_change_session_revocation.sql"
-        rollback = ROOT / "supabase" / "rollback" / "20261117110000_password_change_session_revocation.rollback.sql"
+        migration = ACTIVE_DIR / "20261117210000_password_session_invalidation.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261117210000_password_session_invalidation.rollback.sql"
         self.assertTrue(migration.is_file())
         self.assertTrue(rollback.is_file())
         sql = migration.read_text(encoding="utf-8")

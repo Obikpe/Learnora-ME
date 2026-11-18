@@ -139,7 +139,7 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIn('if not changed_at:', source)
 
     def test_password_change_migration_supplies_the_live_session_timestamp_column(self):
-        migration = (REPO / "supabase/migrations/20261117110000_password_change_session_revocation.sql").read_text()
+        migration = (REPO / "supabase/migrations/20261117210000_password_session_invalidation.sql").read_text()
         self.assertIn("ALTER TABLE public.users", migration)
         self.assertIn("ALTER TABLE public.admins", migration)
         self.assertIn("password_changed_at", migration)
