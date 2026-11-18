@@ -15,9 +15,9 @@ One million registered accounts may be achievable with a much smaller MAU. One m
 
 ## Current hosting and database baseline
 
-- Supabase organisation plan: **Free**.
+- Supabase organisation plan: **Free** (50,000 MAU included; 500 MB database; 5 GB uncached egress, 5 GB cached egress and 1 GB file storage on the current plan).
 - Supabase project region: **eu-west-3 (Paris)**.
-- Vercel team plan: **Hobby**.
+- Vercel team plan: **Hobby** (1 million function invocations/month and 4 CPU-hours/month; Hobby is for non-commercial personal projects). If Learnora is being operated as a commercial service, the current Vercel plan is not appropriate.
 - Current deployed backend region: **iad1 (Washington, D.C.)**.
 - The backend configuration has been changed to **cdg1 (Paris)** to align the function with the Supabase project, but that configuration is not active until a deployment is authorised.
 - Live database snapshot: approximately **19 MB**, **110 public tables**, approximately **192 estimated live rows** across tracked tables. All 110 public tables have RLS enabled. The current application uses the service-role backend model; direct table privileges for `anon` and `authenticated` are currently zero.
@@ -46,9 +46,9 @@ Vercel runtime logs showed very little recent traffic. There is no meaningful co
 
 The FastAPI middleware calls `consume_api_rate_limit` for each non-exempt production API request. The configured default is **60 requests per minute per client IP**; no production override for that setting was present in the Vercel environment-variable inventory.
 
-The rate-limit function locks and updates a bucket row. Users behind the same school, office or mobile-carrier NAT can share one IP bucket, so independent learners can consume one another's allowance. Concurrent requests for one IP also contend on the same bucket row.
+The rate-limit function locks and updates a bucket row. The middleware now verifies a signed JWT and uses a hashed per-account bucket for authenticated users; anonymous or invalid-token requests remain IP-bucketed. This prevents ordinary learners behind the same school, office or mobile-carrier NAT from consuming one another's 60-request allowance. It does not provide a coarse IP-wide cap for authenticated traffic, so edge/WAF protection still needs to be configured and reviewed. Requests from one account still contend on that account's bucket row.
 
-The Supabase client used by the middleware is synchronous, while the middleware is asynchronous. The call has now been moved to Starlette's thread pool so its network wait does not block the ASGI event loop. This does **not** remove the database round trip, the per-IP lock or the shared-IP throttling risk. The rate-limit design still needs a separate redesign.
+The Supabase client used by the middleware is synchronous, while the middleware is asynchronous. The call has been moved to Starlette's thread pool so its network wait does not block the ASGI event loop. The backend now also reuses one bounded HTTP/2 HTTPX connection pool across Supabase services. These changes do **not** remove the database rate-limit round trip or its row lock.
 
 ### 2. Dashboard request fan-out and periodic polling
 
@@ -58,19 +58,21 @@ Both the learning-session heartbeat and dashboard summary refresh were reduced f
 
 At the new cadence, an open learner dashboard generates approximately **two periodic API requests per minute** before other learner activity. One million concurrent dashboards would therefore create about **2 million requests per minute (roughly 33,333 requests per second)** from these two periodic calls alone. That is a workload calculation, not a measured capacity result.
 
-### 3. Progress endpoint performs repeated access checks
+### 3. Authentication and progress endpoints perform repeated access checks
+
+For an ordinary individual account, `get_current_user` checks the cohort-account, administrator and learner identity tables separately to preserve the single-email/single-context rule. That is multiple database lookups on every authenticated API request. Cohort-account resolution performs additional membership and cohort lookups. A future single-query account-context resolver can preserve the same checks with fewer round trips, but it requires a tracked database migration and must wait until migration history is reconciled.
 
 The `/progress/me` path iterates through enrolments and calls the per-course `_enrolment` access resolver for each one. That resolver performs multiple database lookups, including identity, organisation/cohort context and scoped-course access checks. This creates an N+1-style query pattern as a learner's course count grows.
 
 The access rules must remain intact. The correct remediation is a batch access resolver that evaluates the same individual, organisation, cohort and scoped-assignment rules across all relevant course IDs in a small number of queries. Do not remove access checks or trust client-supplied course IDs to make this faster.
 
-### 4. Public course catalogue uses sequential database reads
+### 5. Public course catalogue uses sequential database reads
 
 The public courses route reads course rows, then organisation/creator status where relevant, then track membership data. The track membership helper performs additional reads. The route does not impose an explicit pagination limit on the full course list.
 
 The browser API client has per-browser/session caching and request de-duplication. That helps repeat visits in one browser, but it is not a shared server/CDN cache and does not reduce the first request from each visitor. Any shared cache must preserve the managed-account discovery restrictions; a cached anonymous 200 response must never bypass an authenticated learner's access guard.
 
-### 5. Database index findings
+### 6. Database index findings
 
 The Supabase performance advisor currently reports:
 - **70 foreign keys without covering indexes**.
@@ -81,7 +83,7 @@ The duplicate is `uq_learnora_platform_admin_role`, which duplicates the unique 
 
 The 138 “unused” indexes must not be mass-deleted: the live dataset is tiny and usage statistics are not representative. The 70 foreign-key findings should be prioritised against real query paths, especially assignments, enrolments, lesson progress, quizzes/questions, course-track links and cohort/team assignments.
 
-### 6. Migration history is not aligned
+### 7. Migration history is not aligned
 
 The repository contains 51 migration files and the live project reports 51 applied migrations, but the two sets are not identical:
 - 3 repository migrations do not appear in the live ledger.
@@ -92,22 +94,23 @@ Repository-only names include `pin_cohort_assignment_function_search_paths`, `re
 
 The equal migration count is not proof of alignment. Do not run `supabase db push`, replay migrations or apply new index migrations until the source and live history have been reconciled.
 
-### 7. Future default privileges need administrative hardening
+### 8. Future default privileges need administrative hardening
 
 Current direct table grants to `anon` and `authenticated` are zero, and all 110 public tables have RLS enabled. The security advisor's no-policy findings are consistent with the current backend-only access model; do not add browser policies simply to silence the advisor.
 
 However, the `supabase_admin` default ACLs still grant browser-role privileges on future public objects (tables, sequences and functions). The repository contains `supabase/ops/revoke_supabase_admin_browser_defaults.sql`, marked manual/admin-only. The ordinary project database role cannot assume `supabase_admin`, so this has not been applied. Existing table grants are currently restricted, but future objects created by that managed owner could inherit broader defaults.
 
-### 8. Dependency and build warnings
+### 9. Dependency and build warnings
 
 The frontend's reported raw-image and React Hook warnings have been corrected. The successful CI run reported no ESLint warnings or errors.
 
 Other warnings still need attention:
-- The Python requirements previously pinned yanked `email-validator==2.1.0`; this has been moved to 2.3.0.
-- Supabase Python SDK has been updated from 2.32.0 to 2.34.1 to check whether its internal timeout/verify deprecation warnings are resolved.
-- GitHub Actions `setup-python` has been updated to v7.1.0 (Node 24) to remove the Node 20 deprecation warning.
+- The Python requirements moved from yanked `email-validator==2.1.0` to 2.3.0.
+- Supabase Python SDK moved from 2.32.0 to 2.34.1, and the backend now supplies a shared HTTPX client; the SDK timeout/verify deprecation warnings disappeared in CI.
+- GitHub Actions `setup-python` and `setup-node` were updated to v7.1.0 (Node 24); the Node 20 action deprecation warning disappeared.
 - npm still reports deprecated transitive packages, including `inflight`, `rimraf@3`, `glob@7/10`, `@humanwhocodes/*`, and ESLint 8.57.1. The current Next 14 ESLint configuration constrains the compatible ESLint major; do not force ESLint 9/10 without a coordinated Next.js/tooling upgrade.
 - The Vercel build also reported an unknown npm `cache-dir` configuration. No matching NPM environment variable or repository `.npmrc` was found, so its source appears to be outside the committed project configuration.
+- Node's built-in `punycode` deprecation remains under trace using `NODE_OPTIONS=--trace-deprecation` in CI.
 - Neither frontend currently has a committed npm lockfile. This leaves dependency resolution less reproducible between CI and Vercel and should be corrected.
 
 ## Changes made so far
@@ -117,18 +120,26 @@ Other warnings still need attention:
 - Replaced the reported raw `<img>` usages with Next.js Image components; externally supplied image URLs use unoptimized rendering where host allow-listing cannot be guaranteed.
 - Corrected the reported React Hook dependencies and stabilised the dashboard empty-course fallback.
 - Moved the synchronous rate-limit RPC off the ASGI event loop.
+- Changed authenticated API rate-limit buckets to verified account identity, retaining IP buckets for anonymous/invalid-token requests.
+- Added a bounded shared HTTP/2 HTTPX connection pool for Supabase requests.
 - Configured the backend Vercel function region as `cdg1` (Paris).
 - Changed the session heartbeat and dashboard summary refresh cadence from 30 to 60 seconds.
-- Updated the yanked email-validator dependency, Supabase Python SDK and GitHub Actions Python setup action.
+- Updated the yanked email-validator dependency, Supabase Python SDK and GitHub Actions setup actions.
 
-The frontend/backend changes and 60-second polling change have passed the repository's backend tests and both frontend production builds. The latest dependency-update commit is awaiting its own CI result.
+The frontend/backend changes, per-account rate-limit tests, 60-second polling change and shared Supabase HTTP client have passed the repository's backend tests and both frontend production builds. The latest workflow change is tracing the remaining Node `punycode` warning.
 
 **No production deployment has been triggered.** Both Vercel projects have deployment-on-push disabled in their configuration.
+
+## Capacity implications
+
+The current Vercel Hobby quota is 1 million function invocations per month. Two periodic calls per open dashboard use 120 invocations per dashboard-hour, so that monthly allowance would cover only about **8,333 dashboard-hours** from polling alone, before initial page loads or any learning activity. The current Supabase Free plan includes 50,000 MAU, not one million. Supabase Pro currently includes 100,000 MAU and charges for additional MAU; at one million MAU, the MAU overage alone would be approximately **$2,925/month**, before compute, storage, bandwidth and other usage. See the official pricing pages below.
+
+One million registered accounts with a much smaller MAU is a different target and may be achievable with appropriate data sizing and usage. One million MAU is beyond the current Supabase Free allowance. One million concurrent users would create a fundamentally different workload and is not credible on the current plans or architecture without substantial redesign, higher-capacity infrastructure and progressive load testing.
 
 ## Prioritised next work
 
 1. Reconcile the migration ledger and recover the source of live-only migrations before any schema change.
-2. Redesign rate limiting so authenticated learners behind shared NAT do not share a restrictive 60/minute bucket, while retaining abuse protection. Evaluate moving coarse IP protection to the edge and applying user/route limits in the backend.
+2. Complete edge-level abuse protection for authenticated traffic and review whether the per-account 60/minute allowance should vary by route. The per-account bucket change has already removed the shared-NAT collision for valid sessions.
 3. Batch the `/progress/me` access checks without weakening individual, organisation, cohort or scoped assignment permissions.
 4. Consolidate dashboard reads where practical and review polling/session event flow.
 5. Add only the high-value missing foreign-key indexes after query-plan review and migration reconciliation; remove the confirmed duplicate index in a tracked migration.
@@ -141,3 +152,4 @@ The frontend/backend changes and 60-second polling change have passed the reposi
 - Supabase plans and included limits: https://supabase.com/pricing
 - Vercel Hobby plan limits and non-commercial restriction: https://vercel.com/docs/plans/hobby
 - Vercel plans and usage pricing: https://vercel.com/pricing
+- Vercel function region configuration: https://vercel.com/docs/functions/configuring-functions/region
