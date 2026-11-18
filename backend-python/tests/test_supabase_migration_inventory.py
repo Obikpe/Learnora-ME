@@ -44,30 +44,50 @@ APPLIED_VERSIONS = [
     "20261021220333",
     "20261021220849",
     "20261028171902",
+    "20261102210054",
+    "20261102210056",
+    "20261103041002",
     "20261103155243",
     "20261103155546",
     "20261103155555",
     "20261103160004",
+    "20261109160440",
+    "20261109190939",
+    "20261109190944",
+    "20261116072916",
     "20261117204703",
+    "20261118090829",
+    "20261118090830",
+    "20261118090832",
+    "20261118090839",
+    "20261118090841",
+    "20261118090842",
+    "20261118091000",
 ]
 
-PENDING_VERSIONS = [
-    "20261026100000",
-    "20261026150000",
-    "20261026151000",
-    "20261026153000",
-    "20261102090000",
-    "20261102100000",
-    "20261102110000",
-    "20261102120000",
-    "20261102130000",
-    "20261109180000",
-    "20261109190000",
-    "20261116120000",
-    "20261117210000",
-    "20261117220000",
-]
-EXPECTED_VERSIONS = sorted(APPLIED_VERSIONS + PENDING_VERSIONS)
+# Repository filenames still using an older version timestamp, mapped to the
+# matching applied live version. SQL bodies were checked against the live
+# migration ledger; do not use db push until these filenames are reconciled.
+LIVE_VERSION_ALIASES = {
+    "20261026150000": "20261102210054",
+    "20261026151000": "20261102210056",
+    "20261109180000": "20261109190939",
+    "20261109190000": "20261109190944",
+    "20261116120000": "20261116072916",
+    "20261102090000": "20261118090829",
+    "20261102100000": "20261118090830",
+    "20261102110000": "20261118090832",
+    "20261102120000": "20261118090839",
+    "20261117210000": "20261118090841",
+    "20261117220000": "20261118090842",
+}
+
+PENDING_VERSIONS = ["20261026153000"]
+EXPECTED_VERSIONS = sorted(
+    (set(APPLIED_VERSIONS) - set(LIVE_VERSION_ALIASES.values()))
+    | set(LIVE_VERSION_ALIASES)
+    | set(PENDING_VERSIONS)
+)
 
 
 class SupabaseMigrationInventoryTests(unittest.TestCase):
@@ -75,11 +95,12 @@ class SupabaseMigrationInventoryTests(unittest.TestCase):
         files = sorted(ACTIVE_MIGRATIONS.glob("*.sql"))
         versions = [path.name.split("_", 1)[0] for path in files]
         self.assertEqual(versions, EXPECTED_VERSIONS)
-        self.assertTrue(set(APPLIED_VERSIONS).issubset(set(versions)))
+        self.assertTrue(set(LIVE_VERSION_ALIASES).issubset(set(versions)))
         self.assertTrue(set(PENDING_VERSIONS).issubset(set(versions)))
+        self.assertTrue(set(LIVE_VERSION_ALIASES.values()).issubset(set(APPLIED_VERSIONS)))
         self.assertTrue(all(re.fullmatch(r"\d{14}", version) for version in versions))
         self.assertTrue(all(path.stat().st_size > 0 for path in files))
-        account_deletion = (ACTIVE_MIGRATIONS / "20261102130000_learner_account_deletion.sql").read_text(encoding="utf-8")
+        account_deletion = (ACTIVE_MIGRATIONS / "20261109160440_learner_account_deletion_lifecycle.sql").read_text(encoding="utf-8")
         self.assertIn("deleted_account_history", account_deletion)
         self.assertIn("complete_learner_account_deletion", account_deletion)
         self.assertIn("SECURITY DEFINER", account_deletion)
