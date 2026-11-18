@@ -199,8 +199,8 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
     <main id="main-content" className="landing-page">
       <section className="landing-wrap landing-hero" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
-          <h1>{slide.title}</h1>
-          <p className="landing-hero-description">{slide.body}</p>
+          <h1 key={activeSlide} className="landing-slide-copy">{slide.title}</h1>
+          <p key={"body-" + activeSlide} className="landing-hero-description landing-slide-copy">{slide.body}</p>
           <div className="landing-actions"><Link className="landing-button landing-button-outline" href="/how-it-works">How Learnora works <ArrowUpRight size={16}/></Link></div>
           <form className="landing-search" onSubmit={submitSearch}>
             <Search size={18} aria-hidden="true"/>
@@ -215,7 +215,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
             <span><CheckCircle2 size={17}/> Show your work</span>
           </div>
         </div>
-        <div className="landing-hero-visual">
+        <div className="landing-hero-visual" aria-label="A preview of learning on Learnora">
           <div className="landing-hero-product">
             {courses[0] ? <>
               <div className="landing-hero-product-top"><span>Published course</span><span>{courses[0].settings?.is_free || courses[0].settings?.access_type === "free" ? "Free to start" : "Course details"}</span></div>
