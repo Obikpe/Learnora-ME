@@ -111,7 +111,7 @@
 .landing-principles-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:27px; }
 .landing-principles-grid article { padding:20px 20px 23px; border:1px solid var(--border); border-radius:10px; background:var(--card); }
 .landing-principles-grid article > span { color:var(--primary); font-size:10px; font-weight:800; letter-spacing:.14em; }
-.landing-principles-grid h3 { margin-top:18px; color:var(--text-heading); font-size:16px; font-weight:750; }
+.landing-principles-grid h3 { margin-top:0; color:var(--text-heading); font-size:16px; font-weight:750; }
 .landing-principles-grid p { margin-top:9px; color:var(--text-muted); font-size:12px; line-height:1.8; }
 .landing-audience-section { padding-block:20px 76px; }
 .landing-audience-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:17px; }
