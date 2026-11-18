@@ -110,7 +110,7 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("drop function if exists public.get_learner_learning_seconds", rollback_sql.lower())
 
     def test_account_deletion_migration_preserves_a_restricted_history_record(self):
-        migration = ACTIVE_DIR / "20261102130000_learner_account_deletion.sql"
+        migration = ACTIVE_DIR / "20261109160440_learner_account_deletion_lifecycle.sql"
         self.assertTrue(migration.is_file())
         sql = migration.read_text(encoding="utf-8")
         self.assertIn("CREATE TABLE IF NOT EXISTS public.deleted_account_history", sql)
