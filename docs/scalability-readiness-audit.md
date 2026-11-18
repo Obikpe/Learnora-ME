@@ -65,11 +65,13 @@ The active database has 51 applied migration versions. The repository has the co
 
 Do **not** run `supabase db push` until the 11 version aliases have been reconciled and the pending security migration reviewed. No live schema, data, grants or migration ledger were changed during this audit.
 
-## Production deployment gate
+## Production deployment state
 
-Both `frontend-v02/vercel.json` and `backend-python/vercel.json` explicitly set `git.deploymentEnabled` to `false`. This is why pushes to `main` do not update production automatically. That setting has been preserved; automatic deployment was not silently enabled and no manual deployment was triggered.
+The repository's root `vercel.json`, `frontend-v02/vercel.json` and `backend-python/vercel.json` contain `git.deploymentEnabled: false`. However, Vercel's deployment API now shows a **READY production frontend deployment for commit `454c048`**, with the `learnorame.vercel.app` alias. Its source is Git. I did not invoke a Vercel deployment action in this work; the deployment may have been triggered outside this chat or by project-level behaviour that needs checking. Therefore, the repository setting alone is not sufficient evidence that production Git deployments are disabled.
 
-The latest code therefore still needs an explicitly authorised release through the existing Vercel release process before production measurements can validate the code-level improvements.
+The backend production deployment is still on commit `1282711` and still reports region `iad1`. The Paris (`cdg1`) backend configuration and the public-catalogue RPC code have not reached the backend production deployment.
+
+Before changing deployment settings, inspect the two Vercel projects' actual Root Directory, Git deployment settings and deployment history. Do not re-enable or disable automatic deployments based only on the nested configuration files.
 
 ## Controlled load-test plan
 
@@ -90,5 +92,5 @@ The next test stages should be:
 - **Frontend dependency lockfiles:** CI is generating and validating them; commit job has not yet been confirmed successful.
 - **Next.js/ESLint major upgrade:** investigated, not started; requires a controlled migration.
 - **Migration filename/version drift:** documented; `supabase db push` remains blocked.
-- **Production deployment:** intentionally not triggered.
+- **Production deployment:** frontend commit `454c048` is READY in production; backend remains on `1282711` in `iad1`. No Vercel deploy action was invoked from this work.
 - **Load testing:** script prepared; no production load generated.
