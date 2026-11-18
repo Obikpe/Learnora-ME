@@ -1282,6 +1282,91 @@ def submit_assignment(assignment_id: str, body: AssignmentSubmissionIn, user: Cu
     return {"success": True, "submission": inserted.data[0]}
 
 
+def _dashboard_accessible_enrolments(user_id: str, enrolments: list[dict]) -> list[dict]:
+    """Resolve dashboard enrolments in batches for individual learners.
+
+    Individual learners have no organisation/cohort scope to evaluate per
+    course. Resolve that identity boundary once, then validate all course
+    statuses in one query. Managed identities retain the full per-course
+    resolver so their scoped assignment rules are unchanged.
+    """
+    if not enrolments:
+        return []
+
+    try:
+        cohort_account = (
+            supabase.table("cohort_accounts")
+            .select("id")
+            .eq("id", user_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+        ).data or []
+        memberships = (
+            supabase.table("organisation_members")
+            .select("organisation_id,role,status")
+            .eq("user_id", user_id)
+            .execute()
+        ).data or []
+        cohort_memberships = (
+            supabase.table("cohort_members")
+            .select("id,cohort_id,status")
+            .eq("user_id", user_id)
+            .limit(1000)
+            .execute()
+        ).data or []
+        identity = (
+            supabase.table("users")
+            .select("role")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        ).data or []
+    except Exception as exc:
+        print(f"Dashboard identity scope lookup failed: {type(exc).__name__}")
+        raise HTTPException(503, "Your learning access could not be verified. Please retry.") from None
+
+    is_unscoped_individual = (
+        not cohort_account
+        and not memberships
+        and not cohort_memberships
+        and bool(identity)
+        and is_individual_learner(identity[0].get("role"), "learner", None)
+    )
+
+    if not is_unscoped_individual:
+        return [
+            row for row in enrolments
+            if row.get("course_id") and _enrolment(user_id, str(row["course_id"]))
+        ]
+
+    course_ids = list(dict.fromkeys(
+        str(row["course_id"]) for row in enrolments if row.get("course_id")
+    ))
+    try:
+        course_rows = (
+            supabase.table("learnora_courses")
+            .select("id,status")
+            .in_("id", course_ids)
+            .execute()
+        ).data or [] if course_ids else []
+    except Exception as exc:
+        print(f"Dashboard course status lookup failed: {type(exc).__name__}")
+        raise HTTPException(503, "Your course access could not be verified. Please retry.") from None
+
+    available_courses = {
+        str(row["id"])
+        for row in course_rows
+        if str(row.get("status") or "").lower() in {"published", "archived"}
+    }
+    return [
+        row for row in enrolments
+        if row.get("organisation_id") is None
+        and row.get("cohort_id") is None
+        and str(row.get("course_id") or "") in available_courses
+    ]
+
+
 @router.get("/me")
 def my_progress(
     user: CurrentUser = Depends(get_current_user),
@@ -1299,12 +1384,9 @@ def my_progress(
         .execute()
     ).data or []
 
-    # The dashboard list must apply the same server-side access-scope check
-    # as lesson, quiz, assignment and media endpoints.
-    enrolments = [
-        row for row in enrolments
-        if row.get("course_id") and _enrolment(str(user.id), str(row["course_id"]))
-    ]
+    # Batch the identity and course-status checks for individual learners.
+    # Organisation/cohort identities continue through the full scoped resolver.
+    enrolments = _dashboard_accessible_enrolments(str(user.id), enrolments)
 
     course_ids = list(dict.fromkeys(str(row["course_id"]) for row in enrolments if row.get("course_id")))
     if not course_ids:
