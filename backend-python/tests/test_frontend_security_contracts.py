@@ -77,7 +77,8 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertNotIn("_assert_no_active_quiz_session", ai_api)
         self.assertIn("isQuizActiveInThisTab()", ai_page)
         self.assertIn("Tutor unavailable during quizzes", ai_page)
-        self.assertIn('request<any>("/progress/quiz-sessions/me")', ai_page)
+        self.assertIn("disabled={quizActive}", ai_page)
+        self.assertNotIn("/progress/quiz-sessions/me", ai_page)
 
     def test_certificate_verification_has_one_route_and_displays_revocation(self):
         route = ROOT / "frontend-v02" / "app" / "verify-certificate"
