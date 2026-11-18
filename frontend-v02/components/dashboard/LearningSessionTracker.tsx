@@ -117,7 +117,7 @@ export default function LearningSessionTracker() {
       if (eligibleLearner) void start();
     }).catch(() => {});
 
-    heartbeatTimer = window.setInterval(heartbeat, 30_000);
+    heartbeatTimer = window.setInterval(heartbeat, 60_000);
 
     return () => {
       disposed = true;

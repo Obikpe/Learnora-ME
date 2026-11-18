@@ -217,7 +217,7 @@ export default function MyLearningPage() {
       }
     };
     void refreshSummary();
-    const timer = window.setInterval(() => { void refreshSummary(); }, 30_000);
+    const timer = window.setInterval(() => { void refreshSummary(); }, 60_000);
     const onFocus = () => { void refreshSummary(); };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
