@@ -227,6 +227,7 @@ class PublicTrackProgressTests(unittest.TestCase):
 
     def test_module_unlock_succeeds_at_configured_quiz_threshold(self):
         fixtures = {
+            "learnora_courses": [{"id": "course-1", "status": "published"}],
             "course_modules": [
                 {"id": "module-1", "course_id": "course-1", "order_index": 1, "status": "published"},
                 {"id": "module-2", "course_id": "course-1", "order_index": 2, "status": "published"},

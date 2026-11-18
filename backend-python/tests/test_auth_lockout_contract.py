@@ -30,7 +30,7 @@ class LoginLockoutContractTests(unittest.TestCase):
         self.assertIn("_cohort_rate_limited(account_rate_key)", source)
         self.assertIn("_cohort_record_failure(account_rate_key)", source)
         self.assertIn("_cohort_clear_failures(account_rate_key)", source)
-        self.assertIn("_cohort_rate_limited(ip_rate_key, max_failures=COHORT_LOGIN_IP_MAX_FAILS)", source)
+        self.assertIn("_cohort_rate_limited(ip_rate_key, COHORT_LOGIN_IP_MAX_FAILS)", source)
 
     def test_persistent_rate_limit_fails_closed(self):
         source = (ROOT / "backend-python/routers/auth.py").read_text(encoding="utf-8")
