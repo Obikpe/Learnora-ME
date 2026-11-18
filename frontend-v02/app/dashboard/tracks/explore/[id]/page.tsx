@@ -160,6 +160,6 @@ export default function SignedInTrackDetailPage({ params }: { params: { id: stri
         })}
       </div>
     </section>
-    <p className="mt-7 max-w-3xl text-xs leading-6 text-[var(--text-muted)]"><LockKeyhole size={13} className="mr-2 inline"/>Track enrolment remains subject to the published track's free-access and self-enrolment settings.</p>
+    <p className="mt-7 max-w-3xl text-xs leading-6 text-[var(--text-muted)]"><LockKeyhole size={13} className="mr-2 inline"/>Track enrolment remains subject to the published track&apos;s free-access and self-enrolment settings.</p>
   </Shell>;
 }
