@@ -90,7 +90,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel
-from supabase import Client, create_client
+from supabase import Client, ClientOptions, create_client
 
 from services.free_access import free_access_mode_enabled, is_individual_learner
 
@@ -125,9 +125,24 @@ if not SUPABASE_URL or not SUPABASE_KEY:
             "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set."
         )
 
+# Reuse one bounded HTTP/2 connection pool across PostgREST, Auth and Storage.
+# Supplying the client explicitly avoids the SDK's deprecated timeout/verify
+# constructor arguments while retaining PostgREST's own 10-second request timeout.
+SUPABASE_HTTP_CLIENT = httpx.Client(
+    timeout=httpx.Timeout(120.0, connect=10.0),
+    verify=True,
+    limits=httpx.Limits(
+        max_connections=40,
+        max_keepalive_connections=20,
+        keepalive_expiry=30.0,
+    ),
+    http2=True,
+)
+
 supabase: Client = create_client(
     SUPABASE_URL,
     SUPABASE_KEY,
+    options=ClientOptions(httpx_client=SUPABASE_HTTP_CLIENT),
 )
 
 
