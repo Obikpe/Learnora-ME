@@ -12,6 +12,7 @@ from routers import auth, grading, progress, billing, account_lifecycle, webhook
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 from contextlib import asynccontextmanager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -107,11 +108,14 @@ async def distributed_api_rate_limit(request: Request, call_next):
     client_ip = _trusted_rate_limit_ip(request)
     bucket_key = auth._rate_limit_digest(f"api:{client_ip}")
     try:
-        result = auth.supabase.rpc("consume_api_rate_limit", {
+        # The shared Supabase client is synchronous. Keep its network wait off
+        # the ASGI event loop so one slow rate-limit RPC cannot stall unrelated
+        # requests handled by the same function instance.
+        result = await run_in_threadpool(lambda: auth.supabase.rpc("consume_api_rate_limit", {
             "p_bucket_key": bucket_key,
             "p_max_requests": API_RATE_LIMIT_REQUESTS,
             "p_window_seconds": API_RATE_LIMIT_WINDOW_SECONDS,
-        }).execute()
+        }).execute())
         limited = getattr(result, "data", None)
         if not isinstance(limited, bool):
             if isinstance(limited, list) and limited and isinstance(limited[0], dict):

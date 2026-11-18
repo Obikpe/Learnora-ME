@@ -17,5 +17,8 @@
       "path": "/api/notifications/process-automation",
       "schedule": "0 8 * * *"
     }
+  ],
+  "regions": [
+    "cdg1"
   ]
 }
