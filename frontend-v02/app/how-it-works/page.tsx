@@ -28,7 +28,7 @@ export default function Page() {
       <Journey/>
       <section className="border-y border-white/[.1] bg-[#0c1015] py-16 sm:py-20">
         <div className="mx-auto max-w-[82rem] px-5 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr] lg:items-end"><div><h2 className="mt-4 max-w-xl font-display text-4xl leading-tight sm:text-5xl">One journey. Different tools, working together.</h2></div><p className="max-w-xl text-sm leading-7 text-slate-400 lg:justify-self-end">The experience can include courses, assessment, human guidance and evidence. The exact tools available depend on what has been built, published and enabled for your account.</p></div>
+          <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr] lg:items-end"><div><h2 className="mt-4 max-w-xl font-display text-4xl leading-tight sm:text-5xl">One journey. Different tools, working together.</h2></div><p className="max-w-xl text-sm leading-7 text-slate-400 lg:justify-self-end">The experience can include courses, assessment, human guidance and evidence. The tools available to you depend on your account type and learning programme.</p></div>
           <div className="mt-10 grid gap-0 border-y border-white/[.12] sm:grid-cols-2 xl:grid-cols-4">{capabilities.map(({icon:Icon,title,body})=><article key={title} className="border-b border-white/[.1] py-6 sm:px-5 xl:border-b-0 xl:odd:border-r xl:first:pl-0 xl:last:pr-0"><Icon className="mt-5 gold" size={21} strokeWidth={1.7}/><h3 className="mt-4 font-display text-2xl">{title}</h3><p className="mt-3 text-sm leading-7 text-slate-400">{body}</p></article>)}</div>
         </div>
       </section>

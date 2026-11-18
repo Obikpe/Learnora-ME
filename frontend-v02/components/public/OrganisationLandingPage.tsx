@@ -196,7 +196,7 @@ export default function OrganisationLandingPage() {
           <div><strong>{loading ? "—" : courses.length}</strong><span>Published courses</span></div>
           <div><strong>{loading ? "—" : placements}</strong><span>Course placements across tracks</span></div>
         </div>
-        <p className="org-wrap org-proof-caption">Live counts from Learnora's published catalogue. They describe available learning content, not customer or outcome statistics.</p>
+        
       </section>
 
       <section className="org-wrap org-content-split">
@@ -221,7 +221,7 @@ export default function OrganisationLandingPage() {
 
       <section className="org-tracks-section" id="org-tracks">
         <div className="org-wrap">
-          <div className="org-section-heading"><div><h2>Choose learning that matches your priorities.</h2><p>Explore published Learnora tracks and courses. The catalogue below is loaded from the live platform, not a sample list.</p></div><Link className="org-inline-link" href="/tracks">View all tracks <ArrowRight size={15}/></Link></div>
+          <div className="org-section-heading"><div><h2>Choose learning that matches your priorities.</h2><p>Explore published Learnora tracks and courses.</p></div><Link className="org-inline-link" href="/tracks">View all tracks <ArrowRight size={15}/></Link></div>
           <label className="org-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search skills, tracks or courses" aria-label="Search published skills, tracks or courses"/>{query && <button type="button" onClick={() => setQuery("")}>Clear</button>}</label>
           {catalogueError && <div role="alert" className="org-error"><span>{catalogueError}</span><button type="button" onClick={() => void loadCatalogue()}>Retry</button></div>}
           {loading ? <p className="org-state">Loading published learning tracks and courses…</p> : filteredTracks.length ? <div className="org-track-grid">{filteredTracks.slice(0, 3).map((track, index) => <TrackCard key={track.id} track={track} index={index}/>)}</div> : !catalogueError ? <div className="org-empty"><Layers3 size={25}/><h3>{tracks.length ? "No tracks match that search" : "Published tracks will appear here"}</h3><p>{tracks.length ? "Try a different skill or course title." : "Learnora will display tracks here when they are published to the public catalogue."}</p></div> : null}
