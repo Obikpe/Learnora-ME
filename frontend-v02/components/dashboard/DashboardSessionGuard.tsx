@@ -77,7 +77,7 @@ export default function DashboardSessionGuard({ children }: { children: React.Re
         setError(
           status === 409
             ? (cause?.message || "Your account needs attention before you can continue.")
-            : "We could not verify your Learnora session. Check your connection and try again.",
+            : "We could not verify your Learnora session yet. We’ll keep checking automatically while the connection recovers.",
         );
       } finally {
         if (active) setChecking(false);
