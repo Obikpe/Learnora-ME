@@ -35,7 +35,8 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn("Keep the last successful dashboard data", dashboard)
         self.assertIn("setError(\"Your learning records could not be loaded.", dashboard)
         self.assertIn("error.status = response.status", client)
-        self.assertIn('if (progressResult[1].status === "fulfilled") setActivitySummary', dashboard)
+        # Summary refresh runs independently so it cannot delay the core course list.
+        self.assertIn("if (active) setActivitySummary(summary)", dashboard)
         self.assertIn("if (evidenceResult.status === \"fulfilled\") setEvidence", dashboard)
 
     def test_dashboard_session_gate_recovers_from_temporary_verification_failures(self):
