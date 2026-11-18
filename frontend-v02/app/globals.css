@@ -84,41 +84,6 @@
   --gold-light: var(--primary);
   --gold-deep: var(--primary-hover);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    color-scheme: dark;
-    --bg: #0f1020;
-    --bg-soft: #14152a;
-    --card: #1a1b2e;
-    --border: #2e3050;
-    --text-heading: #f4f5ff;
-    --text-body: #c9cce3;
-    --text-muted: #9a9fc0;
-    --primary: #8b8cff;
-    --primary-hover: #a3a4ff;
-    --primary-tint: #25264a;
-    --on-primary: #0f1020;
-    --accent: #ff8266;
-    --accent-hover: #ff9a82;
-    --on-accent: #14162b;
-    --success: #4ade80;
-    --success-tint: #14301f;
-    --warning: #fbbf24;
-    --warning-tint: #33280f;
-    --error: #f87171;
-    --shadow: none;
-    --hero-bg: #1b1c3d;
-    --hero-shape: #25275a;
-    --banner-bg: #25264a;
-    --banner-text: #f4f5ff;
-    --banner-link: #a3a4ff;
-    --skeleton: #1f2038;
-    --skeleton-hi: #2a2c4a;
-    --gold: var(--primary);
-    --gold-light: var(--primary);
-    --gold-deep: var(--primary-hover);
-  }
-}
 
 *,
 *::before,
