@@ -31,25 +31,6 @@ def _guard_public_discovery(user) -> None:
         )
 
 
-def _is_public_course(course: dict, organisation_map: dict, creator_map: dict) -> bool:
-    if course.get("status") != "published":
-        return False
-    settings = course.get("settings") or {}
-    ownership = course.get("ownership")
-    if ownership == "learnora":
-        return course.get("organisation_id") is None
-    if ownership == "creator":
-        creator = creator_map.get(str(course.get("creator_id")))
-        return bool(creator and creator.get("status") in {"approved", "active"})
-    if ownership == "organisation":
-        if settings.get("public_catalogue") is not True:
-            return False
-        organisation = organisation_map.get(str(course.get("organisation_id")))
-        org_settings = (organisation or {}).get("settings") or {}
-        return bool(organisation and organisation.get("is_active") and org_settings.get("public_directory") is True)
-    return False
-
-
 def _public_track_memberships(course_ids: list[str]) -> dict:
     """Return actual published global track relationships for catalogue courses."""
     ids = list({str(value) for value in course_ids if value})
@@ -310,31 +291,18 @@ def public_track(track_id: str, user=Depends(get_optional_current_user)):
 @router.get("/courses")
 def public_courses(user=Depends(get_optional_current_user)):
     _guard_public_discovery(user)
-    result = (
-        supabase.table("learnora_courses")
-        .select("id,organisation_id,creator_id,title,slug,short_description,description,level,status,ownership,thumbnail_url,estimated_hours,settings,created_at")
-        .eq("status", "published")
-        .order("created_at", desc=True)
-        .execute()
-    )
+
+    # Resolve publication, creator approval, organisation opt-in and global
+    # track membership in one database round trip. The RPC is service-role
+    # only; browser roles cannot bypass the FastAPI visibility guard.
+    result = supabase.rpc("get_public_course_catalogue").execute()
     course_rows = result.data or []
-    organisation_ids = list({str(row["organisation_id"]) for row in course_rows if row.get("organisation_id")})
-    creator_ids = list({str(row["creator_id"]) for row in course_rows if row.get("creator_id")})
-    organisation_map = {}
-    creator_map = {}
-    if organisation_ids:
-        organisations = (supabase.table("organisations").select("id,is_active,settings").in_("id", organisation_ids).execute()).data or []
-        organisation_map = {str(row["id"]): row for row in organisations}
-    if creator_ids:
-        creators = (supabase.table("learnora_creator_accounts").select("id,status").in_("id", creator_ids).execute()).data or []
-        creator_map = {str(row["id"]): row for row in creators}
-    visible = [_public_course_payload(row) for row in course_rows if _is_public_course(row, organisation_map, creator_map)]
-    memberships = _public_track_memberships([
-        str(row.get("id")) for row in visible
-        if row.get("ownership") == "learnora" and not row.get("organisation_id")
-    ])
-    for row in visible:
-        row["tracks"] = memberships.get(str(row.get("id")), [])
+    visible = []
+    for row in course_rows:
+        payload = _public_course_payload(row)
+        payload["tracks"] = row.get("tracks") or []
+        visible.append(payload)
+
     return {"success": True, "count": len(visible), "courses": visible}
 
 
