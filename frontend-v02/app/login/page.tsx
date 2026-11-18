@@ -7,11 +7,17 @@ import Logo from "../../components/brand/Logo";
 import Image from "next/image";
 import { IMAGES } from "../../lib/constants";
 import Toast from "../../components/feedback/Toast";
-import { login,setToken,currentUser,organisationContext,setOrganisationContext,clearOrganisationContext,clearToken } from "../../lib/api";
+import { login,setToken,currentUser,request,organisationContext,setOrganisationContext,clearOrganisationContext,clearToken } from "../../lib/api";
 
 export default function Login() {
   const [email,setEmail]=useState(""),[password,setPassword]=useState(""),[error,setError]=useState(""),[busy,setBusy]=useState(false),[showPassword,setShowPassword]=useState(false);
   const router=useRouter();
+  async function warmDashboard() {
+    // Fetch the learner's core dashboard payload before navigation. The API
+    // client caches this session-scoped response so the dashboard can render
+    // immediately instead of starting a second request after the redirect.
+    try { await request<any>("/progress/me"); } catch {}
+  }
   async function submit(e:any) {
     e.preventDefault();setError("");setBusy(true);
     try {
@@ -55,11 +61,18 @@ export default function Login() {
       // for learners whose learning is controlled by a cohort or organisation.
       if (me.role === "normal" && me.account_type === "learner" && !assignedLearner && safeNext) {
         clearOrganisationContext();
+        if (safeNext === "/dashboard" || safeNext.startsWith("/dashboard/")) await warmDashboard();
         router.push(safeNext);
         return;
       }
       if(selected&&["owner","admin"].includes(selected.role))setOrganisationContext(String(selected.organisation_id));else clearOrganisationContext();
-      router.push(me.role==="organisation_prospect"?"/organisation-portal":selected&&["owner","admin"].includes(selected.role)?"/dashboard/organisation":"/dashboard");
+      const destination = me.role==="organisation_prospect"
+        ? "/organisation-portal"
+        : selected&&["owner","admin"].includes(selected.role)
+          ? "/dashboard/organisation"
+          : "/dashboard";
+      if (destination === "/dashboard") await warmDashboard();
+      router.push(destination);
     } catch(e:any) {
       const message=e.message||"We could not sign you in. Check your details and try again.";
       if(message.startsWith("ACCOUNT_DEACTIVATED:")){
