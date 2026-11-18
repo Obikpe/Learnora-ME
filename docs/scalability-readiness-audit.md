@@ -43,7 +43,7 @@ The backend's deployed region was **Washington (`iad1`)**, while the Supabase pr
 - Learner session heartbeat and dashboard summary refresh intervals were increased from 30 to 60 seconds to reduce background request volume.
 - The public course and track catalogues now each call a single service-role-only Postgres RPC instead of performing several sequential PostgREST requests. The course RPC preserves published-course visibility, approved/active creator status, organisation opt-in and global track membership. The track RPC preserves global-track visibility, required-course integrity and public course shaping; internal course access settings are removed before returning the response.
 - The new RPC migration also adds a course-first index to `learnora_learning_path_courses`, which the course catalogue membership query filters by `course_id`.
-- CI now uses `npm ci`, generates missing lockfiles for review, prints deprecated dependency paths, and is configured not to cancel an in-flight main-branch validation when a newer commit arrives.
+- CI now uses committed npm lockfiles with `npm ci`, prints deprecated dependency paths, and is configured not to cancel an in-flight main-branch validation when a newer commit arrives.
 
 **These changes are repository changes, not production changes.** The catalogue RPC migration has not been applied to the live database, and the backend code/Paris region have not been deployed.
 
@@ -90,8 +90,8 @@ The next test stages should be:
 ## Current status
 
 - **Code-level performance improvements:** committed; pending full CI verification and release.
-- **Public catalogue RPC migration:** committed and covered by disposable-DB assertions; not applied to production.
-- **Frontend dependency lockfiles:** CI is generating and validating them; commit job has not yet been confirmed successful.
+- **Public catalogue RPC migration:** course and track RPCs are committed and covered by disposable-DB assertions; not applied to production. The latest verified CI build fetched the real public course and track catalogues successfully.
+- **Frontend dependency lockfiles:** both frontend lockfiles have been generated, validated and committed by CI; subsequent runs use `npm ci`.
 - **Next.js/ESLint major upgrade:** investigated, not started; requires a controlled migration.
 - **Migration filename/version drift:** documented; `supabase db push` remains blocked.
 - **Production deployment:** frontend commit `454c048` is READY in production; backend remains on `1282711` in `iad1`. No Vercel deploy action was invoked from this work.
