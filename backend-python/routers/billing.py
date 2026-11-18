@@ -451,8 +451,7 @@ def verify_payment(body: VerifyPaymentRequest):
     # 9. Derive the billing interval exclusively from the verified charge
     # -----------------------------------------------------------------------
 
-    # body.billing_interval is retained only for request compatibility. It is
-    # client-controlled and must never decide the subscription duration.
+    # The request's interval is client-controlled and must never decide duration.
     billing_interval = paid_interval
 
     # -----------------------------------------------------------------------

@@ -112,7 +112,7 @@ class BackendSecurityHardeningTests(unittest.TestCase):
 
     def test_login_does_not_disclose_deactivated_or_disabled_account_state_before_password(self):
         auth_source = read("routers/auth.py")
-        learner = auth_source.split("# LEARNER", 1)[1].split("# EMAIL VERIFICATION", 1)[0]
+        learner = auth_source.split('@router.post("/login")', 1)[1].split("# REGISTER", 1)[0]
         self.assertLess(learner.index("valid, needs_rehash"), learner.index('if user.get("account_status")'))
         internal = read("routers/internal_auth.py")
         existing_staff = internal.split('    user, staff = found["user"], found["staff"]', 1)[1]

@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi import HTTPException
-from jose import jwt
+import jwt
 
 from routers import cohort_learners
 

@@ -16,7 +16,7 @@ from typing import Optional
 
 from cryptography.fernet import Fernet
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from jose import jwt
+import jwt
 from pydantic import BaseModel, EmailStr, Field
 
 from routers.auth import (
