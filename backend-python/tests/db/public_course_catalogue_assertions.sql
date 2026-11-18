@@ -42,7 +42,7 @@ BEGIN
   ) VALUES (
     v_organisation_id, 'CI public organisation',
     'ci-org-' || replace(v_organisation_id::text, '-', ''),
-    'academy', 'academy', true, '{"public_directory": true}'::jsonb
+    'academy', 'academy', true, '{"public_directory": true, "pilot_mode": true}'::jsonb
   );
 
   INSERT INTO public.learnora_courses (
