@@ -30,7 +30,7 @@ export default function Register() {
     <aside className="relative hidden min-h-screen flex-col justify-between border-r border-white/[.1] bg-[#0e141a] p-10 lg:flex xl:p-16">
       <a href="/" className="inline-flex w-fit"><Logo/></a>
       <div className="max-w-xl">
-        <p className="section-kicker">A better learning record</p>
+        
         <h1 className="mt-5 font-display text-5xl leading-[1.04] xl:text-6xl">Knowledge grows when you put it to work.</h1>
         <p className="mt-5 max-w-lg text-sm leading-7 text-slate-400">Learnora is designed to connect learning with practice, projects and feedback—so your progress becomes something you can reflect on and build from.</p>
         <div className="mt-10 divide-y divide-white/[.1] border-y border-white/[.1]">

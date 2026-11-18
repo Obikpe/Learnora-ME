@@ -86,13 +86,13 @@ export default function CourseDetailClient({params,searchParams,initialCourse,in
       </section>
 
       {(outcomes.length > 0 || requirements.length > 0) && <section className="mt-14 grid gap-8 border-y border-white/[.1] py-10 md:grid-cols-2">
-        {outcomes.length > 0 && <div><p className="section-kicker">Learning outcomes</p><h2 className="mt-3 font-display text-2xl">What you will learn</h2><ul className="mt-5 space-y-3">{outcomes.map((value:string,index:number)=><li key={index} className="flex gap-3 text-sm leading-6 text-slate-300"><Check size={16} className="mt-1 shrink-0 text-[var(--gold-light)]"/><span>{value}</span></li>)}</ul></div>}
-        {requirements.length > 0 && <div><p className="section-kicker">Before you begin</p><h2 className="mt-3 font-display text-2xl">What you will need</h2><ul className="mt-5 space-y-3">{requirements.map((value:string,index:number)=><li key={index} className="flex gap-3 text-sm leading-6 text-slate-300"><BookOpen size={16} className="mt-1 shrink-0 text-[var(--gold-light)]"/><span>{value}</span></li>)}</ul></div>}
+        {outcomes.length > 0 && <div><h2 className="mt-3 font-display text-2xl">What you will learn</h2><ul className="mt-5 space-y-3">{outcomes.map((value:string,index:number)=><li key={index} className="flex gap-3 text-sm leading-6 text-slate-300"><Check size={16} className="mt-1 shrink-0 text-[var(--gold-light)]"/><span>{value}</span></li>)}</ul></div>}
+        {requirements.length > 0 && <div><h2 className="mt-3 font-display text-2xl">What you will need</h2><ul className="mt-5 space-y-3">{requirements.map((value:string,index:number)=><li key={index} className="flex gap-3 text-sm leading-6 text-slate-300"><BookOpen size={16} className="mt-1 shrink-0 text-[var(--gold-light)]"/><span>{value}</span></li>)}</ul></div>}
       </section>}
 
       {initialPreview && <section className="mt-16 border border-white/[.12] bg-[#11171e] p-6 sm:p-8" aria-labelledby="course-preview-heading">
         <div className="flex flex-wrap items-start justify-between gap-5">
-          <div><p className="section-kicker">Try a lesson</p><h2 id="course-preview-heading" className="mt-3 font-display text-3xl">Preview this course</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Read a published preview lesson before deciding whether to enrol.</p></div>
+          <div><h2 id="course-preview-heading" className="mt-3 font-display text-3xl">Preview this course</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Read a published preview lesson before deciding whether to enrol.</p></div>
           <span className="border border-[var(--gold)]/40 px-3 py-1.5 text-xs font-bold uppercase tracking-[.14em] text-[var(--gold-light)]">Free preview</span>
         </div>
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[.1] pt-5">
@@ -103,7 +103,7 @@ export default function CourseDetailClient({params,searchParams,initialCourse,in
       </section>}
 
       <section className="mt-20 grid gap-10 lg:grid-cols-[.72fr_1.28fr] lg:gap-16">
-        <div><p className="section-kicker">Course outline</p><h2 className="mt-4 max-w-md font-display text-4xl leading-tight sm:text-5xl">What you will work through.</h2></div>
+        <div><h2 className="mt-4 max-w-md font-display text-4xl leading-tight sm:text-5xl">What you will work through.</h2></div>
         <div className="min-w-0">
           {structureLoading ? <div className="space-y-4 border-y border-white/[.1] py-8"><div className="h-4 w-2/3 animate-pulse bg-white/[.06]"/><div className="h-4 w-full animate-pulse bg-white/[.04]"/><div className="h-4 w-5/6 animate-pulse bg-white/[.04]"/></div> : modules.length? <div className="divide-y divide-white/[.1] border-y border-white/[.1]">{modules.map((m:any,i:number)=><details key={m.id} open={i===0} className="group">
             <summary className="flex min-h-20 cursor-pointer list-none items-center justify-between gap-4 py-5 [&::-webkit-details-marker]:hidden"><div className="flex min-w-0 items-start gap-4"><div className="min-w-0"><h3 className="font-semibold text-slate-100">{m.title}</h3>{m.description&&<p className="mt-1 text-sm leading-6 text-slate-500">{m.description}</p>}<p className="mt-2 text-xs text-slate-600">{(m.lessons||[]).length} lessons</p></div></div><ChevronDown size={17} className="shrink-0 text-slate-500 transition-transform group-open:rotate-180"/></summary>

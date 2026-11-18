@@ -52,17 +52,14 @@ type PublicTrack = {
 
 const heroSlides = [
   {
-    eyebrow: "Learn · Practise · Build · Prove",
     title: <>Learn data, design and tech skills. <span className="landing-accent">Build real projects.</span></>,
     body: "Learn practical skills, practise with guided work and build projects that show what you can do.",
   },
   {
-    eyebrow: "A clearer learning journey",
     title: <>Turn what you learn into <span className="landing-accent">work you can show.</span></>,
     body: "Learning is more meaningful when you can apply an idea, build something and reflect on what the work taught you.",
   },
   {
-    eyebrow: "Progress with context",
     title: <>Keep moving from curiosity to <span className="landing-accent">capability.</span></>,
     body: "Follow structured learning, practise deliberately and keep a clearer record of the work behind your progress.",
   },
@@ -228,7 +225,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
               <p className="landing-hero-product-description">{courses[0].short_description || courses[0].description || "Explore the published curriculum and available learning access."}</p>
               <div className="landing-hero-product-topics">{(courses[0].settings?.topics || []).slice(0,3).map(topic=><span key={topic}>{topic}</span>)}</div>
               <div className="landing-hero-product-footer"><span>{courses[0].level || "All levels"}</span><span>{courses[0].estimated_hours ? (courses[0].estimated_hours < 1 ? Math.round(courses[0].estimated_hours * 60) + " min" : courses[0].estimated_hours + " hours") : "Self-paced"}</span><Link href={courseHref(courses[0])}>View course <ArrowRight size={15}/></Link></div>
-            </> : <><div className="landing-hero-product-icon"><BookOpen size={28}/></div><p className="landing-hero-product-kicker">Learnora catalogue</p><h2>Explore practical learning.</h2><p className="landing-hero-product-description">Published courses will appear here when they are ready to explore.</p><Link href="/courses">Browse courses <ArrowRight size={15}/></Link></>}
+            </> : <><div className="landing-hero-product-icon"><BookOpen size={28}/></div><h2>Explore practical learning.</h2><p className="landing-hero-product-description">Published courses will appear here when they are ready to explore.</p><Link href="/courses">Browse courses <ArrowRight size={15}/></Link></>}
           </div>
 
         </div>
