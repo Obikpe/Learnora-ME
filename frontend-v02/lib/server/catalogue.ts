@@ -15,15 +15,16 @@ async function fetchPublic<T>(path: string, key: string): Promise<PublicCatalogu
   for (let attempt = 0; attempt < 3; attempt += 1) {
     let response: Response;
     try {
-      response = await fetch(`${API_ORIGIN}/api${path}`, attempt === 0
-        ? {
-            headers: { Accept: "application/json" },
-            next: { revalidate: 60, tags: [`public-catalogue-${key}`] },
-          }
-        : {
-            headers: { Accept: "application/json" },
-            cache: "no-store",
-          });
+      const baseUrl = `${API_ORIGIN}/api${path}`;
+      // A unique query string bypasses a cached 5xx response without using
+      // no-store, which would force a statically generated page to become dynamic.
+      const retryUrl = attempt === 0
+        ? baseUrl
+        : `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}__catalogue_retry=${attempt}`;
+      response = await fetch(retryUrl, {
+        headers: { Accept: "application/json" },
+        next: { revalidate: 60, tags: [`public-catalogue-${key}`] },
+      });
     } catch (error) {
       lastError = error;
       if (attempt < 2) {
