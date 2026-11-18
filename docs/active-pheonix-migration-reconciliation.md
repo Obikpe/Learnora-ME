@@ -276,3 +276,17 @@ Post-migration verification confirmed zero explicit public-table grant rows for 
 
 
 The trigger-function hardening migration also removed direct `EXECUTE` rights from browser roles for trigger-only functions, including `update_admins_updated_at`, `set_updated_at`, and the cohort validation triggers. Live verification confirms browser roles cannot execute the protected trigger functions; PostgreSQL triggers continue to execute them normally.
+
+
+## Live migration ledger reconciliation — 2026-11-18
+
+A fresh read-only comparison of the active Pheonix migration ledger with `supabase/migrations/` found 51 applied live versions and 51 repository migration files, but three version/name mismatches in each direction. The repository now restores the three applied sources that were absent, and removes two stale duplicate files:
+
+- Restored `20261103041002_add_lesson_video_transcript_text.sql` from the exact SQL recorded in the live migration ledger.
+- Restored `20261109160440_learner_account_deletion_lifecycle.sql`; its SQL matches the existing repository source that was previously stored under the unapplied version `20261102130000`. The old duplicate filename was removed so the live migration is represented once, under its applied version.
+- Restored `20261118091000_feature_foreign_key_indexes.sql` from the exact SQL recorded in the live migration ledger.
+- Removed `20261026100000_pin_cohort_assignment_function_search_paths.sql` because the already-applied `20261021115303_pin_cohort_assignment_trigger_search_path.sql` defines both affected trigger functions with the same empty search path. The later file added no distinct schema effect.
+
+One repository-only migration remains intentionally pending: `20261026153000_revoke_browser_privileges_and_defaults.sql`. It is not recorded as applied in the active database. Do not apply it automatically: it revokes broad function and sequence privileges, so its effect on the service-role execution grants and managed default ACLs must be reviewed against the live function/grant inventory first.
+
+The CI disposable-database rehearsal now includes the three restored applied migrations. This restores filename/version alignment for the live migration ledger while preserving the one reviewed-but-unapplied migration as pending work. No live Supabase schema or migration ledger was changed by this reconciliation.
