@@ -11,15 +11,17 @@ import { login,setToken,currentUser,request,organisationContext,setOrganisationC
 
 export default function Login() {
   const [email,setEmail]=useState(""),[password,setPassword]=useState(""),[error,setError]=useState(""),[busy,setBusy]=useState(false),[showPassword,setShowPassword]=useState(false);
+  const [busyLabel,setBusyLabel]=useState("Signing in…");
   const router=useRouter();
   async function warmDashboard() {
     // Fetch the learner's core dashboard payload before navigation. The API
     // client caches this session-scoped response so the dashboard can render
     // immediately instead of starting a second request after the redirect.
+    setBusyLabel("Preparing your dashboard…");
     try { await request<any>("/progress/me"); } catch {}
   }
   async function submit(e:any) {
-    e.preventDefault();setError("");setBusy(true);
+    e.preventDefault();setError("");setBusy(true);setBusyLabel("Signing in…");
     try {
       const result:any=await login(email,password);setToken(result.token||result.access_token||"cookie-session");
       let me:any;
@@ -100,7 +102,7 @@ export default function Login() {
         <div className="mt-8 grid gap-5">
           <label htmlFor="login-email" className="grid gap-2 text-xs font-medium text-slate-300">Email address<input id="login-email" value={email} onChange={e=>setEmail(e.target.value)} type="email" required autoComplete="email" aria-invalid={Boolean(error)} aria-describedby={error ? "login-form-error" : undefined} className="field" placeholder="you@example.com"/></label>
           <label htmlFor="login-password" className="grid gap-2 text-xs font-medium text-slate-300">Password<span className="relative block"><input id="login-password" value={password} onChange={e=>setPassword(e.target.value)} type={showPassword?"text":"password"} required autoComplete="current-password" aria-invalid={Boolean(error)} aria-describedby={error ? "login-form-error" : undefined} className="field pr-12" placeholder="Enter your password"/><button type="button" aria-label={showPassword?"Hide password":"Show password"} aria-pressed={showPassword} onClick={()=>setShowPassword(v=>!v)} className="absolute inset-y-0 right-0 grid w-12 place-items-center text-slate-500 hover:text-slate-200">{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</button></span></label>
-          <button disabled={busy} className="mt-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-5 text-sm font-bold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-wait disabled:opacity-60">{busy?"Signing in…":"Sign in"}{!busy&&<ArrowRight size={16}/>}</button>
+          <button disabled={busy} className="mt-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-5 text-sm font-bold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-wait disabled:opacity-60">{busy?busyLabel:"Sign in"}{!busy&&<ArrowRight size={16}/>}</button>
         </div>
         <div className="mt-6 text-xs text-slate-500"><a className="gold hover:underline" href="/forgot-password">Forgot password?</a></div>
         <div className="mt-8 border-t border-white/[.1] pt-6 text-sm text-slate-500">New to Learnora? <a className="ml-1 font-semibold gold hover:underline" href="/register">Create an account</a></div>
