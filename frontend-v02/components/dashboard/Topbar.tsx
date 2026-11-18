@@ -36,11 +36,6 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
   const notificationMenuRef = useRef<HTMLDivElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("learnora_theme");
-    document.documentElement.dataset.theme = saved === "light" ? "light" : "dark";
-  }, []);
-
   const showToast = useCallback((notice: ToastNotice) => {
     setToast(notice);
     if (toastTimer.current) clearTimeout(toastTimer.current);
