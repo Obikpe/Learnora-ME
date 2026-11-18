@@ -102,8 +102,10 @@ export default function MyLearningPage() {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
     document.documentElement.dataset.theme = next;
-    if (hasFunctionalCookieConsent()) window.localStorage.setItem("learnora_theme", next);
-    else window.localStorage.removeItem("learnora_theme");
+    try {
+      if (hasFunctionalCookieConsent()) window.localStorage.setItem("learnora_theme", next);
+      else window.localStorage.removeItem("learnora_theme");
+    } catch {}
   }
 
   async function load(me?: any) {

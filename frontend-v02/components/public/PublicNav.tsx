@@ -41,8 +41,10 @@ export default function PublicNav() {
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = nextTheme;
-    if (hasFunctionalCookieConsent()) window.localStorage.setItem("learnora_theme", nextTheme);
-    else window.localStorage.removeItem("learnora_theme");
+    try {
+      if (hasFunctionalCookieConsent()) window.localStorage.setItem("learnora_theme", nextTheme);
+      else window.localStorage.removeItem("learnora_theme");
+    } catch {}
     setTheme(nextTheme);
   };
 
