@@ -127,7 +127,7 @@ class PublicTrackProgressTests(unittest.TestCase):
         }
         with patch.object(progress, "supabase", TrackProgressSupabase(self.fixtures)), patch.object(progress, "_course_summary", side_effect=lambda _user, course_id, **_kwargs: summaries[course_id]) as summary_mock:
             result = progress.track_progress(self.track_id, user=self.user)
-        summary_mock.assert_any_call("learner-1", "course-2", include_archived=True)
+        summary_mock.assert_any_call("learner-1", "course-2", include_archived=True, include_lesson_content=False)
         self.assertEqual(result["courses"][1]["progress"]["progress_percent"], 50)
 
     def test_course_summary_ignores_draft_modules_and_lessons(self):
@@ -183,7 +183,7 @@ class PublicTrackProgressTests(unittest.TestCase):
         with patch.object(progress, "supabase", TrackProgressSupabase(fixtures)):
             result = progress._course_summary("learner-1", "course-1", include_archived=True)
         self.assertEqual(result["total_lessons"], 2)
-        self.assertFalse(result["modules"][1]["locked"])
+        self.assertTrue(result["modules"][1]["locked"])
 
     def test_organisation_learner_cannot_use_individual_public_track_progress(self):
         user = SimpleNamespace(id="learner-2", role="witstart", account_type="learner")
