@@ -286,3 +286,30 @@ html[data-theme="dark"] .text-emerald-200 { color: var(--success) !important; }
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
+
+
+/* Prevent iOS focus zoom and keep public form controls comfortably readable. */
+@media (max-width: 700px) {
+  input, select, textarea { font-size:16px !important; }
+}
+:where(a,button,[role="button"],input[type="checkbox"],input[type="radio"] ) { touch-action:manipulation; }
+main :where(p,li) a:not([class*="button"]) { text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px; }
+main :where(p,li) a:not([class*="button"]):hover { text-decoration-thickness:2px; }
+
+
+.course-mobile-action {
+  position:sticky;
+  bottom:0;
+  z-index:30;
+  margin:1.25rem -1.25rem 0;
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+  border-block:1px solid var(--border);
+  background:color-mix(in srgb,var(--bg) 94%,transparent);
+  backdrop-filter:blur(14px);
+  box-shadow:0 -8px 24px rgba(0,0,0,.08);
+}
+.course-detail-title { overflow-wrap:anywhere; }
+@media (min-width:1280px) { .course-mobile-action { display:none; } }
+
+.course-detail-cover { width:100%; aspect-ratio:16/7; max-height:340px; border-radius:12px; background:var(--bg-soft); }
+@media(max-width:700px) { .course-detail-cover { aspect-ratio:16/9; max-height:220px; } }

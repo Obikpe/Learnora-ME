@@ -213,6 +213,7 @@ jobs:
         working-directory: frontend-v02
         run: |
           npm install --no-audit --no-fund
+          npm run lint
           npm run build
 
       - name: Build Teams website

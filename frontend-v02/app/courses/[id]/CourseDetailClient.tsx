@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { ArrowRight, BookOpen, Clock3, LockKeyhole, Check, ChevronDown } from "lucide-react";
 import { course, structure } from "../../../lib/api/learning";
 import { request } from "../../../lib/api/client";
@@ -40,13 +41,28 @@ export default function CourseDetailClient({params,searchParams,initialCourse,in
   const lessonCount=modules.reduce((n:number,m:any)=>n+(m.lessons||[]).length,0);
   const outcomes=Array.isArray(c?.settings?.learning_outcomes)?c.settings.learning_outcomes:[];
   const requirements=Array.isArray(c?.settings?.requirements)?c.settings.requirements:[];
+  const coverCandidate=typeof c?.thumbnail_url==="string"?c.thumbnail_url.trim():"";
+  const courseCover=coverCandidate.startsWith("https://images.unsplash.com/")||coverCandidate.startsWith("https://gihfupzvdpyrmynqgukz.supabase.co/")?coverCandidate:"";
   const pageBody=<main id="main-content" className={`mx-auto max-w-[82rem] px-5 pb-24 ${signedIn?"pt-8":"pt-32"} lg:px-8`}>
       <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs text-slate-600"><a href="/" className="hover:text-slate-300">Home</a><span>/</span><a href="/courses" className="hover:text-slate-300">Courses</a><span>/</span><span className="max-w-[18rem] truncate text-slate-400">{c.title}</span></nav>
       <section className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_23rem] xl:gap-16">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3"><span className="section-kicker">{c.level||"Learnora course"}</span><span className="h-px w-8 bg-white/20"/><span className="text-xs text-slate-500">{c.ownership==="organisation"?"Organisation programme":c.ownership==="creator"?"Creator course":"Learnora learning"}</span></div>
-          <h1 className="mt-6 max-w-4xl font-display text-5xl leading-[1.02] tracking-[-.05em] sm:text-6xl lg:text-7xl">{c.title}</h1>
-          <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-300">{c.description||c.short_description||"Explore the curriculum and course objectives."}</p>
+          <h1 className="course-detail-title mt-5 max-w-4xl font-display text-[clamp(1.875rem,7vw,2.5rem)] leading-[1.08] tracking-[-.04em] sm:text-5xl lg:text-7xl">{c.title}</h1>
+          <div className="course-mobile-action xl:hidden" role="group" aria-label="Course access action">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0"><p className="text-xs font-semibold text-[var(--text-heading)]">{isFree ? "Free to start" : "Access by arrangement"}</p><p className="mt-1 text-xs text-[var(--text-muted)]">{c.level || "Learnora course"}{c.estimated_hours ? " · " + c.estimated_hours + " hours" : " · Self-paced"}</p></div>
+              {canEnrol && !enrolled ? <button type="button" onClick={enrol} disabled={enrolling} aria-label={"Enrol in " + c.title} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-[var(--on-accent)] disabled:opacity-50">{enrolling ? "Enrolling…" : "Enrol for free"}<ArrowRight size={15}/></button>
+                : canEnrol && enrolled ? <a href={"/courses/" + encodeURIComponent(params.id)} className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-[var(--on-accent)]">Continue learning<ArrowRight size={15}/></a>
+                : isFree && !user ? <a href={"/login?next=" + encodeURIComponent("/courses/" + params.id + "?enrol=1")} className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-[var(--on-accent)]">Sign in to enrol<ArrowRight size={15}/></a>
+                : freeLaunchCourse && !individualLearner && user?.role === "normal" ? <span role="status" className="text-xs text-[var(--text-muted)]">Ask your organisation about access.</span>
+                : isFree ? <a href="/dashboard" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-[var(--border)] px-4 text-sm font-semibold">Go to My Learning<ArrowRight size={15}/></a>
+                : <a href="/get-started" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-[var(--border)] px-4 text-sm font-semibold">Request access<ArrowRight size={15}/></a>}
+            </div>
+            {enrolError && <p role="alert" className="mt-2 text-xs text-[var(--error)]">{enrolError}</p>}
+          </div>
+          {courseCover && <div className="course-detail-cover mt-5 overflow-hidden border border-white/[.1]"><Image src={courseCover} alt={c.title + " course cover"} width={1400} height={600} sizes="(max-width: 768px) 100vw, 70vw" priority className="h-full w-full object-cover"/></div>}
+          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300 sm:mt-7 sm:text-lg sm:leading-8">{c.description||c.short_description||"Explore the curriculum and course objectives."}</p>
           <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-y border-white/[.1] py-5 text-sm text-slate-400">
             <span className="inline-flex items-center gap-2"><Clock3 size={16} className="text-[var(--gold-light)]"/>{c.estimated_hours?c.estimated_hours+" estimated hours":"Self-paced"}</span>
             <span className="inline-flex items-center gap-2"><BookOpen size={16} className="text-[var(--gold-light)]"/>{structureLoading?"…":modules.length} modules</span>
@@ -58,10 +74,10 @@ export default function CourseDetailClient({params,searchParams,initialCourse,in
           </div>
         </div>
 
-        <aside className="h-fit border border-white/[.12] bg-[#11171e] xl:sticky xl:top-28">
+        <aside className="hidden h-fit border border-white/[.12] bg-[#11171e] xl:sticky xl:top-28 xl:block">
           <div className="border-b border-white/[.1] px-6 py-5"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-slate-500">Course access</p><h2 className="mt-2 font-display text-3xl">{isFree?"Your next step starts here":"Access by arrangement"}</h2></div>
           <div className="p-6">
-            <p className="text-sm leading-7 text-slate-400">{isFree?(freeMode&&c.ownership==="learnora"?"Learnora is currently free for individual learners. Enrol to start learning and keep your progress with your account.":"This published course is marked as free. Enrol to start learning and keep your progress with your account."):"Self-enrolment is not enabled for this course. Access may depend on an organisation assignment or another access policy; Learnora will not bypass that requirement."}</p>
+            <p className="text-sm leading-7 text-slate-400">{isFree?(freeMode&&c.ownership==="learnora"?"Learnora is currently free for individual learners. Enrol to start learning and keep your progress with your account.":"This published course is marked as free. Enrol to start learning and keep your progress with your account."):"This course is not open for self-enrolment. Request access and the Learnora team will explain the available options."}</p>
             <div className="my-5 border-y border-white/[.09] py-4"><div className="flex items-center justify-between py-1.5 text-sm"><span className="text-slate-500">Modules</span><span className="tabular-nums">{structureLoading?"…":modules.length}</span></div><div className="flex items-center justify-between py-1.5 text-sm"><span className="text-slate-500">Lessons</span><span className="tabular-nums">{structureLoading?"…":lessonCount}</span></div><div className="flex items-center justify-between py-1.5 text-sm"><span className="text-slate-500">Pace</span><span>{c.estimated_hours?c.estimated_hours+" hours":"Flexible"}</span></div></div>
             {canEnrol&&!enrolled?<button onClick={enrol} disabled={enrolling} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--gold)] px-5 text-sm font-bold text-[#17140d] transition-colors hover:bg-[var(--gold-light)] disabled:cursor-not-allowed disabled:opacity-50">{enrolling?"Enrolling…":"Enrol for free"}<ArrowRight size={16}/></button>:canEnrol&&enrolled?<a href={"/courses/"+encodeURIComponent(params.id)} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--gold)] px-5 text-sm font-bold text-[#17140d]">Continue learning <ArrowRight size={15}/></a>:isFree&&!user?<a href={"/login?next="+encodeURIComponent("/courses/"+params.id+"?enrol=1")} className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--gold)] px-5 text-sm font-bold text-[#17140d]">Enrol for free <ArrowRight size={15}/></a>:freeLaunchCourse&&!individualLearner&&user?.role==="normal"?<div role="status" className="rounded-lg border border-white/[.12] bg-white/[.03] p-4 text-sm leading-6 text-slate-300">This account is linked to an organisation. Ask the organisation to release your managed account before creating an individual Learnora account.</div>:isFree?<a href="/dashboard" className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/[.16] px-5 text-sm font-semibold">Go to My Learning <ArrowRight size={15}/></a>:<a href="/get-started" className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/[.16] px-5 text-sm font-semibold transition-colors hover:border-white/30 hover:bg-white/[.03]">Ask about access <ArrowRight size={15}/></a>}
             {enrolError&&<div role="alert" className="mt-4 rounded-lg border border-amber-300/15 bg-amber-300/[.04] p-3 text-xs leading-5 text-amber-100/80">{enrolError} <a href="/login" className="font-semibold gold">Sign in</a></div>}
@@ -77,7 +93,7 @@ export default function CourseDetailClient({params,searchParams,initialCourse,in
       {initialPreview && <section className="mt-16 border border-white/[.12] bg-[#11171e] p-6 sm:p-8" aria-labelledby="course-preview-heading">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div><p className="section-kicker">Try a lesson</p><h2 id="course-preview-heading" className="mt-3 font-display text-3xl">Preview this course</h2><p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Read a published preview lesson before deciding whether to enrol.</p></div>
-          <span className="border border-[var(--gold)]/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--gold-light)]">Free preview</span>
+          <span className="border border-[var(--gold)]/40 px-3 py-1.5 text-xs font-bold uppercase tracking-[.14em] text-[var(--gold-light)]">Free preview</span>
         </div>
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[.1] pt-5">
           <div><h3 className="text-lg font-semibold">{initialPreview.title}</h3><p className="mt-1 text-xs text-slate-500">{initialPreview.duration_minutes ? initialPreview.duration_minutes + " minutes" : "Preview lesson"} · {initialPreview.lesson_type || "Lesson"}</p>{initialPreview.description && <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">{initialPreview.description}</p>}</div>

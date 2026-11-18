@@ -22,6 +22,7 @@ export default function PublicNav() {
   const [audienceOpen, setAudienceOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -31,7 +32,11 @@ export default function PublicNav() {
     root.dataset.theme = nextTheme;
     setTheme(nextTheme);
   }, []);
-  const close = () => { setOpen(false); setAudienceOpen(false); };
+  const close = (restoreFocus = false) => {
+    setOpen(false);
+    setAudienceOpen(false);
+    if (restoreFocus) menuTriggerRef.current?.focus();
+  };
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = nextTheme;
@@ -78,7 +83,7 @@ export default function PublicNav() {
   }, [open]);
 
   return (
-    <header ref={headerRef} onKeyDown={e=>{if(e.key==="Escape")close()}} className="fixed inset-x-0 top-0 z-50 border-b border-white/[.09] bg-[#090b0e]/95 backdrop-blur-xl">
+    <header ref={headerRef} onKeyDown={e=>{if(e.key==="Escape")close(true)}} className="fixed inset-x-0 top-0 z-50 border-b border-white/[.09] bg-[#090b0e]/95 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-[82rem] items-center justify-between px-5 lg:px-8">
         <Link href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-white focus:px-4 focus:py-3 focus:text-black" onClick={close}>Skip to content</Link>
         <Link href="/" aria-label="Learnora ME home" onClick={close} className="shrink-0"><Logo /></Link>
@@ -101,13 +106,13 @@ export default function PublicNav() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <button type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]">{theme === "dark" ? <Sun size={17}/> : <Moon size={17}/>}</button>
-          <Link href="/help" aria-label="Help and support" title="Help and support" className="grid size-10 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]"><Headset size={17}/></Link>
+          <button type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} className="grid size-11 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]">{theme === "dark" ? <Sun size={17}/> : <Moon size={17}/>}</button>
+          <Link href="/help" aria-label="Help and support" title="Help and support" className="grid size-11 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]"><Headset size={17}/></Link>
           <Link href="/login" className="rounded-lg px-2 py-3 text-sm text-slate-300 transition-colors hover:text-white">Sign in</Link>
           <Link href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]">Get started <ArrowRight size={15}/></Link>
         </div>
 
-        <button type="button" className="grid size-11 place-items-center rounded-xl border border-white/[.12] text-slate-200 transition-colors hover:bg-white/[.05] lg:hidden" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-controls="public-mobile-nav" aria-expanded={open} onClick={() => setOpen(v => !v)}>
+        <button ref={menuTriggerRef} type="button" className="grid size-11 place-items-center rounded-xl border border-white/[.12] text-slate-200 transition-colors hover:bg-white/[.05] lg:hidden" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-controls="public-mobile-nav" aria-expanded={open} onClick={() => setOpen(v => !v)}>
           {open ? <X size={20}/> : <Menu size={20}/>}
         </button>
       </div>

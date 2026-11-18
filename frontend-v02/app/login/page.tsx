@@ -69,7 +69,8 @@ export default function Login() {
     }
     finally {setBusy(false);}
   }
-  return <main className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1fr_.92fr]">
+  return <main id="main-content" tabIndex={-1} className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1fr_.92fr]">
+    <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-[var(--card)] focus:px-4 focus:py-3 focus:text-[var(--text-heading)]">Skip to content</a>
     <aside className="relative hidden min-h-screen overflow-hidden border-r border-white/[.1] bg-[#11171e] lg:block">
       <img src={IMAGES.login} alt="A quiet study space ready for focused learning" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
       <div className="absolute inset-0 bg-[#090b0e]/65"/>
@@ -79,18 +80,18 @@ export default function Login() {
       <form onSubmit={submit} className="mx-auto w-full max-w-md">
         <a href="/" className="inline-flex items-center gap-2 text-xs text-slate-500 transition-colors hover:text-slate-200"><ArrowLeft size={14}/> Back to Learnora</a>
         <div className="mt-8"><Logo/></div>
-        <p className="mt-12 text-[10px] font-bold uppercase tracking-[.2em] text-[var(--gold-light)]">Your learning workspace</p>
+        <p className="mt-12 text-xs font-bold uppercase tracking-[.2em] text-[var(--gold-light)]">Your learning workspace</p>
         <h1 className="mt-4 font-display text-5xl leading-tight tracking-[-.04em] sm:text-6xl">Welcome back.</h1>
         <p className="mt-4 text-sm leading-7 text-slate-400">Sign in to continue with the courses, people and work connected to your account.</p>
         <div className="mt-8 grid gap-5">
-          <label htmlFor="login-email" className="grid gap-2 text-xs font-medium text-slate-300">Email address<input id="login-email" value={email} onChange={e=>setEmail(e.target.value)} type="email" required autoComplete="email" className="field" placeholder="you@example.com"/></label>
-          <label htmlFor="login-password" className="grid gap-2 text-xs font-medium text-slate-300">Password<span className="relative block"><input id="login-password" value={password} onChange={e=>setPassword(e.target.value)} type={showPassword?"text":"password"} required autoComplete="current-password" className="field pr-12" placeholder="Enter your password"/><button type="button" aria-label={showPassword?"Hide password":"Show password"} onClick={()=>setShowPassword(v=>!v)} className="absolute inset-y-0 right-0 grid w-12 place-items-center text-slate-500 hover:text-slate-200">{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</button></span></label>
+          <label htmlFor="login-email" className="grid gap-2 text-xs font-medium text-slate-300">Email address<input id="login-email" value={email} onChange={e=>setEmail(e.target.value)} type="email" required autoComplete="email" aria-invalid={Boolean(error)} aria-describedby={error ? "login-form-error" : undefined} className="field" placeholder="you@example.com"/></label>
+          <label htmlFor="login-password" className="grid gap-2 text-xs font-medium text-slate-300">Password<span className="relative block"><input id="login-password" value={password} onChange={e=>setPassword(e.target.value)} type={showPassword?"text":"password"} required autoComplete="current-password" aria-invalid={Boolean(error)} aria-describedby={error ? "login-form-error" : undefined} className="field pr-12" placeholder="Enter your password"/><button type="button" aria-label={showPassword?"Hide password":"Show password"} aria-pressed={showPassword} onClick={()=>setShowPassword(v=>!v)} className="absolute inset-y-0 right-0 grid w-12 place-items-center text-slate-500 hover:text-slate-200">{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</button></span></label>
           <button disabled={busy} className="mt-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-5 text-sm font-bold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-wait disabled:opacity-60">{busy?"Signing in…":"Sign in"}{!busy&&<ArrowRight size={16}/>}</button>
         </div>
         <div className="mt-6 text-xs text-slate-500"><a className="gold hover:underline" href="/forgot-password">Forgot password?</a></div>
         <div className="mt-8 border-t border-white/[.1] pt-6 text-sm text-slate-500">New to Learnora? <a className="ml-1 font-semibold gold hover:underline" href="/register">Create an account</a></div>
         <div className="mt-4 text-xs text-slate-500">Joining through an organisation cohort? <a className="ml-1 font-semibold gold hover:underline" href="/cohort-login">Cohort learner sign in</a></div>
-        <p className="mt-8 text-[10px] leading-5 text-slate-600">Use only your own account. Access to organisation and internal workspaces depends on your assigned permissions.</p>
+        <p className="mt-8 text-xs leading-5 text-slate-500">Use only your own account. Access to organisation and internal workspaces depends on your assigned permissions.</p>
       </form>
     </section>
     {error&&<Toast title="Sign in failed" message={error} type="error" onClose={()=>setError("")}/>}

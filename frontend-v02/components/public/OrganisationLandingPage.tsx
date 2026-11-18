@@ -76,7 +76,7 @@ function TrackCard({ track, index }: { track: Track; index: number }) {
   return (
     <article className="org-track-card">
       <Link href={"/tracks/" + encodeURIComponent(track.id)} className="org-track-image">
-        <img src={course?.thumbnail_url || images[index % images.length]} alt="" loading="lazy"/>
+        <img width={700} height={500} src={course?.thumbnail_url || images[index % images.length]} alt="" loading="lazy"/>
         <span><RouteIcon/> Skills track</span>
       </Link>
       <div className="org-track-copy">
@@ -173,7 +173,7 @@ export default function OrganisationLandingPage() {
       <div className="org-audience-strip"><div className="org-wrap"><Link href="/for-learners">For individuals</Link><Link href="/for-instructors">For instructors</Link><Link href="/for-organisations" aria-current="page">For organisations</Link><span>Learning built around the people and work that matter</span></div></div>
 
       <section className="org-hero">
-        <div className="org-hero-photo"><img src={IMAGES.organisationPage} alt="Colleagues collaborating in a bright workspace" fetchPriority="high"/><div className="org-photo-overlay"><span>LEARNORA ME · ORGANISATIONS</span><strong>Develop people. Strengthen capability. Make learning useful.</strong></div></div>
+        <div className="org-hero-photo"><img width={700} height={500} src={IMAGES.organisationPage} alt="Colleagues collaborating in a bright workspace" fetchPriority="high"/><div className="org-photo-overlay"><span>LEARNORA ME · ORGANISATIONS</span><strong>Develop people. Strengthen capability. Make learning useful.</strong></div></div>
         <div className="org-wrap org-hero-inner">
           <div className="org-hero-copy">
             <p className="org-kicker"><span/> Learnora for organisations</p>
@@ -201,9 +201,9 @@ export default function OrganisationLandingPage() {
 
       <section className="org-wrap org-content-split">
         <div className="org-photo-grid" aria-label="Learning and collaboration photography">
-          <img src={IMAGES.workshop} alt="A group taking part in a learning workshop" loading="lazy"/>
-          <img src={IMAGES.projects} alt="Colleagues collaborating on a project" loading="lazy"/>
-          <img src={IMAGES.practice} alt="A person learning with a laptop" loading="lazy"/>
+          <img width={700} height={500} src={IMAGES.workshop} alt="A group taking part in a learning workshop" loading="lazy"/>
+          <img width={700} height={500} src={IMAGES.projects} alt="Colleagues collaborating on a project" loading="lazy"/>
+          <img width={700} height={500} src={IMAGES.practice} alt="A person learning with a laptop" loading="lazy"/>
         </div>
         <div className="org-content-copy">
           <p className="org-eyebrow">Learning that fits your context</p>
@@ -225,7 +225,7 @@ export default function OrganisationLandingPage() {
           <label className="org-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search skills, tracks or courses" aria-label="Search published skills, tracks or courses"/>{query && <button type="button" onClick={() => setQuery("")}>Clear</button>}</label>
           {catalogueError && <div role="alert" className="org-error"><span>{catalogueError}</span><button type="button" onClick={() => void loadCatalogue()}>Retry</button></div>}
           {loading ? <p className="org-state">Loading published learning tracks and courses…</p> : filteredTracks.length ? <div className="org-track-grid">{filteredTracks.slice(0, 3).map((track, index) => <TrackCard key={track.id} track={track} index={index}/>)}</div> : !catalogueError ? <div className="org-empty"><Layers3 size={25}/><h3>{tracks.length ? "No tracks match that search" : "Published tracks will appear here"}</h3><p>{tracks.length ? "Try a different skill or course title." : "Learnora will display tracks here when they are published to the public catalogue."}</p></div> : null}
-          {!loading && filteredCourses.length > 0 && <div className="org-course-results"><div className="org-results-heading"><h3>{query ? "Matching published courses" : "More learning to explore"}</h3><Link href={query ? "/courses?search=" + encodeURIComponent(query) : "/courses"}>Browse courses <ArrowRight size={14}/></Link></div><div className="org-course-grid">{filteredCourses.map(course => <article className="org-course-card" key={course.id}><div className="org-course-image"><img src={course.thumbnail_url || IMAGES.practice} alt="" loading="lazy"/></div><div><span>{course.level || "Published course"}</span><h4><Link href={"/courses/" + encodeURIComponent(course.id)}>{course.title}</Link></h4><p>{course.short_description || course.description || "Explore the published course outline and learning content."}</p>{typeof course.estimated_hours === "number" && course.estimated_hours > 0 && <small><Clock3 size={13}/>{course.estimated_hours} hours</small>}</div></article>)}</div></div>}
+          {!loading && filteredCourses.length > 0 && <div className="org-course-results"><div className="org-results-heading"><h3>{query ? "Matching published courses" : "More learning to explore"}</h3><Link href={query ? "/courses?search=" + encodeURIComponent(query) : "/courses"}>Browse courses <ArrowRight size={14}/></Link></div><div className="org-course-grid">{filteredCourses.map(course => <article className="org-course-card" key={course.id}><div className="org-course-image"><img width={700} height={500} src={course.thumbnail_url || IMAGES.practice} alt="" loading="lazy"/></div><div><span>{course.level || "Published course"}</span><h4><Link href={"/courses/" + encodeURIComponent(course.id)}>{course.title}</Link></h4><p>{course.short_description || course.description || "Explore the published course outline and learning content."}</p>{typeof course.estimated_hours === "number" && course.estimated_hours > 0 && <small><Clock3 size={13}/>{course.estimated_hours} hours</small>}</div></article>)}</div></div>}
           {!loading && !filteredCourses.length && !catalogueError && <p className="org-no-courses">No published courses match this search.</p>}
         </div>
       </section>
@@ -253,7 +253,7 @@ export default function OrganisationLandingPage() {
               <li><CheckCircle2/> Explore teams, programmes and cohort requirements</li>
               <li><CheckCircle2/> Understand onboarding, review and activation</li>
             </ul>
-            <div className="org-contact-image"><img src={IMAGES.organisations} alt="A team collaborating around a table" loading="lazy"/></div>
+            <div className="org-contact-image"><img width={700} height={500} src={IMAGES.organisations} alt="A team collaborating around a table" loading="lazy"/></div>
           </div>
           <div className="org-form-panel">
             {success ? <div className="org-success" role="status"><CheckCircle2 size={30}/><h3>Enquiry submitted</h3><p>Your request reference is <strong>{success.id}</strong>.</p><p>{success.verificationEmailSent ? "A verification email has been sent to your contact address." : "Email delivery was not confirmed. Please check your inbox or contact Learnora support if it does not arrive."}</p>{success.verificationMessage && <p className="org-form-warning">{success.verificationMessage}</p>}<p>Verify your email before signing in to the prospect portal. Your organisation workspace remains inactive until Learnora completes its review, contract and approval process.</p><Link className="org-button org-button-primary" href="/login">Go to sign in <ArrowRight size={15}/></Link><button className="org-reset" type="button" onClick={() => setSuccess(null)}>Submit another enquiry</button></div> : <>
@@ -273,8 +273,8 @@ export default function OrganisationLandingPage() {
                 <label>Expected cohorts <span>(optional)</span><input type="number" min="0" value={form.expected_cohorts} onChange={e => update("expected_cohorts", e.target.value)}/></label>
                 <label className="org-form-full">Expected programme duration <span>(optional)</span><input value={form.duration} onChange={e => update("duration", e.target.value)} placeholder="e.g. 6 months"/></label>
                 <label className="org-form-full">What are you looking to achieve?<textarea value={form.notes} onChange={e => update("notes", e.target.value)} rows={4} placeholder="Tell us about your learning priorities, teams and desired outcomes."/></label>
-                <div className="org-form-account org-form-full"><h4>Create your enquiry portal password</h4><p>The portal lets you follow your request and review any contract shared with you. Email verification is required before sign-in.</p><div className="org-form-two"><label>Password<input type="password" value={form.portal_password} onChange={e => update("portal_password", e.target.value)} minLength={10} maxLength={72} autoComplete="new-password" required/></label><label>Confirm password<input type="password" value={form.confirm_password} onChange={e => update("confirm_password", e.target.value)} minLength={10} maxLength={72} autoComplete="new-password" required/></label></div></div>
-                {formError && <p className="org-form-error org-form-full" role="alert">{formError}</p>}
+                <div className="org-form-account org-form-full"><h4>Create your enquiry portal password</h4><p>The portal lets you follow your request and review any contract shared with you. Email verification is required before sign-in.</p><div className="org-form-two"><label>Password<input type="password" value={form.portal_password} onChange={e => update("portal_password", e.target.value)} minLength={10} maxLength={72} autoComplete="new-password" aria-invalid={formError.includes("passwords do not match")} aria-describedby={formError.includes("passwords do not match") ? "org-form-error" : undefined} required/></label><label>Confirm password<input type="password" value={form.confirm_password} onChange={e => update("confirm_password", e.target.value)} minLength={10} maxLength={72} autoComplete="new-password" aria-invalid={formError.includes("passwords do not match")} aria-describedby={formError.includes("passwords do not match") ? "org-form-error" : undefined} required/></label></div></div>
+                {formError && <p id="org-form-error" className="org-form-error org-form-full" role="alert">{formError}</p>}
                 <p className="org-form-terms org-form-full">Submitting creates an organisation request and a prospect portal account. It does not activate an organisation workspace or commit either party to a contract. Read our <Link href="/terms">Terms of Use</Link> and <Link href="/privacy">Privacy Notice</Link>.</p>
                 <button className="org-button org-button-primary org-submit org-form-full" type="submit" disabled={submitting}>{submitting ? "Submitting enquiry…" : "Submit organisation enquiry"} <ArrowRight size={16}/></button>
               </form>

@@ -27,6 +27,7 @@ export const setToken = (_v: string) => {
   localStorage.removeItem("phx_token");
   sessionStorage.removeItem("phx_logged_out");
   localStorage.removeItem("phx_logged_out");
+  localStorage.setItem("phx_session_hint", "1");
   sessionStorage.setItem("phx_session_epoch", String(Date.now()) + "-" + Math.random().toString(36).slice(2));
   sessionStorage.setItem("phx_token", "cookie-session");
 };
@@ -65,6 +66,7 @@ export const clearToken = () => {
   sessionStorage.removeItem("phx_token");
   sessionStorage.removeItem("phx_session_epoch");
   localStorage.removeItem("phx_token");
+  localStorage.removeItem("phx_session_hint");
   localStorage.removeItem("learnora_organisation_id");
   sessionStorage.setItem("phx_logged_out", "1");
   localStorage.setItem("phx_logged_out", "1");
@@ -157,6 +159,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
         sessionStorage.removeItem("phx_session_epoch");
         sessionStorage.setItem("phx_logged_out", "1");
         localStorage.setItem("phx_logged_out", "1");
+        localStorage.removeItem("phx_session_hint");
       }
       const safeServerMessage =
         typeof body.detail === "string" && body.detail !== "Internal Server Error" ? body.detail
