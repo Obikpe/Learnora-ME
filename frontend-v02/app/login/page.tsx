@@ -18,7 +18,7 @@ export default function Login() {
     // client caches this session-scoped response so the dashboard can render
     // immediately instead of starting a second request after the redirect.
     setBusyLabel("Preparing your dashboard…");
-    try { await request<any>("/progress/me"); } catch {}
+    try { await request<unknown>("/progress/me"); } catch {}
   }
   async function submit(e:any) {
     e.preventDefault();setError("");setBusy(true);setBusyLabel("Signing in…");
