@@ -29,6 +29,56 @@ class PublicDirectoryAccessModeTests(unittest.TestCase):
             ))
         self.assertEqual(cohort.exception.status_code, 403)
 
+    def test_public_course_catalogue_uses_one_server_side_rpc(self):
+        class FakeSupabase:
+            def __init__(self):
+                self.rpc_calls = []
+                self.table_calls = []
+
+            def rpc(self, name):
+                self.rpc_calls.append(name)
+
+                class Query:
+                    def execute(self):
+                        return SimpleNamespace(data=[{
+                            "id": "course-1",
+                            "organisation_id": None,
+                            "creator_id": None,
+                            "title": "Public course",
+                            "slug": "public-course",
+                            "short_description": "A public course",
+                            "description": "Description",
+                            "level": "beginner",
+                            "status": "published",
+                            "ownership": "learnora",
+                            "thumbnail_url": None,
+                            "estimated_hours": 2,
+                            "settings": {},
+                            "created_at": "2026-11-18T00:00:00Z",
+                            "tracks": [{
+                                "id": "track-1",
+                                "name": "Public track",
+                                "slug": "public-track",
+                                "order_index": 0,
+                                "required": True,
+                            }],
+                        }])
+
+                return Query()
+
+            def table(self, name):
+                self.table_calls.append(name)
+                raise AssertionError("Public catalogue must not make follow-up table requests")
+
+        fake = FakeSupabase()
+        with patch.object(public_directory, "supabase", fake):
+            response = public_directory.public_courses(user=None)
+
+        self.assertEqual(fake.rpc_calls, ["get_public_course_catalogue"])
+        self.assertEqual(fake.table_calls, [])
+        self.assertEqual(response["count"], 1)
+        self.assertEqual(response["courses"][0]["tracks"][0]["id"], "track-1")
+
     def test_free_launch_labels_only_global_learnora_courses_as_free(self):
         global_course = {"id": "global-1", "ownership": "learnora", "organisation_id": None, "settings": {}}
         tenant_course = {"id": "tenant-1", "ownership": "learnora", "organisation_id": "org-1", "settings": {}}
