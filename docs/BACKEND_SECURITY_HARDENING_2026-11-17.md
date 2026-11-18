@@ -1,79 +1,90 @@
-# Backend security hardening — 17 November 2026
+# Learnora backend security hardening — 18 November 2026
 
-This report records the repository changes and live Supabase checks made during the security review. It distinguishes code changes from production configuration that still requires an authorised database action or a deployment.
+## Scope and production boundary
 
-## Implemented in the repository
+The reviewed code changes, regression tests, migration definitions, and CI test harness updates are committed to `main`.
 
-- Paystack verification binds the subscription interval to the verified currency and amount. Payment references are format-validated and URL-encoded before the verification request.
-- Learner login already enforces five failed attempts per account and account/IP pair within a five-minute window, plus an IP-wide threshold of twenty. Internal staff login now uses the same persistent limiter and returns HTTP 429 with a five-minute `Retry-After` after lockout.
-- Internal staff JWTs now use a domain-separated signing key and explicit issuer/audience claims. Staff and learner tokens cannot be substituted for one another.
-- JWT issuance now preserves sub-second `iat` precision. The session check compares the full timestamp with `password_changed_at`, avoiding the same-second invalidation gap.
-- Registration now returns a generic response for existing and new identities instead of exposing whether an email belongs to a learner, administrator or cohort account.
-- Password requirements are twelve characters minimum, reject passwords found in the Pwned Passwords range service, and reject inputs exceeding bcrypt's 72-byte limit.
-- Legacy SHA-256 password hashes remain temporarily supported and are scheduled to require reset after `LEGACY_SHA256_LOGIN_DEADLINE=2027-01-01T00:00:00Z`.
-- Course-management failures return generic client messages while recording exception details server-side.
-- Cron and Paystack webhook signature comparisons use byte strings, avoiding non-ASCII header exceptions.
-- `/api/ready` is not exempt from the global API rate limiter.
-- Payout status changes now use a typed request body with an explicit allowed-value set.
-- The resource-upload endpoint now targets the existing private `learnora-resources` bucket; its request model already restricts MIME types and caps uploads at 100 MiB.
-- The backend example environment file documents `PAYSTACK_SECRET_KEY` as server-only. Do not use a `NEXT_PUBLIC_` prefix for a payment secret.
-- The current requirements already use FastAPI 0.142.4, Starlette 1.7.0, python-multipart 0.0.32 and PyJWT 2.15.1. The vulnerable direct `python-jose` and `bleach` dependencies are absent.
-- Added `pip-audit` to the quality workflow and added focused security regression tests.
+**No production deployment was made. No live Supabase migration, storage-bucket change, or default-ACL change was applied.** Live Supabase checks below were read-only.
 
-## Live Supabase checks
+## Changes implemented on `main`
+
+### Payments and billing
+
+- Paystack references are validated against a strict character/length allow-list before any network request and are URL-encoded in the verification URL.
+- Subscription duration is derived from the verified Paystack transaction currency and amount in minor units. The client-supplied billing interval is not authoritative.
+- Added runtime tests for all configured NGN/USD amount mappings, unsupported amounts/currencies, path-injection references, and URL encoding.
+
+### Authentication and sessions
+
+- Learner and staff login paths use persistent account/IP rate-limit buckets. Cohort login additionally uses account, account-plus-IP, and IP-wide buckets.
+- The Vercel client-IP path uses the normalized `x-real-ip` header only when running on Vercel; arbitrary `x-forwarded-for` values are not trusted.
+- Login checks verify the password before disclosing account state. Registration responses avoid confirming whether an email address is already registered.
+- Staff JWTs use a domain-separated signing key and issuer/audience claims.
+- Password policy checks enforce a 12-character minimum, reject bcrypt inputs over 72 UTF-8 bytes, and use the Pwned Passwords range API.
+- Password-change/reset code updates `password_changed_at`; token validation compares the full-precision JWT issue time against that timestamp.
+- The canonical pending migration is `supabase/migrations/20261117210000_password_session_invalidation.sql`. It adds the timestamp to `public.users` and `public.admins`, backfills existing rows, and makes the column non-null. Its rollback is intentionally non-destructive because dropping the column would disable session revocation.
+
+### Other backend protections
+
+- Course-creation errors return generic client messages while details remain server-side.
+- Admin payout status is validated against an explicit set of allowed states.
+- Paystack webhook and cron authorization comparisons use bytes-safe constant-time comparisons.
+- Resource upload requests validate MIME type and size and target the existing `learnora-resources` bucket.
+- The pending `20261117220000_private_course_resources_bucket.sql` migration now targets `learnora-resources` (not the unused `learnora-course-resources` name).
+- Quiz sessions have an authenticated heartbeat endpoint that renews only the caller's active session.
+- The AI workspace checks quiz activity in the current browser tab; it does not globally block AI because a different tab has an active quiz.
+- A module without a published quiz is not treated as an impossible completion gate for later modules.
+- Community question email delivery uses the Gmail API helper.
+
+### Frontend and dependencies
+
+- The three public client-rendered pages that failed the supplied Vercel build now use server page wrappers for metadata and separate client components with `"use client"` at the top.
+- The AI workspace disables tutor interaction while a quiz is active in the same tab.
+- The legacy cohort JWT import was migrated from `python-jose` to PyJWT. Direct dependencies were updated; the CI dependency audit reports no known vulnerabilities.
+
+## Verification completed
+
+Successful GitHub Actions runs on commit `8be87f0692d3994fa9d08c3015719821b632f89b`:
+
+- **Learnora production checks:** run `44270934608`.
+  - 343 backend unit tests ran; 1 was skipped; all executed tests passed.
+  - `pip-audit`: no known vulnerabilities found.
+  - Python compilation and undefined-name/static checks passed.
+  - Backend application import and HTTP startup smoke test passed.
+  - Additive migration rehearsal and rollback checks passed.
+  - Learner frontend production build passed.
+  - Teams frontend production build passed.
+- **Cohort Learning Access Tests:** run `44270934622`.
+  - Cohort unit tests and database-backed lifecycle assertions passed.
+  - Disposable API staging schema and PostgREST startup passed.
+  - Full authenticated cohort lifecycle API journey passed.
+  - Timestamped migration replay, deterministic seed checks, browser-role privilege checks, and service-role grant checks passed.
+
+The API staging and migration replay used disposable CI PostgreSQL databases only.
+
+## Read-only live Supabase findings
 
 Project: `gihfupzvdpyrmynqgukz`.
 
-- All 108 public tables have Row Level Security enabled.
-- There are no public-schema RLS policies. This is deny-by-default and matches the current architecture: browser clients do not query the database directly; FastAPI uses the service-role key.
-- Direct grants to `anon` and `authenticated` were not found on public tables, functions or sequences: the live checks returned 0 table grants, 0 routine grants and 0 sequence grants.
-- The live `learnora-course-media` bucket is private, has a 2 GiB size limit and allows only the five video MIME types used by the upload API.
-- The live `learnora-resources` bucket is private, but currently has no file-size limit and no MIME allow-list. The endpoint now points to this bucket, so the storage hardening script must be applied before enabling staff resource uploads.
+- The live migration ledger includes `20261117204703` (administrator sequence browser-access revocation).
+- `public.users.account_status` and `public.users.account_deactivation_until` exist in the live schema.
+- `password_changed_at` is not yet present on either `public.users` or `public.admins`; therefore the password-session revocation feature is not active in production until migration `20261117210000` is applied.
+- All 108 inspected public tables have RLS enabled. The read-only privilege check found no direct browser-role grants on public tables, functions, or sequences.
+- Managed `supabase_admin` default ACLs still include browser-role privileges (16 table, 6 sequence, and 2 function ACL entries). The ordinary project connection is not a member of `supabase_admin`, so the manual remediation script could not be applied.
+- `learnora-course-media` is private, limited to 2 GiB, and has the expected video MIME allow-list.
+- `learnora-resources` is private but currently has no file-size limit or MIME allow-list. The pending resource-bucket migration and manual hardening script define the 100 MiB document/image allow-list.
 
-### Managed-role default privileges remain open
+### Migration-ledger caution
 
-The live `supabase_admin` default ACLs still grant browser-role privileges on future objects: 16 table-default entries, 6 sequence-default entries and 2 function-default entries were returned by the live check. This does not mean the current public tables are directly exposed: current direct grants are absent and RLS is enabled with no policies. It does mean a future object created under `supabase_admin` could inherit unsafe defaults.
+Some repository migration files are reconstructed equivalents of changes already present in the live schema under different migration version IDs. The API staging workflow applies these files only to a disposable database to recreate the expected schema. Do not replay those reconstructed account-lifecycle migrations against production without reconciling the exact live migration ledger first.
 
-The existing manual script is `supabase/ops/revoke_supabase_admin_browser_defaults.sql`. The current project connection is not a member of `supabase_admin`, so this session cannot apply it. Run it only from a database session authorised to alter defaults for that managed role, then run `supabase/ops/verify_live_schema.sql` and recheck default ACLs. Do not treat this item as resolved until the verification query returns no browser-role defaults.
+## Remaining production release gates
 
-## Database migration awaiting approval
+1. Apply `20261117210000_password_session_invalidation.sql` to production after explicit approval. This intentionally invalidates existing JWT sessions, so users will need to sign in again.
+2. Apply `20261117220000_private_course_resources_bucket.sql` (or the reviewed `supabase/ops/harden_course_upload_buckets.sql`) after explicit approval to enforce the resource upload size and MIME restrictions.
+3. Run `supabase/ops/revoke_supabase_admin_browser_defaults.sql` in a `supabase_admin`-authorized session. The ordinary project connection cannot perform this managed-role change.
+4. The backend now expects the server-only Vercel variable `PAYSTACK_SECRET_KEY`. The backend Vercel project still contains the legacy sensitive variable `NEXT_PUBLIC_PAYSTACK_SECRET_KEY`; Vercel did not allow that sensitive variable's key name to be changed through the available API. Create `PAYSTACK_SECRET_KEY` with the existing Paystack secret in Vercel, then remove the legacy variable. The secret value was not retrieved or exposed.
+5. After the environment variable is corrected, run a Paystack test-mode verification and verify the normalized client-IP header on a live Vercel request.
+6. Deploy only after separate authorization.
 
-`supabase/migrations/20261117110000_password_change_session_revocation.sql` adds `password_changed_at` to both `public.users` and `public.admins`, with a non-null default.
-
-The live schema currently does not contain either column. This migration is therefore required before deploying the updated password-change/session-validation code. It sets the initial timestamp to the migration time, intentionally invalidating all existing JWT sessions once applied; users and staff will need to sign in again. The paired rollback is deliberately non-destructive because dropping the column would remove session revocation protection.
-
-**This migration has not been applied.**
-
-## Storage hardening awaiting approval
-
-`supabase/ops/harden_course_upload_buckets.sql` keeps both buckets private and configures:
-
-- `learnora-course-media`: 2 GiB maximum; video MIME allow-list.
-- `learnora-resources`: 100 MiB maximum; document, spreadsheet, presentation, image, text, ZIP and JSON MIME allow-list.
-
-**This script has not been applied.** Apply and verify it before enabling staff resource uploads in production.
-
-## Items requiring live verification or operational follow-up
-
-1. **Rate-limit IP through Vercel rewrites:** the backend uses Vercel's `x-real-ip` header when running on Vercel and falls back to the request peer. Code review supports per-visitor buckets, but a live request through the public frontend rewrite and a direct backend request have not been compared. Do not trust arbitrary forwarded headers from non-Vercel sources.
-2. **Managed default ACLs:** see the blocking item above.
-3. **Storage bucket policy:** see the pending script above.
-4. **Dependency audit:** `pip-audit` is now in CI, but it has not run in this review. No claim is made that the full resolved dependency graph is advisory-free until the audit passes.
-5. **Vercel payment configuration:** the frontend Vercel project currently has only `NEXT_PUBLIC_API_URL`. The backend project has a legacy `NEXT_PUBLIC_PAYSTACK_SECRET_KEY` variable name, but it is not referenced by the backend source and is not present in the frontend project's environment. Before paid billing is re-enabled, provision a fresh Paystack secret as a sensitive, server-only `PAYSTACK_SECRET_KEY` in the backend project and remove the legacy variable. Rotate the Paystack key if it has ever been placed in browser code or a public build.
-6. **Rate-limit availability:** persistent rate limiting intentionally fails closed when Supabase cannot be reached. This protects authentication but can make API requests unavailable during a database outage. Replacing it with a dedicated shared rate-limit store is an architectural follow-up, not a safe fail-open change.
-7. **Lookup cost:** the repeated identity lookups remain a performance concern. They were not cached because caching role and account state can delay revocation; profile this before changing the authorization path.
-8. **Legacy environment variables:** the backend Vercel project contains old payment-provider and mail variables. They should be removed only after confirming no active deployment or rollback depends on them.
-
-## Release gates
-
-Before deployment:
-
-1. Apply and verify the password-change migration.
-2. Apply and verify the storage bucket hardening script.
-3. Have an authorised `supabase_admin` session run the default-ACL remediation and verify no browser-role defaults remain.
-4. Run the backend test suite, compile check and `pip-audit`; resolve every new finding.
-5. Test learner and staff lockout, password reset invalidation, legacy-password deadline behaviour, generic registration responses, Paystack sandbox amount/interval binding, and signed uploads.
-6. Compare the real client IP observed through the frontend rewrite and direct backend path.
-7. Deploy only after the above gates are approved.
-
-No production deployment or database mutation was performed as part of this review.
+**Production remains untouched.**
