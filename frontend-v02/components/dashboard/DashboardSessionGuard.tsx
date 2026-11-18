@@ -5,14 +5,24 @@ import { usePathname } from "next/navigation";
 import { currentUser } from "../../lib/api";
 import Skeleton from "../../components/feedback/Skeleton";
 
+function apiErrorStatus(error: unknown): number {
+  return typeof error === "object" && error !== null && "status" in error
+    ? Number((error as { status?: unknown }).status || 0)
+    : 0;
+}
+
+function apiErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Your account needs attention before you can continue.";
+}
+
 async function verifySessionWithRetry() {
-  let lastError: any;
+  let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       return await currentUser();
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error;
-      const status = Number(error?.status || 0);
+      const status = apiErrorStatus(error);
       if ([401, 403, 409].includes(status) || attempt === 2) break;
       await new Promise(resolve => window.setTimeout(resolve, attempt === 0 ? 350 : 900));
     }
@@ -39,8 +49,8 @@ export default function DashboardSessionGuard({ children }: { children: React.Re
       await verifySessionWithRetry();
       setAuthorised(true);
       setRetryable(false);
-    } catch (cause: any) {
-      const status = Number(cause?.status || 0);
+    } catch (cause: unknown) {
+      const status = apiErrorStatus(cause);
       setAuthorised(false);
       setRetryable(![401, 403, 409].includes(status));
       if (status === 401 || status === 403) {
@@ -49,7 +59,7 @@ export default function DashboardSessionGuard({ children }: { children: React.Re
       }
       setError(
         status === 409
-          ? (cause?.message || "Your account needs attention before you can continue.")
+          ? (apiErrorMessage(cause) || "Your account needs attention before you can continue.")
           : "We could not verify your Learnora session yet. We’ll keep checking automatically while the connection recovers.",
       );
     } finally {
@@ -65,9 +75,9 @@ export default function DashboardSessionGuard({ children }: { children: React.Re
       try {
         await verifySessionWithRetry();
         if (active) { setAuthorised(true); setRetryable(false); }
-      } catch (cause: any) {
+      } catch (cause: unknown) {
         if (!active) return;
-        const status = Number(cause?.status || 0);
+        const status = apiErrorStatus(cause);
         setAuthorised(false);
         setRetryable(![401, 403, 409].includes(status));
         if (status === 401 || status === 403) {
@@ -76,7 +86,7 @@ export default function DashboardSessionGuard({ children }: { children: React.Re
         }
         setError(
           status === 409
-            ? (cause?.message || "Your account needs attention before you can continue.")
+            ? (apiErrorMessage(cause) || "Your account needs attention before you can continue.")
             : "We could not verify your Learnora session yet. We’ll keep checking automatically while the connection recovers.",
         );
       } finally {
