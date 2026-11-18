@@ -83,7 +83,7 @@ def _authorise_feature(
     if is_individual_learner(
         getattr(getattr(context, "user", None), "role", None),
         getattr(getattr(context, "user", None), "account_type", None),
-        context.organisation_id,
+        getattr(context, "organisation_id", None),
     ) and feature in {"tutor", "coach", "practice", "project", "summarise"}:
         return
 

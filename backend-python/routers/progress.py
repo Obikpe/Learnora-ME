@@ -1167,6 +1167,29 @@ def submit_quiz_attempt(quiz_id: str, body: QuizAttemptIn, user: CurrentUser = D
     return {"success": True, "attempt": inserted.data[0], "review": review, "passing_score": passing_score, "course_progress": course_progress}
 
 
+@router.post("/quizzes/{quiz_id}/session/{session_id}/heartbeat")
+def heartbeat_quiz_session(quiz_id: str, session_id: str, user: CurrentUser = Depends(get_current_user)):
+    """Extend only the authenticated learner's still-active quiz session."""
+    now = datetime.now(timezone.utc)
+    expires_at = (now + timedelta(hours=2)).isoformat()
+    try:
+        renewed = (
+            supabase.table("quiz_active_sessions")
+            .update({"expires_at": expires_at})
+            .eq("id", str(session_id))
+            .eq("user_id", str(user.id))
+            .eq("quiz_id", str(quiz_id))
+            .gt("expires_at", now.isoformat())
+            .execute()
+        ).data or []
+    except Exception as exc:
+        print(f"Quiz session heartbeat failed: {type(exc).__name__}")
+        raise HTTPException(503, "Quiz protection is temporarily unavailable. Please retry.") from None
+    if not renewed:
+        raise HTTPException(409, "This quiz session has expired. Reopen the quiz to continue.")
+    return {"success": True, "expires_at": renewed[0]["expires_at"]}
+
+
 @router.delete("/quizzes/{quiz_id}/session/{session_id}")
 def close_quiz_session(quiz_id: str, session_id: str, user: CurrentUser = Depends(get_current_user)):
     sessions = (

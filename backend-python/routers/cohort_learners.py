@@ -678,7 +678,7 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
     if (
         _cohort_rate_limited(account_rate_key)
         or _cohort_rate_limited(rate_key)
-        or _cohort_rate_limited(ip_rate_key, max_failures=COHORT_LOGIN_IP_MAX_FAILS)
+        or _cohort_rate_limited(ip_rate_key, COHORT_LOGIN_IP_MAX_FAILS)
     ):
         raise HTTPException(429, "Too many failed login attempts. Try again later.")
 
@@ -686,7 +686,7 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
         verify_password(body.password, DUMMY_COHORT_PASSWORD_HASH)
         _cohort_record_failure(account_rate_key)
         _cohort_record_failure(rate_key)
-        _cohort_record_failure(ip_rate_key, max_failures=COHORT_LOGIN_IP_MAX_FAILS)
+        _cohort_record_failure(ip_rate_key, COHORT_LOGIN_IP_MAX_FAILS)
         raise HTTPException(401, "Invalid username or password.")
 
     result = (
