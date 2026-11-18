@@ -68,7 +68,7 @@ class InternalContentUploadTests(unittest.TestCase):
             result = internal_content.create_resource_upload(
                 "lesson-1", payload, staff=SimpleNamespace(user_id="staff-1")
             )
-        self.assertEqual(db.storage.bucket_name, "learnora-course-media")
+        self.assertEqual(db.storage.bucket_name, "learnora-resources")
         self.assertTrue(result["path"].startswith("courses/course-1/lessons/lesson-1/resources/"))
         self.assertNotIn("../", result["path"])
         self.assertEqual(result["token"], "signed-token")
