@@ -160,24 +160,6 @@ def _assert_contract_ai_entitlement(organisation_id: str | None, feature: str):
     raise HTTPException(403, f"Your organisation contract does not include the AI feature: {feature}.")
 
 
-def _assert_no_active_quiz_session(user_id: str) -> None:
-    """Prevent tutor requests while this learner has an active server-side quiz session."""
-    try:
-        active = (
-            supabase.table("quiz_active_sessions")
-            .select("id")
-            .eq("user_id", str(user_id))
-            .gt("expires_at", datetime.now(timezone.utc).isoformat())
-            .limit(1)
-            .execute()
-        ).data or []
-    except Exception as exc:
-        print(f"Active quiz session verification failed: {type(exc).__name__}")
-        raise HTTPException(503, "AI tutor access could not be verified. Please try again.") from None
-    if active:
-        raise HTTPException(403, "The AI tutor is unavailable while a quiz session is active.")
-
-
 @router.post("/ask")
 async def ask(
     body: AskIn,
@@ -187,7 +169,6 @@ async def ask(
     _authorise_feature(body.feature, context)
 
     if body.feature == "tutor":
-        _assert_no_active_quiz_session(str(user.id))
         if body.assessment_id:
             raise HTTPException(403, "The AI tutor is unavailable for quiz and assessment content.")
 

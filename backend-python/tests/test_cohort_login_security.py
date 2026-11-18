@@ -106,10 +106,10 @@ class CohortLoginSecurityTests(unittest.TestCase):
     def test_five_bad_attempts_block_the_sixth_for_same_username_and_ip(self):
         failures = {}
 
-        def limited(key):
-            return failures.get(key, 0) >= cohort.COHORT_LOGIN_MAX_FAILS
+        def limited(key, max_failures=cohort.COHORT_LOGIN_MAX_FAILS):
+            return failures.get(key, 0) >= max_failures
 
-        def record(key):
+        def record(key, _max_failures=cohort.COHORT_LOGIN_MAX_FAILS):
             failures[key] = failures.get(key, 0) + 1
 
         with patch.object(cohort, "supabase", self.db), \
