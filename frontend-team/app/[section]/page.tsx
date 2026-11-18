@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect,useMemo,useState } from "react";
+import { useParams } from "next/navigation";
 import { Search, ArrowUpRight, Users, Network, UserRoundCog, Building2, BookOpen, Layers3, ShieldCheck, Activity, Settings, CircleDollarSign, LineChart, Bell } from "lucide-react";
 import { teamMe,staff,departments,teams } from "../../lib/api";
 import Shell from "../../components/Shell";
@@ -19,7 +20,8 @@ const config:any={
   settings:{title:"Settings",eyebrow:"Workspace configuration",description:"Platform-wide settings will appear here when the corresponding configuration service is connected.",icon:Settings}
 };
 
-export default function Section({params}:{params:{section:string}}) {
+export default function Section() {
+  const params = useParams<{section:string}>();
   const [user,setUser]=useState<any>(null),[data,setData]=useState<any>(null),[query,setQuery]=useState(""),[loading,setLoading]=useState(true),[error,setError]=useState("");
   const key=params.section,meta=config[key]||{title:key.replaceAll("-"," ").replace(/\b\w/g,(x:string)=>x.toUpperCase()),eyebrow:"Internal workspace",description:"This view is not yet connected to a live data source.",icon:Layers3};
   const loader=loaders[key];
