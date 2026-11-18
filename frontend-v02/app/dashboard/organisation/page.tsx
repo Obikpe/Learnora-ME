@@ -588,7 +588,7 @@ export default function OrganisationWorkspace() {
                 </div>
                 <div className="rounded-xl border border-white/[.07] p-4">
                   <h3 className="font-semibold">Cohorts <span className="text-xs text-slate-500">({cohorts.length})</span></h3>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">Each cohort owns its learner accounts. A learner stays on one track for the cohort's lifetime; courses, lesson plans and tutors are assigned per learner.</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">Each cohort owns its learner accounts. A learner stays on one track for the cohort&apos;s lifetime; courses, lesson plans and tutors are assigned per learner.</p>
                   <div className="mt-3 space-y-3">
                     {cohorts.map((cohort) => {
                       const cohortId = String(cohort.id);
