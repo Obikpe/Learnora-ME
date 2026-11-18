@@ -280,13 +280,32 @@ The trigger-function hardening migration also removed direct `EXECUTE` rights fr
 
 ## Live migration ledger reconciliation — 2026-11-18
 
-A fresh read-only comparison of the active Pheonix migration ledger with `supabase/migrations/` found 51 applied live versions and 51 repository migration files, but three version/name mismatches in each direction. The repository now restores the three applied sources that were absent, and removes two stale duplicate files:
+A fresh read-only comparison found 51 applied versions in the active Pheonix migration ledger. The repository now has source files matching all 51 live migration names and SQL bodies, plus one intentionally pending repository-only migration. Three applied sources that were absent from the repository were restored from the exact SQL recorded in the live ledger:
 
-- Restored `20261103041002_add_lesson_video_transcript_text.sql` from the exact SQL recorded in the live migration ledger.
-- Restored `20261109160440_learner_account_deletion_lifecycle.sql`; its SQL matches the existing repository source that was previously stored under the unapplied version `20261102130000`. The old duplicate filename was removed so the live migration is represented once, under its applied version.
-- Restored `20261118091000_feature_foreign_key_indexes.sql` from the exact SQL recorded in the live migration ledger.
-- Removed `20261026100000_pin_cohort_assignment_function_search_paths.sql` because the already-applied `20261021115303_pin_cohort_assignment_trigger_search_path.sql` defines both affected trigger functions with the same empty search path. The later file added no distinct schema effect.
+- `20261103041002_add_lesson_video_transcript_text.sql`
+- `20261109160440_learner_account_deletion_lifecycle.sql`
+- `20261118091000_feature_foreign_key_indexes.sql`
 
-One repository-only migration remains intentionally pending: `20261026153000_revoke_browser_privileges_and_defaults.sql`. It is not recorded as applied in the active database. Do not apply it automatically: it revokes broad function and sequence privileges, so its effect on the service-role execution grants and managed default ACLs must be reviewed against the live function/grant inventory first.
+Two stale duplicate files were removed:
 
-The CI disposable-database rehearsal now includes the three restored applied migrations. This restores filename/version alignment for the live migration ledger while preserving the one reviewed-but-unapplied migration as pending work. No live Supabase schema or migration ledger was changed by this reconciliation.
+- `20261026100000_pin_cohort_assignment_function_search_paths.sql`, because the already-applied `20261021115303_pin_cohort_assignment_trigger_search_path.sql` defines both affected trigger functions with the same empty search path.
+- `20261102130000_learner_account_deletion.sql`, whose SQL is represented by the applied `20261109160440_learner_account_deletion_lifecycle.sql`.
+
+**Important: 11 repository filenames still have version timestamps that differ from the live ledger**, even though their SQL bodies were compared and found equivalent after removing comments and transaction wrappers. These are:
+- `shared_auth_rate_limits`: repository version `20261026150000`, live version `20261102210054`
+- `shared_api_rate_limit`: repository version `20261026151000`, live version `20261102210056`
+- `learner_deletion_grace_and_marketing_consent`: repository version `20261109180000`, live version `20261109190939`
+- `erase_learner_records_after_recovery`: repository version `20261109190000`, live version `20261109190944`
+- `notification_email_automation`: repository version `20261116120000`, live version `20261116072916`
+- `learner_learning_plans`: repository version `20261102090000`, live version `20261118090829`
+- `quiz_active_sessions`: repository version `20261102100000`, live version `20261118090830`
+- `certificate_revocation`: repository version `20261102110000`, live version `20261118090832`
+- `project_submission_integrity`: repository version `20261102120000`, live version `20261118090839`
+- `password_session_invalidation`: repository version `20261117210000`, live version `20261118090841`
+- `private_course_resources_bucket`: repository version `20261117220000`, live version `20261118090842`
+
+Do not run `supabase db push` from this repository until those 11 filenames have been reconciled to their live version numbers and the full migration chain has been reviewed. The migration CLI uses version identifiers; matching SQL content under a different timestamp does not make the versions equivalent.
+
+One additional repository-only migration remains intentionally pending: `20261026153000_revoke_browser_privileges_and_defaults.sql`. It is not recorded as applied in the active database. Do not apply it automatically: it revokes broad function and sequence privileges, so its effect on service-role execution grants and managed default ACLs must be reviewed against the live function/grant inventory first.
+
+The disposable CI migration rehearsal includes the three restored applied migrations and asserts their key columns, function permissions and indexes. These source-file reconciliations did not apply or alter any live Supabase migration, schema, data or grants.
