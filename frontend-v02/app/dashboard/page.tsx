@@ -24,6 +24,22 @@ function dateLabel(value?: string | null) {
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+async function loadCoreProgress() {
+  let lastError: any;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await request<any>("/progress/me");
+    } catch (error: any) {
+      lastError = error;
+      const status = Number(error?.status || 0);
+      const transient = !status || [429, 500, 502, 503, 504].includes(status);
+      if (!transient || attempt === 2) break;
+      await new Promise(resolve => window.setTimeout(resolve, attempt === 0 ? 350 : 900));
+    }
+  }
+  throw lastError;
+}
+
 function CourseCard({ row, completed }: { row: any; completed: boolean }) {
   const course = row.course || {};
   const courseId = String(course.id || row.enrolment?.course_id || "");
@@ -96,7 +112,7 @@ export default function MyLearningPage() {
     setRefreshing(true);
     setError("");
     const progressResult = await Promise.allSettled([
-      request<any>("/progress/me"),
+      loadCoreProgress(),
     ]);
     const progressResponse = progressResult[0];
     const progressLoaded = progressResponse.status === "fulfilled";
@@ -295,7 +311,7 @@ export default function MyLearningPage() {
       </div>
     </section>
 
-    {error && <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--warning)]/25 bg-[var(--warning)]/[.05] px-4 py-3 text-sm text-[var(--warning)]"><span>{error}</span><button type="button" onClick={() => void load(user)} disabled={refreshing} className="inline-flex min-h-9 items-center rounded-lg border border-[var(--border)] px-3 text-xs font-semibold text-[var(--text-heading)] disabled:opacity-50">{refreshing ? "Retrying…" : "Try again"}</button></div>}
+    {error && <div role="status" className="mb-5 rounded-xl border border-[var(--warning)]/25 bg-[var(--warning)]/[.05] px-4 py-3 text-sm text-[var(--warning)]">{error} You can keep using the dashboard; we’ll refresh the learning records automatically when the connection recovers.</div>}
 
     <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Learning summary">
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Active courses</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learning ? inProgress.length : "—"}</p></div>
@@ -324,7 +340,7 @@ export default function MyLearningPage() {
     <div className="mt-6 grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_19rem]">
       <section className="min-w-0" role="tabpanel">
         {tab === "in-progress" && (!learning
-          ? <div className="empty">Your learning records are unavailable right now. Use “Try again” above to reload them.</div>
+          ? <div className="empty">Your learning records are temporarily unavailable. Learnora will keep trying automatically.</div>
           : inProgress.length
           ? <div className="space-y-4">{inProgress.map((row: any) => <CourseCard key={row.enrolment?.id || row.course?.id} row={row} completed={false}/>)}</div>
           : courses.length === 0
