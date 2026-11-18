@@ -33,18 +33,23 @@ class FrontendSecurityContractTests(unittest.TestCase):
         self.assertIn("if (progressData)", dashboard)
         self.assertIn("setLearning(progressData)", dashboard)
         self.assertIn("Keep the last successful dashboard data", dashboard)
-        self.assertIn("setError(\"Your learning records could not be loaded.", dashboard)
+        self.assertIn("loadCoreProgress()", dashboard)
+        self.assertIn("setError(\"Your learning records are temporarily unavailable.", dashboard)
+        self.assertIn("setTimeout(() => { void load(user); }, 8000)", dashboard)
+        self.assertNotIn("Try again", dashboard)
         self.assertIn("error.status = response.status", client)
         # Summary refresh runs independently so it cannot delay the core course list.
         self.assertIn("if (active) setActivitySummary(summary)", dashboard)
-        self.assertIn("if (evidenceResult.status === \"fulfilled\") setEvidence", dashboard)
+        self.assertIn('request<any>("/evidence/me")', dashboard)
 
     def test_dashboard_session_gate_recovers_from_temporary_verification_failures(self):
         guard = (ROOT / "frontend-v02" / "components" / "dashboard" / "DashboardSessionGuard.tsx").read_text(encoding="utf-8")
         self.assertIn("status === 401 || status === 403", guard)
         self.assertIn("status === 409", guard)
         self.assertIn("We could not verify your Learnora session", guard)
-        self.assertIn("onClick={() => void validate()}", guard)
+        self.assertIn("verifySessionWithRetry()", guard)
+        self.assertIn("setTimeout(() => { void validate(); }, 8000)", guard)
+        self.assertNotIn("Try again", guard)
         self.assertIn('"/login?next="', guard)
         self.assertNotIn('window.location.replace("/")', guard)
 
