@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole } from "lucide-react";
 import Logo from "../../components/brand/Logo";
+import Image from "next/image";
 import { IMAGES } from "../../lib/constants";
 import Toast from "../../components/feedback/Toast";
 import { login,setToken,currentUser,organisationContext,setOrganisationContext,clearOrganisationContext,clearToken } from "../../lib/api";
@@ -72,7 +73,7 @@ export default function Login() {
   return <main id="main-content" tabIndex={-1} className="grid min-h-screen bg-[var(--bg)] lg:grid-cols-[1fr_.92fr]">
     <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-[var(--card)] focus:px-4 focus:py-3 focus:text-[var(--text-heading)]">Skip to content</a>
     <aside className="relative hidden min-h-screen overflow-hidden border-r border-white/[.1] bg-[#11171e] lg:block">
-      <img src={IMAGES.login} alt="A quiet study space ready for focused learning" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high"/>
+      <Image src={IMAGES.login} alt="A quiet study space ready for focused learning" fill sizes="(max-width: 1024px) 100vw, 50vw" priority className="object-cover"/>
       <div className="absolute inset-0 bg-[#090b0e]/65"/>
       <div className="absolute inset-x-0 bottom-0 p-12 xl:p-16"><p className="text-[10px] font-bold uppercase tracking-[.22em] text-[var(--gold-light)]">Learnora ME</p><h2 className="mt-5 max-w-xl font-display text-5xl leading-[1.04] xl:text-6xl">Make the work you do to learn count.</h2><p className="mt-5 max-w-md text-sm leading-7 text-slate-300">Pick up where you left off. Keep practising, building and collecting evidence of your progress.</p><div className="mt-8 flex items-center gap-3 text-xs text-slate-400"><span className="grid size-9 place-items-center border border-white/20"><LockKeyhole size={15}/></span><span>Secure access to your learning workspace</span></div></div>
     </aside>

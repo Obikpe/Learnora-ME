@@ -26,7 +26,7 @@ export default function TrackDetailClient({params,initialTrack}:{params:{id:stri
     } catch {
       setProgress(null);
     }
-  }, [params.id]);
+  }, [params.id, initialTrack, loadProgress]);
 
   useEffect(() => {
     let active = true;

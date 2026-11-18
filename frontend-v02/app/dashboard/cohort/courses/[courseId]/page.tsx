@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, BookOpen, CheckCircle2, Circle, Clock3, RefreshCw } from "lucide-react";
@@ -18,7 +18,7 @@ export default function CohortCoursePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setRefreshing(true);
     setError("");
     try {
@@ -40,9 +40,9 @@ export default function CohortCoursePage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }
+  }, [courseId]);
 
-  useEffect(() => { if (courseId) void load(); }, [courseId]);
+  useEffect(() => { if (courseId) void load(); }, [load, courseId]);
 
   const completedCount = useMemo(() => lessons.filter((lesson: any) => progress[String(lesson.id)]?.completed).length, [lessons, progress]);
   const percent = lessons.length ? Math.round(completedCount / lessons.length * 100) : 0;

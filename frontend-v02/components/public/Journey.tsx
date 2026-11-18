@@ -1,4 +1,5 @@
 import { ArrowUpRight, BookOpen, FileCheck2, FolderKanban, Target } from "lucide-react";
+import Image from "next/image";
 import { IMAGES } from "../../lib/constants";
 
 const items = [
@@ -18,7 +19,7 @@ export default function Journey() {
       <div className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {items.map(({title,description,image,icon:Icon,href,note}) => <a href={href} key={title} className="group min-w-0">
           <div className="relative aspect-[4/4.7] overflow-hidden border border-white/[.1] bg-[#151c24]">
-            <img src={image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"/>
+            <Image src={image} alt="" fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw" loading="lazy" className="object-cover transition-transform duration-500 group-hover:scale-[1.025]"/>
             <span className="absolute inset-x-0 bottom-0 border-t border-white/15 bg-[#090b0e]/90 px-4 py-3 text-xs text-slate-300">{note}</span>
           </div>
           <div className="border-b border-white/[.12] pb-5 pt-5 transition-colors group-hover:border-[var(--gold)]/60">

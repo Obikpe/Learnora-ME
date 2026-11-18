@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Building2, FileText, RefreshCw, Users } from "lucide-react";
 import { currentUser, clearToken } from "../../../lib/api";
 import { request, setOrganisationContext } from "../../../lib/api/client";
@@ -32,6 +32,9 @@ export default function OrganisationWorkspace() {
   const [learnerCourseForms, setLearnerCourseForms] = useState<Record<string, any>>({});
   const [lessonOptions, setLessonOptions] = useState<Record<string, any[]>>({});
   const [expandedCohorts, setExpandedCohorts] = useState<Record<string, boolean>>({});
+  const expandedCohortsRef = useRef(expandedCohorts);
+  expandedCohortsRef.current = expandedCohorts;
+  const loadCohortDetailRef = useRef<(cohortId: string, organisationId?: string) => Promise<void>>(async () => {});
   const [trackForm, setTrackForm] = useState<any>({ name: "", description: "" });
   const [programmeForm, setProgrammeForm] = useState<any>({ name: "", description: "", start_date: "", end_date: "" });
   const [cohortForm, setCohortForm] = useState<any>({ name: "", description: "", programme_id: "", start_date: "", end_date: "", capacity: "", instructor_capacity: "" });
@@ -50,7 +53,7 @@ export default function OrganisationWorkspace() {
   const [needsOrgSelection, setNeedsOrgSelection] = useState(false);
   const [orgChoices, setOrgChoices] = useState<any[]>([]);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -103,15 +106,15 @@ export default function OrganisationWorkspace() {
       setTrackCatalogue(trackResult.tracks || []);
       setAssignedCourses(assignedCourseResult.courses || []);
       const openCohorts = (cohortResult.cohorts || []).filter((cohort: any) => ["draft", "upcoming", "active"].includes(cohort.status));
-      await Promise.all(openCohorts.filter((cohort: any) => expandedCohorts[String(cohort.id)]).map((cohort: any) => loadCohortDetail(String(cohort.id), String(selected.organisation_id))));
+      await Promise.all(openCohorts.filter((cohort: any) => expandedCohortsRef.current[String(cohort.id)]).map((cohort: any) => loadCohortDetailRef.current(String(cohort.id), String(selected.organisation_id))));
     } catch (e: any) {
       setError(e.message || "The organisation workspace could not be loaded.");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   async function addMember(e: any) {
     e.preventDefault();
@@ -253,6 +256,8 @@ export default function OrganisationWorkspace() {
       setError(e.message || "Cohort learning details could not be loaded.");
     }
   }
+
+  loadCohortDetailRef.current = loadCohortDetail;
 
   async function toggleCohortManagement(cohort: any) {
     const cohortId = String(cohort.id);

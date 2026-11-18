@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, LoaderCircle, Save } from "lucide-react";
@@ -21,7 +21,7 @@ export default function CohortLessonPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     setNotice("");
@@ -39,9 +39,9 @@ export default function CohortLessonPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [courseId, lessonId]);
 
-  useEffect(() => { if (courseId && lessonId) void load(); }, [courseId, lessonId]);
+  useEffect(() => { if (courseId && lessonId) void load(); }, [load, courseId, lessonId]);
 
   async function saveProgress(completed = false) {
     setSaving(true);

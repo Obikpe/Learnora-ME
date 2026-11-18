@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle2, Users } from "lucide-react";
 import { request } from "../../../../lib/api/client";
 import Logo from "../../../../components/brand/Logo";
@@ -15,7 +15,7 @@ export default function TeamWorkspace({ params }: { params: { teamId: string } }
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setError("");
     try {
       const workspace = await request<any>("/organisations/team-workspace/" + encodeURIComponent(params.teamId));
@@ -23,9 +23,9 @@ export default function TeamWorkspace({ params }: { params: { teamId: string } }
     } catch (e: any) {
       setError(e.message || "This team workspace could not be loaded.");
     }
-  }
+  }, [params.teamId]);
 
-  useEffect(() => { void load(); }, [params.teamId]);
+  useEffect(() => { void load(); }, [load]);
 
   async function addMember(e: any) {
     e.preventDefault();

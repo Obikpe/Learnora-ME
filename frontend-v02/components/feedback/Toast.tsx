@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function Toast({ title, message, type = "success", onClose }: { title: string; message: string; type?: "success" | "error"; onClose?: () => void }) {
   const [visible, setVisible] = useState(true);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setVisible(false);
-      onClose?.();
+      onCloseRef.current?.();
     }, 5000);
     return () => window.clearTimeout(timeout);
   }, []);

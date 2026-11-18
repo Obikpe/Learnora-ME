@@ -2,6 +2,7 @@ import { publicPageMetadata } from "../../lib/seo";
 
 export const metadata = publicPageMetadata("About Learnora ME", "Learn about Learnora ME and its approach to practical learning, projects, feedback and skills evidence.", "/about");
 
+import Image from "next/image";
 import PublicNav from "../../components/public/PublicNav";
 import PublicFooter from "../../components/public/PublicFooter";
 import { IMAGES } from "../../lib/constants";
@@ -18,7 +19,7 @@ export default function Page() {
             <p className="mt-7 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">Learnora is being built around a simple belief: learning becomes more useful when people can practise what they learn, build something with it, show what they have demonstrated and keep growing from there.</p>
             <a href="/how-it-works" className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold gold hover:underline">See how the journey works <ArrowRight size={16}/></a>
           </div>
-          <div className="relative"><div className="aspect-[4/3] overflow-hidden border border-white/[.12] bg-[#151c24]"><img src={IMAGES.aboutHero} alt="People learning and connecting around a shared table" fetchPriority="high" className="h-full w-full object-cover"/></div><p className="mt-3 max-w-sm text-xs leading-5 text-slate-600">A connected path between learning, practice and the work people can show.</p></div>
+          <div className="relative"><div className="aspect-[4/3] overflow-hidden border border-white/[.12] bg-[#151c24]"><Image src={IMAGES.aboutHero} alt="People learning and connecting around a shared table" fill sizes="(max-width: 768px) 100vw, 45vw" priority className="object-cover"/></div><p className="mt-3 max-w-sm text-xs leading-5 text-slate-600">A connected path between learning, practice and the work people can show.</p></div>
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Award, BookOpen, CheckCircle2, Clock3, FileText, GraduationCap, RefreshCw, Sun, Moon } from "lucide-react";
 import { currentUser, getCachedCurrentUser } from "../../lib/api";
@@ -62,7 +63,7 @@ function RecommendedCourseCard({ course }: { course: any }) {
   const free = course.settings?.is_free === true || course.settings?.access_type === "free";
   const href = "/courses/" + encodeURIComponent(id) + (free ? "?enrol=1" : "");
   return <article className="flex min-w-0 flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-    {course.thumbnail_url && <img src={course.thumbnail_url} alt="" loading="lazy" className="mb-4 aspect-[16/9] w-full rounded-lg object-cover"/>}
+    {course.thumbnail_url && <Image unoptimized src={course.thumbnail_url} alt="" width={640} height={360} sizes="(max-width: 768px) 100vw, 50vw" loading="lazy" className="mb-4 aspect-[16/9] w-full rounded-lg object-cover"/>}
     <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--primary)]">{course.level || "Course"}</p>
     <h3 className="mt-2 text-sm font-bold leading-5 text-[var(--text-heading)]">{course.title}</h3>
     <p className="mt-2 line-clamp-3 flex-1 text-xs leading-5 text-[var(--text-muted)]">{course.short_description || course.description || ""}</p>
@@ -239,7 +240,7 @@ export default function MyLearningPage() {
       ["learner", "member"].includes(membership.role) && membership.status === "active"
     )
   );
-  const courses = learning?.courses || [];
+  const courses = useMemo(() => learning?.courses || [], [learning?.courses]);
   const inProgress = useMemo(() => courses.filter((row: any) => !(row.completed || row.enrolment?.status === "completed")), [courses]);
   const completed = useMemo(() => courses.filter((row: any) => row.completed || row.enrolment?.status === "completed"), [courses]);
   const enrolledIds = useMemo(() => new Set(courses.map((row: any) => String(row.course?.id || row.enrolment?.course_id || ""))), [courses]);
@@ -376,7 +377,7 @@ export default function MyLearningPage() {
         {recommendations.length > 0 && <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
           <h2 className="text-sm font-bold text-[var(--text-heading)]">Recommended for you</h2>
           <div className="mt-4 space-y-3">{recommendations.map((course:any) => <div key={course.id} className="flex items-start gap-3 border-b border-[var(--border)] pb-3 last:border-0 last:pb-0">
-            {course.thumbnail_url ? <img src={course.thumbnail_url} alt="" className="size-14 shrink-0 rounded-lg object-cover"/> : <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-[var(--bg-soft)] text-[var(--primary)]"><BookOpen size={19}/></span>}
+            {course.thumbnail_url ? <Image unoptimized src={course.thumbnail_url} alt="" width={56} height={56} sizes="56px" className="size-14 shrink-0 rounded-lg object-cover"/> : <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-[var(--bg-soft)] text-[var(--primary)]"><BookOpen size={19}/></span>}
             <div className="min-w-0"><p className="text-xs font-semibold leading-5 text-[var(--text-heading)]">{course.title}</p><p className="mt-1 line-clamp-2 text-[11px] leading-4 text-[var(--text-muted)]">{course.short_description || course.description || "Explore this course."}</p><Link href={"/courses/" + encodeURIComponent(course.id)} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--primary)]">View course <ArrowRight size={12}/></Link></div>
           </div>)}</div>
         </section>}

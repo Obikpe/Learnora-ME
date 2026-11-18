@@ -1,4 +1,5 @@
 import { ArrowRight, ArrowUpRight, BookOpen, CheckCircle2, Compass } from "lucide-react";
+import Image from "next/image";
 import { IMAGES } from "../../lib/constants";
 
 export default function Hero() {
@@ -34,7 +35,7 @@ export default function Hero() {
         <div className="relative mx-auto w-full max-w-[590px] lg:ml-auto">
           <div className="mb-3 border-b border-white/[.12] pb-3 text-[10px] uppercase tracking-[.18em] text-slate-500">Learning in motion</div>
           <div className="relative aspect-[4/4.6] overflow-hidden border border-white/[.12] bg-[#151c24]">
-            <img src={IMAGES.hero} alt="Learners working together at a table" className="h-full w-full object-cover" fetchPriority="high" decoding="async"/>
+            <Image src={IMAGES.hero} alt="Learners working together at a table" fill sizes="(max-width: 1024px) 100vw, 50vw" priority className="object-cover"/>
             <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-5 border-t border-white/20 bg-[#090b0e]/90 p-5 sm:p-6">
               <div><p className="text-[10px] font-semibold uppercase tracking-[.2em] gold">The Learnora approach</p><p className="mt-2 max-w-sm font-display text-2xl leading-snug sm:text-3xl">A course is a beginning. What you do with it is the story.</p></div>
               <span className="hidden shrink-0 border-l border-white/20 pl-4 text-xs leading-5 text-slate-400 sm:block">Learning<br/>Practice<br/>Projects<br/>Evidence</span>
