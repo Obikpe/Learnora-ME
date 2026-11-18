@@ -37,7 +37,7 @@ class CookieAuthContractTests(unittest.TestCase):
         self.assertIn("path=/", cookie)
 
     def test_production_cookie_is_secure(self):
-        request = make_request("https://learnora-taupe.vercel.app")
+        request = make_request("https://learnora-me-v02.vercel.app")
         response = Response()
         with patch.object(auth, "APP_ENV", "production"):
             result = auth.deliver_auth_token(request, response, "secret-jwt", {"access_token": "secret-jwt"})

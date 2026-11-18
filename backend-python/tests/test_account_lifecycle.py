@@ -78,8 +78,9 @@ class AccountLifecycleContractTests(unittest.TestCase):
     def test_signup_routes_recoverable_accounts_without_sending_reactivation_email(self):
         source = (ROOT / "backend-python/routers/auth.py").read_text(encoding="utf-8")
         registration = source.split('"/register"', 1)[1].split("# VERIFY EMAIL", 1)[0]
-        self.assertIn('account_status") == "deactivation_pending"', registration)
-        self.assertIn("ACCOUNT_DEACTIVATED:", registration)
+        self.assertIn("generic_registration_response", registration)
+        self.assertIn("return generic_registration_response", registration)
+        self.assertNotIn("ACCOUNT_DEACTIVATED:", registration)
         self.assertNotIn("_send_email(", registration)
         self.assertNotIn("/reactivate-account#token=", registration)
         self.assertIn("marketing_email_opt_in: bool = False", source)

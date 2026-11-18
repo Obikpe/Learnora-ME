@@ -63,7 +63,7 @@ class CohortLoginSecurityTests(unittest.TestCase):
                     self.assertEqual(raised.exception.status_code, 401)
                     self.assertEqual(raised.exception.detail, "Invalid username or password.")
             self.db.table.assert_not_called()
-            self.assertEqual(record_failure.call_count, 6)
+            self.assertEqual(record_failure.call_count, 9)
             self.assertEqual(verify.call_count, 3)
 
     def test_rotating_usernames_still_hits_client_ip_bucket(self):

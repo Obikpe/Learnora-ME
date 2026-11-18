@@ -114,7 +114,7 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         auth_source = read("routers/auth.py")
         learner = auth_source.split('@router.post("/login")', 1)[1].split("# REGISTER", 1)[0]
         self.assertLess(learner.index("valid, needs_rehash"), learner.index('if user.get("account_status")'))
-        internal = read("routers/internal_auth.py")
+        internal = read("routers/internal_auth.py").split("def internal_login(", 1)[1]
         existing_staff = internal.split('    user, staff = found["user"], found["staff"]', 1)[1]
         self.assertLess(existing_staff.index("valid, needs_rehash"), existing_staff.index('if user.get("account_status")'))
 
