@@ -9,8 +9,8 @@ INSERT INTO storage.buckets (
     allowed_mime_types
 )
 VALUES (
-    'learnora-course-resources',
-    'learnora-course-resources',
+    'learnora-resources',
+    'learnora-resources',
     false,
     104857600,
     ARRAY[
