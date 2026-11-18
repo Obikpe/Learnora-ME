@@ -208,7 +208,7 @@ export default function OrganisationLandingPage() {
         <div className="org-content-copy">
           
           <h2>One platform. Different organisational needs.</h2>
-          <p>Not every organisation works in the same way. Learnora's organisation model is designed to support different structures while keeping learning and access organised.</p>
+          <p>Not every organisation works in the same way. Learnora&apos;s organisation model is designed to support different structures while keeping learning and access organised.</p>
           <ul className="org-checks">
             <li><CheckCircle2/> Businesses developing job-related capabilities across teams</li>
             <li><CheckCircle2/> Schools and universities coordinating structured learning</li>
@@ -232,7 +232,7 @@ export default function OrganisationLandingPage() {
 
       <section className="org-capabilities-band">
         <div className="org-wrap">
-          <div className="org-capabilities-intro"><h2>Give people the structure and support to keep moving.</h2><p>Use the organisation workspace model to coordinate the people, learning and oversight your programme requires. Access and capacity remain subject to Learnora's approval and agreed entitlements.</p></div>
+          <div className="org-capabilities-intro"><h2>Give people the structure and support to keep moving.</h2><p>Use the organisation workspace model to coordinate the people, learning and oversight your programme requires. Access and capacity remain subject to Learnora&apos;s approval and agreed entitlements.</p></div>
           <div className="org-capabilities-grid">
             <article><Building2/><h3>Organisation workspace</h3><p>Keep organisational identity, settings, people and learning access within a dedicated workspace.</p></article>
             <article><Users/><h3>Teams and managers</h3><p>Organise people into teams and assign scoped responsibilities to authorised managers.</p></article>
@@ -246,7 +246,7 @@ export default function OrganisationLandingPage() {
         <div className="org-wrap org-contact-grid">
           <div className="org-contact-copy">
             
-            <h2>Let's understand what your organisation needs.</h2>
+            <h2>Let&apos;s understand what your organisation needs.</h2>
             <p>Tell us about your organisation, the people you support and the learning outcomes you are working towards. The Learnora team will review your enquiry before any workspace is provisioned.</p>
             <ul className="org-checks">
               <li><CheckCircle2/> Discuss your structure and learning priorities</li>
