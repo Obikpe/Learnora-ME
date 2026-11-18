@@ -10,6 +10,8 @@ os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 
+from fastapi import HTTPException
+
 from routers import progress
 
 

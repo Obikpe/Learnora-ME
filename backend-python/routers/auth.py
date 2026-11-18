@@ -96,6 +96,7 @@ from services.free_access import free_access_mode_enabled, is_individual_learner
 
 
 router = APIRouter()
+log = logging.getLogger("auth")
 bearer = HTTPBearer(auto_error=False)
 
 
@@ -2650,6 +2651,7 @@ def register(
         .strip()[:100]
         or None
     )
+    now = datetime.now(timezone.utc)
 
     # Keep registration responses indistinguishable for existing individual,
     # administrator and organisation-managed identities. Account recovery and

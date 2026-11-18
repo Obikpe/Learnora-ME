@@ -19,6 +19,32 @@ from services.audit import audit
 router = APIRouter(tags=["Cohort learning"])
 
 
+def _notify_cohort_member(
+    user_id: Optional[str],
+    event_key: str,
+    title: str,
+    body: str,
+) -> None:
+    """Create an in-app notification for cohort members with a user identity."""
+    if not user_id:
+        return
+    try:
+        from services.notification_service import create_learner_notification
+        create_learner_notification(
+            user_id=str(user_id),
+            event_key=event_key,
+            notification_type="cohort_learning",
+            title=title,
+            body=body,
+            action_url="/dashboard/notifications",
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger("cohort_learning").exception(
+            "Cohort learner notification failed (%s)", type(exc).__name__
+        )
+
+
 class TrackCourseIn(BaseModel):
     course_id: UUID
 
