@@ -394,8 +394,8 @@ def _module_unlock_states(user_id: str, modules: list[dict], lessons: list[dict]
             continue
         quizzes = list(quizzes_by_module.get(module_id, {}).values())
         if not quizzes:
-            access_available = False
-            blocker = {"module": module, "reason": "missing_quiz", "threshold": None}
+            # A module without a published assessment is not a completion gate.
+            # Do not deadlock the learner on content that has no quiz to pass.
             continue
         failed = next(
             (
