@@ -243,3 +243,34 @@ jobs:
             frontend-team/package-lock.json
           if-no-files-found: warn
           retention-days: 1
+
+  commit-generated-lockfiles:
+    name: Commit verified npm lockfiles
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: production-checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: true
+
+      - name: Download verified lockfiles
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: learnora-generated-lockfiles
+          path: ./
+
+      - name: Commit lockfiles when they change
+        run: |
+          git add frontend-v02/package-lock.json frontend-team/package-lock.json
+          if git diff --cached --quiet; then
+            echo "Dependency lockfiles are already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add verified frontend dependency lockfiles"
+          git push origin HEAD:main
