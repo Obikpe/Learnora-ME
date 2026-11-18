@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Award, BookOpen, CheckCircle2, Clock3, FileText, GraduationCap, RefreshCw, Sun, Moon } from "lucide-react";
@@ -108,7 +108,7 @@ export default function MyLearningPage() {
   const [refreshing, setRefreshing] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  async function load(me?: any) {
+  const load = useCallback(async (me?: any) => {
     setRefreshing(true);
     setError("");
     const progressResult = await Promise.allSettled([
@@ -129,7 +129,7 @@ export default function MyLearningPage() {
         setRefreshing(false);
         return;
       }
-      setError("Your learning records could not be loaded. Please try again.");
+      setError("Your learning records are temporarily unavailable. We are reconnecting automatically.");
     }
 
     // The core learning view should not wait for optional summary, plan,
@@ -176,7 +176,15 @@ export default function MyLearningPage() {
 
     await Promise.allSettled(backgroundTasks);
     setRefreshing(false);
-  }
+  }, []);
+
+  // A transient first-load failure is retried in the background. Learners
+  // should not have to diagnose or manually restart dashboard loading.
+  useEffect(() => {
+    if (!user || !error) return;
+    const timer = window.setTimeout(() => { void load(user); }, 8000);
+    return () => window.clearTimeout(timer);
+  }, [error, load, user]);
 
   useEffect(() => {
     let cancelled = false;
