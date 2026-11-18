@@ -205,12 +205,14 @@ jobs:
           PY
 
       - name: Set up Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "20"
 
       - name: Build learner website
         working-directory: frontend-v02
+        env:
+          NODE_OPTIONS: --trace-deprecation
         run: |
           npm install --no-audit --no-fund
           npm run lint
