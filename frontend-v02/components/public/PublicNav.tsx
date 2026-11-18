@@ -93,7 +93,7 @@ export default function PublicNav() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <button type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} className="grid size-11 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]">{theme === "dark" ? <Sun size={17}/> : <Moon size={17}/>}</button>
+          <button type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} className="theme-switch grid size-11 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]"><span key={theme} className="theme-switch-icon">{theme === "dark" ? <Sun size={17}/> : <Moon size={17}/>}</span></button>
           <Link href="/help" aria-label="Help and support" title="Help and support" className="grid size-11 place-items-center rounded-lg border border-white/[.12] text-slate-300 hover:bg-white/[.05]"><Headset size={17}/></Link>
           <Link href="/login" className="rounded-lg px-2 py-3 text-sm text-slate-300 transition-colors hover:text-white">Sign in</Link>
           <Link href="/register" className="public-nav-primary inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--on-accent)] transition-colors hover:bg-[var(--accent-hover)]">Get started <ArrowRight size={15}/></Link>
@@ -115,7 +115,7 @@ export default function PublicNav() {
           <p className="px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[.18em] text-slate-600">Choose your path</p>
           {audiences.map(item => <Link key={item.href} href={item.href} onClick={() => close()} className="rounded-lg px-3 py-3 hover:bg-white/[.04]"><span className="block text-sm font-semibold">{item.title}</span><span className="mt-1 block text-xs text-slate-500">{item.detail}</span></Link>)}
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[.08] pt-4">
-            <button type="button" onClick={toggleTheme} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/[.14] px-3 text-sm text-slate-300">{theme === "dark" ? <Sun size={16}/> : <Moon size={16}/>} {theme === "dark" ? "Light theme" : "Dark theme"}</button>
+            <button type="button" onClick={toggleTheme} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/[.14] px-3 text-sm text-slate-300"><span key={theme} className="theme-switch-icon">{theme === "dark" ? <Sun size={16}/> : <Moon size={16}/>}</span> {theme === "dark" ? "Light theme" : "Dark theme"}</button>
             <Link href="/help" onClick={() => close()} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/[.14] px-3 text-sm text-slate-300"><Headset size={16}/> Support</Link>
           </div>
         </nav>
