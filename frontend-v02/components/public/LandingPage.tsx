@@ -255,7 +255,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         </div>
       </section>
 
-      {continueCourses.length > 0 && <section className="landing-wrap py-10" aria-labelledby="continue-learning-heading">
+      {continueCourses.length > 0 && <section className="landing-wrap py-10 landing-reveal" aria-labelledby="continue-learning-heading">
         <div className="landing-section-heading"><div><h2 id="continue-learning-heading">Continue learning</h2><p>Pick up where you left off.</p></div><Link className="landing-text-link" href="/dashboard">Open My Learning <ArrowRight size={15}/></Link></div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{continueCourses.map((row:any) => <Link key={row.course.id} href={"/dashboard/learning/"+encodeURIComponent(row.course.id)} className="border border-[var(--border)] bg-[var(--card)] p-5 transition-colors hover:border-[var(--gold)]/50"><p className="text-[10px] uppercase tracking-[.16em] text-slate-500">In progress</p><h3 className="mt-3 font-display text-xl">{row.course.title}</h3><div className="mt-5 h-1.5 overflow-hidden bg-[var(--border)]"><div className="h-full bg-[var(--gold)]" style={{width:Math.max(0,Math.min(100,Number(row.progress?.progress_percent||0)))+"%"}}/></div><p className="mt-2 text-xs text-slate-500">{Number(row.progress?.progress_percent||0)}% complete</p></Link>)}</div>
       </section>}
