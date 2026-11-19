@@ -765,3 +765,14 @@ The implementation is represented by migrations `20261109180000_learner_deletion
 The production-check workflow exposed a pre-existing Learnora ME lint backlog on candidate `7a0fec45e272fdefd57b7c488ad2102d02d5dc5b`. The landing-page motion commit changed CSS only; repository-wide ESLint nevertheless scanned the entire frontend and failed with 710 errors and 49 warnings. Reported categories included explicit `any` types, synchronous state updates inside effects, and internal-route anchors. These findings span files outside that CSS-only change and were not introduced by the motion work.
 
 The original candidate was not deployed. Backend compilation, migration/rollback rehearsals, backend static checks, import, regression suite and HTTP smoke test passed; the learner frontend stopped at repository-wide ESLint before its production build, and Teams build was skipped. No production database or deployment was changed. The existing lint debt remains open and must be addressed in focused, behaviour-preserving batches; it must not be represented as resolved by changing lint severity.
+
+### Workflow repair — 19 November 2026
+
+The incremental-lint workflow edit was subsequently found to contain malformed trailing shell lines and a duplicated Teams build section. The malformed workflow caused GitHub Actions runs to fail before job creation. This was corrected by restoring the known-good workflow structure, removing the orphaned commands and duplicate build, and retaining the backend checks and both full frontend production builds.
+
+The frontend lint steps now lint only changed JavaScript/TypeScript files relative to the push or pull-request base. Full production builds remain mandatory for both `frontend-v02` and `frontend-team`; the existing repository-wide lint backlog is not represented as resolved. Checkout now fetches full history for the comparison. The changed-file list is passed to ESLint through `xargs`; an empty list skips only the incremental lint invocation, not the production build.
+
+- Workflow repair commit: `91d727f777fadfa5455d79d1c70db90fa30b5a89`.
+- Follow-up correction to changed-file input formatting: `9844198f0cb5eec759c3bb64ec51dfa011ba8445`.
+- The repaired workflow was recognised by GitHub and created a real job. At the time of this note, run `44624319758` had passed backend dependency audit, compilation, migration/rollback rehearsal, Python static checks, backend import, the complete backend test suite and HTTP startup smoke test; the learner production build was still running. A subsequent run for the formatting correction was queued.
+- No production deployment or production database change was performed. Release readiness remains unconfirmed until the latest-main run completes successfully, including both frontend builds.
