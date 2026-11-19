@@ -175,6 +175,12 @@ def issue_course_certificate(
     if existing:
         if existing[0].get("revoked_at"):
             raise HTTPException(409, "This certificate has been revoked and cannot be reissued. Contact Learnora support.")
+        if user.account_type == "learner":
+            try:
+                from services.course_completion_badges import award_course_completion_badges
+                award_course_completion_badges(str(user.id), course_id, database=supabase)
+            except Exception as exc:
+                print(f"Course completion badge award failed ({type(exc).__name__})")
         try:
             from services.notification_service import create_learner_notification
             create_learner_notification(
@@ -237,6 +243,13 @@ def issue_course_certificate(
 
     if not row:
         raise HTTPException(500, "The certificate could not be issued. Please retry.")
+    if user.account_type == "learner":
+        try:
+            from services.course_completion_badges import award_course_completion_badges
+            award_course_completion_badges(str(user.id), course_id, database=supabase)
+        except Exception as exc:
+            print(f"Course completion badge award failed ({type(exc).__name__})")
+
     try:
         from services.notification_service import create_learner_notification
         create_learner_notification(

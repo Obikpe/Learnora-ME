@@ -2,6 +2,7 @@
 import os
 import time
 import unittest
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -85,6 +86,21 @@ class CookieAuthContractTests(unittest.TestCase):
         self.assertEqual(len(query.payload["token_hash"]), 64)
         self.assertNotEqual(query.payload["token_hash"], token)
         self.assertNotIn("token", query.payload)
+
+    def test_password_change_invalidates_sessions_issued_before_change(self):
+        changed_at = "2026-11-19T22:00:00+00:00"
+        with self.assertRaises(HTTPException) as raised:
+            auth._assert_session_not_before_password_change(
+                {"iat": time.time() - 60},
+                {"password_changed_at": changed_at},
+            )
+        self.assertEqual(raised.exception.status_code, 401)
+
+    def test_fresh_session_after_password_change_remains_valid(self):
+        changed_at = datetime.now(timezone.utc).isoformat()
+        fresh = auth.make_token("learner@example.com", "normal", "learner")
+        payload = auth.jwt.decode(fresh, auth.JWT_SECRET, algorithms=[auth.ALGORITHM])
+        auth._assert_session_not_before_password_change(payload, {"password_changed_at": changed_at})
 
     def test_revoked_token_is_rejected_on_authenticated_requests(self):
         digest = auth._auth_token_hash("signed-token-value")

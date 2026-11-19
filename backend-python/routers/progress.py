@@ -1620,6 +1620,13 @@ def my_progress(
                     saved_enrolment = {**enrolment, **latest[0]}
 
         completed = bool(saved_enrolment.get("status") == "completed" or calculated_complete)
+        if completed and user.account_type == "learner" and user.id:
+            try:
+                from services.course_completion_badges import award_course_completion_badges
+                award_course_completion_badges(str(user.id), course_id, database=supabase)
+            except Exception as exc:
+                print(f"Course completion badge award failed ({type(exc).__name__})")
+
         if calculated_complete and enrolment.get("status") == "active" and completed:
             course_title = str((course_map.get(course_id) or {}).get("title") or "your course")
             _notify_learning_event(
@@ -1640,6 +1647,8 @@ def my_progress(
             "tracked_lessons": total_lessons,
             "completed_assessments": completed_assessments,
             "total_assessments": total_assessments,
+            "completed_units": completed_units,
+            "total_units": total_units,
             "last_activity_at": last_activity,
             "last_accessed_item": next((
                 {

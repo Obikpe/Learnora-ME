@@ -4038,6 +4038,7 @@ def me(
 def change_password(
     payload: ChangePasswordRequest,
     request: Request,
+    response: Response,
     user: CurrentUser = Depends(
         get_current_user
     ),
@@ -4148,16 +4149,17 @@ def change_password(
     new_hash = hash_password(
         payload.new_password
     )
+    password_changed_at = datetime.now(timezone.utc)
 
     try:
 
-        response = (
+        update_result = (
             supabase
             .table(table)
             .update(
                 {
                     "password_hash": new_hash,
-                    "password_changed_at": datetime.now(timezone.utc).isoformat(),
+                    "password_changed_at": password_changed_at.isoformat(),
                 }
             )
             .eq(
@@ -4180,7 +4182,7 @@ def change_password(
             ),
         )
 
-    if not response.data:
+    if not update_result.data:
 
         raise HTTPException(
             status_code=500,
@@ -4214,9 +4216,16 @@ def change_password(
         except Exception:
             logging.getLogger(__name__).exception("Password-change security notification failed")
 
-    return {
-        "status": "success",
-        "message": (
-            "Password changed successfully"
-        ),
-    }
+    # password_changed_at invalidates every older learner/admin/staff session.
+    # Issue one fresh short-lived token only to the browser performing the change.
+    fresh_token = make_token(user.email, user.role, user.account_type)
+    return deliver_auth_token(
+        request,
+        response,
+        fresh_token,
+        {
+            "status": "success",
+            "message": "Password changed successfully. Other devices have been signed out.",
+            "access_token": fresh_token,
+        },
+    )

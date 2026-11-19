@@ -91,8 +91,9 @@ def my_evidence(
     badges = (
         supabase
         .table("learner_badges")
-        .select("*")
+        .select("id,badge_id,user_id,awarded_at")
         .eq("user_id", user.id)
+        .order("awarded_at", desc=True)
         .execute()
     )
 
@@ -114,6 +115,22 @@ def my_evidence(
         .execute()
     ).data or []
     skill_map = {str(row["id"]): row for row in definitions}
+    badge_rows = badges.data or []
+    badge_ids = list({str(row["badge_id"]) for row in badge_rows if row.get("badge_id")})
+    badge_definitions = (
+        supabase.table("badges")
+        .select("id,name,description,criteria")
+        .in_("id", badge_ids)
+        .execute()
+    ).data or [] if badge_ids else []
+    badge_map = {str(row["id"]): row for row in badge_definitions}
+    course_completion_counts = {}
+    for learner_badge in badge_rows:
+        badge = badge_map.get(str(learner_badge.get("badge_id") or ""), {})
+        criteria = badge.get("criteria") if isinstance(badge.get("criteria"), dict) else {}
+        skill_id = str(criteria.get("skill_id") or "")
+        if criteria.get("type") == "course_completion" and skill_id:
+            course_completion_counts[skill_id] = course_completion_counts.get(skill_id, 0) + 1
     project_source_ids = list({
         str(row["source_id"])
         for row in evidence_rows
@@ -162,16 +179,25 @@ def my_evidence(
             mastery_scores.setdefault(skill_id, []).append(float(score))
     enriched_skill_rows = []
     for definition in definitions:
-        values = mastery_scores.get(str(definition["id"]), [])
+        skill_id = str(definition["id"])
+        values = mastery_scores.get(skill_id, [])
+        completion_count = course_completion_counts.get(skill_id, 0)
         proficiency = round(sum(values) / len(values), 1) if values else 0
-        status = "advanced" if proficiency >= 85 else "competent" if proficiency >= 70 else "developing" if values else "not_started"
+        status = (
+            "advanced" if proficiency >= 85
+            else "competent" if proficiency >= 70
+            else "developing" if values
+            else "course_completed" if completion_count
+            else "not_started"
+        )
         enriched_skill_rows.append({
             **definition,
-            "skill_id": str(definition["id"]),
+            "skill_id": skill_id,
             "skill_name": definition.get("name"),
             "proficiency": proficiency,
             "status": status,
             "verified_evidence_count": len(values),
+            "course_completion_count": completion_count,
         })
     course_ids = list({
         str(row["course_id"])
@@ -215,7 +241,15 @@ def my_evidence(
         "success": True,
         "skills": enriched_skill_rows,
         "evidence": enriched_evidence,
-        "badges": badges.data or [],
+        "badges": [
+            {
+                **row,
+                "name": (badge_map.get(str(row.get("badge_id") or "")) or {}).get("name"),
+                "description": (badge_map.get(str(row.get("badge_id") or "")) or {}).get("description"),
+                "criteria": (badge_map.get(str(row.get("badge_id") or "")) or {}).get("criteria"),
+            }
+            for row in badge_rows
+        ],
         "certificates": enriched_certificates,
     }
 
