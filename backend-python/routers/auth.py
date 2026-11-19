@@ -4149,7 +4149,6 @@ def change_password(
     new_hash = hash_password(
         payload.new_password
     )
-    password_changed_at = datetime.now(timezone.utc)
 
     try:
 
@@ -4159,7 +4158,7 @@ def change_password(
             .update(
                 {
                     "password_hash": new_hash,
-                    "password_changed_at": password_changed_at.isoformat(),
+                    "password_changed_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
             .eq(

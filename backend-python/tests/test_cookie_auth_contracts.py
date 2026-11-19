@@ -88,7 +88,7 @@ class CookieAuthContractTests(unittest.TestCase):
         self.assertNotIn("token", query.payload)
 
     def test_password_change_invalidates_sessions_issued_before_change(self):
-        changed_at = "2026-11-19T22:00:00+00:00"
+        changed_at = datetime.fromtimestamp(time.time() + 60, timezone.utc).isoformat()
         with self.assertRaises(HTTPException) as raised:
             auth._assert_session_not_before_password_change(
                 {"iat": time.time() - 60},
