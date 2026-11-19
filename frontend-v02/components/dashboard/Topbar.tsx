@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Bell, Check, X, Headset, CircleUserRound, LogOut } from "lucide-react";
+import { Bell, Check, X, Headset, CircleUserRound, LogOut, Sun, Moon } from "lucide-react";
+import { useTheme } from "../../components/providers/ThemeProvider";
 import { clearToken } from "../../lib/api";
 import { request } from "../../lib/api/client";
 
@@ -24,6 +25,7 @@ function safeInternalPath(value?: string | null) {
 
 export default function Topbar({ admin = false }: { admin?: boolean }) {
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
   const [unread, setUnread] = useState(0);
   const [toast, setToast] = useState<ToastNotice | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -177,6 +179,7 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
 
   return <>
     <div className="flex shrink-0 items-center gap-2">
+      <button type="button" onClick={toggleTheme} aria-pressed={theme === "dark"} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} className="theme-toggle theme-toggle-compact"><span className="theme-toggle-track"><span className="theme-toggle-thumb"><span key={theme} className="theme-toggle-icon">{theme === "dark" ? <Moon size={13}/> : <Sun size={13}/>}</span></span></span></button>
       {!admin && <a href="mailto:learnorame@gmail.com?subject=Learnora%20ME%20Support" onClick={() => { if (window.matchMedia("(max-width: 1023px)").matches) { setPreviewOpen(false); setAccountOpen(false); } }} aria-label="Customer support" title="Customer support" className={actionClass}><Headset size={17}/></a>}
       {!admin && <div className="relative" ref={notificationMenuRef}>
         <button type="button" onClick={() => { if (window.matchMedia("(max-width: 1023px)").matches) setAccountOpen(false); setPreviewOpen(value => !value); }} aria-expanded={previewOpen} aria-label={unread ? `Notifications preview, ${unread} unread` : "Notifications preview"} className={`relative ${actionClass}`}>
