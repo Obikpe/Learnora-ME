@@ -87,6 +87,9 @@ class CookieAuthContractTests(unittest.TestCase):
         self.assertNotEqual(query.payload["token_hash"], token)
         self.assertNotIn("token", query.payload)
 
+    def test_primary_production_frontend_origin_is_trusted_for_cookie_sessions(self):
+        self.assertIn("https://learnorame.vercel.app", auth._cookie_auth_origins())
+
     def test_password_change_invalidates_sessions_issued_before_change(self):
         changed_at = datetime.fromtimestamp(time.time() + 60, timezone.utc).isoformat()
         with self.assertRaises(HTTPException) as raised:

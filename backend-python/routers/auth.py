@@ -167,6 +167,7 @@ def _cookie_auth_origins() -> set[str]:
     """Return the explicit frontend origins allowed to establish cookie sessions."""
     origins = {
         "https://learnora-me-v02.vercel.app",
+        "https://learnorame.vercel.app",
         "https://teamslearnora.vercel.app",
         "https://thepheonixanalytics.com",
         "https://www.thepheonixanalytics.com",
