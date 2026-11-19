@@ -4,6 +4,7 @@ import "./organisation.css";
 import type { Metadata, Viewport } from "next";
 import { getSiteUrl } from "../lib/server/catalogue";
 import CookieConsent from "../components/public/CookieConsent";
+import RouteScrollReset from "../components/RouteScrollReset";
 import { ThemeProvider } from "../components/providers/ThemeProvider";
 
 export const metadata: Metadata = {
@@ -38,5 +39,5 @@ export const viewport: Viewport = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: '(function(){try{var c=JSON.parse(localStorage.getItem("learnora_cookie_consent_v1")||"null");var ok=c&&c.version===1&&c.functional===true;var t=ok?localStorage.getItem("learnora_theme"):null;if(!ok)localStorage.removeItem("learnora_theme");document.documentElement.dataset.theme=t==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}})();' }} /></head><body><ThemeProvider>{children}<CookieConsent /></ThemeProvider></body></html>;
+  return <html lang="en" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: '(function(){try{var c=JSON.parse(localStorage.getItem("learnora_cookie_consent_v1")||"null");var ok=c&&c.version===1&&c.functional===true;var t=ok?localStorage.getItem("learnora_theme"):null;if(!ok)localStorage.removeItem("learnora_theme");document.documentElement.dataset.theme=t==="dark"?"dark":"light"}catch(e){document.documentElement.dataset.theme="light"}})();' }} /></head><body><ThemeProvider><RouteScrollReset />{children}<CookieConsent /></ThemeProvider></body></html>;
 }

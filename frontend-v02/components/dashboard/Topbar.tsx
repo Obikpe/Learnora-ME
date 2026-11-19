@@ -207,7 +207,7 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
         <button type="button" onClick={() => { if (window.matchMedia("(max-width: 1023px)").matches) setPreviewOpen(false); setAccountOpen(value => !value); }} aria-expanded={accountOpen} aria-label="Account and profile menu" title="Account and profile" className={actionClass}><CircleUserRound size={18}/></button>
         {accountOpen && <div className="absolute right-0 top-full z-[75] mt-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl">
           <Link href={admin ? "/dashboard/admin" : "/dashboard/settings"} onClick={() => setAccountOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm text-[var(--text-body)] hover:bg-[var(--bg-soft)]">{admin ? "Admin overview" : "Account settings"}</Link>
-          <button type="button" onClick={() => { setAccountOpen(false); clearToken(); window.location.replace("/"); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-body)] hover:bg-[var(--bg-soft)]"><LogOut size={15}/>Sign out</button>
+          <button type="button" onClick={async () => { setAccountOpen(false); const confirmed = await clearToken(); window.location.replace(confirmed ? "/" : "/login?reason=logout-unconfirmed"); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--text-body)] hover:bg-[var(--bg-soft)]"><LogOut size={15}/>Sign out</button>
         </div>}
       </div>
     </div>

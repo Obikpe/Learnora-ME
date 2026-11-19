@@ -52,8 +52,8 @@ export function invalidateRequestCache() {
   clearStoredCache();
 }
 
-export const clearToken = () => {
-  if (typeof window === "undefined") return;
+export const clearToken = async (): Promise<boolean> => {
+  if (typeof window === "undefined") return true;
   invalidateRequestCache();
   for (let index = sessionStorage.length - 1; index >= 0; index--) {
     const key = sessionStorage.key(index);
@@ -71,7 +71,17 @@ export const clearToken = () => {
   sessionStorage.setItem("phx_logged_out", "1");
   localStorage.setItem("phx_logged_out", "1");
   clearOrganisationContext();
-  void fetch("/api/auth/logout", { method: "POST", credentials: "same-origin", keepalive: true }).catch(() => {});
+  try {
+    const response = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+      keepalive: true,
+      cache: "no-store",
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 };
 
 function cacheLifetime(path: string) {
