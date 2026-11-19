@@ -793,5 +793,4 @@ The frontend lint steps now lint only changed JavaScript/TypeScript files relati
 - Frontend logout waits for the server response instead of launching a fire-and-forget request.
 
 ### Database and release boundary
-- Migration `20261119100000_revoked_auth_tokens.sql` creates the RLS-protected revocation store with access limited to the backend service role.
-- Apply and verify the migration before deploying the backend. No production database mutation is included in this source commit.
+- Migration `20261119223222_revoked_auth_tokens.sql` matches the live migration ledger. The RLS-protected table is applied in production, and verification confirmed browser roles have no table privileges while `service_role` has the required read/write permissions.
