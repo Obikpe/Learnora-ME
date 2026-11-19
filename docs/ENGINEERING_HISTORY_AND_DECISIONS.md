@@ -758,3 +758,10 @@ The implementation is represented by migrations `20261109180000_learner_deletion
 ### Verification boundary
 - Source inspected after changes to confirm all reveal sections have the `landing-reveal` class and the observer disconnects on unmount.
 - Reduced-motion styles are included. No browser rendering, device-level performance test, frontend build, or preview deployment is claimed in this entry.
+
+
+## 7. Frontend lint baseline and incremental enforcement — 19 November 2026
+
+The production-check workflow exposed a pre-existing Learnora ME lint backlog on candidate `7a0fec45e272fdefd57b7c488ad2102d02d5dc5b`. The landing-page motion commit changed CSS only; repository-wide ESLint nevertheless scanned the entire frontend and failed with 710 errors and 49 warnings. Reported categories included explicit `any` types, synchronous state updates inside effects, and internal-route anchors. These findings span files outside that CSS-only change and were not introduced by the motion work.
+
+The original candidate was not deployed. Backend compilation, migration/rollback rehearsals, backend static checks, import, regression suite and HTTP smoke test passed; the learner frontend stopped at repository-wide ESLint before its production build, and Teams build was skipped. No production database or deployment was changed. The existing lint debt remains open and must be addressed in focused, behaviour-preserving batches; it must not be represented as resolved by changing lint severity.
