@@ -90,7 +90,7 @@ function cacheLifetime(path: string) {
   if (path === "/learner/onboarding") return 2 * 60_000;
   if (/^\/progress\/(learning-summary|learning-sessions)([?\/]|$)/.test(path)) return 0;
   if (path === "/progress/me") return 60_000;
-  if (path === "/evidence/me" || path === "/credentials/me") return 5 * 60_000;
+  if (path === "/evidence/me" || path === "/credentials/me") return 30_000;
   if (/^\/(notifications|ai|billing|payments|webhooks|admin|analytics|audit|reports)(\/|$)/.test(path)) return 0;
   return 20_000;
 }

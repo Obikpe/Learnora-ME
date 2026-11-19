@@ -45,15 +45,15 @@ export default function AccountSettings({ user }: { user: any }) {
       setError("The new passwords do not match.");
       return;
     }
-    if (form.new_password.length < 8) {
-      setError("Choose a new password with at least 8 characters.");
+    if (form.new_password.length < 12) {
+      setError("Choose a new password with at least 12 characters.");
       return;
     }
     setBusy(true);
     try {
       await request("/auth/change-password", { method: "POST", body: JSON.stringify(form) });
       setForm({ current_password: "", new_password: "", confirm_password: "" });
-      setNotice("Your password has been changed.");
+      setNotice("Your password has been changed. Other devices have been signed out; this device remains signed in.");
     } catch (e: any) {
       setError(e.message || "Your password could not be changed.");
     } finally {
@@ -103,8 +103,8 @@ export default function AccountSettings({ user }: { user: any }) {
       {notice && <p role="status" className="mt-5 flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[.05] p-3 text-sm text-emerald-200"><CheckCircle2 size={15}/>{notice}</p>}
       <form onSubmit={changePassword} className="mt-6 space-y-4">
         <label className="block text-xs text-slate-400">Current password<input required type="password" autoComplete="current-password" value={form.current_password} onChange={e => setForm(old => ({ ...old, current_password: e.target.value }))} className="mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] p-3 text-sm text-white outline-none focus:border-[#d7ad35]/50"/></label>
-        <label className="block text-xs text-slate-400">New password<input required minLength={8} type="password" autoComplete="new-password" value={form.new_password} onChange={e => setForm(old => ({ ...old, new_password: e.target.value }))} className="mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] p-3 text-sm text-white outline-none focus:border-[#d7ad35]/50"/><span className="mt-1 block text-[11px] text-slate-600">At least 8 characters.</span></label>
-        <label className="block text-xs text-slate-400">Confirm new password<input required minLength={8} type="password" autoComplete="new-password" value={form.confirm_password} onChange={e => setForm(old => ({ ...old, confirm_password: e.target.value }))} className="mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] p-3 text-sm text-white outline-none focus:border-[#d7ad35]/50"/></label>
+        <label className="block text-xs text-slate-400">New password<input required minLength={12} type="password" autoComplete="new-password" value={form.new_password} onChange={e => setForm(old => ({ ...old, new_password: e.target.value }))} className="mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] p-3 text-sm text-white outline-none focus:border-[#d7ad35]/50"/><span className="mt-1 block text-[11px] text-slate-600">At least 12 characters.</span></label>
+        <label className="block text-xs text-slate-400">Confirm new password<input required minLength={12} type="password" autoComplete="new-password" value={form.confirm_password} onChange={e => setForm(old => ({ ...old, confirm_password: e.target.value }))} className="mt-2 w-full rounded-xl border border-white/10 bg-[#090c10] p-3 text-sm text-white outline-none focus:border-[#d7ad35]/50"/></label>
         <button disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-bold text-black disabled:opacity-50"><ShieldCheck size={15}/>{busy ? "Updating password…" : "Update password"}</button>
       </form>
     </section>

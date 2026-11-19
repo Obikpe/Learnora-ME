@@ -794,3 +794,13 @@ The frontend lint steps now lint only changed JavaScript/TypeScript files relati
 
 ### Database and release boundary
 - Migration `20261119223222_revoked_auth_tokens.sql` matches the live migration ledger. The RLS-protected table is applied in production, and verification confirmed browser roles have no table privileges while `service_role` has the required read/write permissions.
+
+
+## 4. Recent learner dashboard, session and achievement corrections — 19 November 2026
+
+- Dashboard overall progress now uses all accessible enrolled courses, including completed enrolments, and weights lessons plus published assessments. Completed courses contribute 100%; the active-course count remains separate.
+- The dashboard no longer exposes a manual Refresh control. It revalidates learning records on focus/visibility and periodically while open; evidence and credential cache lifetimes are shorter to keep achievement updates current.
+- Current and longest streak values both render explicit day units.
+- Password changes update `password_changed_at`, which invalidates older learner, admin and internal staff JWTs on their next authenticated request. The password-change response issues a fresh short-lived session only to the browser performing the change; other devices must sign in again. Password-reset flows continue to invalidate all existing sessions.
+- Added a criteria-driven `course_completion` badge awarder. The live Pheonix database had an empty skill and badge catalogue; the migration seeds the Data Analytics Foundations skill and badge for the Introduction to Data Analytics course, and backfills the badge to existing completed enrolments. This is course-completion recognition only and does not inflate verified mastery, which still requires approved project evidence.
+- The live migration `20261119224623_course_completion_skill_badges` was applied and verified. The course had two completed enrolments and both were awarded the badge.

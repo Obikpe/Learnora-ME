@@ -130,3 +130,10 @@ The implementation checkpoint above is historical. The following release prepara
 - The previous production Teams and backend deployments were built from older `Pheonix-Analytics` commits. The release-candidate staging deployments were explicitly built from `Learnora-ME`. Production will be deployed from the current repository and correct monorepo roots; automatic Git push linkage should be checked separately because Vercel project Git connections are not changed by a manual deployment.
 - Production domains currently assigned to the Vercel projects are `learnora-me.vercel.app`, `teamslearnora.vercel.app` and `learnora-backend.vercel.app`. Both frontend Next.js configurations proxy `/api/*` to the backend domain; this same-origin proxy is retained.
 - Production migration, browser-based learner/staff acceptance and the final production deployment remain unverified. Do not mark phases 6–8 as production-release complete until these gates pass.
+
+
+## Course-completion recognition — 19 November 2026
+
+- Added the first criteria-driven course-completion skill badge for Introduction to Data Analytics.
+- Existing completed enrolments for that course were backfilled in the live Pheonix database.
+- Course-completion badges appear as a separate recognition state and do not increase verified skill proficiency. Verified mastery continues to require approved project submissions mapped to the relevant skill.

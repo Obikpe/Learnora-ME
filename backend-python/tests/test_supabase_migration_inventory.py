@@ -64,6 +64,7 @@ APPLIED_VERSIONS = [
     "20261118090842",
     "20261118091000",
     "20261119223222",
+    "20261119224623",
 ]
 
 # Repository filenames still using an older version timestamp, mapped to the
