@@ -121,7 +121,7 @@ export default function Sidebar({ admin = false, role = "", active, hideTutor = 
         {mobileOpen ? <X size={19}/> : <Menu size={19}/>}
       </button>
     </div>
-    <Link href={admin ? "/dashboard/admin/overview" : "/dashboard"} className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight text-[var(--text-heading)]" aria-label="Learnora ME home">
+    <Link href={admin ? "/dashboard/admin" : "/dashboard"} className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight text-[var(--text-heading)]" aria-label="Learnora ME home">
       <span>Learnora <span className="text-[var(--primary)]">ME</span></span>
     </Link>
 
