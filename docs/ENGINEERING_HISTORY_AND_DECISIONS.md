@@ -741,3 +741,20 @@ The implementation is represented by migrations `20261109180000_learner_deletion
 - These checks are source-level assertions, not an authenticated browser walkthrough. Desktop/mobile rendering, navigation clicks, sign-in/dashboard loading and theme persistence still require browser acceptance.
 - The latest GitHub Actions run for the candidate source was pending with no jobs reported when this note was written; no successful build or test result is claimed.
 - No Vercel deployment, production database change or migration was performed.
+## Landing-page motion enhancement — 19 November 2026
+
+### Documentation reviewed before implementation
+- `docs/learnora-ui-ux-research.md`: motion must remain subordinate to comprehension, preserve semantic and keyboard-accessible controls, and work on mobile.
+- `docs/PRODUCT_ENGINEERING_SPEC.md`: keep the existing responsive Next.js UI architecture and accessibility requirements.
+
+### Changes
+- Added a one-time IntersectionObserver reveal for the landing page's major content sections, including the personalised Continue Learning panel. Sections reveal as they enter the viewport and are unobserved after reveal.
+- Added a sequenced hero entrance for the eyebrow, rotating headline/description, action, search, topic chips, learning points, slide controls and live course preview.
+- Added a restrained animated course-preview ring and occasional light sweep, with a subtle icon breathing effect.
+- Added short staggered entrances for course, track, principles, audience and evidence cards; gentle hover lift/image zoom; animated action arrows; and FAQ open-state transitions.
+- Kept the existing hero headline carousel's reduced-motion behaviour and added explicit reduced-motion overrides for the new motion system. IntersectionObserver has a graceful fallback for unsupported browsers.
+- No content, routes, data source, or navigation behaviour was changed.
+
+### Verification boundary
+- Source inspected after changes to confirm all reveal sections have the `landing-reveal` class and the observer disconnects on unmount.
+- Reduced-motion styles are included. No browser rendering, device-level performance test, frontend build, or preview deployment is claimed in this entry.
