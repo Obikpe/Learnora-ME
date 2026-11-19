@@ -33,15 +33,25 @@ export function invalidateApiCache() {
   } catch {}
 }
 
-export const clearToken = () => {
-  if (typeof window === "undefined") return;
+export const clearToken = async (): Promise<boolean> => {
+  if (typeof window === "undefined") return true;
   invalidateApiCache();
   sessionStorage.removeItem("learnora_team_token");
   sessionStorage.removeItem("learnora_team_session_epoch");
   localStorage.removeItem("learnora_team_token");
   sessionStorage.setItem("learnora_team_logged_out", "1");
   sessionStorage.removeItem("learnora_team_last_activity");
-  void fetch("/api/internal/auth/logout", { method: "POST", credentials: "same-origin", keepalive: true }).catch(() => {});
+  try {
+    const response = await fetch("/api/internal/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+      keepalive: true,
+      cache: "no-store",
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 };
 
 export class ApiRequestError extends Error {

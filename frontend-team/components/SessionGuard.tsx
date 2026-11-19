@@ -34,8 +34,7 @@ export default function SessionGuard() {
       const raw = sessionStorage.getItem("learnora_team_last_activity");
       const last = raw ? Number(raw) : Date.now();
       if (!Number.isFinite(last) || Date.now() - last >= IDLE_LIMIT_MS) {
-        clearToken();
-        router.replace("/login?reason=idle");
+        void clearToken().then(() => router.replace("/login?reason=idle"));
       }
     };
 

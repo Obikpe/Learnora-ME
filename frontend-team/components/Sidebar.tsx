@@ -39,7 +39,7 @@ export default function Sidebar({roles,active}:{roles:string[];active:string}) {
   const [mobileOpen,setMobileOpen]=useState(false);
   const platform=roles.includes("super_admin")||roles.includes("platform_admin");
   const items=platform?all:all.filter(x=>["overview","staff","teams","courses","tracks","content","projects","certificates","assessments","learners","activity","notifications","settings"].includes(x[0]));
-  const logout=()=>{clearToken();location.href="/login"};
+  const logout=async()=>{const confirmed=await clearToken();location.href=confirmed?"/login":"/login?reason=logout-unconfirmed"};
   return <>
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-[17rem] border-r border-white/[.09] bg-[#0c1015] lg:block">
       <div className="flex h-20 items-center border-b border-white/[.09] px-6">
