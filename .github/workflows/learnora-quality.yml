@@ -254,7 +254,6 @@ jobs:
             echo "No Teams frontend source files changed; full build still runs."
           fi
           npm run build
-          npm run build
 
       - name: Upload generated dependency lockfiles for review
         if: always()
