@@ -718,3 +718,26 @@ The approved product rule is:
 - Shared platform catalogue and organisation resources are not deleted solely because a learner created or was assigned as their actor; the learner attribution is detached where appropriate.
 
 The implementation is represented by migrations `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql`. They remain unapplied to production until separately authorised. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until migrations, schema checks and deletion tests are complete. The Terms and Privacy Policy wording will be reviewed and updated in a separate documentation/legal-review pass after the feature set is complete.
+## Learnora ME visual and navigation repair — 19 November 2026
+
+### Documentation reviewed before implementation
+- `docs/learnora-ui-ux-research.md`: preserve the existing public top-navigation structure, use the existing Next.js/React/Tailwind/Lucide stack, use real catalogue data, keep layouts page-specific, and make motion subordinate to comprehension and accessibility.
+- `docs/PRODUCT_ENGINEERING_SPEC.md`: `frontend-v02/` is the active customer-facing Learnora ME application; preserve the customer/internal-app boundary and existing architecture.
+- `docs/ENGINEERING_HISTORY_AND_DECISIONS.md`, `docs/ROADMAP.md`, and `docs/LEARNER_JOURNEY_PHASES_1_5.md`: preserve learner access restrictions and distinguish source-level checks from runtime/browser acceptance.
+
+### Changes committed to `main`
+- Corrected the administrator brand/home link to `/dashboard/admin`; the previous `/dashboard/admin/overview` destination did not exist.
+- Kept learner links that are handled by the learner dynamic route and retained only administrator destinations supported by the admin route handler. The public navigation, footer, account settings and instructor destinations were checked against the app route tree.
+- Moved the animated theme toggle into the shared dashboard Topbar so it is available on learner and administrator dashboard pages, removing the duplicate control from the My Learning page. Added compact sizing for narrow mobile headers.
+- Removed broad global dark-background catch-all and global white/slate text recolouring rules that overrode Tailwind utilities. Legacy surface colours now map by surface level (page, soft surface, card) rather than flattening all surfaces into one card colour. Public navigation/footer retain their scoped theme rules.
+- Restored the mobile landing-page featured-course preview, added a restrained Learnora eyebrow and accessible manual controls for the rotating hero messages. The temporary floating learning-path overlay remains removed.
+
+### Source-level verification
+- Re-fetched the route tree and checked all 21 learner/admin/instructor sidebar destinations against static routes or the supported dynamic route sections; all matched.
+- Checked all public navigation and footer destinations against the route tree; all matched.
+- Confirmed the administrator brand link no longer points to `/dashboard/admin/overview`, the shared dashboard theme toggle is present, the landing hero controls and mobile preview are present, the broad global colour overrides are absent, and the edited global CSS braces are balanced.
+
+### Acceptance boundary
+- These checks are source-level assertions, not an authenticated browser walkthrough. Desktop/mobile rendering, navigation clicks, sign-in/dashboard loading and theme persistence still require browser acceptance.
+- The latest GitHub Actions run for the candidate source was pending with no jobs reported when this note was written; no successful build or test result is claimed.
+- No Vercel deployment, production database change or migration was performed.
