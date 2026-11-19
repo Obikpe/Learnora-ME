@@ -134,6 +134,24 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
   const [activeSlide, setActiveSlide] = useState(0);
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const targets = document.querySelectorAll<HTMLElement>(".landing-page .landing-reveal");
+    if (!("IntersectionObserver" in window)) {
+      targets.forEach(target => target.classList.add("is-visible"));
+      return;
+    }
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        (entry.target as HTMLElement).classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -48px 0px" });
+    targets.forEach(target => observer.observe(target));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") setActiveSlide(value => (value + 1) % heroSlides.length);
     }, 7000);
@@ -197,7 +215,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
 
   return (
     <main id="main-content" className="landing-page">
-      <section className="landing-wrap landing-hero" aria-label="Discover Learnora">
+      <section className="landing-wrap landing-hero landing-hero-motion" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
           <p className="landing-kicker"><span/> Learnora ME</p>
           <h1 key={activeSlide} className="landing-slide-copy" aria-live="polite">{slide.title}</h1>
@@ -242,7 +260,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{continueCourses.map((row:any) => <Link key={row.course.id} href={"/dashboard/learning/"+encodeURIComponent(row.course.id)} className="border border-[var(--border)] bg-[var(--card)] p-5 transition-colors hover:border-[var(--gold)]/50"><p className="text-[10px] uppercase tracking-[.16em] text-slate-500">In progress</p><h3 className="mt-3 font-display text-xl">{row.course.title}</h3><div className="mt-5 h-1.5 overflow-hidden bg-[var(--border)]"><div className="h-full bg-[var(--gold)]" style={{width:Math.max(0,Math.min(100,Number(row.progress?.progress_percent||0)))+"%"}}/></div><p className="mt-2 text-xs text-slate-500">{Number(row.progress?.progress_percent||0)}% complete</p></Link>)}</div>
       </section>}
 
-      <section className="landing-section landing-soft-section">
+      <section className="landing-section landing-soft-section landing-reveal">
         <div className="landing-wrap">
           <div className="landing-section-heading">
             <div><h2>New and available to explore</h2></div>
@@ -255,7 +273,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         </div>
       </section>
 
-      <section className="landing-wrap landing-tracks-section">
+      <section className="landing-wrap landing-tracks-section landing-reveal">
         <div className="landing-section-heading">
           <div><h2>Follow a path, not just a playlist</h2><p>Tracks bring related courses together in an intentional sequence.</p></div>
           <Link className="landing-text-link" href="/tracks">Explore all tracks <ArrowRight size={15}/></Link>
@@ -265,7 +283,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         ) : !error ? <div className="landing-empty"><Route size={24}/><h3>No tracks available yet</h3><p>There are no published learning tracks to explore right now.</p></div> : null}
       </section>
 
-      <section className="landing-image-band">
+      <section className="landing-image-band landing-reveal">
         <div className="landing-wrap landing-image-band-inner">
           <div className="landing-evidence-preview" aria-label="How Learnora distinguishes learning progress, assessment and reviewed evidence">
             <article><div><strong>Course progress</strong><p>Records lessons and learning activity.</p></div><span className="landing-evidence-type">Learning record</span></article>
@@ -276,14 +294,14 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         </div>
       </section>
 
-      <section className="landing-wrap landing-categories-section">
+      <section className="landing-wrap landing-categories-section landing-reveal">
         <div className="landing-section-heading">
           <div><h2>Explore learning areas</h2><p>These topics are drawn from the published course catalogue.</p></div>
         </div>
         {categories.length ? <div className="landing-category-list">{categories.map(category => <Link key={category} href={"/courses?search=" + encodeURIComponent(category)}><span/>{category}<ArrowUpRight size={14}/></Link>)}</div> : <div className="landing-empty"><Compass size={24}/><h3>Explore courses by topic</h3><p>Topic collections will appear when published courses include topic information.</p></div>}
       </section>
 
-      <section className="landing-wrap landing-principles-section">
+      <section className="landing-wrap landing-principles-section landing-reveal">
         <div className="landing-principles-grid">
           <article><h3>Practice matters</h3><p>Understanding grows when people use ideas, make decisions and learn from feedback.</p></article>
           <article><h3>Evidence should be honest</h3><p>Course completion, assessment results and instructor-reviewed evidence are different things.</p></article>
@@ -291,7 +309,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         </div>
       </section>
 
-      <section className="landing-wrap landing-audience-section">
+      <section className="landing-wrap landing-audience-section landing-reveal">
         <div className="landing-section-heading"><div><h2>Different journeys. One shared foundation.</h2></div></div>
         <div className="landing-audience-grid">
           <Link href="/for-learners"><Image src={IMAGES.learners} alt="Learners working together" width={700} height={500} quality={75} sizes="(max-width: 768px) 100vw, 33vw"/><div><GraduationCap size={20}/><h3>For learners</h3><p>Build useful skills through lessons, practice, projects and an honest record of progress.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
@@ -300,7 +318,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         </div>
       </section>
 
-      <section className="landing-wrap landing-faq-section">
+      <section className="landing-wrap landing-faq-section landing-reveal">
         <div className="landing-faq-intro"><h2>Before you begin.</h2><p>Know what you can explore and how learning works on Learnora.</p></div>
         <div className="landing-faq-list">
           <details><summary>What makes Learnora different from a course library?</summary><p>A course is one part of the journey. Learnora connects lessons with practice, projects, feedback and a record of what you have demonstrated.</p></details>
@@ -312,7 +330,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         </div>
       </section>
 
-      <section className="landing-wrap landing-final-cta">
+      <section className="landing-wrap landing-final-cta landing-reveal">
         <div><h2>Your next step does not have to be your whole future.</h2><p>Explore a course, follow a learning track or find out how Learnora can support your teaching or organisation.</p></div>
         <div className="landing-final-actions"><Link className="landing-button landing-button-primary" href="/courses">Explore courses <ArrowRight size={16}/></Link><Link className="landing-button landing-button-outline" href="/get-started">Choose your path <ArrowUpRight size={16}/></Link></div>
       </section>
