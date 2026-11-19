@@ -776,3 +776,22 @@ The frontend lint steps now lint only changed JavaScript/TypeScript files relati
 - Follow-up correction to changed-file input formatting: `9844198f0cb5eec759c3bb64ec51dfa011ba8445`.
 - The repaired workflow was recognised by GitHub and created a real job. At the time of this note, run `44624319758` had passed backend dependency audit, compilation, migration/rollback rehearsal, Python static checks, backend import, the complete backend test suite and HTTP startup smoke test; the learner production build was still running. A subsequent run for the formatting correction was queued.
 - No production deployment or production database change was performed. Release readiness remains unconfirmed until the latest-main run completes successfully, including both frontend builds.
+
+## Route scroll, visible landing motion and server-side session revocation — 19 November 2026
+
+### Route navigation
+- Added a root-level pathname listener that returns the document to the top after client-side route changes. Same-page hash navigation remains browser-native.
+
+### Landing-page motion
+- Added an ambient moving gradient, orbiting outline, animated accent treatment and gentle featured-course float to the hero.
+- Strengthened section entrance and staggered card animations. Content remains visible when JavaScript or IntersectionObserver is unavailable; reduced-motion preferences still disable non-essential movement.
+
+### Session security
+- Reduced the backend JWT lifetime to 15 minutes and clamp the configured lifetime so production environment overrides cannot extend it beyond 15 minutes. Learner, cohort and internal staff tokens use the same cap.
+- Added a server-side revoked-token store. Only a SHA-256 fingerprint and token expiry are stored; the bearer token itself is never persisted.
+- Learner and internal staff logout endpoints revoke the presented cookie/bearer token before returning success. Every learner/cohort/staff authenticated request checks the revocation store and fails closed if that store is unavailable.
+- Frontend logout waits for the server response instead of launching a fire-and-forget request.
+
+### Database and release boundary
+- Migration `20261119100000_revoked_auth_tokens.sql` creates the RLS-protected revocation store with access limited to the backend service role.
+- Apply and verify the migration before deploying the backend. No production database mutation is included in this source commit.
