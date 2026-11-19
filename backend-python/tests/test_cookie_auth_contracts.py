@@ -115,6 +115,53 @@ class CookieAuthContractTests(unittest.TestCase):
                 auth.assert_token_not_revoked("signed-token-value")
         self.assertEqual(raised.exception.status_code, 401)
 
+    def test_password_change_reissues_only_the_current_browser_session(self):
+        from types import SimpleNamespace
+
+        class UpdateQuery:
+            def __init__(self):
+                self.payload = None
+            def update(self, payload):
+                self.payload = payload
+                return self
+            def eq(self, *_args):
+                return self
+            def execute(self):
+                return SimpleNamespace(data=[{"id": "admin-1"}])
+
+        class FakeDatabase:
+            def __init__(self):
+                self.query = UpdateQuery()
+            def table(self, _name):
+                return self.query
+
+        database = FakeDatabase()
+        request = make_request("http://localhost:3000")
+        response = Response()
+        user = SimpleNamespace(email="admin@example.com", role="admin", account_type="admin", id="admin-1")
+        payload = auth.ChangePasswordRequest(
+            current_password="OldSecurePassword123!",
+            new_password="NewSecurePassword456!",
+            confirm_password="NewSecurePassword456!",
+        )
+        with patch.object(auth, "check_password_rules"), \
+             patch.object(auth, "_find_admin", return_value={"id": "admin-1", "password_hash": "stored"}), \
+             patch.object(auth, "verify_password", return_value=(True, False)), \
+             patch.object(auth, "hash_password", return_value="new-hash"), \
+             patch.object(auth, "supabase", database), \
+             patch.object(auth, "log_audit_event"), \
+             patch.object(auth, "log_security_event"):
+            result = auth.change_password(payload, request, response, user)
+
+        self.assertEqual(result["status"], "success")
+        self.assertNotIn("access_token", result)
+        cookie = response.headers.get("set-cookie", "")
+        self.assertIn("phx_token=", cookie)
+        fresh_token = cookie.split("phx_token=", 1)[1].split(";", 1)[0]
+        fresh_payload = auth.jwt.decode(fresh_token, auth.JWT_SECRET, algorithms=[auth.ALGORITHM])
+        changed_at = datetime.fromisoformat(database.query.payload["password_changed_at"]).timestamp()
+        self.assertGreaterEqual(float(fresh_payload["iat"]), changed_at)
+
     def test_logout_revokes_cookie_token_before_success(self):
         request = make_request(cookie="phx_token=signed-token")
         response = Response()
