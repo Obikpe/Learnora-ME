@@ -10,6 +10,6 @@ CREATE INDEX IF NOT EXISTS revoked_auth_tokens_expires_at_idx ON public.revoked_
 ALTER TABLE public.revoked_auth_tokens ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.revoked_auth_tokens FROM PUBLIC;
 REVOKE ALL ON TABLE public.revoked_auth_tokens FROM anon, authenticated;
-GRANT SELECT, INSERT, DELETE ON TABLE public.revoked_auth_tokens TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.revoked_auth_tokens TO service_role;
 COMMENT ON TABLE public.revoked_auth_tokens IS 'One-way fingerprints of revoked Learnora JWTs, retained only until each token expiry.';
 COMMIT;
