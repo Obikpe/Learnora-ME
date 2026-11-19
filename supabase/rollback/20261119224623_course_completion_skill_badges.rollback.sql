@@ -15,4 +15,3 @@ WHERE name = 'Data Analytics Foundations'
     SELECT 1 FROM public.badges
     WHERE criteria->>'skill_id' = skills.id::text
   );
-COMMIT;
