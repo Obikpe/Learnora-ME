@@ -314,3 +314,117 @@
   .landing-search button { min-height:44px; }
   .landing-audience-strip a { display:inline-flex; min-height:44px; align-items:center; }
 }
+
+/* Landing-page motion system: editorial entrance, scroll reveals and restrained interaction feedback. */
+@keyframes landing-rise-in {
+  from { opacity:0; transform:translate3d(0,24px,0); }
+  to { opacity:1; transform:translate3d(0,0,0); }
+}
+@keyframes landing-soft-in {
+  from { opacity:0; transform:translate3d(-14px,0,0); }
+  to { opacity:1; transform:translate3d(0,0,0); }
+}
+@keyframes landing-card-arrive {
+  from { opacity:0; transform:translate3d(0,18px,0) scale(.985); }
+  to { opacity:1; transform:translate3d(0,0,0) scale(1); }
+}
+@keyframes landing-orbit {
+  0%,100% { transform:translate3d(0,0,0) rotate(-8deg); }
+  50% { transform:translate3d(0,-9px,0) rotate(0deg); }
+}
+@keyframes landing-icon-breathe {
+  0%,100% { box-shadow:0 0 0 0 color-mix(in srgb,var(--primary) 0%,transparent); }
+  50% { box-shadow:0 0 0 9px color-mix(in srgb,var(--primary) 9%,transparent); }
+}
+@keyframes landing-sheen {
+  0% { transform:translateX(-120%) skewX(-18deg); opacity:0; }
+  18% { opacity:.45; }
+  48%,100% { transform:translateX(140%) skewX(-18deg); opacity:0; }
+}
+@keyframes landing-rule-grow {
+  from { transform:scaleX(0); transform-origin:left; }
+  to { transform:scaleX(1); transform-origin:left; }
+}
+
+/* Hero elements enter in sequence rather than moving continuously. */
+.landing-hero-motion .landing-kicker { animation:landing-soft-in .65s .04s both; }
+.landing-hero-motion .landing-slide-copy { animation:landing-rise-in .72s .12s both; }
+.landing-hero-motion .landing-hero-description { animation:landing-rise-in .72s .22s both; }
+.landing-hero-motion .landing-actions { animation:landing-rise-in .72s .3s both; }
+.landing-hero-motion .landing-search { animation:landing-rise-in .72s .38s both; }
+.landing-hero-motion .landing-popular-topics { animation:landing-rise-in .72s .44s both; }
+.landing-hero-motion .landing-hero-points { animation:landing-rise-in .72s .5s both; }
+.landing-hero-motion .landing-slide-controls { animation:landing-soft-in .65s .56s both; }
+.landing-hero-motion .landing-hero-product { animation:landing-rise-in .9s .2s both; }
+.landing-hero-product { position:relative; isolation:isolate; }
+.landing-hero-product:before {
+  content:""; position:absolute; z-index:-1; width:190px; height:190px; top:-90px; right:-65px;
+  border:1px solid color-mix(in srgb,var(--primary) 24%,transparent); border-radius:50%;
+  box-shadow:0 0 0 22px color-mix(in srgb,var(--primary) 4%,transparent),0 0 0 48px color-mix(in srgb,var(--primary) 3%,transparent);
+  pointer-events:none; animation:landing-orbit 9s ease-in-out infinite;
+}
+.landing-hero-product:after {
+  content:""; position:absolute; z-index:0; top:0; bottom:0; left:0; width:32%;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--primary) 8%,transparent),transparent);
+  pointer-events:none; transform:translateX(-140%) skewX(-18deg);
+  animation:landing-sheen 8s 1.5s ease-in-out infinite;
+}
+.landing-hero-product-icon { animation:landing-icon-breathe 4.5s 1s ease-in-out infinite; }
+.landing-hero-product-top,.landing-hero-product-kicker,.landing-hero-product h2,
+.landing-hero-product-description,.landing-hero-product-topics,.landing-hero-product-footer { position:relative; z-index:1; }
+.landing-slide-controls > div button:before { transition:width .28s ease,background-color .28s ease; }
+.landing-slide-controls > div button:focus-visible { outline:2px solid var(--primary); outline-offset:2px; border-radius:6px; }
+
+/* Sections reveal once as the visitor scrolls; no layout measurements or scroll handlers. */
+.landing-page .landing-reveal { opacity:0; transform:translate3d(0,24px,0); transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1); }
+.landing-page .landing-reveal.is-visible { opacity:1; transform:translate3d(0,0,0); }
+.landing-page .landing-reveal .landing-section-heading { transition:transform .65s .06s ease,opacity .65s .06s ease; }
+.landing-page .landing-reveal:not(.is-visible) .landing-section-heading { opacity:0; transform:translateY(10px); }
+.landing-page .landing-reveal.is-visible .landing-section-heading { opacity:1; transform:translateY(0); }
+
+/* Cards arrive in a short stagger and respond gently to pointer hover. */
+.landing-course-card,.landing-track-card,.landing-principles-grid article,.landing-audience-grid > a {
+  will-change:transform;
+  transition:transform .28s cubic-bezier(.2,.7,.2,1),border-color .28s ease,box-shadow .28s ease;
+}
+.landing-reveal.is-visible .landing-course-card,
+.landing-reveal.is-visible .landing-track-card,
+.landing-reveal.is-visible .landing-principles-grid article,
+.landing-reveal.is-visible .landing-audience-grid > a { animation:landing-card-arrive .62s both; }
+.landing-reveal.is-visible :is(.landing-course-card,.landing-track-card,.landing-principles-grid article,.landing-audience-grid > a):nth-child(2) { animation-delay:.08s; }
+.landing-reveal.is-visible :is(.landing-course-card,.landing-track-card,.landing-principles-grid article,.landing-audience-grid > a):nth-child(3) { animation-delay:.16s; }
+.landing-reveal.is-visible :is(.landing-course-card,.landing-track-card,.landing-principles-grid article,.landing-audience-grid > a):nth-child(4) { animation-delay:.24s; }
+@media (hover:hover) and (pointer:fine) {
+  .landing-course-card:hover,.landing-track-card:hover,.landing-principles-grid article:hover,.landing-audience-grid > a:hover {
+    transform:translateY(-5px); box-shadow:0 16px 36px color-mix(in srgb,var(--text-heading) 9%,transparent);
+  }
+  .landing-course-card:hover .landing-course-image img,.landing-track-card:hover .landing-image-link img,.landing-audience-grid > a:hover img {
+    transform:scale(1.055);
+  }
+}
+.landing-course-image img,.landing-image-link img,.landing-audience-grid img { transition:transform .65s cubic-bezier(.2,.7,.2,1); }
+.landing-button svg,.landing-text-link svg,.landing-final-actions svg { transition:transform .22s ease; }
+.landing-button:hover svg,.landing-text-link:hover svg,.landing-final-actions a:hover svg { transform:translateX(4px); }
+.landing-faq-list details { transition:border-color .22s ease; }
+.landing-faq-list details[open] { border-color:color-mix(in srgb,var(--primary) 45%,var(--border)); }
+.landing-faq-list details summary:after { transition:transform .22s ease,color .22s ease; }
+.landing-faq-list details[open] summary:after { transform:rotate(180deg); }
+.landing-final-cta { transition:border-color .3s ease,box-shadow .3s ease; }
+.landing-final-cta.is-visible { animation:landing-rise-in .75s both; }
+.landing-final-cta:hover { border-color:color-mix(in srgb,var(--primary) 48%,var(--border)); box-shadow:var(--shadow); }
+
+@media (prefers-reduced-motion:reduce) {
+  .landing-page .landing-reveal,.landing-page .landing-reveal.is-visible,
+  .landing-page .landing-reveal .landing-section-heading,
+  .landing-page .landing-reveal.is-visible .landing-section-heading {
+    opacity:1 !important; transform:none !important; transition:none !important;
+  }
+  .landing-hero-motion *, .landing-hero-motion *:before, .landing-hero-motion *:after,
+  .landing-hero-product:before,.landing-hero-product:after,
+  .landing-hero-product-icon,.landing-reveal.is-visible .landing-course-card,
+  .landing-reveal.is-visible .landing-track-card,.landing-reveal.is-visible .landing-principles-grid article,
+  .landing-reveal.is-visible .landing-audience-grid > a,.landing-final-cta.is-visible {
+    animation:none !important; transition:none !important;
+  }
+}
+
