@@ -339,6 +339,16 @@ html { scroll-behavior:smooth; }
 .theme-toggle-compact .theme-toggle-track { width:44px; height:26px; }
 .theme-toggle-compact .theme-toggle-thumb { width:20px; height:20px; }
 .theme-toggle-compact[aria-pressed="true"] .theme-toggle-thumb { transform:translateX(18px); }
+@media (max-width:420px) {
+  .dashboard-support-action { display:none !important; }
+}
+@media (max-width:380px) {
+  .dashboard-page header > div { gap:8px; padding-inline:12px; }
+  .dashboard-page header > div > div:first-child { gap:12px; }
+  .theme-toggle-compact .theme-toggle-track { width:40px; height:24px; }
+  .theme-toggle-compact .theme-toggle-thumb { width:18px; height:18px; }
+  .theme-toggle-compact[aria-pressed="true"] .theme-toggle-thumb { transform:translateX(14px); }
+}
 .public-nav-mobile { transform-origin:top center; animation:learnora-menu-in 220ms cubic-bezier(.2,.75,.25,1) both; }
 .public-nav-panel-content { animation:learnora-menu-in 180ms ease both; }
 .ai-bot {
