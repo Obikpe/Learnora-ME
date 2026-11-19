@@ -230,9 +230,9 @@ jobs:
           echo "::endgroup::"
           BASE_SHA="$(jq -r 'if .pull_request then .pull_request.base.sha else .before end' "$GITHUB_EVENT_PATH")"
           git cat-file -e "$BASE_SHA^{commit}"
-          mapfile -t CHANGED_FILES < <(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$GITHUB_SHA" -- 'frontend-v02/*.js' 'frontend-v02/*.jsx' 'frontend-v02/*.ts' 'frontend-v02/*.tsx' | sed 's#^frontend-v02/##')
-          if (("${#CHANGED_FILES[@]}")); then
-            npx eslint "${CHANGED_FILES[@]}"
+          CHANGED_FILES="$(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$GITHUB_SHA" -- 'frontend-v02/*.js' 'frontend-v02/*.jsx' 'frontend-v02/*.ts' 'frontend-v02/*.tsx' | sed 's#^frontend-v02/##')"
+          if [ -n "$CHANGED_FILES" ]; then
+            printf '%s\\n' "$CHANGED_FILES" | xargs -r npx eslint
           else
             echo "No learner frontend source files changed; full build still runs."
           fi
@@ -247,74 +247,12 @@ jobs:
           node -e 'const a=require(process.env.RUNNER_TEMP + "/learnora-team-npm-audit.json"); const v=a.metadata?.vulnerabilities||{}; console.log("Teams frontend npm audit:", JSON.stringify(v));'
           BASE_SHA="$(jq -r 'if .pull_request then .pull_request.base.sha else .before end' "$GITHUB_EVENT_PATH")"
           git cat-file -e "$BASE_SHA^{commit}"
-          mapfile -t CHANGED_FILES < <(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$GITHUB_SHA" -- 'frontend-team/*.js' 'frontend-team/*.jsx' 'frontend-team/*.ts' 'frontend-team/*.tsx' | sed 's#^frontend-team/##')
-          if (("${#CHANGED_FILES[@]}")); then
-            npx eslint "${CHANGED_FILES[@]}"
+          CHANGED_FILES="$(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$GITHUB_SHA" -- 'frontend-team/*.js' 'frontend-team/*.jsx' 'frontend-team/*.ts' 'frontend-team/*.tsx' | sed 's#^frontend-team/##')"
+          if [ -n "$CHANGED_FILES" ]; then
+            printf '%s\\n' "$CHANGED_FILES" | xargs -r npx eslint
           else
             echo "No Teams frontend source files changed; full build still runs."
           fi
-          npm run build
-
-      - name: Upload generated dependency lockfiles for review
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: learnora-generated-lockfiles
-          path: |
-            frontend-v02/package-lock.json
-            frontend-team/package-lock.json
-          if-no-files-found: warn
-          retention-days: 1
-
-  commit-generated-lockfiles:
-    name: Commit verified npm lockfiles
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: production-checks
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Check out main
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          persist-credentials: true
-
-      - name: Download verified lockfiles
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          name: learnora-generated-lockfiles
-          path: ./
-
-      - name: Commit lockfiles when they change
-        run: |
-          git add frontend-v02/package-lock.json frontend-team/package-lock.json
-          if git diff --cached --quiet; then
-            echo "Dependency lockfiles are already up to date."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Add verified frontend dependency lockfiles"
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
- | sed 's#^frontend-v02/##' || true)
-          if (("${#CHANGED_FILES[@]}")); then
-            npx eslint "${CHANGED_FILES[@]}"
-          else
-            echo "No learner frontend source files changed; full build still runs."
-          fi
-          npm run build
-
-      - name: Build Teams website
-        working-directory: frontend-team
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          npm ci --no-audit --no-fund
-          npm audit --json > "$RUNNER_TEMP/learnora-team-npm-audit.json" || true
-          node -e 'const a=require(process.env.RUNNER_TEMP + "/learnora-team-npm-audit.json"); const v=a.metadata?.vulnerabilities||{}; console.log("Teams frontend npm audit:", JSON.stringify(v));'
-          npm run lint
-          npm run build
           npm run build
 
       - name: Upload generated dependency lockfiles for review
