@@ -230,7 +230,13 @@ jobs:
           echo "::endgroup::"
           BASE_SHA="$(jq -r 'if .pull_request then .pull_request.base.sha else .before end' "$GITHUB_EVENT_PATH")"
           git cat-file -e "$BASE_SHA^{commit}"
-          mapfile -t CHANGED_FILES < <(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$GITHUB_SHA" -- frontend-v02 | grep -E '\.(js|jsx|ts|tsx)
+          mapfile -t CHANGED_FILES < <(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$GITHUB_SHA" -- 'frontend-v02/*.js' 'frontend-v02/*.jsx' 'frontend-v02/*.ts' 'frontend-v02/*.tsx' | sed 's#^frontend-v02/##')
+          if (("${#CHANGED_FILES[@]}")); then
+            npx eslint "${CHANGED_FILES[@]}"
+          else
+            echo "No learner frontend source files changed; full build still runs."
+          fi
+          npm run build
 
       - name: Build Teams website
         working-directory: frontend-team
