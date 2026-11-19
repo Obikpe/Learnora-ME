@@ -155,14 +155,8 @@ img { color: transparent; }
 [class~="bg-[#0b0f13]"], [class~="bg-[#0c1015]"], [class~="bg-[#0e1319]"], [class~="bg-[#0e141a]"],
 [class~="bg-[#11161d]"], [class~="bg-[#11171e]"], [class~="bg-[#171f28]"],
 [class~="bg-[#151c24]"], [class~="bg-[#171e27]"] { background-color: var(--card) !important; }
-[class*="bg-black/10"], [class*="bg-black/15"], [class*="bg-black/20"],
-[class*="bg-white/[.015]"], [class*="bg-white/[.025]"] { background-color: var(--bg-soft) !important; }
 [class*="border-white"], [class*="divide-white"] { border-color: var(--border) !important; }
-.text-white, .text-slate-100, .text-slate-200 { color: var(--text-heading) !important; }
-.text-slate-300 { color: var(--text-body) !important; }
-.text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700 { color: var(--text-muted) !important; }
 [class*="placeholder:text-slate"]::placeholder { color: var(--text-muted); }
-[class*="hover:text-white"]:hover { color: var(--text-heading) !important; }
 [class*="hover:bg-white"]:hover { background-color: var(--primary-tint) !important; }
 [class~="bg-[#d7ad35]"], [class~="bg-[#d5b15b]"], [class~="bg-[var(--gold)]"] { background-color: var(--primary) !important; }
 [class*="bg-[#d7ad35]/"], [class*="bg-[#d5b15b]/"] { background-color: var(--primary-tint) !important; }
@@ -172,7 +166,6 @@ img { color: transparent; }
 [class*="hover:bg-[var(--gold-light)]"]:hover, [class*="hover:bg-[#d7ad35]"]:hover, [class*="hover:bg-[#d5b15b]"]:hover { background-color: var(--primary-hover) !important; }
 [class~="accent-[#d7ad35]"], [class~="accent-[#d5b15b]"] { accent-color: var(--primary) !important; }
 [class*="text-[#f2d477]"] { color: var(--primary) !important; }
-[class*="text-black"], [class*="text-[#16140f]"], [class*="text-[#17140d]"] { color: var(--on-primary) !important; }
 [class~="border-[#d7ad35]"], [class~="border-[#d5b15b]"] { border-color: var(--primary) !important; }
 [class*="border-[#d7ad35]/"], [class*="border-[#d5b15b]/"] { border-color: var(--border) !important; }
 [class*="focus:border-[#d7ad35]"]:focus { border-color: var(--primary) !important; }
@@ -208,44 +201,11 @@ html[data-theme="dark"] .text-emerald-200 { color: var(--success) !important; }
 .sc{border:1px solid var(--border);border-radius:10px;background:var(--card);padding:18px}.cal-h{display:flex;align-items:center;justify-content:space-between;gap:12px}.cal-h button{display:grid;width:32px;height:32px;place-items:center;border-radius:6px;color:var(--text-muted)}.cal-h button:hover{background:var(--bg-soft);color:var(--text-heading)}.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px 2px;margin-top:16px;text-align:center}.cal-weekday{padding-bottom:5px;color:var(--text-muted);font-size:10px;font-weight:650}.cal-cell{position:relative;display:grid;height:36px;place-items:center}.cal-day{display:grid;width:31px;height:31px;place-items:center;border-radius:50%;color:var(--text-body);font-size:12px}.cal-day.is-active{background:var(--primary-tint);color:var(--primary);font-weight:650}.cal-day.is-today{background:var(--primary);color:var(--on-primary);font-weight:750}.cal-dot{position:absolute;bottom:0;left:50%;width:4px;height:4px;transform:translateX(-50%);border-radius:50%;background:var(--primary)}
 
 
-/* Legacy dark utility panels now inherit Learnora's selected surface theme. */
-[class*="bg-[#0"], [class*="bg-[#1"], [class*="bg-[#2"], [class*="bg-black/"], [class~="bg-black"] {
-  background-color: var(--card) !important;
-}
-[class*="border-white"], [class*="divide-white"] { border-color: var(--border) !important; }
-.text-white, .text-slate-100, .text-slate-200 { color: var(--text-heading) !important; }
-.text-slate-300 { color: var(--text-body) !important; }
-.text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700 { color: var(--text-muted) !important; }
-.landing-hero-image:after { background: linear-gradient(transparent, color-mix(in srgb, var(--bg) 35%, transparent)); }
-.landing-image-caption { color: var(--text-heading); }
-.landing-image-caption span { color: var(--primary); }
-.landing-image-caption strong { color: var(--text-heading); }
-
-
-/* Cover the remaining common dark utility surfaces across the entire frontend. */
-[class~="bg-black"], [class*="bg-black/"],
-[class~="bg-neutral-900"], [class~="bg-neutral-950"],
-[class~="bg-gray-900"], [class~="bg-gray-950"],
-[class~="bg-slate-900"], [class~="bg-slate-950"],
-[class~="bg-zinc-900"], [class~="bg-zinc-950"],
-[class~="bg-stone-900"], [class~="bg-stone-950"] {
-  background-color: var(--card) !important;
-}
-
-
-/* Keep formerly light-on-dark copy readable after dark panels are removed. */
-.text-gray-100, .text-gray-200, .text-neutral-100, .text-neutral-200,
-.text-zinc-100, .text-zinc-200, .text-stone-100, .text-stone-200 {
-  color: var(--text-heading) !important;
-}
-.text-gray-300, .text-neutral-300, .text-zinc-300, .text-stone-300 {
-  color: var(--text-body) !important;
-}
-.text-gray-400, .text-gray-500, .text-neutral-400, .text-neutral-500,
-.text-zinc-400, .text-zinc-500, .text-stone-400, .text-stone-500 {
-  color: var(--text-muted) !important;
-}
-
+/* Theme-aware public image treatments. */
+.landing-hero-image:after { background:linear-gradient(transparent,color-mix(in srgb,var(--bg) 35%,transparent)); }
+.landing-image-caption { color:var(--text-heading); }
+.landing-image-caption span { color:var(--primary); }
+.landing-image-caption strong { color:var(--text-heading); }
 
 @keyframes notification-drawer-in {
   from { transform: translateX(100%); }
@@ -373,6 +333,10 @@ html { scroll-behavior:smooth; }
 .theme-toggle[aria-pressed="true"] .theme-toggle-thumb { transform:translateX(29px); }
 .theme-toggle-icon { display:grid; place-items:center; animation:learnora-theme-spin 320ms cubic-bezier(.2,.8,.2,1); }
 .theme-toggle-labelled { min-height:40px; }
+.theme-toggle-compact { min-height:32px; gap:0; padding:2px; }
+.theme-toggle-compact .theme-toggle-track { width:44px; height:26px; }
+.theme-toggle-compact .theme-toggle-thumb { width:20px; height:20px; }
+.theme-toggle-compact[aria-pressed="true"] .theme-toggle-thumb { transform:translateX(18px); }
 .public-nav-mobile { transform-origin:top center; animation:learnora-menu-in 220ms cubic-bezier(.2,.75,.25,1) both; }
 .public-nav-panel-content { animation:learnora-menu-in 180ms ease both; }
 .ai-bot {
