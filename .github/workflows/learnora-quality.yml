@@ -86,7 +86,8 @@ jobs:
             supabase/migrations/20261116120000_notification_email_automation.sql \
             supabase/migrations/20261117210000_password_session_invalidation.sql \
             supabase/migrations/20261118091000_feature_foreign_key_indexes.sql \
-            supabase/migrations/20261118141100_public_course_catalogue_rpc.sql
+            supabase/migrations/20261118141100_public_course_catalogue_rpc.sql \
+            supabase/migrations/20261119224623_course_completion_skill_badges.sql
           do
             psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
@@ -161,6 +162,21 @@ jobs:
             IF to_regclass('public.project_submissions_one_active_per_learner_idx') IS NOT NULL
               OR to_regclass('public.skill_evidence_project_submission_skill_unique_idx') IS NOT NULL THEN
               RAISE EXCEPTION 'project integrity rollback did not remove both indexes';
+            END IF;
+          END $do$;
+          ROLLBACK;
+          SQL
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          \i supabase/rollback/20261119224623_course_completion_skill_badges.rollback.sql
+          DO $do$ BEGIN
+            IF EXISTS (
+              SELECT 1 FROM public.skills WHERE name = 'Data Analytics Foundations'
+            ) OR EXISTS (
+              SELECT 1 FROM public.badges
+              WHERE criteria->>'course_id' = 'e89cdf59-f4ad-4453-ab14-73e372fbce7e'
+            ) THEN
+              RAISE EXCEPTION 'course-completion badge rollback did not remove the seeded skill and badge';
             END IF;
           END $do$;
           ROLLBACK;
