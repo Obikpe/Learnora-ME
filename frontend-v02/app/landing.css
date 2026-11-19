@@ -269,7 +269,9 @@
 @media (max-width:700px) {
   .landing-hero h1 { font-size:clamp(32px,8vw,40px); }
   .landing-hero-description { font-size:16px; }
-  .landing-hero-visual { display:none; } /* The featured course is already represented in the catalogue rail. */
+  .landing-hero-visual { display:block; }
+  .landing-hero-product { min-height:320px; padding:22px; }
+  .landing-hero-product-icon { margin-top:18px; }
   .landing-course-grid {
     display:flex;
     gap:12px;
