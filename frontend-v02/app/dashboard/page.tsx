@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Award, BookOpen, CheckCircle2, Clock3, FileText, GraduationCap, RefreshCw, Sun, Moon } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle2, Clock3, FileText, GraduationCap, RefreshCw } from "lucide-react";
 import { currentUser, getCachedCurrentUser } from "../../lib/api";
 import { request } from "../../lib/api/client";
-import { useTheme } from "../../components/providers/ThemeProvider";
 import Shell from "../../components/dashboard/Shell";
 import Skeleton from "../../components/feedback/Skeleton";
 import LearnerAssistant from "../../components/dashboard/LearnerAssistant";
@@ -112,7 +111,6 @@ export default function MyLearningPage() {
   const [certificateError, setCertificateError] = useState(false);
   const [evidenceError, setEvidenceError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   const load = useCallback(async (me?: any) => {
     setRefreshing(true);
@@ -318,7 +316,6 @@ export default function MyLearningPage() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <button type="button" onClick={toggleTheme} aria-pressed={theme === "dark"} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} className="theme-toggle theme-toggle-labelled"><span className="theme-toggle-track"><span className="theme-toggle-thumb"><span key={theme} className="theme-toggle-icon">{theme === "dark" ? <Moon size={14}/> : <Sun size={14}/>}</span></span></span><span>{theme === "dark" ? "Light theme" : "Dark theme"}</span></button>
         <button type="button" onClick={() => void load(user)} disabled={refreshing} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-body)] hover:bg-[var(--bg-soft)] disabled:opacity-50"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""}/> Refresh</button>
         {!assignedLearner && <Link href="/courses" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]">Explore courses <ArrowRight size={14}/></Link>}
         {!assignedLearner && <LearnerAssistant courses={catalogue} goal={goal} learning={courses} />}
