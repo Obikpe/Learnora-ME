@@ -232,7 +232,7 @@ jobs:
           git cat-file -e "$BASE_SHA^{commit}"
           CHANGED_FILES="$(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$GITHUB_SHA" -- 'frontend-v02/*.js' 'frontend-v02/*.jsx' 'frontend-v02/*.ts' 'frontend-v02/*.tsx' | sed 's#^frontend-v02/##')"
           if [ -n "$CHANGED_FILES" ]; then
-            printf '%s\\n' "$CHANGED_FILES" | xargs -r npx eslint
+            printf '%s\n' "$CHANGED_FILES" | xargs -r npx eslint
           else
             echo "No learner frontend source files changed; full build still runs."
           fi
@@ -249,7 +249,7 @@ jobs:
           git cat-file -e "$BASE_SHA^{commit}"
           CHANGED_FILES="$(git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$GITHUB_SHA" -- 'frontend-team/*.js' 'frontend-team/*.jsx' 'frontend-team/*.ts' 'frontend-team/*.tsx' | sed 's#^frontend-team/##')"
           if [ -n "$CHANGED_FILES" ]; then
-            printf '%s\\n' "$CHANGED_FILES" | xargs -r npx eslint
+            printf '%s\n' "$CHANGED_FILES" | xargs -r npx eslint
           else
             echo "No Teams frontend source files changed; full build still runs."
           fi
