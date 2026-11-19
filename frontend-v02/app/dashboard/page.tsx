@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Award, BookOpen, CheckCircle2, Clock3, FileText, GraduationCap, RefreshCw } from "lucide-react";
+import { ArrowRight, Award, BookOpen, CheckCircle2, Clock3, FileText, GraduationCap } from "lucide-react";
 import { currentUser, getCachedCurrentUser } from "../../lib/api";
 import { request } from "../../lib/api/client";
 import Shell from "../../components/dashboard/Shell";
@@ -110,10 +110,8 @@ export default function MyLearningPage() {
   const [error, setError] = useState("");
   const [certificateError, setCertificateError] = useState(false);
   const [evidenceError, setEvidenceError] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (me?: any) => {
-    setRefreshing(true);
     setError("");
     const progressResult = await Promise.allSettled([
       loadCoreProgress(),
@@ -130,7 +128,6 @@ export default function MyLearningPage() {
       const failure = (progressResponse as PromiseRejectedResult).reason as (Error & { status?: number }) | undefined;
       if (failure?.status === 401) {
         if (typeof window !== "undefined") window.location.replace("/login");
-        setRefreshing(false);
         return;
       }
       setError("Your learning records are temporarily unavailable. We are reconnecting automatically.");
@@ -179,7 +176,6 @@ export default function MyLearningPage() {
     }
 
     await Promise.allSettled(backgroundTasks);
-    setRefreshing(false);
   }, []);
 
   // A transient first-load failure is retried in the background. Learners
@@ -214,6 +210,25 @@ export default function MyLearningPage() {
     }).catch(() => { if (!cancelled) location.href = "/login"; });
     return () => { cancelled = true; };
   }, []);
+
+  // Refresh learning records when the learner returns and periodically while the dashboard is open.
+  useEffect(() => {
+    if (!user) return;
+    let lastRefresh = Date.now();
+    const refresh = () => {
+      if (document.visibilityState !== "visible" || Date.now() - lastRefresh < 15_000) return;
+      lastRefresh = Date.now();
+      void load(user);
+    };
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [load, user]);
 
   // Keep the live session totals and meaningful-day streak current while the dashboard is open.
   useEffect(() => {
@@ -272,9 +287,15 @@ export default function MyLearningPage() {
   }, [catalogue, enrolledIds, goal]);
   const completedLessons = courses.reduce((sum: number, row: any) => sum + Number(row.completed_lessons || 0), 0);
   const totalLessons = courses.reduce((sum: number, row: any) => sum + Number(row.total_lessons || 0), 0);
-  const activeCourseLessons = inProgress.reduce((sum:number, row:any) => sum + Number(row.total_lessons || 0), 0);
-  const activeCompletedLessons = inProgress.reduce((sum:number, row:any) => sum + Number(row.completed_lessons || 0), 0);
-  const overallProgress = activeCourseLessons ? Math.round((activeCompletedLessons / activeCourseLessons) * 100) : 0;
+  const overallTotalUnits = courses.reduce((sum: number, row: any) => sum + Number(row.total_units ?? row.total_lessons ?? 0), 0);
+  const overallCompletedUnits = courses.reduce((sum: number, row: any) => {
+    const total = Number(row.total_units ?? row.total_lessons ?? 0);
+    const done = row.completed || row.enrolment?.status === "completed"
+      ? total
+      : Number(row.completed_units ?? row.completed_lessons ?? 0);
+    return sum + Math.max(0, Math.min(total, done));
+  }, 0);
+  const overallProgress = overallTotalUnits ? Math.round((overallCompletedUnits / overallTotalUnits) * 100) : 0;
   const learningSeconds = Number(activitySummary?.learning_time_seconds || 0);
   const learningTimeLabel = learningSeconds >= 3600
     ? Math.floor(learningSeconds / 3600) + "h " + Math.floor((learningSeconds % 3600) / 60) + "m"
@@ -294,6 +315,8 @@ export default function MyLearningPage() {
   const dailyGoalText = continueItem?.title || learningPlan?.plan_data?.weeks?.[0]?.guidance?.focus || "";
   const certificates = credentials?.certificates || [];
   const skills = evidence?.skills || [];
+  const earnedSkills = skills.filter((skill: any) => skill.status && skill.status !== "not_started");
+  const badges = evidence?.badges || [];
   const recentCertificates = certificates.slice(0, 3);
 
   if (!user || loading) return <Shell active="learning" restricted={assignedLearner}><Skeleton label="Loading your learning records"/></Shell>;
@@ -301,7 +324,7 @@ export default function MyLearningPage() {
   const tabs: { id: Tab; label: string; count: number }[] = [
     { id: "in-progress", label: "In Progress", count: inProgress.length },
     { id: "completed", label: "Completed", count: completed.length },
-    { id: "skills", label: "Skills", count: skills.length },
+    { id: "skills", label: "Skills", count: earnedSkills.length },
     { id: "certificates", label: "Certificates", count: certificates.length },
   ];
 
@@ -316,7 +339,6 @@ export default function MyLearningPage() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => void load(user)} disabled={refreshing} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text-body)] hover:bg-[var(--bg-soft)] disabled:opacity-50"><RefreshCw size={14} className={refreshing ? "animate-spin" : ""}/> Refresh</button>
         {!assignedLearner && <Link href="/courses" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-xs font-semibold text-[var(--on-primary)] hover:bg-[var(--primary-hover)]">Explore courses <ArrowRight size={14}/></Link>}
         {!assignedLearner && <LearnerAssistant courses={catalogue} goal={goal} learning={courses} />}
       </div>
@@ -328,12 +350,12 @@ export default function MyLearningPage() {
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Active courses</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learning ? inProgress.length : "—"}</p></div>
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Lessons completed</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learning ? completedLessons : "—"}<span className="ml-1 text-sm font-medium text-[var(--text-muted)]">/ {learning ? totalLessons : "—"}</span></p></div>
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning time</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{learningTimeLabel}</p></div>
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning streak</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{Number(activitySummary?.current_streak || 0) + " days"}</p></div>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><p className="text-xs text-[var(--text-muted)]">Learning streak</p><p className="mt-2 text-2xl font-bold tabular-nums text-[var(--text-heading)]">{Number(activitySummary?.current_streak || 0) + (Number(activitySummary?.current_streak || 0) === 1 ? " day" : " days")}</p></div>
     </section>
     <section className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <div className="mb-2 flex items-center justify-between gap-3"><h2 className="text-sm font-semibold text-[var(--text-heading)]">Overall learning progress</h2><span className="text-sm font-bold tabular-nums text-[var(--text-heading)]">{learning && totalLessons ? overallProgress + "%" : "—"}</span></div>
+      <div className="mb-2 flex items-center justify-between gap-3"><h2 className="text-sm font-semibold text-[var(--text-heading)]">Overall learning progress</h2><span className="text-sm font-bold tabular-nums text-[var(--text-heading)]">{learning && overallTotalUnits ? overallProgress + "%" : "—"}</span></div>
       <div className="h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{width: overallProgress + "%"}}/></div>
-      <p className="mt-2 text-xs text-[var(--text-muted)]">{!learning ? "Learning data is unavailable until your records load." : activeCourseLessons ? "Lesson-weighted progress across your active courses (" + activeCourseLessons + " lessons)." : "Your progress will appear when you have active courses."}</p>
+      <p className="mt-2 text-xs text-[var(--text-muted)]">{!learning ? "Learning data is unavailable until your records load." : overallTotalUnits ? "Progress across all your enrolled courses, including completed courses (" + overallTotalUnits + " learning items)." : "Your progress will appear when you enrol in a course."}</p>
     </section>
 
     <div className="mt-7 flex gap-6 overflow-x-auto border-b border-[var(--border)]" role="tablist" aria-label="My learning sections">
@@ -366,8 +388,11 @@ export default function MyLearningPage() {
           ? <div className="space-y-4">{completed.map((row: any) => <CourseCard key={row.enrolment?.id || row.course?.id} row={row} completed/>)}</div>
           : <div className="py-2"><h2 className="mb-3 text-base font-semibold text-[var(--text-heading)]">No completed courses</h2><div className="empty">{assignedLearner ? "You have no completed assigned courses yet." : <>Nothing here yet. <Link href="/courses">Explore courses</Link> to get started.</>}</div></div>)}
         {tab === "skills" && <section>
-          <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Skills</h2>
-          {evidenceError ? <p className="py-8 text-sm text-[var(--text-muted)]">Skills could not be loaded.</p> : skills.length ? <div className="grid gap-3 md:grid-cols-2">{skills.map((skill: any) => <article key={skill.skill_id || skill.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-[var(--text-heading)]">{skill.skill_name || skill.name}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">{skill.category || "Skill"}</p></div><span className="text-xs capitalize text-[var(--text-muted)]">{String(skill.status || "not_started").replaceAll("_", " ")}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: Math.max(0, Math.min(100, Number(skill.proficiency) || 0)) + "%" }}/></div><p className="mt-2 text-[11px] text-[var(--text-muted)]">{skill.verified_evidence_count || 0} verified evidence items · {Number(skill.proficiency) || 0}%</p></article>)}</div> : <div className="empty">Nothing here yet.</div>}
+          <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Skills and achievements</h2>
+          {evidenceError ? <p className="py-8 text-sm text-[var(--text-muted)]">Skills could not be loaded.</p> : <>
+            {badges.length > 0 && <div className="mb-5 grid gap-3 sm:grid-cols-2">{badges.map((badge: any) => <article key={badge.id} className="flex items-start gap-3 rounded-xl border border-[var(--primary)]/25 bg-[var(--primary-tint)] p-4"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--card)] text-[var(--primary)]"><Award size={19}/></span><div><h3 className="text-sm font-bold text-[var(--text-heading)]">{badge.name || "Learning achievement"}</h3><p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{badge.description || "Achievement awarded by Learnora."}</p></div></article>)}</div>}
+            {earnedSkills.length ? <div className="grid gap-3 md:grid-cols-2">{earnedSkills.map((skill: any) => <article key={skill.skill_id || skill.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-[var(--text-heading)]">{skill.skill_name || skill.name}</h3><p className="mt-1 text-xs text-[var(--text-muted)]">{skill.category || "Skill"}</p></div><span className="text-xs capitalize text-[var(--text-muted)]">{String(skill.status || "not_started").replaceAll("_", " ")}</span></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--bg-soft)]"><div className="h-full rounded-full bg-[var(--primary)]" style={{ width: Math.max(0, Math.min(100, Number(skill.proficiency) || 0)) + "%" }}/></div><p className="mt-2 text-[11px] text-[var(--text-muted)]">{skill.verified_evidence_count || 0} verified evidence items · {skill.course_completion_count || 0} completed courses · {Number(skill.proficiency) || 0}% verified proficiency</p></article>)}</div> : !badges.length ? <div className="empty">Complete a course or submit work for review to start earning skill achievements.</div> : null}
+          </>}
         </section>}
         {tab === "certificates" && <section>
           <h2 className="mb-4 text-lg font-bold text-[var(--text-heading)]">Certificates</h2>
@@ -397,7 +422,7 @@ export default function MyLearningPage() {
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-5">
           <div className="flex items-center gap-2"><Clock3 size={17} className="text-[var(--primary)]"/><h2 className="text-sm font-bold text-[var(--text-heading)]">Learning snapshot</h2></div>
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{Number(activitySummary?.longest_streak || 0)}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Longest streak</p></div>
+            <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{Number(activitySummary?.longest_streak || 0) + (Number(activitySummary?.longest_streak || 0) === 1 ? " day" : " days")}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Longest streak</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--success)]">{completed.length}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Completed</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{completedLessons}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Lessons completed</p></div>
             <div><p className="text-2xl font-bold tabular-nums text-[var(--text-heading)]">{certificates.length}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Certificates</p></div>
