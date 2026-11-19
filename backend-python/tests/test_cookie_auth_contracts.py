@@ -1,6 +1,8 @@
 """Regression tests for HttpOnly cookie sessions and bearer compatibility."""
 import os
+import time
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 os.environ.setdefault("APP_ENV", "development")
@@ -63,6 +65,48 @@ class CookieAuthContractTests(unittest.TestCase):
         creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="header-jwt")
         self.assertEqual(auth._request_auth_token(request, creds), "cookie-jwt")
         self.assertEqual(auth._request_auth_token(make_request(), creds), "header-jwt")
+
+    def test_token_ttl_is_capped_at_fifteen_minutes(self):
+        self.assertLessEqual(auth.TOKEN_TTL, 900)
+        self.assertGreaterEqual(auth.TOKEN_TTL, 60)
+
+    def test_logout_persists_a_hash_of_the_token(self):
+        token = auth.jwt.encode({"sub": "learner@example.com", "exp": time.time() + 300}, auth.JWT_SECRET, algorithm=auth.ALGORITHM)
+        class Query:
+            def __init__(self): self.payload = None
+            def delete(self): return self
+            def lt(self, *_args): return self
+            def upsert(self, payload, **_kwargs): self.payload = payload; return self
+            def execute(self): return SimpleNamespace(data=[])
+        query = Query()
+        with patch.object(auth.supabase, "table", return_value=query) as table:
+            self.assertTrue(auth.revoke_auth_token(token))
+        table.assert_called_with("revoked_auth_tokens")
+        self.assertEqual(len(query.payload["token_hash"]), 64)
+        self.assertNotEqual(query.payload["token_hash"], token)
+        self.assertNotIn("token", query.payload)
+
+    def test_revoked_token_is_rejected_on_authenticated_requests(self):
+        digest = auth._auth_token_hash("signed-token-value")
+        class Query:
+            def select(self, *_args): return self
+            def eq(self, *_args): return self
+            def gt(self, *_args): return self
+            def limit(self, *_args): return self
+            def execute(self): return SimpleNamespace(data=[{"token_hash": digest}])
+        with patch.object(auth.supabase, "table", return_value=Query()):
+            with self.assertRaises(HTTPException) as raised:
+                auth.assert_token_not_revoked("signed-token-value")
+        self.assertEqual(raised.exception.status_code, 401)
+
+    def test_logout_revokes_cookie_token_before_success(self):
+        request = make_request(cookie="phx_token=signed-token")
+        response = Response()
+        with patch.object(auth, "revoke_auth_token") as revoke:
+            result = auth.logout(request, response)
+        revoke.assert_called_once_with("signed-token")
+        self.assertTrue(result["success"])
+        self.assertIn("max-age=0", response.headers.get("set-cookie", "").lower())
 
     def test_logout_cookie_is_expired(self):
         response = Response()

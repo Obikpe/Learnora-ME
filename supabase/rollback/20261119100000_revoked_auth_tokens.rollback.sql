@@ -1,0 +1,2 @@
+-- Intentionally non-destructive: dropping this table would make already signed-out JWTs valid again until expiry.
+-- To retire this feature safely, rotate JWT_SECRET and deploy code that no longer issues or accepts these sessions first.

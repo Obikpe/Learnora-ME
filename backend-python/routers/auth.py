@@ -255,12 +255,7 @@ TRIAL_DAYS = int(
 
 ALGORITHM = "HS256"
 
-TOKEN_TTL = int(
-    os.getenv(
-        "TOKEN_TTL_SECONDS",
-        "86400",
-    )
-)
+TOKEN_TTL = min(max(int(os.getenv("TOKEN_TTL_SECONDS", "900")), 60), 900)
 
 JWT_SECRET = (
     os.getenv(
@@ -1002,6 +997,7 @@ def make_token(
             "email": email,
             "role": role,
             "account_type": account_type,
+            "jti": secrets.token_urlsafe(32),
             "iat": now,
             "exp": (
                 now
@@ -1028,6 +1024,55 @@ def _assert_session_not_before_password_change(payload: dict, account: dict) -> 
             raise HTTPException(status_code=401, detail="Session expired after a password change. Please sign in again.")
     except (TypeError, ValueError, OverflowError):
         raise HTTPException(status_code=401, detail="Session could not be validated. Please sign in again.")
+
+
+def _auth_token_hash(token_value: str) -> str:
+    """Hash the complete signed token; never persist the bearer credential itself."""
+    return hashlib.sha256(token_value.encode("utf-8")).hexdigest()
+
+
+def assert_token_not_revoked(token_value: str) -> None:
+    """Fail closed when a session has been revoked or the revocation store is unavailable."""
+    digest = _auth_token_hash(token_value)
+    try:
+        result = (
+            supabase.table("revoked_auth_tokens")
+            .select("token_hash")
+            .eq("token_hash", digest)
+            .gt("expires_at", datetime.now(timezone.utc).isoformat())
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:
+        print(f"Session revocation lookup failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Session validation is temporarily unavailable. Please retry.") from None
+    if result.data:
+        raise HTTPException(status_code=401, detail="This session has been signed out. Please sign in again.")
+
+
+def revoke_auth_token(token_value: Optional[str]) -> bool:
+    """Persist a one-way token fingerprint until its JWT expiry."""
+    if not token_value:
+        return True
+    try:
+        payload = jwt.decode(token_value, options={"verify_signature": False, "verify_exp": False}, algorithms=[ALGORITHM])
+        expires = float(payload.get("exp") or 0)
+    except (InvalidTokenError, TypeError, ValueError, OverflowError):
+        return True
+    if expires <= time.time():
+        return True
+    now = datetime.now(timezone.utc)
+    try:
+        table = supabase.table("revoked_auth_tokens")
+        table.delete().lt("expires_at", now.isoformat()).execute()
+        table.upsert(
+            {"token_hash": _auth_token_hash(token_value), "expires_at": datetime.fromtimestamp(expires, timezone.utc).isoformat()},
+            on_conflict="token_hash",
+        ).execute()
+    except Exception as exc:
+        print(f"Session revocation write failed: {type(exc).__name__}")
+        raise HTTPException(status_code=503, detail="Sign-out could not be confirmed by the server. Please retry.") from None
+    return True
 
 
 def _legacy_password_login_allowed(stored_hash: str) -> bool:
@@ -1622,6 +1667,8 @@ def get_current_user(
             status_code=401,
             detail="Invalid or expired token",
         )
+
+    assert_token_not_revoked(token_value)
 
     # Existing cohort accounts remain a separate compatibility source until the
     # identity migration is implemented. The email guards below ensure a
@@ -2636,8 +2683,18 @@ def login(
 
 
 @router.post("/logout")
-def logout(response: Response):
+def logout(request: Request, response: Response):
     clear_auth_cookie(response, AUTH_COOKIE_NAME)
+    authorization = request.headers.get("authorization", "")
+    scheme, separator, credentials = authorization.partition(" ")
+    token_value = request.cookies.get(AUTH_COOKIE_NAME) or (
+        credentials.strip() if separator and scheme.lower() == "bearer" else None
+    )
+    try:
+        revoke_auth_token(token_value)
+    except HTTPException as exc:
+        response.status_code = exc.status_code
+        return {"success": False, "message": exc.detail}
     return {"success": True}
 
 

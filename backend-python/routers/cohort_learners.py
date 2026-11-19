@@ -745,6 +745,7 @@ def login_cohort_account(body: CohortLogin, request: Request, response: Response
         "username": account["username"],
         "role": "cohort_learner",
         "account_type": "cohort",
+        "jti": secrets.token_urlsafe(32),
         "iat": token_now,
         "exp": token_now + TOKEN_TTL,
     }, JWT_SECRET, algorithm=ALGORITHM)

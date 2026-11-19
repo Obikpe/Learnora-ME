@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import logging
 import os
+import secrets
 import time
 from datetime import datetime, timezone
 from typing import Optional
@@ -183,6 +184,8 @@ def get_current_staff(
         )
     except InvalidTokenError:
         raise HTTPException(401, "Invalid or expired internal token") from None
+
+    auth.assert_token_not_revoked(token_value)
 
     if payload.get("context") != "internal" or payload.get("account_type") != "staff":
         raise HTTPException(403, "Internal staff token required")
@@ -416,8 +419,9 @@ def internal_login(
             "context": "internal",
             "iss": INTERNAL_TOKEN_ISSUER,
             "aud": INTERNAL_TOKEN_AUDIENCE,
+            "jti": secrets.token_urlsafe(32),
             "iat": now,
-            "exp": now + int(os.getenv("TOKEN_TTL_SECONDS", "86400")),
+            "exp": now + auth.TOKEN_TTL,
         },
         INTERNAL_JWT_SECRET,
         algorithm=ALGORITHM,
@@ -441,8 +445,18 @@ def internal_login(
 
 
 @router.post("/logout")
-def internal_logout(response: Response):
+def internal_logout(request: Request, response: Response):
     clear_auth_cookie(response, TEAM_COOKIE_NAME)
+    authorization = request.headers.get("authorization", "")
+    scheme, separator, credentials = authorization.partition(" ")
+    token_value = request.cookies.get(TEAM_COOKIE_NAME) or (
+        credentials.strip() if separator and scheme.lower() == "bearer" else None
+    )
+    try:
+        auth.revoke_auth_token(token_value)
+    except HTTPException as exc:
+        response.status_code = exc.status_code
+        return {"success": False, "message": exc.detail}
     return {"success": True}
 
 
