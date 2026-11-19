@@ -199,7 +199,8 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
     <main id="main-content" className="landing-page">
       <section className="landing-wrap landing-hero" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
-          <h1 key={activeSlide} className="landing-slide-copy">{slide.title}</h1>
+          <p className="landing-kicker"><span/> Learnora ME</p>
+          <h1 key={activeSlide} className="landing-slide-copy" aria-live="polite">{slide.title}</h1>
           <p key={"body-" + activeSlide} className="landing-hero-description landing-slide-copy">{slide.body}</p>
           <div className="landing-actions"><Link className="landing-button landing-button-outline" href="/how-it-works">How Learnora works <ArrowUpRight size={16}/></Link></div>
           <form className="landing-search" onSubmit={submitSearch}>
@@ -213,6 +214,12 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
             <span><BookOpen size={17}/> Learn clearly</span>
             <span><Compass size={17}/> Practise deeply</span>
             <span><CheckCircle2 size={17}/> Show your work</span>
+          </div>
+          <div className="landing-slide-controls" aria-label="Featured messages">
+            <span aria-live="polite">{String(activeSlide + 1).padStart(2, "0")} / {String(heroSlides.length).padStart(2, "0")}</span>
+            <div>
+              {heroSlides.map((item, index) => <button key={index} type="button" className={activeSlide === index ? "active" : ""} aria-label={"Show featured message " + (index + 1)} aria-pressed={activeSlide === index} onClick={() => setActiveSlide(index)} />)}
+            </div>
           </div>
         </div>
         <div className="landing-hero-visual" aria-label="A preview of learning on Learnora">
