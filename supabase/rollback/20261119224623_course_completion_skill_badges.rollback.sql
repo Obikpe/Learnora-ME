@@ -1,5 +1,4 @@
 -- Remove only the Introduction to Data Analytics completion badge and its awards.
-BEGIN;
 DELETE FROM public.learner_badges
 WHERE badge_id IN (
   SELECT id FROM public.badges
