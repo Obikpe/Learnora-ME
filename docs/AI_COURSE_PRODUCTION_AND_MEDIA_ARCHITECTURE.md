@@ -204,3 +204,46 @@ To place the first Course Studio inside the Learnora ME website while keeping th
 5. Keep all generation logic in the shared backend. The later Learnora Teams website should reuse these APIs rather than create a second generation engine.
 
 The current `frontend-team/` remains a separate internal application with its own login and content operations. This phase does not redesign it or move its existing pages into Learnora ME; it temporarily makes the new AI Course Studio reachable inside Learnora ME through the proper staff identity boundary.
+
+
+## 15. Live Pheonix database verification — 21 November 2026
+
+The active Supabase project was checked read-only:
+- Project: **Pheonix**, reference `gihfupzvdpyrmynqgukz`, status `ACTIVE_HEALTHY`, PostgreSQL 17.11, region `eu-west-3`.
+- The live migration ledger contains **56** versions.
+- The repository contains **57** SQL files under `supabase/migrations/`.
+- There are **12 live migration versions without a same-version repository source file**, including the live `20261118214152_public_course_catalogue_rpc` while the repository has `20261118141100_public_course_catalogue_rpc.sql`.
+- There are **13 repository-only migration filenames**: 12 are stale timestamp versions corresponding to live migrations, and `20261026153000_revoke_browser_privileges_and_defaults.sql` remains an unapplied candidate. The repository and live ledger are not version-aligned.
+- **Do not run `supabase db push` or apply a new production migration until this discrepancy is reconciled.** The live migration ledger is the authority for applied versions; a semantically similar SQL file with a different timestamp is not a matching migration source.
+
+### Live curriculum and media schema
+
+The live schema confirms:
+- `learnora_courses` has global/organisation/creator ownership, publication status, descriptions, `settings jsonb` and estimated hours.
+- `learnora_learning_paths` and `learnora_learning_path_courses` are the global track and ordered course-link tables.
+- `course_modules` and `learnora_lessons` already represent ordered modules and lessons. `learnora_lessons.content` is plain text/Markdown; there are no dedicated columns for a private production script, storyboard or AI-generation provenance.
+- `lesson_videos` supports multiple rows per lesson, provider values including Supabase, Cloudflare, Mux, Bunny, Vimeo and YouTube, storage path/external ID, duration, size, MIME type, privacy, processing status and transcript text.
+- `lesson_resources` stores resource metadata and storage/external references.
+- The current database has no lesson-video records for the test Introduction to Data Analytics lesson.
+
+The schema is therefore sufficient for current learner-facing text, video metadata, resources and playback, but not yet a durable AI production workspace. A production script/storyboard should not be placed in learner-visible `learnora_lessons.content`, nor hidden in an oversized course settings JSON object. Add a reviewed production-draft/job model in a migration after migration reconciliation.
+
+### Live AI profile and permission findings
+
+- The live `content_generation` AI profile exists, is enabled, and is configured as `openrouter/free` with a stored default maximum of 2,000 output tokens.
+- The active gateway can override output tokens per call, but the model/provider's actual response limits and output validity still need runtime verification.
+- The internal permission `content.manage` exists. In the live staff-role permission mapping it is currently assigned only to `super_admin`.
+- The `learning_curriculum` staff role exists but does not currently have `content.manage`. Therefore the first generation API is restricted to super-admin staff until a dedicated course-generation permission is safely added and assigned to the curriculum role. Do not bypass the permission system with a hardcoded role check.
+- The current generation endpoint uses the existing `content_generation` profile and requires internal staff `content.manage`. It produces validated draft proposals only; it does not create or publish course records yet.
+
+### Test course — preserve history when replacing
+
+A read-only live query confirmed that the test course is not an empty disposable record:
+- Course: **Introduction to Data Analytics**, published and Learnora-owned.
+- It is linked to the published **Data Analytics** track.
+- It currently has one published module and one published article lesson, **What Is Data Analytics?**
+- The lesson is marked as 35 minutes and contains 10,655 characters of written content.
+- It has **2 enrolments and 2 lesson-progress records**, and no attached videos.
+
+Do not hard-delete this course or its lesson. When the real AI-produced course is ready, retire the test version from new discovery while preserving those enrolments and progress records. The existing track curriculum may be frozen by its enrolment history, so the replacement may require a successor track/version and a reviewed transition plan rather than editing the current track in place. Verify the current learner access and track-lock behaviour before any retirement operation.
+
