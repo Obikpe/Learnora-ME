@@ -325,6 +325,14 @@ def _escape_ilike_literal(value: str) -> str:
     )
 
 
+def _age_on_date(birth_date: date, today: date) -> int:
+    """Calculate completed years on a specific local calendar date."""
+    age = today.year - birth_date.year
+    if (today.month, today.day) < (birth_date.month, birth_date.day):
+        age -= 1
+    return age
+
+
 def norm_email(
     email: str,
 ) -> str:
@@ -2736,9 +2744,7 @@ def register(
 
     if payload.date_of_birth > local_today:
         raise HTTPException(status_code=400, detail="Date of birth cannot be in the future.")
-    age = local_today.year - payload.date_of_birth.year
-    if (local_today.month, local_today.day) < (payload.date_of_birth.month, payload.date_of_birth.day):
-        age -= 1
+    age = _age_on_date(payload.date_of_birth, local_today)
     if age < 13:
         log_security_event(action="underage_registration_blocked", email=email, request=request)
         raise HTTPException(status_code=400, detail="Learnora accounts are available only to people aged 13 or older.")
