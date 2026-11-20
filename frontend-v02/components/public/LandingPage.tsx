@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { splitWords } from "../motion/SplitText";
 import TopicMarquee from "../motion/TopicMarquee";
 import LandingStats from "./LandingStats";
 import type { FormEvent } from "react";
