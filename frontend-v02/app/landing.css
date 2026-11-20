@@ -508,3 +508,24 @@ html.js .landing-reveal.is-visible .landing-evidence-preview article { opacity:1
     animation:none !important; transition:none !important; filter:none !important;
   }
 }
+
+
+/* The rotating hero statement is the landing page's primary visual hook. */
+.landing-page .landing-hero .landing-slide-copy {
+  max-width: 680px;
+  margin-top: 22px;
+  color: var(--primary);
+  font-size: clamp(2.35rem, 4.35vw, 3.6rem);
+  font-weight: 780;
+  line-height: 1.12;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+@media (max-width: 700px) {
+  .landing-page .landing-hero .landing-slide-copy {
+    margin-top: 18px;
+    font-size: clamp(2rem, 7.4vw, 2.55rem);
+    line-height: 1.16;
+    letter-spacing: -.04em;
+  }
+}
