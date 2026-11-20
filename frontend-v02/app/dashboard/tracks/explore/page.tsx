@@ -74,8 +74,8 @@ export default function ExploreLearningTracksPage() {
       <Link href="/dashboard/tracks" className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary)]">← My learning tracks</Link>
       <div className="mt-5 flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[.16em] text-[var(--primary)]">Explore learning tracks</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--text-heading)] sm:text-4xl">Find your next learning path</h1>
+          
+          
           <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-muted)]">Explore structured learning journeys, review the courses in each track and choose where you want to build your skills.</p>
         </div>
         <span className="text-xs tabular-nums text-[var(--text-muted)]">{loading ? "Loading tracks…" : `${filtered.length} tracks`}</span>
