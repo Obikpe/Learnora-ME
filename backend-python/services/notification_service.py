@@ -5,6 +5,7 @@ turn a successful course publish/update into a failed course operation.
 """
 import logging
 import re
+from html import escape
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Any
