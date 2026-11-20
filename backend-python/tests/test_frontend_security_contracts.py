@@ -159,6 +159,7 @@ class FrontendSecurityContractTests(unittest.TestCase):
         auth = (ROOT / "backend-python" / "routers" / "auth.py").read_text(encoding="utf-8")
         self.assertIn('user.is_birthday_today ? "Happy Birthday" : "Welcome back"', dashboard)
         self.assertIn('"is_birthday_today": birthday_today', auth)
+        self.assertNotIn('"date_of_birth": user.date_of_birth', auth)
 
 
 if __name__ == "__main__":
