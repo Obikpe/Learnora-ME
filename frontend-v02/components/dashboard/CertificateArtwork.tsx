@@ -7,7 +7,7 @@ export default function CertificateArtwork({ certificate }: { certificate: any }
   const [open, setOpen] = useState(false);
   const issued = certificate.issued_at ? new Date(certificate.issued_at) : null;
   const date = issued && !Number.isNaN(issued.getTime()) ? issued.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "Date unavailable";
-  const artwork = <div className="certificate-artwork flex aspect-[1.414/1] w-full flex-col items-center justify-center border-[8px] border-double border-[#b99a52] bg-[#fffdf6] px-[7%] py-[5%] text-center text-[#24233b]">
+  const artwork = <div className="certificate-artwork flex aspect-[1.414/1] w-full flex-col items-center justify-center border-[8px] border-double border-[#b99a52] bg-[#fffdf6] px-[7%] py-[4%] text-center text-[#24233b]">
     <div className="grid size-9 place-items-center rounded-full border border-[#b99a52] text-[#9b7b35]"><Award size={20}/></div>
     <p className="mt-2 text-[clamp(8px,1vw,13px)] font-bold uppercase tracking-[.25em] text-[#92783e]">Learnora ME</p>
     <h2 className="mt-2 font-serif text-[clamp(20px,3vw,42px)]">Certificate of Completion</h2>
@@ -17,6 +17,7 @@ export default function CertificateArtwork({ certificate }: { certificate: any }
     <p className="mt-1 max-w-[85%] text-[clamp(14px,1.8vw,24px)] font-semibold">{certificate.course_title || "Course completion"}</p>
     <div className="mt-5 flex w-full justify-between text-[clamp(7px,.85vw,11px)] text-[#77715f]"><span>Learnora ME</span><span>{date}</span></div>
     <p className="mt-2 text-[clamp(6px,.75vw,10px)] text-[#8b805f]">Certificate No. {certificate.certificate_number || "Pending"}</p>
+    <p className="mt-3 max-w-[90%] text-[clamp(6px,.75vw,10px)] leading-tight text-[#77715f]">This is a certificate of course completion, not a professional certification.</p>
   </div>;
 
   return <>
