@@ -178,7 +178,7 @@ export default function OrganisationLandingPage() {
         <div className="org-wrap org-hero-inner">
           <div className="org-hero-copy">
             
-            <h1>Build the capabilities your people and work need next.</h1>
+            
             <p>Bring learning, practice and progress into one connected experience. Shape programmes around your organisation, whether you are developing a workforce, supporting a school, running an academy or growing a team.</p>
             <ul className="org-checks">
               <li><CheckCircle2/> Build skills around real roles and priorities</li>
@@ -208,7 +208,7 @@ export default function OrganisationLandingPage() {
         </div>
         <div className="org-content-copy">
           
-          <h2>One platform. Different organisational needs.</h2>
+          
           <p>Not every organisation works in the same way. Learnora&apos;s organisation model is designed to support different structures while keeping learning and access organised.</p>
           <ul className="org-checks">
             <li><CheckCircle2/> Businesses developing job-related capabilities across teams</li>
@@ -222,7 +222,7 @@ export default function OrganisationLandingPage() {
 
       <section className="org-tracks-section" id="org-tracks">
         <div className="org-wrap">
-          <div className="org-section-heading"><div><h2>Choose learning that matches your priorities.</h2><p>Explore published Learnora tracks and courses.</p></div><Link className="org-inline-link" href="/tracks">View all tracks <ArrowRight size={15}/></Link></div>
+          <div className="org-section-heading"><div><p>Explore published Learnora tracks and courses.</p></div><Link className="org-inline-link" href="/tracks">View all tracks <ArrowRight size={15}/></Link></div>
           <label className="org-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search skills, tracks or courses" aria-label="Search published skills, tracks or courses"/>{query && <button type="button" onClick={() => setQuery("")}>Clear</button>}</label>
           {catalogueError && <div role="alert" className="org-error"><span>{catalogueError}</span><button type="button" onClick={() => void loadCatalogue()}>Retry</button></div>}
           {loading ? <p className="org-state">Loading published learning tracks and courses…</p> : filteredTracks.length ? <div className="org-track-grid">{filteredTracks.slice(0, 3).map((track, index) => <TrackCard key={track.id} track={track} index={index}/>)}</div> : !catalogueError ? <div className="org-empty"><Layers3 size={25}/><h3>{tracks.length ? "No tracks match that search" : "Published tracks will appear here"}</h3><p>{tracks.length ? "Try a different skill or course title." : "Learnora will display tracks here when they are published to the public catalogue."}</p></div> : null}
@@ -233,7 +233,7 @@ export default function OrganisationLandingPage() {
 
       <section className="org-capabilities-band">
         <div className="org-wrap">
-          <div className="org-capabilities-intro"><h2>Give people the structure and support to keep moving.</h2><p>Use the organisation workspace model to coordinate the people, learning and oversight your programme requires. Access and capacity remain subject to Learnora&apos;s approval and agreed entitlements.</p></div>
+          <div className="org-capabilities-intro"><p>Use the organisation workspace model to coordinate the people, learning and oversight your programme requires. Access and capacity remain subject to Learnora&apos;s approval and agreed entitlements.</p></div>
           <div className="org-capabilities-grid">
             <article><Building2/><h3>Organisation workspace</h3><p>Keep organisational identity, settings, people and learning access within a dedicated workspace.</p></article>
             <article><Users/><h3>Teams and managers</h3><p>Organise people into teams and assign scoped responsibilities to authorised managers.</p></article>
@@ -247,7 +247,7 @@ export default function OrganisationLandingPage() {
         <div className="org-wrap org-contact-grid">
           <div className="org-contact-copy">
             
-            <h2>Let&apos;s understand what your organisation needs.</h2>
+            
             <p>Tell us about your organisation, the people you support and the learning outcomes you are working towards. The Learnora team will review your enquiry before any workspace is provisioned.</p>
             <ul className="org-checks">
               <li><CheckCircle2/> Discuss your structure and learning priorities</li>
@@ -284,7 +284,7 @@ export default function OrganisationLandingPage() {
         </div>
       </section>
 
-      <section className="org-final-cta"><div className="org-wrap"><div><h2>Start with your people. Build towards what comes next.</h2><p>Explore the catalogue or tell us what your organisation is working towards.</p></div><div><a className="org-button org-button-light" href="#org-tracks">Explore learning <ArrowRight size={15}/></a><a className="org-button org-button-ghost" href="#org-contact">Make an enquiry <ArrowUpRight size={15}/></a></div></div></section>
+      <section className="org-final-cta"><div className="org-wrap"><div><p>Explore the catalogue or tell us what your organisation is working towards.</p></div><div><a className="org-button org-button-light" href="#org-tracks">Explore learning <ArrowRight size={15}/></a><a className="org-button org-button-ghost" href="#org-contact">Make an enquiry <ArrowUpRight size={15}/></a></div></div></section>
     </main>
   );
 }
