@@ -121,5 +121,45 @@ class FrontendSecurityContractTests(unittest.TestCase):
                 self.assertIn("X-Content-Type-Options", content)
 
 
+    def test_landing_hero_keeps_side_by_side_course_preview_without_pause_button(self):
+        landing = (ROOT / "frontend-v02" / "components" / "public" / "LandingPage.tsx").read_text(encoding="utf-8")
+        css = (ROOT / "frontend-v02" / "app" / "landing.css").read_text(encoding="utf-8")
+        self.assertIn("setInterval", landing)
+        self.assertIn("landing-hero-product", landing)
+        self.assertNotIn("landing-slide-pause", landing)
+        self.assertNotIn("Pause", landing)
+        self.assertNotIn("Play", landing)
+        self.assertIn("@media (min-width: 1001px)", css)
+        self.assertIn("padding-top: 22px", css)
+        self.assertIn("align-items: start", css)
+
+    def test_cookie_choices_are_shown_to_first_time_visitors_from_the_root_layout(self):
+        layout = (ROOT / "frontend-v02" / "app" / "layout.tsx").read_text(encoding="utf-8")
+        consent = (ROOT / "frontend-v02" / "components" / "public" / "CookieConsent.tsx").read_text(encoding="utf-8")
+        self.assertIn("<CookieConsent />", layout)
+        self.assertIn("setVisible(!saved)", consent)
+        self.assertIn("Reject optional", consent)
+        self.assertIn("Customise", consent)
+        self.assertIn("Accept optional", consent)
+
+    def test_registration_collects_birth_date_and_requires_both_age_declarations(self):
+        register = (ROOT / "frontend-v02" / "app" / "register" / "page.tsx").read_text(encoding="utf-8")
+        api = (ROOT / "frontend-v02" / "lib" / "api" / "auth.ts").read_text(encoding="utf-8")
+        self.assertIn('type="date"', register)
+        self.assertIn('max={maxBirthDate}', register)
+        self.assertIn("I confirm that I am at least 13 years old", register)
+        self.assertIn("accurate and truthful", register)
+        self.assertIn("!ageConfirmed||!truthConfirmed||!ageIsValid", register)
+        self.assertIn("date_of_birth: dateOfBirth", api)
+        self.assertIn("age_13_plus_confirmed: age13PlusConfirmed", api)
+        self.assertIn("age_information_truthful: ageInformationTruthful", api)
+
+    def test_dashboard_greeting_uses_server_computed_birthday_flag(self):
+        dashboard = (ROOT / "frontend-v02" / "app" / "dashboard" / "page.tsx").read_text(encoding="utf-8")
+        auth = (ROOT / "backend-python" / "routers" / "auth.py").read_text(encoding="utf-8")
+        self.assertIn('user.is_birthday_today ? "Happy Birthday" : "Welcome back"', dashboard)
+        self.assertIn('"is_birthday_today": birthday_today', auth)
+
+
 if __name__ == "__main__":
     unittest.main()
