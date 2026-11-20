@@ -8,7 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowRight, ArrowUpRight, BookOpen, CheckCircle2, Clock3, Compass,
-  GraduationCap, Layers3, RefreshCw, Search, Route, Pause, Play,
+  GraduationCap, Layers3, RefreshCw, Search, Route,
 } from "lucide-react";
 import { request } from "../../lib/api/client";
 import { currentUser } from "../../lib/api";
@@ -134,14 +134,13 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
   const [error, setError] = useState(initialError || "");
   const [retrying, setRetrying] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [paused, setPaused] = useState(false);
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || paused) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") setActiveSlide(value => (value + 1) % heroSlides.length);
     }, 7000);
     return () => window.clearInterval(timer);
-  }, [paused]);
+  }, []);
   const [search, setSearch] = useState("");
   const [continueCourses, setContinueCourses] = useState<any[]>([]);
 
@@ -218,9 +217,8 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
             <span><CheckCircle2 size={17}/> Show your work</span>
           </div>
           <div className="landing-slide-controls" aria-label="Featured messages">
-            <button type="button" className="landing-slide-pause" aria-pressed={paused} aria-label={paused ? "Resume automatic headline rotation" : "Pause automatic headline rotation"} onClick={() => setPaused(value => !value)}>{paused ? <Play size={15} aria-hidden="true"/> : <Pause size={15} aria-hidden="true"/>}</button>
             <div>
-              {heroSlides.map((item, index) => <button key={index} type="button" className={activeSlide === index ? "active" : ""} aria-label={"Show featured message " + (index + 1)} aria-pressed={activeSlide === index} onClick={() => { setActiveSlide(index); setPaused(true); }} />)}
+              {heroSlides.map((item, index) => <button key={index} type="button" className={activeSlide === index ? "active" : ""} aria-label={"Show featured message " + (index + 1)} aria-pressed={activeSlide === index} onClick={() => setActiveSlide(index)} />)}
             </div>
           </div>
         </div>
