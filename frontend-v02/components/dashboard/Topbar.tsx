@@ -186,8 +186,8 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
           <Bell size={17}/>
           {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
         </button>
-        {previewOpen && <aside role="dialog" aria-label="Notification preview" className="absolute right-0 top-full z-[80] mt-2 flex max-h-[min(28rem,calc(100vh-6rem))] w-[min(22rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl">
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+        {previewOpen && <aside role="dialog" aria-label="Notification preview" className="absolute right-0 top-full z-[80] mt-2 flex max-h-[min(20rem,calc(100dvh-7rem))] w-[min(18rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl sm:max-h-[min(28rem,calc(100vh-6rem))] sm:w-[min(22rem,calc(100vw-2rem))]">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-2.5 sm:px-4 sm:py-3">
             <div className="min-w-0">
               <span className="block text-xs font-semibold text-[var(--text-heading)]">Notifications</span>
               <span className="mt-0.5 block text-[10px] text-[var(--text-muted)]">{unread} unread</span>
@@ -195,12 +195,12 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
             <button type="button" onClick={() => setPreviewOpen(false)} aria-label="Close notification preview" className="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-soft)]"><X size={16}/></button>
           </div>
           {previewItems.length ? <div className="min-h-0 overflow-y-auto">
-            {previewItems.map(item => <button key={item.id} type="button" onClick={() => { setPreviewOpen(false); router.push("/dashboard/notifications?selected=" + encodeURIComponent(item.id)); }} className="block w-full border-b border-[var(--border)] px-4 py-3 text-left transition hover:bg-[var(--bg-soft)] last:border-b-0">
+            {previewItems.map(item => <button key={item.id} type="button" onClick={() => { setPreviewOpen(false); router.push("/dashboard/notifications?selected=" + encodeURIComponent(item.id)); }} className="block w-full border-b border-[var(--border)] px-3 py-2.5 text-left sm:px-4 sm:py-3 transition hover:bg-[var(--bg-soft)] last:border-b-0">
               <span className="block truncate text-xs font-semibold leading-5 text-[var(--text-heading)]">{item.title}</span>
               <span className="mt-1 block line-clamp-2 break-words text-[11px] leading-4 text-[var(--text-muted)]">{item.body}</span>
             </button>)}
           </div> : <p className="px-4 py-6 text-xs text-[var(--text-muted)]">No notifications yet.</p>}
-          <button type="button" onClick={() => { setPreviewOpen(false); router.push("/dashboard/notifications"); }} className="shrink-0 border-t border-[var(--border)] px-4 py-3 text-left text-[11px] font-semibold text-[var(--primary)] hover:bg-[var(--bg-soft)]">View all notifications</button>
+          <button type="button" onClick={() => { setPreviewOpen(false); router.push("/dashboard/notifications"); }} className="shrink-0 border-t border-[var(--border)] px-3 py-2.5 text-left sm:px-4 sm:py-3 text-[11px] font-semibold text-[var(--primary)] hover:bg-[var(--bg-soft)]">View all notifications</button>
         </aside>}
       </div>}
       <div className="relative" ref={accountMenuRef}>
