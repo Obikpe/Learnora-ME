@@ -522,3 +522,16 @@ The approved product rule is:
 - Shared platform catalogue and organisation resources are not deleted solely because a learner created or was assigned as their actor; the learner attribution is detached where appropriate.
 
 The implementation is represented by migrations `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql`. They remain unapplied to production until separately authorised. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until migrations, schema checks and deletion tests are complete. The Terms and Privacy Policy wording will be reviewed and updated in a separate documentation/legal-review pass after the feature set is complete.
+
+
+## AI course production and lesson media addendum — 21 November 2026
+
+See [AI Course Production and Media Architecture Audit](AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md) for the current-state audit, workflow, security model and implementation requirements.
+
+The canonical curriculum remains **Track → Course → Module → Lesson**. A track groups ordered courses; courses remain independently discoverable/enrollable where permitted and may also be included in one or more tracks. A course may include Excel in its own modules while a separate standalone Excel course also exists. Do not collapse courses into tracks or modules.
+
+AI course production is an internal Learnora ME capability operated by authorised Learnora Teams staff. It is not available to independent creators, tutors or customer organisations. The feature must be enforced by backend internal-staff permissions. The separate Learnora Teams website remains a distinct application and is not being rebuilt in this phase; the current integration is a backend and product capability, with a later Teams website build after Learnora ME integration is stable.
+
+The existing `services/ai_gateway.py` is the LLM integration point and must be extended through a named course-production profile rather than replaced. The active learner player already supports signed video playback, YouTube/Vimeo embeds, lesson text, resources and learner notes. Its current limitation is that it renders only the first attached video. The active Teams content manager already supports manual curriculum and media management; AI generation and automated rendering are new capabilities, not existing completed features.
+
+The existing private Supabase Storage buckets and signed upload/playback flow remain the current media implementation. Cloudflare R2 is only a candidate for later cost evaluation, not an approved or integrated replacement. AI-generated courses remain drafts until a staff reviewer approves them. The test Introduction to Data Analytics course is to be replaced only after verifying its live enrolments/progress and publishing a reviewed real replacement; do not destructively delete learner history.
