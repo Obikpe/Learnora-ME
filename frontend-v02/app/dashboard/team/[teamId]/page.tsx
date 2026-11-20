@@ -65,7 +65,7 @@ export default function TeamWorkspace() {
           <>
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[.2em] gold">Team workspace</p>
+                
                 <h1 className="mt-3 font-display text-4xl sm:text-5xl">{data.team.name}</h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{data.team.description || "A focused workspace for members of this organisation team."}</p>
               </div>
