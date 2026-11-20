@@ -72,7 +72,7 @@ export default function MyLearningTracksPage() {
   return <Shell active="tracks">
     <header className="flex flex-wrap items-end justify-between gap-5 border-b border-white/[.08] pb-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[.18em] gold">Your learning journey</p>
+        
         <h1 className="mt-3 font-display text-4xl sm:text-5xl">My learning tracks</h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Follow the courses in each track and keep track of your progress from one place.</p>
       </div>
