@@ -141,6 +141,22 @@ async def _generate_json(system_prompt: str, user_payload: dict, *, max_tokens: 
     }
 
 
+@router.get("/access")
+def course_studio_access(
+    staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
+):
+    return {
+        "success": True,
+        "staff": {
+            "staff_id": staff.staff_id,
+            "name": staff.name,
+            "email": staff.email,
+            "roles": staff.roles,
+        },
+        "capabilities": ["curriculum.generate", "lesson_package.generate"],
+    }
+
+
 @router.post("/curriculum")
 async def generate_curriculum(
     payload: CurriculumRequest,
