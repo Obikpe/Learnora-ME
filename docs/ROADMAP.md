@@ -630,3 +630,40 @@ The implementation pass has moved beyond the initial inventory. The following ch
 
 No deployment, CI run, SQL migration or live database mutation was performed for this implementation update.
 
+
+
+## AI-assisted course production milestone — 21 November 2026
+
+**Priority:** P1 — required to seed a credible catalogue before the planned learner outreach. This work must not bypass existing security, migration and release gates.
+
+### Product and architecture decisions
+- Preserve the canonical Track → Course → Module → Lesson hierarchy. Tracks group ordered courses; courses can exist independently and can also belong to tracks.
+- Introduce AI course production as an internal Learnora ME capability for authorised Learnora Teams staff only. Independent creators, tutors and customer organisations must be denied by backend policy.
+- Keep the Learnora Teams website separate. This phase integrates the capability into the shared backend and Learnora ME; the separate Teams website build follows once the Learnora ME integration is stable.
+- Extend the existing named-profile AI gateway; do not replace it. The active gateway currently executes OpenRouter requests, so provider support must be described and tested accurately.
+- Use a staged workflow: outline review → curriculum proposal → lesson packages → optional media jobs → staff review → explicit publication.
+- The lesson player already supports video and written content, but currently displays only the first attached video. Improve it for multiple media assets and short authored notes, while keeping learner-owned notes distinct.
+- Retain Supabase private Storage and its signed upload/playback path for the first increment. Evaluate Cloudflare R2 separately; do not migrate storage by assumption.
+- Video rendering is a separate asynchronous worker concern, not a synchronous Vercel request and not coupled to the LLM provider.
+
+### Delivery sequence
+1. Complete the current-state audit and update the engineering documents.
+2. Restore the Learnora ME brand in the landing-page top navigation (the root page currently passes `hideBrand` to `PublicNav`).
+3. Verify live schema, permissions, migration ledger and test-course history; do not run unreviewed migrations or destructive data changes.
+4. Implement the backend course-production service and internal-staff-only draft-generation API using the existing AI gateway.
+5. Extend the existing Teams content workflow with outline input, structured curriculum preview/editing and lesson-package generation.
+6. Adapt the Learnora ME lesson player for video + concise authored notes + resources/practice, including multiple videos where needed.
+7. Add asynchronous video-rendering jobs, storage integration and secure playback only after the content-generation foundation is verified.
+8. Generate, review and publish initial real courses (including Excel, Data Analytics and Front-end Web Development catalogue directions). Replace the test Introduction to Data Analytics course only after verifying enrolment/progress and preserving any learner history.
+9. Run backend, frontend, permission, publication and browser/mobile acceptance checks. Deployment remains a separate explicit step.
+
+### Acceptance gates
+- Internal team member with the specific generation permission can create and edit drafts.
+- Learner, creator, tutor and organisation identities cannot call generation APIs directly.
+- Generated hierarchy persists in the canonical tables without duplicate course/module/lesson models.
+- Draft courses and lessons do not appear in public discovery or learner progress/completion counts.
+- Staff approval is required before publication.
+- Video and text can coexist in a lesson; a lesson without video remains valid; multiple videos do not silently disappear from the player.
+- Media access is re-authorised at playback time; durable records store asset identity, not expiring signed URLs.
+- Test-course replacement preserves learner history and track relationships.
+- No production migration, storage migration or deployment is performed without separate verification and approval.
