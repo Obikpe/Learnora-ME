@@ -18,7 +18,7 @@ export default function LearningCalendarPage() {
   }, []);
   return <Shell active="calendar">
     <div className="mb-6 flex items-center justify-between gap-3">
-      <div><p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">Your learning</p><h1 className="mt-1 text-2xl font-bold text-[var(--text-heading)]">Learning calendar</h1><p className="mt-1 text-sm text-[var(--text-muted)]">Days when you completed meaningful learning activities.</p></div>
+      <div><h1 className="mt-1 text-2xl font-bold text-[var(--text-heading)]">Learning calendar</h1><p className="mt-1 text-sm text-[var(--text-muted)]">Days when you completed meaningful learning activities.</p></div>
       <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--primary)]"><ArrowLeft size={15}/> Dashboard</Link>
     </div>
     {loading ? <Skeleton label="Loading your learning calendar"/> : summary
