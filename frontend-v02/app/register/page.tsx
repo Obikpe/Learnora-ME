@@ -31,7 +31,7 @@ export default function Register() {
       <a href="/" className="inline-flex w-fit"><Logo/></a>
       <div className="max-w-xl">
         
-        <h1 className="mt-5 font-display text-5xl leading-[1.04] xl:text-6xl">Knowledge grows when you put it to work.</h1>
+        
         <p className="mt-5 max-w-lg text-sm leading-7 text-slate-400">Learnora is designed to connect learning with practice, projects and feedback—so your progress becomes something you can reflect on and build from.</p>
         <div className="mt-10 divide-y divide-white/[.1] border-y border-white/[.1]">
           {[{icon:Layers3,title:"Learn with structure",text:"Follow clear lessons and outcomes."},{icon:Target,title:"Practise with purpose",text:"Try ideas and improve with feedback."},{icon:FolderKanban,title:"Keep evidence",text:"Build a record of projects and progress."}].map(({icon:Icon,title,text})=><div key={title} className="flex items-center gap-4 py-4"><span className="grid size-10 shrink-0 place-items-center border border-white/[.1] text-[var(--gold-light)]"><Icon size={18}/></span><div><p className="text-sm font-semibold">{title}</p><p className="mt-1 text-xs text-slate-500">{text}</p></div></div>)}
@@ -44,8 +44,8 @@ export default function Register() {
       <div className="mx-auto w-full max-w-lg">
         <a href="/" className="inline-flex items-center gap-2 text-xs text-slate-500 transition-colors hover:text-slate-200 lg:hidden"><ArrowLeft size={14}/> Back to Learnora</a>
         <div className="mt-8 lg:mt-0"><a href="/" className="hidden lg:inline-flex"><Logo/></a></div>
-          <p className="mt-10 text-xs font-bold uppercase tracking-[.2em] text-[var(--gold-light)]">Create your account</p>
-          <h1 className="mt-3 font-display text-4xl leading-tight tracking-[-.04em] sm:text-5xl">Start with one step.</h1>
+          
+          <h1 className="mt-3 font-display text-4xl leading-tight tracking-[-.04em] sm:text-5xl">Create account</h1>
           <p className="mt-4 max-w-md text-sm leading-7 text-slate-400">Create your Learnora account. You can explore the learning experiences and access available to your account.</p>
           <form onSubmit={submit} className="mt-8 grid gap-5">
             <label htmlFor="register-name" className="grid gap-2 text-xs font-medium text-slate-300">Your name<input id="register-name" value={name} onChange={e=>setName(e.target.value)} required autoComplete="name" className="field" placeholder="Full name"/></label>
