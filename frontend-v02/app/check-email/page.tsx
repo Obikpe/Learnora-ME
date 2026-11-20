@@ -51,7 +51,7 @@ export default function CheckEmailPage() {
         <div className="mt-12 grid size-16 place-items-center rounded-2xl border border-[var(--gold)]/25 bg-[var(--gold)]/[.08] text-[var(--gold-light)]">
           <MailCheck size={29} strokeWidth={1.6} />
         </div>
-        <p className="mt-8 text-[10px] font-bold uppercase tracking-[.22em] text-[var(--gold-light)]">One last step</p>
+        
         <h1 className="mt-3 font-display text-4xl leading-tight tracking-[-.035em] sm:text-5xl">Check your email.</h1>
         <p className="mt-4 text-sm leading-7 text-slate-300">
           If you are creating a new account, confirm the address below using the verification email. If it does not arrive, request another when the countdown finishes. If you already have a Learnora account, sign in instead. If it is deactivated, sign in to begin account recovery.
