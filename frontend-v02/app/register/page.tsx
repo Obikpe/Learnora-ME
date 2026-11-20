@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Layers3, Target, FolderKanban } from "lucide-react";
+import Logo from "../../components/brand/Logo";
+import Toast from "../../components/feedback/Toast";
+import { register } from "../../lib/api";
+
 function calculateAge(value: string): number {
   const [year, month, day] = value.split("-").map(Number);
   const today = new Date();
@@ -9,11 +15,6 @@ function calculateAge(value: string): number {
   if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age -= 1;
   return age;
 }
-import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Layers3, Target, FolderKanban } from "lucide-react";
-import Logo from "../../components/brand/Logo";
-import Toast from "../../components/feedback/Toast";
-import { register } from "../../lib/api";
 
 export default function Register() {
   const [name,setName]=useState(""),[email,setEmail]=useState(""),[password,setPassword]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[ageConfirmed,setAgeConfirmed]=useState(false),[truthConfirmed,setTruthConfirmed]=useState(false),[error,setError]=useState(""),[acceptedTerms,setAcceptedTerms]=useState(false),[marketingEmailOptIn,setMarketingEmailOptIn]=useState(false),[busy,setBusy]=useState(false),[showPassword,setShowPassword]=useState(false);
