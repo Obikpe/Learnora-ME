@@ -37,7 +37,7 @@ export default async function Home() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }} />
-      <PublicNav hideBrand />
+      <PublicNav />
       <LandingPage initialCourses={courseResult.items} initialTracks={trackResult.items} initialError={initialError} />
       <PublicFooter />
     </>
