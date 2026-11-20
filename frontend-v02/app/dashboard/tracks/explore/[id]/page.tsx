@@ -129,7 +129,7 @@ export default function SignedInTrackDetailPage() {
     <Link href="/dashboard/tracks/explore" className="inline-flex items-center gap-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary)]"><ArrowLeft size={14}/>All learning tracks</Link>
     <header className="mt-6 grid gap-7 border-b border-[var(--border)] pb-8 lg:grid-cols-[1fr_.55fr] lg:items-end">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[.16em] text-[var(--primary)]">Learning track</p>
+        
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-[var(--text-heading)] sm:text-5xl">{track.name}</h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--text-muted)]">{track.description || "A structured sequence of courses to help you develop and apply a connected set of skills."}</p>
       </div>
@@ -148,7 +148,7 @@ export default function SignedInTrackDetailPage() {
 
     {error && <div role="alert" className="mt-5 rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-sm text-red-500">{error}</div>}
     <section className="mt-9">
-      <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[.16em] text-[var(--primary)]">Curriculum</p><h2 className="mt-2 text-2xl font-bold text-[var(--text-heading)]">Courses in this track</h2></div><p className="text-xs text-[var(--text-muted)]">{track.course_count || track.courses?.length || 0} courses · ordered learning</p></div>
+      <div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="mt-2 text-2xl font-bold text-[var(--text-heading)]">Courses in this track</h2></div><p className="text-xs text-[var(--text-muted)]">{track.course_count || track.courses?.length || 0} courses · ordered learning</p></div>
       <div className="mt-5 divide-y divide-[var(--border)] border-y border-[var(--border)]">
         {(track.courses || []).map((item: any, index: number) => {
           const saved = progress?.courses?.find((course: any) => course.course_id === item.course_id || course.course?.id === item.course?.id);
