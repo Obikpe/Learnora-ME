@@ -160,8 +160,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
   const catalogue = <main id="main-content" className={"mx-auto max-w-7xl px-5 pb-24 " + (signedIn ? "pt-8" : "pt-32") + " lg:px-8"}>
       <section className="grid gap-10 border-b border-white/[.1] pb-12 lg:grid-cols-[1fr_.6fr] lg:items-end">
         <div>
-          
-          
+          <h1 className="font-display text-4xl tracking-tight sm:text-5xl">Courses</h1>
           <p className="mt-6 max-w-2xl text-base leading-8 text-slate-400 sm:text-lg">Browse published courses, compare what you will learn and choose a useful next step. Each course page explains its curriculum and who can enrol.</p>
         </div>
         <div className="border-l border-[#d7ad35]/50 pl-5">
