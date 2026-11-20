@@ -18,7 +18,7 @@ const links = [
   { href: "/about", title: "About Learnora" },
 ];
 
-export default function PublicNav() {
+export default function PublicNav({ hideBrand = false }: { hideBrand?: boolean }) {
   const [open, setOpen] = useState(false);
   const [audienceOpen, setAudienceOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -73,7 +73,7 @@ export default function PublicNav() {
     <header ref={headerRef} onKeyDown={e=>{if(e.key==="Escape")close(true)}} className="public-nav fixed inset-x-0 top-0 z-50 border-b border-white/[.09] bg-[#090b0e]/95 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-[82rem] items-center justify-between px-5 lg:px-8">
         <Link href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:bg-white focus:px-4 focus:py-3 focus:text-black" onClick={() => close()}>Skip to content</Link>
-        <Link href="/" aria-label="Learnora ME home" onClick={() => close()} className="shrink-0"><Logo /></Link>
+        {!hideBrand && <Link href="/" aria-label="Learnora ME home" onClick={() => close()} className="shrink-0"><Logo /></Link>}
 
         <nav aria-label="Main navigation" className="hidden items-center gap-7 lg:flex">
           <div className="group relative">
