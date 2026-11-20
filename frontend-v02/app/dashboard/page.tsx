@@ -334,7 +334,7 @@ export default function MyLearningPage() {
         <div className="grid size-14 shrink-0 place-items-center rounded-full bg-[var(--primary-tint)] text-xl font-bold text-[var(--primary)] sm:size-16 sm:text-2xl" aria-hidden="true">{(user.name || user.email || "L").trim().charAt(0).toUpperCase()}</div>
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">My Learning</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--text-heading)] sm:text-3xl">Welcome back{user.name ? ", " + user.name.split(" ")[0] : ""}</h1>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--text-heading)] sm:text-3xl">{user.is_birthday_today ? "Happy Birthday" : "Welcome back"}{user.name ? ", " + user.name.split(" ")[0] : ""}</h1>
           {goal && <p className="mt-1 text-sm text-[var(--text-muted)]">Learning goal: {goal}</p>}
         </div>
       </div>
