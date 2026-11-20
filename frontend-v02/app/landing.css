@@ -529,3 +529,21 @@ html.js .landing-reveal.is-visible .landing-evidence-preview article { opacity:1
     letter-spacing: -.04em;
   }
 }
+
+
+/* Align the hero copy and published-course preview as one first-screen composition. */
+@media (min-width: 1001px) {
+  .landing-page { padding-top: 88px; }
+  .landing-page .landing-hero {
+    padding-top: 22px;
+    padding-bottom: 56px;
+    align-items: start;
+  }
+  .landing-page .landing-hero-copy,
+  .landing-page .landing-hero-visual {
+    align-self: start;
+  }
+}
+@media (max-width: 1000px) {
+  .landing-page .landing-hero { padding-top: 34px; }
+}
