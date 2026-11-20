@@ -44,6 +44,7 @@ class RegistrationAgePolicyTests(unittest.TestCase):
         self.assertIn('notification_type="birthday"', worker)
         self.assertIn("_send_automated_email_once(", worker)
         self.assertIn("_create_in_app_once(", worker)
+        self.assertIn("user.get(\"email_verified\") is True", worker)
 
 
 if __name__ == "__main__":
