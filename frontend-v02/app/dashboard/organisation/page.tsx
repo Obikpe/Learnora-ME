@@ -433,7 +433,7 @@ export default function OrganisationWorkspace() {
     return <main className="min-h-screen bg-[#080b0f] px-5 py-12 text-white">
       <section className="mx-auto max-w-3xl rounded-3xl border border-white/[.08] bg-[#0e1319] p-6 sm:p-9">
         <Building2 className="gold" size={25}/>
-        <p className="mt-5 text-xs font-bold uppercase tracking-[.2em] gold">Organisation workspace</p>
+        
         <h1 className="mt-3 font-display text-4xl">Choose your workspace</h1>
         <p className="mt-3 text-sm leading-7 text-slate-400">Your account can administer more than one organisation. Choose which organisation you want to manage for this session.</p>
         <div className="mt-6 grid gap-3">{orgChoices.map((choice: any) => <button key={choice.organisation_id} onClick={() => { history.replaceState(null, "", location.pathname); setOrganisationContext(String(choice.organisation_id)); setNeedsOrgSelection(false); void load(); }} className="flex items-center justify-between gap-4 rounded-xl border border-white/10 p-4 text-left transition hover:border-[#d7ad35]/30 hover:bg-[#d7ad35]/[.03]"><div><p className="font-semibold">{choice.organisation_name || "Organisation workspace"}</p><p className="mt-1 text-xs text-slate-500">{choice.organisation_slug || choice.organisation_id}</p></div><span className="rounded-full border border-white/10 px-3 py-1 text-xs capitalize text-slate-400">{choice.role}</span></button>)}</div>
@@ -465,7 +465,7 @@ export default function OrganisationWorkspace() {
       <main className="mx-auto max-w-[82rem] px-5 py-10 lg:px-8">
         <div id="overview" className="flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.2em] gold">Organisation workspace</p>
+            
             <h1 className="mt-3 font-display text-4xl sm:text-5xl">{org?.name || "Your organisation"}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">Manage the people and learning access attached to your organisation. Available controls depend on your role and approved contract entitlements.</p>
           </div>
