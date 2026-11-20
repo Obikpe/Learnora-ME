@@ -156,7 +156,7 @@ export default function NotificationsPage() {
   return <Shell active="notifications">
     <div className="flex flex-col gap-5 border-b border-white/[.09] pb-7 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="section-kicker">Your learning signal</p>
+        
         <h1 className="mt-3 font-display text-4xl tracking-tight sm:text-5xl">Notifications<span className="text-[#d7ad35]">.</span></h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">New courses matched to your track, changes to courses you follow, and updates tied to your learning journey. Learnora checks for new activity while your workspace is open.</p>
       </div>
