@@ -203,7 +203,6 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
     <main id="main-content" className="landing-page">
       <section className="landing-wrap landing-hero landing-hero-motion" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
-          <p className="landing-kicker"><span/> Learnora ME</p>
           <h1 key={activeSlide} className="landing-slide-copy">{splitWords(slide.title)}</h1>
           <p key={"body-" + activeSlide} className="landing-hero-description landing-slide-copy">{slide.body}</p>
           <div className="landing-actions"><Link className="landing-button landing-button-outline" href="/how-it-works">How Learnora works <ArrowUpRight size={16}/></Link></div>
