@@ -37,6 +37,7 @@ from routers.auth import (
     _find_user,
     _find_cohort_accounts_by_email,
     norm_email,
+    _age_on_date,
     check_password_rules,
     hash_password,
     verify_password,
@@ -387,6 +388,8 @@ def create_cohort_learner(
     cohort = _cohort_for_org(organisation_id, cohort_id)
     if body.date_of_birth >= date.today():
         raise HTTPException(400, "Date of birth must be in the past.")
+    if _age_on_date(body.date_of_birth, date.today()) < 13:
+        raise HTTPException(400, "Cohort learners must be at least 13 years old.")
     encrypted_dob = _encrypt_date_of_birth(body.date_of_birth)
     email = norm_email(str(body.email))
 
