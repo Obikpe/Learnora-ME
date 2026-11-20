@@ -55,7 +55,7 @@ export default function TracksClient({ initialTracks, initialError }: { initialT
     <PublicNav/>
     <main id="main-content" className="mx-auto max-w-7xl px-5 pb-24 pt-32 lg:px-8">
       <header className="grid gap-8 border-b border-white/[.1] pb-12 lg:grid-cols-[1fr_.7fr] lg:items-end">
-        <div><h1 className="mt-5 max-w-4xl font-display text-5xl leading-[1.02] tracking-[-.04em] sm:text-6xl lg:text-7xl">Follow a track. Build a body of work.</h1></div>
+        <div></div>
         <p className="max-w-xl text-base leading-8 text-slate-400">Tracks bring related courses together in a deliberate order. Work through the required courses, keep your progress and see how far you have come.</p>
       </header>
 
