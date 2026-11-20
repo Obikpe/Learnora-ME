@@ -6,6 +6,7 @@ turn a successful course publish/update into a failed course operation.
 import logging
 import re
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Any
 
 from routers.auth import supabase
@@ -703,10 +704,94 @@ def _process_weekly_in_app_summaries(now: datetime) -> int:
     return delivered
 
 
+
+def _process_birthday_messages(now: datetime) -> int:
+    """Send one birthday notification and email per active learner per local year."""
+    rows = (
+        supabase.table("users")
+        .select("id,name,email,email_verified,email_verified_at,account_status,date_of_birth,timezone")
+        .eq("account_status", "active")
+        .not_.is_("date_of_birth", "null")
+        .limit(10000)
+        .execute()
+    ).data or []
+
+    delivered = 0
+    for user in rows:
+        user_id = str(user.get("id") or "")
+        if not user_id:
+            continue
+        try:
+            birth_date = date.fromisoformat(str(user.get("date_of_birth"))[:10])
+        except (TypeError, ValueError):
+            continue
+
+        timezone_name = str(user.get("timezone") or "Africa/Lagos")
+        try:
+            local_now = now.astimezone(ZoneInfo(timezone_name))
+        except (ZoneInfoNotFoundError, ValueError):
+            local_now = now.astimezone(ZoneInfo("Africa/Lagos"))
+
+        birthday_day = birth_date.day
+        is_leap_year = local_now.year % 4 == 0 and (local_now.year % 100 != 0 or local_now.year % 400 == 0)
+        # Observe 29 February birthdays on 28 February in non-leap years.
+        if birth_date.month == 2 and birth_date.day == 29 and not is_leap_year:
+            birthday_day = 28
+        if (birth_date.month, birthday_day) != (local_now.month, local_now.day):
+            continue
+
+        name = str(user.get("name") or "there").strip()
+        safe_name = escape(name)
+        title = "Happy Birthday from Learnora!"
+        body = f"Happy Birthday, {name}! We hope you have a wonderful day. Keep learning, practising and building things you are proud of."
+        event_key = f"birthday:{local_now.year}"
+
+        in_app_sent = _create_in_app_once(
+            user_id=user_id,
+            event_key=event_key,
+            notification_type="birthday",
+            title=title,
+            body=body,
+            action_url="/dashboard",
+            now=now,
+        )
+
+        email_sent = False
+        if user.get("email") and (user.get("email_verified") is True or user.get("email_verified_at")):
+            text_body = (
+                f"Hi {name},\\n\\nHappy Birthday from everyone at Learnora! "
+                "We hope you have a wonderful day and a year full of meaningful learning, "
+                "new ideas and things you are proud to build.\\n\\n"
+                "Open your Learnora dashboard: https://learnorame.vercel.app/dashboard\\n\\n"
+                "Learnora ME"
+            )
+            html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
+<div style="max-width:600px;margin:40px auto;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px">
+<h1 style="margin:0 0 16px;color:#5b4bdb">Happy Birthday, {safe_name}!</h1>
+<p>Everyone at Learnora wishes you a wonderful birthday.</p>
+<p>May the year ahead bring meaningful learning, new ideas and things you are proud to build.</p>
+<p style="margin:28px 0"><a href="https://learnorame.vercel.app/dashboard" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#5b4bdb;color:#fff;text-decoration:none;font-weight:bold">Open my dashboard</a></p>
+<p style="font-size:13px;color:#64748b">Learnora ME · Learn. Practise. Build. Prove.</p>
+</div></body></html>"""
+            email_sent = _send_automated_email_once(
+                user_id=user_id,
+                email=str(user["email"]),
+                event_key=event_key,
+                subject=f"Happy Birthday, {name}!",
+                text_body=text_body,
+                html_body=html_body,
+                now=now,
+            )
+
+        if in_app_sent or email_sent:
+            delivered += 1
+    return delivered
+
+
 def process_automated_learner_notifications() -> dict[str, int]:
     """Daily worker for welcome retries, security alerts and learning reminders."""
     now = datetime.now(timezone.utc)
-    results = {"welcome": 0, "security": 0, "deadlines": 0, "inactivity": 0, "weekly_summaries": 0}
+    results = {"welcome": 0, "security": 0, "deadlines": 0, "inactivity": 0, "weekly_summaries": 0, "birthdays": 0}
     try:
         welcome_retries = (
             supabase.table("learner_notification_deliveries")
@@ -740,6 +825,10 @@ def process_automated_learner_notifications() -> dict[str, int]:
         results["weekly_summaries"] = _process_weekly_in_app_summaries(now)
     except Exception:
         logger.exception("Weekly in-app learning summary batch failed")
+    try:
+        results["birthdays"] = _process_birthday_messages(now)
+    except Exception:
+        logger.exception("Birthday notification batch failed")
     return results
 
 
