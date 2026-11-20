@@ -78,7 +78,8 @@ import time
 from html import escape
 
 from collections import defaultdict, deque
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from email.message import EmailMessage
 from typing import Optional
 
@@ -1178,6 +1179,8 @@ class CurrentUser(BaseModel):
     cohort_id: Optional[str] = None
     track_id: Optional[str] = None
     username: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    timezone_name: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -1375,7 +1378,7 @@ def _find_user(
             "sub_status, is_paid, subscription_tier, "
             "expires_at, trial_ends_at, email_verified_at, "
             "account_status, account_deactivation_until, marketing_email_opt_in, "
-            "marketing_in_app_opt_in, password_changed_at"
+            "marketing_in_app_opt_in, password_changed_at, date_of_birth, timezone"
         )
         .ilike(
             "email",
@@ -1981,6 +1984,8 @@ def get_current_user(
         ),
         marketing_email_opt_in=bool(user.get("marketing_email_opt_in")),
         marketing_in_app_opt_in=bool(user.get("marketing_in_app_opt_in")),
+        date_of_birth=str(user.get("date_of_birth")) if user.get("date_of_birth") else None,
+        timezone_name=str(user.get("timezone") or "Africa/Lagos"),
         expires_at=(
             entitlement["expires_at"]
         ),
@@ -2262,6 +2267,10 @@ class RegisterRequest(BaseModel):
     password: str
     name: Optional[str] = None
     marketing_email_opt_in: bool = False
+    date_of_birth: date
+    age_13_plus_confirmed: bool = False
+    age_information_truthful: bool = False
+    timezone_name: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -2719,6 +2728,23 @@ def register(
         payload.password
     )
 
+    timezone_name = (payload.timezone_name or "Africa/Lagos").strip()
+    try:
+        local_today = datetime.now(ZoneInfo(timezone_name)).date()
+    except (ZoneInfoNotFoundError, ValueError):
+        raise HTTPException(status_code=400, detail="Choose a valid time zone.") from None
+
+    if payload.date_of_birth > local_today:
+        raise HTTPException(status_code=400, detail="Date of birth cannot be in the future.")
+    age = local_today.year - payload.date_of_birth.year
+    if (local_today.month, local_today.day) < (payload.date_of_birth.month, payload.date_of_birth.day):
+        age -= 1
+    if age < 13:
+        log_security_event(action="underage_registration_blocked", email=email, request=request)
+        raise HTTPException(status_code=400, detail="Learnora accounts are available only to people aged 13 or older.")
+    if not payload.age_13_plus_confirmed or not payload.age_information_truthful:
+        raise HTTPException(status_code=400, detail="Confirm that you are at least 13 and that your registration information is truthful.")
+
     name = (
         (payload.name or "")
         .strip()[:100]
@@ -2771,6 +2797,11 @@ def register(
         "subscription_tier": "free",
         "created_at": now.isoformat(),
         "email_verified_at": None,
+        "date_of_birth": payload.date_of_birth.isoformat(),
+        "timezone": timezone_name,
+        "age_13_plus_confirmed": True,
+        "age_attestation_at": now.isoformat(),
+        "age_attestation_version": "age-attestation-v1",
         "marketing_email_opt_in": bool(payload.marketing_email_opt_in),
         "marketing_in_app_opt_in": False,
         "marketing_consent_at": now.isoformat() if payload.marketing_email_opt_in else None,
@@ -2910,7 +2941,11 @@ def register(
         account_type="learner",
         role="normal",
         request=request,
-        metadata={"marketing_email_opt_in": bool(payload.marketing_email_opt_in)},
+        metadata={
+            "marketing_email_opt_in": bool(payload.marketing_email_opt_in),
+            "age_13_plus_confirmed": True,
+            "age_attestation_version": "age-attestation-v1",
+        },
     )
 
     return generic_registration_response
@@ -4007,11 +4042,28 @@ def me(
         except Exception as exc:
             print("Current-user cohort membership lookup failed:", exc)
             raise HTTPException(503, "Your cohort membership could not be verified. Please retry.") from None
+    birthday_today = False
+    if user.date_of_birth:
+        try:
+            birth_date = date.fromisoformat(str(user.date_of_birth)[:10])
+            try:
+                local_today = datetime.now(ZoneInfo(user.timezone_name or "Africa/Lagos")).date()
+            except (ZoneInfoNotFoundError, ValueError):
+                local_today = datetime.now(ZoneInfo("Africa/Lagos")).date()
+            birthday_day = birth_date.day
+            if birth_date.month == 2 and birth_date.day == 29 and not (local_today.year % 4 == 0 and (local_today.year % 100 != 0 or local_today.year % 400 == 0)):
+                birthday_day = 28
+            birthday_today = birth_date.month == local_today.month and birthday_day == local_today.day
+        except (TypeError, ValueError):
+            birthday_today = False
+
     return {
         "status": "success",
         "id": user.id,
         "name": user.name,
         "email": user.email,
+        "date_of_birth": user.date_of_birth,
+        "is_birthday_today": birthday_today,
         "role": user.role,
         "sub_status": user.sub_status,
         "account_type": user.account_type,
