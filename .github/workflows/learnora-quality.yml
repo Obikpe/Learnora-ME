@@ -88,8 +88,8 @@ jobs:
             supabase/migrations/20261118091000_feature_foreign_key_indexes.sql \
             supabase/migrations/20261118141100_public_course_catalogue_rpc.sql \
             supabase/migrations/20261119224623_course_completion_skill_badges.sql \
-            supabase/migrations/20261120150000_learner_birthdays_and_age_attestation.sql \
-            supabase/migrations/20261120160000_clear_birthday_data_on_account_deletion.sql
+            supabase/migrations/20261120133258_learner_birthdays_and_age_attestation.sql \
+            supabase/migrations/20261120133439_clear_birthday_data_on_account_deletion.sql
           do
             psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
