@@ -712,7 +712,6 @@ def _process_birthday_messages(now: datetime) -> int:
         supabase.table("users")
         .select("id,name,email,email_verified,email_verified_at,account_status,date_of_birth,timezone")
         .eq("account_status", "active")
-        .not_.is_("date_of_birth", "null")
         .limit(10000)
         .execute()
     ).data or []
