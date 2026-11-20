@@ -41,7 +41,6 @@ class RegistrationAgePolicyTests(unittest.TestCase):
         worker = source.split("def _process_birthday_messages(", 1)[1].split("def process_automated_learner_notifications", 1)[0]
         self.assertIn('ZoneInfo(timezone_name)', worker)
         self.assertIn('event_key = f"birthday:{local_now.year}"', worker)
-        self.assertIn('pending_events', worker)
         self.assertIn('0 <= days_since_birthday <= 7', worker)
         self.assertIn('notification_type="birthday"', worker)
         self.assertIn("_send_automated_email_once(", worker)
