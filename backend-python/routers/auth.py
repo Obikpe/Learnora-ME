@@ -4068,7 +4068,6 @@ def me(
         "id": user.id,
         "name": user.name,
         "email": user.email,
-        "date_of_birth": user.date_of_birth,
         "is_birthday_today": birthday_today,
         "role": user.role,
         "sub_status": user.sub_status,
