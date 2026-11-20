@@ -35,6 +35,8 @@ class MigrationInventoryTests(unittest.TestCase):
             "20261021220849_revoke_trigger_function_browser_execute.sql",
             "20261026153000_revoke_browser_privileges_and_defaults.sql",
             "20261117210000_password_session_invalidation.sql",
+            "20261120150000_learner_birthdays_and_age_attestation.sql",
+            "20261120160000_clear_birthday_data_on_account_deletion.sql",
         )
         for name in expected:
             with self.subTest(migration=name):
@@ -170,6 +172,20 @@ class MigrationInventoryTests(unittest.TestCase):
         for role in ("anon", "authenticated"):
             self.assertIn(role, sql)
         self.assertIn("ALTER DEFAULT PRIVILEGES", sql)
+
+
+    def test_birthday_and_age_migrations_keep_personal_data_private_and_clear_it_on_deletion(self):
+        age = ACTIVE_DIR / "20261120150000_learner_birthdays_and_age_attestation.sql"
+        deletion = ACTIVE_DIR / "20261120160000_clear_birthday_data_on_account_deletion.sql"
+        age_sql = age.read_text(encoding="utf-8")
+        deletion_sql = deletion.read_text(encoding="utf-8")
+        self.assertIn("date_of_birth date", age_sql)
+        self.assertIn("age_13_plus_confirmed", age_sql)
+        self.assertIn("age_attestation_at", age_sql)
+        self.assertIn("users_age_attestation_consistency_check", age_sql)
+        self.assertIn("date_of_birth = NULL", deletion_sql)
+        self.assertIn("age_13_plus_confirmed = false", deletion_sql)
+        self.assertIn("age_attestation_at = NULL", deletion_sql)
 
 
 if __name__ == "__main__":
