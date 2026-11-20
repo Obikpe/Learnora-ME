@@ -378,10 +378,10 @@
 /* Sections reveal once as the visitor scrolls; no layout measurements or scroll handlers. */
 html.js .landing-page .landing-reveal:not(.is-visible) { opacity:0; transform:translate3d(0,28px,0); }
 .landing-page .landing-reveal { transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1); }
-.landing-page .landing-reveal.is-visible { opacity:1; transform:translate3d(0,0,0); }
+html.js .landing-page .landing-reveal.is-visible { opacity:1; transform:translate3d(0,0,0); }
 .landing-page .landing-reveal .landing-section-heading { transition:transform .65s .06s ease,opacity .65s .06s ease; }
 html.js .landing-page .landing-reveal:not(.is-visible) .landing-section-heading { opacity:0; transform:translateY(10px); }
-.landing-page .landing-reveal.is-visible .landing-section-heading { opacity:1; transform:translateY(0); }
+html.js .landing-page .landing-reveal.is-visible .landing-section-heading { opacity:1; transform:translateY(0); }
 
 /* Cards arrive in a short stagger and respond gently to pointer hover. */
 .landing-course-card,.landing-track-card,.landing-principles-grid article,.landing-audience-grid > a {
@@ -427,7 +427,7 @@ html.js .landing-page .landing-reveal:not(.is-visible) .landing-section-heading 
 }
 html.js .landing-reveal:not(.is-visible) .landing-evidence-preview article { opacity:0; transform:translateY(12px); }
 .landing-evidence-preview article { transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1); }
-.landing-reveal.is-visible .landing-evidence-preview article { opacity:1; transform:translateY(0); }
+html.js .landing-reveal.is-visible .landing-evidence-preview article { opacity:1; transform:translateY(0); }
 .landing-reveal.is-visible .landing-evidence-preview article:nth-child(2) { transition-delay:.1s; }
 .landing-reveal.is-visible .landing-evidence-preview article:nth-child(3) { transition-delay:.2s; }
 .landing-popular-topics a { transition:transform .2s ease,border-color .2s ease,color .2s ease,background-color .2s ease; }
