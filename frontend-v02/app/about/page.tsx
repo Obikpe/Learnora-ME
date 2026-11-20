@@ -15,7 +15,7 @@ export default function Page() {
       <section className="border-b border-white/[.1]">
         <div className="mx-auto grid max-w-[82rem] gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:gap-16 lg:px-8 lg:py-24">
           <div>
-            <h1 className="mt-6 max-w-4xl font-display text-5xl leading-[1.02] tracking-[-.05em] sm:text-6xl lg:text-7xl">Learning should open a door—not leave you at the finish line.</h1>
+            
             <p className="mt-7 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">Learnora is being built around a simple belief: learning becomes more useful when people can practise what they learn, build something with it, show what they have demonstrated and keep growing from there.</p>
             <a href="/how-it-works" className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold gold hover:underline">See how the journey works <ArrowRight size={16}/></a>
           </div>
@@ -24,7 +24,7 @@ export default function Page() {
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:py-24 lg:grid-cols-[.75fr_1.25fr] lg:px-8">
-        <div><h2 className="mt-5 font-display text-4xl leading-tight sm:text-5xl">Knowledge is valuable. Being able to use it matters too.</h2></div>
+        <div></div>
         <div className="space-y-5 text-base leading-8 text-slate-400">
           <p>Learning today can happen almost anywhere, but the journey is often fragmented. A lesson lives on one platform, practice files somewhere else, feedback in a message, a project on a drive, and a certificate in an inbox. The learner is left to connect the story alone.</p>
           <p>At the same time, a completed course and a demonstrated skill are not identical. Employers, clients, instructors and teams need context to understand what someone can do; learners need feedback that helps them recognise what they have learned and what they should practise next.</p>
@@ -35,7 +35,7 @@ export default function Page() {
       <section className="border-y border-white/[.06] bg-[#0b0f14] py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           
-          <h2 className="mt-5 max-w-3xl font-display text-4xl sm:text-5xl">A connected path from curiosity to capability.</h2>
+          
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {[
               {icon:Compass,title:"Learn with purpose",body:"Understand concepts through structured lessons, examples and clear objectives."},
@@ -51,10 +51,10 @@ export default function Page() {
 
       <section className="mx-auto grid max-w-7xl gap-10 px-5 py-20 sm:py-24 lg:grid-cols-2 lg:items-center lg:px-8">
         <div className="relative min-h-[380px] overflow-hidden rounded-[2rem] border border-white/10"><div className="absolute inset-0 bg-cover bg-center opacity-60" style={{backgroundImage:"url("+IMAGES.aboutVision+")"}}/></div>
-        <div><h2 className="mt-5 font-display text-4xl leading-tight sm:text-5xl">A learning record that grows with the person.</h2><p className="mt-6 leading-8 text-slate-400">We want Learnora to become a place where learning is not isolated from doing. A learner could build a body of work over time; an instructor could guide and assess practical progress; an organisation could understand its learning programmes and capability gaps; and evidence could help people explain their strengths with more confidence and context.</p><p className="mt-4 leading-8 text-slate-400"></p><a href="/how-it-works" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold gold">Explore how it works <ArrowRight size={16}/></a></div>
+        <div><p className="mt-6 leading-8 text-slate-400">We want Learnora to become a place where learning is not isolated from doing. A learner could build a body of work over time; an instructor could guide and assess practical progress; an organisation could understand its learning programmes and capability gaps; and evidence could help people explain their strengths with more confidence and context.</p><p className="mt-4 leading-8 text-slate-400"></p><a href="/how-it-works" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold gold">Explore how it works <ArrowRight size={16}/></a></div>
       </section>
 
-      <section className="px-5 pb-24 lg:px-8"><div className="mx-auto max-w-7xl rounded-[2rem] border border-[#d7ad35]/20 bg-[#10151b] p-8 sm:p-12"><h2 className="mt-4 max-w-3xl font-display text-3xl sm:text-4xl">People deserve a clearer way to learn, practise, reflect and show their growth.</h2><p className="mt-5 max-w-3xl leading-7 text-slate-400">Learnora ME is being built for learners, instructors and organisations who want education to connect more meaningfully with real capability. The platform will continue to evolve, but the principle should remain: be practical, be honest about evidence, and help people take the next useful step.</p><a href="/get-started" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-5 py-3.5 font-bold text-black">Find your path <ArrowRight size={16}/></a></div></section>
+      <section className="px-5 pb-24 lg:px-8"><div className="mx-auto max-w-7xl rounded-[2rem] border border-[#d7ad35]/20 bg-[#10151b] p-8 sm:p-12"><p className="mt-5 max-w-3xl leading-7 text-slate-400">Learnora ME is being built for learners, instructors and organisations who want education to connect more meaningfully with real capability. The platform will continue to evolve, but the principle should remain: be practical, be honest about evidence, and help people take the next useful step.</p><a href="/get-started" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#d7ad35] px-5 py-3.5 font-bold text-black">Find your path <ArrowRight size={16}/></a></div></section>
     </main>
     <PublicFooter />
   </>;
