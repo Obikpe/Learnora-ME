@@ -90,14 +90,14 @@ export default function Login() {
     <aside className="relative hidden min-h-screen overflow-hidden border-r border-white/[.1] bg-[#11171e] lg:block">
       <Image src={IMAGES.login} alt="A quiet study space ready for focused learning" fill sizes="(max-width: 1024px) 100vw, 50vw" priority className="object-cover"/>
       <div className="absolute inset-0 bg-[#090b0e]/65"/>
-      <div className="absolute inset-x-0 bottom-0 p-12 xl:p-16"><p className="text-[10px] font-bold uppercase tracking-[.22em] text-[var(--gold-light)]">Learnora ME</p><h2 className="mt-5 max-w-xl font-display text-5xl leading-[1.04] xl:text-6xl">Make the work you do to learn count.</h2><p className="mt-5 max-w-md text-sm leading-7 text-slate-300">Pick up where you left off. Keep practising, building and collecting evidence of your progress.</p><div className="mt-8 flex items-center gap-3 text-xs text-slate-400"><span className="grid size-9 place-items-center border border-white/20"><LockKeyhole size={15}/></span><span>Secure access to your learning workspace</span></div></div>
+      <div className="absolute inset-x-0 bottom-0 p-12 xl:p-16"><p className="mt-5 max-w-md text-sm leading-7 text-slate-300">Pick up where you left off. Keep practising, building and collecting evidence of your progress.</p><div className="mt-8 flex items-center gap-3 text-xs text-slate-400"><span className="grid size-9 place-items-center border border-white/20"><LockKeyhole size={15}/></span><span>Secure access to your learning workspace</span></div></div>
     </aside>
     <section className="flex min-h-screen items-center px-5 py-12 sm:px-8 lg:px-12 xl:px-20">
       <form onSubmit={submit} className="mx-auto w-full max-w-md">
         <a href="/" className="inline-flex items-center gap-2 text-xs text-slate-500 transition-colors hover:text-slate-200"><ArrowLeft size={14}/> Back to Learnora</a>
         <div className="mt-8"><Logo/></div>
-        <p className="mt-12 text-xs font-bold uppercase tracking-[.2em] text-[var(--gold-light)]">Your learning workspace</p>
-        <h1 className="mt-4 font-display text-5xl leading-tight tracking-[-.04em] sm:text-6xl">Welcome back.</h1>
+        
+        <h1 className="mt-4 font-display text-5xl leading-tight tracking-[-.04em] sm:text-6xl">Sign in</h1>
         <p className="mt-4 text-sm leading-7 text-slate-400">Sign in to continue with the courses, people and work connected to your account.</p>
         <div className="mt-8 grid gap-5">
           <label htmlFor="login-email" className="grid gap-2 text-xs font-medium text-slate-300">Email address<input id="login-email" value={email} onChange={e=>setEmail(e.target.value)} type="email" required autoComplete="email" aria-invalid={Boolean(error)} aria-describedby={error ? "login-form-error" : undefined} className="field" placeholder="you@example.com"/></label>
