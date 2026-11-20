@@ -186,3 +186,21 @@ Still required before schema or production-media implementation:
 - Verify current test-course enrolments and progress before changing seeded data.
 - Verify current video file-size limits, storage quota and actual bucket policies before choosing a rendering/upload format.
 
+
+
+## 14. Learnora ME placement and internal staff authentication boundary
+
+The two active websites proxy API requests to the same FastAPI backend, but they do not use the same browser session identity:
+- Learnora ME's normal learner/admin application session uses the public authentication cookie/session flow.
+- Internal staff authentication uses the domain-separated staff JWT and the separate `learnora_team_token` HttpOnly cookie through `/api/internal/auth/login`, `/api/internal/auth/me` and `/api/internal/auth/logout`.
+
+The ME admin dashboard's `account_type === "admin"` check is not a substitute for internal staff authorisation. A normal learner, creator, organisation owner, or public-site administrator must not gain course-production access merely by reaching a hidden route or possessing an ME session.
+
+To place the first Course Studio inside the Learnora ME website while keeping the Learnora Teams website build deferred:
+1. Add a dedicated Learnora ME route for internal staff sign-in and Course Studio.
+2. Authenticate that route against the existing internal staff endpoints and the separate staff cookie.
+3. Require the existing internal `content.manage` permission on every course-generation endpoint (and consider a narrower `content.generate` permission when the permission catalogue/migration ledger is safely reconciled).
+4. Do not accept the learner cookie or client-supplied role as proof of staff authority.
+5. Keep all generation logic in the shared backend. The later Learnora Teams website should reuse these APIs rather than create a second generation engine.
+
+The current `frontend-team/` remains a separate internal application with its own login and content operations. This phase does not redesign it or move its existing pages into Learnora ME; it temporarily makes the new AI Course Studio reachable inside Learnora ME through the proper staff identity boundary.
