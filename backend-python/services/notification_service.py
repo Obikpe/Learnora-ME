@@ -715,6 +715,19 @@ def _process_birthday_messages(now: datetime) -> int:
         .limit(10000)
         .execute()
     ).data or []
+    pending_rows = (
+        supabase.table("learner_notification_deliveries")
+        .select("user_id,event_key")
+        .like("event_key", "birthday:%")
+        .in_("status", ["pending", "failed", "sending"])
+        .lte("next_attempt_at", now.isoformat())
+        .limit(10000)
+        .execute()
+    ).data or []
+    pending_events = {
+        (str(row.get("user_id") or ""), str(row.get("event_key") or ""))
+        for row in pending_rows
+    }
 
     delivered = 0
     for user in rows:
@@ -737,14 +750,18 @@ def _process_birthday_messages(now: datetime) -> int:
         # Observe 29 February birthdays on 28 February in non-leap years.
         if birth_date.month == 2 and birth_date.day == 29 and not is_leap_year:
             birthday_day = 28
-        if (birth_date.month, birthday_day) != (local_now.month, local_now.day):
+        birthday_date = date(local_now.year, birth_date.month, birthday_day)
+        days_since_birthday = (local_now.date() - birthday_date).days
+        event_key = f"birthday:{local_now.year}"
+        is_birthday_today = days_since_birthday == 0
+        should_retry = (user_id, event_key) in pending_events and 0 <= days_since_birthday <= 7
+        if not is_birthday_today and not should_retry:
             continue
 
         name = str(user.get("name") or "there").strip()
         safe_name = escape(name)
         title = "Happy Birthday from Learnora!"
         body = f"Happy Birthday, {name}! We hope you have a wonderful day. Keep learning, practising and building things you are proud of."
-        event_key = f"birthday:{local_now.year}"
 
         in_app_sent = _create_in_app_once(
             user_id=user_id,
