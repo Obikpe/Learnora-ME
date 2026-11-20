@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { splitWords } from "../motion/SplitText";
+import TopicMarquee from "../motion/TopicMarquee";
+import LandingStats from "./LandingStats";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowRight, ArrowUpRight, BookOpen, CheckCircle2, Clock3, Compass,
-  GraduationCap, Layers3, RefreshCw, Search, Route,
+  GraduationCap, Layers3, RefreshCw, Search, Route, Pause, Play,
 } from "lucide-react";
 import { request } from "../../lib/api/client";
 import { currentUser } from "../../lib/api";
@@ -81,7 +84,7 @@ function TrackCard({ track, index }: { track: PublicTrack; index: number }) {
   const firstCourse = track.courses?.find(item => item.course)?.course;
   const image = firstCourse ? courseImage(firstCourse, index) : [IMAGES.practice, IMAGES.projects, IMAGES.library][index % 3];
   return (
-    <article className="landing-track-card">
+    <article className="landing-track-card" data-tilt="4" data-spotlight>
       <Link href={"/tracks/" + encodeURIComponent(track.id)} className="landing-image-link" aria-hidden="true" tabIndex={-1}>
         <Image src={image} alt="" width={800} height={450} quality={75} sizes="(max-width: 768px) 100vw, 33vw" />
         <span className="landing-image-label"><Route size={13}/> Learning track</span>
@@ -105,7 +108,7 @@ function CourseCard({ course, index }: { course: PublicCourse; index: number }) 
   const free = course.settings?.is_free === true || course.settings?.access_type === "free";
   const selfEnrolAvailable = free;
   return (
-    <article className="landing-course-card">
+    <article className="landing-course-card" data-tilt="4" data-spotlight>
       <Link href={courseHref(course)} className="landing-course-image" aria-hidden="true" tabIndex={-1}>
         <Image src={courseImage(course, index)} alt="" width={800} height={450} quality={75} sizes="(max-width: 768px) 100vw, 33vw" />
         {free && <span className="landing-free-label">Free access</span>}
@@ -132,31 +135,14 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
   const [error, setError] = useState(initialError || "");
   const [retrying, setRetrying] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const targets = document.querySelectorAll<HTMLElement>(".landing-page .landing-reveal");
-    if (!("IntersectionObserver" in window)) {
-      targets.forEach(target => target.classList.add("is-visible"));
-      return;
-    }
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        (entry.target as HTMLElement).classList.add("is-visible");
-        observer.unobserve(entry.target);
-      });
-    }, { threshold: 0.12, rootMargin: "0px 0px -48px 0px" });
-    targets.forEach(target => observer.observe(target));
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || paused) return;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") setActiveSlide(value => (value + 1) % heroSlides.length);
     }, 7000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [paused]);
   const [search, setSearch] = useState("");
   const [continueCourses, setContinueCourses] = useState<any[]>([]);
 
@@ -218,7 +204,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
       <section className="landing-wrap landing-hero landing-hero-motion" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
           <p className="landing-kicker"><span/> Learnora ME</p>
-          <h1 key={activeSlide} className="landing-slide-copy" aria-live="polite">{slide.title}</h1>
+          <h1 key={activeSlide} className="landing-slide-copy">{splitWords(slide.title)}</h1>
           <p key={"body-" + activeSlide} className="landing-hero-description landing-slide-copy">{slide.body}</p>
           <div className="landing-actions"><Link className="landing-button landing-button-outline" href="/how-it-works">How Learnora works <ArrowUpRight size={16}/></Link></div>
           <form className="landing-search" onSubmit={submitSearch}>
@@ -234,13 +220,14 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
             <span><CheckCircle2 size={17}/> Show your work</span>
           </div>
           <div className="landing-slide-controls" aria-label="Featured messages">
-            <span aria-live="polite">{String(activeSlide + 1).padStart(2, "0")} / {String(heroSlides.length).padStart(2, "0")}</span>
+            <span aria-live={paused ? "polite" : "off"}>{String(activeSlide + 1).padStart(2, "0")} / {String(heroSlides.length).padStart(2, "0")}</span>
+            <button type="button" className="landing-slide-pause" aria-pressed={paused} aria-label={paused ? "Resume automatic headline rotation" : "Pause automatic headline rotation"} onClick={() => setPaused(value => !value)}>{paused ? <Play size={15} aria-hidden="true"/> : <Pause size={15} aria-hidden="true"/>}</button>
             <div>
-              {heroSlides.map((item, index) => <button key={index} type="button" className={activeSlide === index ? "active" : ""} aria-label={"Show featured message " + (index + 1)} aria-pressed={activeSlide === index} onClick={() => setActiveSlide(index)} />)}
+              {heroSlides.map((item, index) => <button key={index} type="button" className={activeSlide === index ? "active" : ""} aria-label={"Show featured message " + (index + 1)} aria-pressed={activeSlide === index} onClick={() => { setActiveSlide(index); setPaused(true); }} />)}
             </div>
           </div>
         </div>
-        <div className="landing-hero-visual" aria-label="A preview of learning on Learnora">
+        <div className="landing-hero-visual" data-tilt="4" aria-label="A preview of learning on Learnora">
           <div className="landing-hero-product">
             {courses[0] ? <>
               <div className="landing-hero-product-top"><span>Published course</span><span>{courses[0].settings?.is_free || courses[0].settings?.access_type === "free" ? "Free to start" : "Course details"}</span></div>
@@ -254,6 +241,8 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
           </div>
         </div>
       </section>
+
+      <TopicMarquee topics={categories} />
 
       {continueCourses.length > 0 && <section className="landing-wrap py-10 landing-reveal" aria-labelledby="continue-learning-heading">
         <div className="landing-section-heading"><div><h2 id="continue-learning-heading">Continue learning</h2><p>Pick up where you left off.</p></div><Link className="landing-text-link" href="/dashboard">Open My Learning <ArrowRight size={15}/></Link></div>
@@ -294,11 +283,13 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
         </div>
       </section>
 
+      <LandingStats courses={courses} tracks={tracks} />
+
       <section className="landing-wrap landing-categories-section landing-reveal">
         <div className="landing-section-heading">
           <div><h2>Explore learning areas</h2><p>These topics are drawn from the published course catalogue.</p></div>
         </div>
-        {categories.length ? <div className="landing-category-list">{categories.map(category => <Link key={category} href={"/courses?search=" + encodeURIComponent(category)}><span/>{category}<ArrowUpRight size={14}/></Link>)}</div> : <div className="landing-empty"><Compass size={24}/><h3>Explore courses by topic</h3><p>Topic collections will appear when published courses include topic information.</p></div>}
+        {categories.length ? <div className="landing-category-list" data-stagger>{categories.map(category => <Link key={category} href={"/courses?search=" + encodeURIComponent(category)}><span/>{category}<ArrowUpRight size={14}/></Link>)}</div> : <div className="landing-empty"><Compass size={24}/><h3>Explore courses by topic</h3><p>Topic collections will appear when published courses include topic information.</p></div>}
       </section>
 
       <section className="landing-wrap landing-principles-section landing-reveal">
