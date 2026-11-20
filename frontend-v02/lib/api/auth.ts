@@ -55,9 +55,25 @@ export function updateCachedCurrentUser(patch: Record<string, any>) {
 export const login = (email: string, password: string) =>
   request<any>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
 
-export const register = (name: string, email: string, password: string, marketingEmailOptIn = false) =>
+export const register = (
+  name: string,
+  email: string,
+  password: string,
+  marketingEmailOptIn = false,
+  dateOfBirth = "",
+  age13PlusConfirmed = false,
+  ageInformationTruthful = false,
+  timezoneName = "Africa/Lagos",
+) =>
   request<any>("/auth/register", { method: "POST", body: JSON.stringify({
-    name, email, password, marketing_email_opt_in: marketingEmailOptIn,
+    name,
+    email,
+    password,
+    marketing_email_opt_in: marketingEmailOptIn,
+    date_of_birth: dateOfBirth,
+    age_13_plus_confirmed: age13PlusConfirmed,
+    age_information_truthful: ageInformationTruthful,
+    timezone_name: timezoneName,
   }) });
 
 export function currentUser(): Promise<any> {
