@@ -186,7 +186,7 @@ export default function Topbar({ admin = false }: { admin?: boolean }) {
           <Bell size={17}/>
           {unread > 0 && <span aria-label={`${unread} unread notifications`} className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-[var(--bg)] bg-[var(--accent)] px-1 text-[10px] font-bold text-[var(--on-accent)]">{unread > 99 ? "99+" : unread}</span>}
         </button>
-        {previewOpen && <aside role="dialog" aria-label="Notification preview" className="absolute right-0 top-full z-[80] mt-2 flex max-h-[min(20rem,calc(100dvh-7rem))] w-[min(18rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl sm:max-h-[min(28rem,calc(100vh-6rem))] sm:w-[min(22rem,calc(100vw-2rem))]">
+        {previewOpen && <aside role="dialog" aria-label="Notification preview" className="absolute right-0 top-full z-[80] mt-2 flex max-h-[min(20rem,calc(100dvh-7rem))] w-[min(18rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-2xl sm:max-h-[min(28rem,calc(100vh-6rem))] sm:w-[min(22rem,calc(100vw-1.5rem))]">
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-2.5 sm:px-4 sm:py-3">
             <div className="min-w-0">
               <span className="block text-xs font-semibold text-[var(--text-heading)]">Notifications</span>
