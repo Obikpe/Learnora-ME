@@ -203,7 +203,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
     <main id="main-content" className="landing-page">
       <section className="landing-wrap landing-hero landing-hero-motion" aria-label="Discover Learnora">
         <div className="landing-hero-copy">
-          <h1 key={activeSlide} className="landing-slide-copy">{splitWords(slide.title)}</h1>
+          
           <p key={"body-" + activeSlide} className="landing-hero-description landing-slide-copy">{slide.body}</p>
           <div className="landing-actions"><Link className="landing-button landing-button-outline" href="/how-it-works">How Learnora works <ArrowUpRight size={16}/></Link></div>
           <form className="landing-search" onSubmit={submitSearch}>
@@ -235,7 +235,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
               <p className="landing-hero-product-description">{courses[0].short_description || courses[0].description || "Explore the published curriculum and available learning access."}</p>
               <div className="landing-hero-product-topics">{(courses[0].settings?.topics || []).slice(0,3).map(topic=><span key={topic}>{topic}</span>)}</div>
               <div className="landing-hero-product-footer"><span>{courses[0].level || "All levels"}</span><span>{courses[0].estimated_hours ? (courses[0].estimated_hours < 1 ? Math.round(courses[0].estimated_hours * 60) + " min" : courses[0].estimated_hours + " hours") : "Self-paced"}</span><Link href={courseHref(courses[0])}>View course <ArrowRight size={15}/></Link></div>
-            </> : <><div className="landing-hero-product-icon"><BookOpen size={28}/></div><h2>Explore practical learning.</h2><p className="landing-hero-product-description">Published courses will appear here when they are ready to explore.</p><Link href="/courses">Browse courses <ArrowRight size={15}/></Link></>}
+            </> : <><div className="landing-hero-product-icon"><BookOpen size={28}/></div><p className="landing-hero-product-description">Published courses will appear here when they are ready to explore.</p><Link href="/courses">Browse courses <ArrowRight size={15}/></Link></>}
           </div>
         </div>
       </section>
