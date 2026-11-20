@@ -36,6 +36,12 @@ class RegistrationAgePolicyTests(unittest.TestCase):
         self.assertIn('"age_attestation_at": now.isoformat()', register)
         self.assertIn('"age_attestation_version": "age-attestation-v1"', register)
 
+    def test_organisation_cohort_provisioning_also_blocks_under_13(self):
+        source = (ROOT / "backend-python" / "routers" / "cohort_learners.py").read_text(encoding="utf-8")
+        create = source.split("def create_cohort_learner(", 1)[1]
+        self.assertIn("_age_on_date(body.date_of_birth, date.today()) < 13", create)
+        self.assertIn("Cohort learners must be at least 13 years old.", create)
+
     def test_birthday_worker_uses_user_time_zone_and_idempotent_year_key(self):
         source = (ROOT / "backend-python" / "services" / "notification_service.py").read_text(encoding="utf-8")
         worker = source.split("def _process_birthday_messages(", 1)[1].split("def process_automated_learner_notifications", 1)[0]
