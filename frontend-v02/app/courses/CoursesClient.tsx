@@ -161,7 +161,7 @@ export default function CoursesClient({ initialCourses, initialError }: { initia
       <section className="grid gap-10 border-b border-white/[.1] pb-12 lg:grid-cols-[1fr_.6fr] lg:items-end">
         <div>
           
-          <h1 className="mt-5 max-w-4xl font-display text-5xl leading-[1.02] tracking-[-.04em] sm:text-6xl lg:text-7xl">Find the skill. Put it to work.</h1>
+          
           <p className="mt-6 max-w-2xl text-base leading-8 text-slate-400 sm:text-lg">Browse published courses, compare what you will learn and choose a useful next step. Each course page explains its curriculum and who can enrol.</p>
         </div>
         <div className="border-l border-[#d7ad35]/50 pl-5">
