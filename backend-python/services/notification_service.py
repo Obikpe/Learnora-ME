@@ -760,10 +760,10 @@ def _process_birthday_messages(now: datetime) -> int:
         email_sent = False
         if user.get("email") and (user.get("email_verified") is True or user.get("email_verified_at")):
             text_body = (
-                f"Hi {name},\\n\\nHappy Birthday from everyone at Learnora! "
+                f"Hi {name},\n\nHappy Birthday from everyone at Learnora! "
                 "We hope you have a wonderful day and a year full of meaningful learning, "
-                "new ideas and things you are proud to build.\\n\\n"
-                "Open your Learnora dashboard: https://learnorame.vercel.app/dashboard\\n\\n"
+                "new ideas and things you are proud to build.\n\n"
+                "Open your Learnora dashboard: https://learnorame.vercel.app/dashboard\n\n"
                 "Learnora ME"
             )
             html_body = f"""<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033">
