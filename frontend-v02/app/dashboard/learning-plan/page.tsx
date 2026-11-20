@@ -52,8 +52,8 @@ export default function LearningPlanPage(){
   <div className="mx-auto max-w-5xl">
    <Link href="/dashboard" className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-white"><ArrowLeft size={14}/>Learning workspace</Link>
    <header className="mt-7 border-b border-white/[.1] pb-7">
-    <p className="section-kicker">Optional AI planning</p>
-    <h1 className="mt-3 font-display text-4xl tracking-tight sm:text-5xl">A plan for the way you learn.</h1>
+    
+    
     <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">Choose a published track and let Learnora help organise your study time. The track remains the source of truth: this plan only schedules existing courses and never changes the curriculum.</p>
    </header>
    {error&&<div role="alert" className="notice error mt-5">{error}</div>}
