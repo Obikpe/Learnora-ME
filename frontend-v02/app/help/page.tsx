@@ -27,8 +27,8 @@ export default function HelpPage() {
     <PublicNav />
     <main id="main-content" className="mx-auto max-w-5xl px-5 pb-24 pt-36 lg:px-8">
       <Link href="/" className="inline-flex min-h-11 items-center gap-2 text-sm text-slate-400 hover:text-white"><ArrowLeft size={15}/> Back to Learnora</Link>
-      <p className="mt-10 section-kicker">Learnora support</p>
-      <h1 className="mt-4 max-w-3xl font-display text-5xl leading-tight sm:text-6xl">How can we help?</h1>
+      
+      
       <p className="mt-6 max-w-2xl text-base leading-8 text-slate-400">Find guidance for common questions or contact the Learnora team. For account security, never share your password or one-time verification codes.</p>
       <div className="mt-12 grid gap-4 md:grid-cols-3">
         {topics.map(({icon:Icon,title,body})=><article key={title} className="border border-white/[.1] bg-[#10151b] p-6"><Icon className="gold" size={22}/><h2 className="mt-5 text-lg font-semibold">{title}</h2><p className="mt-3 text-sm leading-7 text-slate-400">{body}</p></article>)}
