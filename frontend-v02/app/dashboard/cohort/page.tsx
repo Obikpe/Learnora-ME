@@ -100,7 +100,7 @@ export default function CohortDashboardPage() {
           {(learnerName || "L").trim().charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">My Learning</p>
+          
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-[var(--text-heading)] sm:text-3xl">
             Welcome back{learner?.first_name ? ", " + learner.first_name : ""}
           </h1>
@@ -139,7 +139,7 @@ export default function CohortDashboardPage() {
     <section className="mt-8">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">Your learning plan</p>
+          
           <h2 className="mt-1 text-xl font-bold text-[var(--text-heading)]">Assigned courses</h2>
         </div>
         <span className="text-xs text-[var(--text-muted)]">{courses.length} {courses.length === 1 ? "course" : "courses"}</span>
