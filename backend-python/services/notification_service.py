@@ -719,7 +719,7 @@ def _process_birthday_messages(now: datetime) -> int:
     delivered = 0
     for user in rows:
         user_id = str(user.get("id") or "")
-        if not user_id:
+        if not user_id or not (user.get("email_verified") is True or user.get("email_verified_at")):
             continue
         try:
             birth_date = date.fromisoformat(str(user.get("date_of_birth"))[:10])
@@ -757,7 +757,7 @@ def _process_birthday_messages(now: datetime) -> int:
         )
 
         email_sent = False
-        if user.get("email") and (user.get("email_verified") is True or user.get("email_verified_at")):
+        if user.get("email"):
             text_body = (
                 f"Hi {name},\n\nHappy Birthday from everyone at Learnora! "
                 "We hope you have a wonderful day and a year full of meaningful learning, "
