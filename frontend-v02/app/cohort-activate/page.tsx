@@ -61,7 +61,7 @@ export default function CohortActivatePage() {
           <Link href="/cohort-login" className="mt-7 inline-flex rounded-xl bg-[#d7ad35] px-5 py-3 text-sm font-bold text-black">Go to cohort sign in</Link>
         </div> : <form onSubmit={submit} className="mt-10">
           <KeyRound className="text-[#d7ad35]" size={28}/>
-          <p className="mt-5 text-[10px] font-bold uppercase tracking-[.2em] text-[#f2d477]">Cohort learner access</p>
+          
           <h1 className="mt-3 font-display text-4xl">Set your password.</h1>
           <p className="mt-4 text-sm leading-7 text-slate-400">Create a password to activate the Learnora account your organisation prepared for you. Activation links expire after a short period and can only be used once.</p>
           {!token && <p className="mt-5 rounded-xl border border-amber-400/20 bg-amber-400/[.05] p-3 text-xs leading-5 text-amber-100">Waiting for the activation link. If you opened this page directly, use the complete link from your email.</p>}
