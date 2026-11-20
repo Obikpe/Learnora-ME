@@ -220,7 +220,6 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
             <span><CheckCircle2 size={17}/> Show your work</span>
           </div>
           <div className="landing-slide-controls" aria-label="Featured messages">
-            <span aria-live={paused ? "polite" : "off"}>{String(activeSlide + 1).padStart(2, "0")} / {String(heroSlides.length).padStart(2, "0")}</span>
             <button type="button" className="landing-slide-pause" aria-pressed={paused} aria-label={paused ? "Resume automatic headline rotation" : "Pause automatic headline rotation"} onClick={() => setPaused(value => !value)}>{paused ? <Play size={15} aria-hidden="true"/> : <Pause size={15} aria-hidden="true"/>}</button>
             <div>
               {heroSlides.map((item, index) => <button key={index} type="button" className={activeSlide === index ? "active" : ""} aria-label={"Show featured message " + (index + 1)} aria-pressed={activeSlide === index} onClick={() => { setActiveSlide(index); setPaused(true); }} />)}
@@ -252,7 +251,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
       <section className="landing-section landing-soft-section landing-reveal">
         <div className="landing-wrap">
           <div className="landing-section-heading">
-            <div><h2>New and available to explore</h2></div>
+            <div><h2>Courses</h2></div>
             <Link className="landing-text-link" href="/courses">Browse all courses <ArrowRight size={15}/></Link>
           </div>
           {error && <div role="alert" className="landing-error"><span>{error}</span><button type="button" disabled={retrying} onClick={() => void loadCatalogue()}><RefreshCw size={14}/> {retrying ? "Retrying…" : "Try again"}</button></div>}
@@ -264,7 +263,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
 
       <section className="landing-wrap landing-tracks-section landing-reveal">
         <div className="landing-section-heading">
-          <div><h2>Follow a path, not just a playlist</h2><p>Tracks bring related courses together in an intentional sequence.</p></div>
+          <div><h2>Learning tracks</h2><p>Tracks bring related courses together in an intentional sequence.</p></div>
           <Link className="landing-text-link" href="/tracks">Explore all tracks <ArrowRight size={15}/></Link>
         </div>
         {featuredTracks.length ? (
@@ -279,16 +278,13 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
             <article><div><strong>Assessment result</strong><p>Records performance against an assessment.</p></div><span className="landing-evidence-type">Assessment</span></article>
             <article><div><strong>Instructor-reviewed evidence</strong><p>Records work that has been reviewed by an instructor.</p></div><span className="landing-evidence-type">Human review</span></article>
           </div>
-          <div><h2>Progress should mean more than a percentage.</h2><p>Finishing a course tells you that you reached the end of its material. Practice, projects, assessment and feedback help tell a fuller story of what you can do.</p><Link className="landing-button landing-button-light" href="/how-it-works">See how it works <ArrowRight size={16}/></Link></div>
+          <div><h2>Learning progress and evidence</h2><p>Finishing a course tells you that you reached the end of its material. Practice, projects, assessment and feedback help tell a fuller story of what you can do.</p><Link className="landing-button landing-button-light" href="/how-it-works">See how it works <ArrowRight size={16}/></Link></div>
         </div>
       </section>
 
       <LandingStats courses={courses} tracks={tracks} />
 
       <section className="landing-wrap landing-categories-section landing-reveal">
-        <div className="landing-section-heading">
-          <div><h2>Explore learning areas</h2><p>These topics are drawn from the published course catalogue.</p></div>
-        </div>
         {categories.length ? <div className="landing-category-list" data-stagger>{categories.map(category => <Link key={category} href={"/courses?search=" + encodeURIComponent(category)}><span/>{category}<ArrowUpRight size={14}/></Link>)}</div> : <div className="landing-empty"><Compass size={24}/><h3>Explore courses by topic</h3><p>Topic collections will appear when published courses include topic information.</p></div>}
       </section>
 
@@ -301,7 +297,6 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
       </section>
 
       <section className="landing-wrap landing-audience-section landing-reveal">
-        <div className="landing-section-heading"><div><h2>Different journeys. One shared foundation.</h2></div></div>
         <div className="landing-audience-grid">
           <Link href="/for-learners"><Image src={IMAGES.learners} alt="Learners working together" width={700} height={500} quality={75} sizes="(max-width: 768px) 100vw, 33vw"/><div><GraduationCap size={20}/><h3>For learners</h3><p>Build useful skills through lessons, practice, projects and an honest record of progress.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
           <Link href="/for-instructors"><Image src={IMAGES.instructors} alt="An instructor supporting a class" width={700} height={500} quality={75} sizes="(max-width: 768px) 100vw, 33vw"/><div><BookOpen size={20}/><h3>For instructors</h3><p>Create practical learning, support learners and review work.</p><span>Explore this path <ArrowRight size={14}/></span></div></Link>
@@ -310,7 +305,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
       </section>
 
       <section className="landing-wrap landing-faq-section landing-reveal">
-        <div className="landing-faq-intro"><h2>Before you begin.</h2><p>Know what you can explore and how learning works on Learnora.</p></div>
+        <div className="landing-faq-intro"><h2>Frequently asked questions</h2><p>Find answers about courses, enrolment and learning on Learnora.</p></div>
         <div className="landing-faq-list">
           <details><summary>What makes Learnora different from a course library?</summary><p>A course is one part of the journey. Learnora connects lessons with practice, projects, feedback and a record of what you have demonstrated.</p></details>
           <details><summary>Can I browse courses before creating an account?</summary><p>Yes. You can browse published courses and learning tracks before creating an account. You will need an account to enrol and save your progress.</p></details>
@@ -322,7 +317,7 @@ export default function LandingPage({ initialCourses, initialTracks, initialErro
       </section>
 
       <section className="landing-wrap landing-final-cta landing-reveal">
-        <div><h2>Your next step does not have to be your whole future.</h2><p>Explore a course, follow a learning track or find out how Learnora can support your teaching or organisation.</p></div>
+        <div><p>Explore a course, follow a learning track or find out how Learnora can support your teaching or organisation.</p></div>
         <div className="landing-final-actions"><Link className="landing-button landing-button-primary" href="/courses">Explore courses <ArrowRight size={16}/></Link><Link className="landing-button landing-button-outline" href="/get-started">Choose your path <ArrowUpRight size={16}/></Link></div>
       </section>
     </main>
