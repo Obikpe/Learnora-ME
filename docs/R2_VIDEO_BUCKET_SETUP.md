@@ -107,3 +107,12 @@ The Kokoro ONNX Python package is MIT-licensed and the Kokoro 82M model is Apach
 - [ ] Deploy the backend and Learnora ME frontend only after the migration is applied.
 - [ ] Run one test lesson end to end; verify the MP4, captions, R2 object, signed playback URL and learner access restriction.
 - [ ] Review the video and lesson content before publishing the course.
+
+
+## Primary references
+
+- [Cloudflare R2 presigned URLs](https://developers.cloudflare.com/r2/api/s3/presigned-urls/)
+- [Cloudflare R2 bucket CORS](https://developers.cloudflare.com/r2/buckets/cors/)
+- [GitHub Actions billing and public-repository runner usage](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+- [Kokoro ONNX implementation and usage](https://github.com/thewh1teagle/kokoro-onnx)
+- [Kokoro 82M ONNX model and licence](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX)
