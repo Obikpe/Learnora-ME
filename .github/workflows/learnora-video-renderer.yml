@@ -24,11 +24,11 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_WORKER_ACCESS_KEY_ID: ${{ secrets.R2_WORKER_ACCESS_KEY_ID }}
+          R2_WORKER_SECRET_ACCESS_KEY: ${{ secrets.R2_WORKER_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: |
-          if [[ -z "$SUPABASE_URL" || -z "$SUPABASE_SERVICE_ROLE_KEY" || -z "$R2_ACCOUNT_ID" || -z "$R2_ACCESS_KEY_ID" || -z "$R2_SECRET_ACCESS_KEY" || -z "$R2_BUCKET_NAME" ]]; then
+          if [[ -z "$SUPABASE_URL" || -z "$SUPABASE_SERVICE_ROLE_KEY" || -z "$R2_ACCOUNT_ID" || -z "$R2_WORKER_ACCESS_KEY_ID" || -z "$R2_WORKER_SECRET_ACCESS_KEY" || -z "$R2_BUCKET_NAME" ]]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "Video rendering skipped: configure the Supabase and Cloudflare R2 repository secrets."
           else
@@ -75,11 +75,11 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_WORKER_ACCESS_KEY_ID: ${{ secrets.R2_WORKER_ACCESS_KEY_ID }}
+          R2_WORKER_SECRET_ACCESS_KEY: ${{ secrets.R2_WORKER_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: python scripts/video_renderer/worker.py --max-jobs 2
 
       - name: Explain skipped configuration
         if: steps.config.outputs.configured != 'true'
-        run: echo "Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_BUCKET_NAME under repository Actions secrets to enable the renderer."
+        run: echo "Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, R2_ACCOUNT_ID, R2_WORKER_ACCESS_KEY_ID, R2_WORKER_SECRET_ACCESS_KEY and R2_BUCKET_NAME under repository Actions secrets to enable the renderer."
