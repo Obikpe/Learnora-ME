@@ -711,7 +711,7 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [x] Prepare the first Data Analytics, Excel Fundamentals and Front-end Web Development production briefs.
 - [ ] Pass CI for the render queue and worker; configure private R2, CORS, Vercel environment and GitHub Actions secrets.
 - [ ] Deploy the verified renderer/playback integration and run an end-to-end test lesson.
-- [x] Link a generated course to its selected global track during atomic draft creation.
+- [x] Link a generated course to its selected global track during atomic publication, after rechecking track enrolment locks.
 - [x] Add a final publish action restricted to the existing `content.manage` permission; generation-only staff cannot publish.
 - [x] Add an atomic, permission-gated publication action that checks completed video jobs, ready media and valid knowledge checks before publishing the course hierarchy.
 - [ ] Complete real course review and publication after the video worker is configured and the migration is approved.
@@ -723,7 +723,7 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - The current Learnora ME root navigation renders the `Logo` component by default, and the dashboard navigation also renders the Learnora ME wordmark. The previously reported missing brand text is not present in the current `main` source inspected for this pass. No unnecessary logo rewrite was made.
 - The learner lesson workspace is already video-capable: it renders signed native video, YouTube/Vimeo embeds, authored lesson content and learner-owned notes separately. It displays one primary video per lesson; the first AI renderer also produces one primary video per lesson.
 - The Course Studio remains an internal-staff-only route inside Learnora ME, separate from normal learner/creator/organisation navigation and permissions. The separate `frontend-team/` application remains a later website build, not part of this integration.
-- The selected global track is now linked when the unpublished course draft is created. Standalone courses remain supported.
+- The selected global track is linked only during final publication, after the database rechecks the track's enrolment lock. Standalone courses remain supported.
 - The batch action now generates missing lesson packages sequentially and stops on the first failed request.
 - The video worker configuration was corrected to use dedicated R2 worker credentials and the actual `lesson_videos` schema. The backend playback credentials remain separate and read-only.
 - No learner-facing developer comments, implementation notes, or debug text have been added.
