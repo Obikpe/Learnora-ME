@@ -1,13 +1,13 @@
 # AI Course Production and Curriculum Architecture Audit
 
-**Status:** Architecture decision and implementation baseline  
+**Status:** Current-state audit with transitional implementation history  
 **Reviewed:** 21 November 2026  
 **Repository:** `Obikpe/Learnora-ME`, branch `main`  
 **Applications:** Learnora ME (`frontend-v02/`), Learnora Teams (`frontend-team/`), FastAPI (`backend-python/`), Supabase (`supabase/`)
 
 ## 1. Why this document exists
 
-This document records the current-state audit and the approved direction for introducing AI-assisted course production into Learnora ME. It supplements, and does not replace, the Product Engineering Specification, Roadmap, Account and Organisation Architecture, learner journey documents, or migration reconciliation records.
+This document records the current-state code, media and production-pipeline audit, including the history of the first Course Studio prototype. The cross-product ownership decision is governed by [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md): AI course/lesson production, production review, acceptance and publishing belong in Learnora Teams; normal Learnora ME is the learner-facing delivery website. Earlier wording that made Learnora ME the intended home of AI production is superseded. This document remains useful for technical implementation evidence, but its transitional Course Studio placement must not be read as the target product architecture.
 
 The implementation must be based on the active application roots. The legacy `frontend/`, `backend-node/`, and `backend-python-v0/` are historical/legacy surfaces and must not be used as the implementation target without a separately documented migration decision.
 
@@ -21,7 +21,7 @@ The implementation must be based on the active application roots. The legacy `fr
 | Data and storage | `supabase/` plus active Pheonix project | PostgreSQL, migrations, RLS, database functions, private storage buckets and application records |
 | Engineering documentation | `docs/` | Product specification, roadmap, engineering decisions, security, migration and learner journey records |
 
-Learnora Teams is not the customer organisation portal. Customer organisation owners, managers, tutors and learners continue to use Learnora ME. Learnora Teams is a distinct website and must remain a distinct trust boundary and deployment surface. This phase integrates the course-production capability into the shared backend and the existing Learnora ME/Teams architecture; it does not redesign or rebuild the Teams website. The Teams website build is a later phase after the Learnora ME integration is stable.
+Learnora Teams is not the customer organisation portal. Customer organisation owners, managers, tutors and learners use the customer-facing Learnora ME product when those workflows are in scope. Learnora Teams is a distinct website and trust boundary. Its ownership of internal AI/content production is the approved target. The earlier decision to host the first Course Studio prototype inside Learnora ME was transitional and is not authority to keep production workflows in the learner-facing website.
 
 ## 3. Curriculum model — preserve the four levels
 
@@ -82,7 +82,7 @@ The gateway's current fallback mechanism is a single configured fallback model, 
 
 ## 6. Target AI Course Production workflow
 
-The initial capability is for authorised Learnora ME internal team members only. It is not a feature for independent creators, tutors, customer organisations or organisation staff. The backend must enforce this boundary using the existing internal staff authentication and permission model. Hiding a button in the frontend is not authorisation.
+The intended capability is for authorised Learnora Teams internal team members only. It is not automatically available to independent creators, tutors, customer organisations or organisation staff. The backend must enforce this boundary using the internal staff authentication and permission model. The current repository contains a transitional Course Studio prototype reachable from Learnora ME; that placement does not change product ownership and must not be treated as the final architecture. Hiding a button in the frontend is not authorisation.
 
 Proposed workflow:
 1. An authorised Learnora Teams staff member enters a course brief, target audience, prerequisites, level, learning outcomes and a structured outline.
@@ -187,7 +187,7 @@ Still required before schema or production-media implementation:
 
 
 
-## 14. Learnora ME placement and internal staff authentication boundary
+## 14. Historical transitional Course Studio placement and internal staff authentication boundary
 
 The two active websites proxy API requests to the same FastAPI backend, but they do not use the same browser session identity:
 - Learnora ME's normal learner/admin application session uses the public authentication cookie/session flow.
@@ -195,14 +195,14 @@ The two active websites proxy API requests to the same FastAPI backend, but they
 
 The ME admin dashboard's `account_type === "admin"` check is not a substitute for internal staff authorisation. A normal learner, creator, organisation owner, or public-site administrator must not gain course-production access merely by reaching a hidden route or possessing an ME session.
 
-To place the first Course Studio inside the Learnora ME website while keeping the Learnora Teams website build deferred:
+**Historical implementation decision — superseded by PD-003:** the first Course Studio prototype was placed inside Learnora ME while the separate Teams website build was deferred. The steps below explain that transitional code and its authentication boundary; they are not the target product placement. The eventual Teams workspace must reuse the secured backend production APIs rather than create a second generation engine.
 1. Add a dedicated Learnora ME route for internal staff sign-in and Course Studio.
 2. Authenticate that route against the existing internal staff endpoints and the separate staff cookie.
 3. Require the existing internal `content.manage` permission on every course-generation endpoint (and consider a narrower `content.generate` permission when the permission catalogue/migration ledger is safely reconciled).
 4. Do not accept the learner cookie or client-supplied role as proof of staff authority.
 5. Keep all generation logic in the shared backend. The later Learnora Teams website should reuse these APIs rather than create a second generation engine.
 
-The current `frontend-team/` remains a separate internal application with its own login and content operations. This phase does not redesign it or move its existing pages into Learnora ME; it temporarily makes the new AI Course Studio reachable inside Learnora ME through the proper staff identity boundary.
+The current `frontend-team/` remains a separate internal application with its own login and content operations. The transitional ME Course Studio must not be mistaken for the final location of production workflows. Any future transition into Teams requires a documented dependency, permission, media and data-ownership plan before code is moved.
 
 
 ## 15. Live Pheonix database verification — 21 November 2026
