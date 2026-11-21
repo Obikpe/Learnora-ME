@@ -124,7 +124,7 @@ jobs:
             supabase/migrations/20261119224623_course_completion_skill_badges.sql \
             supabase/migrations/20261120133258_learner_birthdays_and_age_attestation.sql \
             supabase/migrations/20261120133439_clear_birthday_data_on_account_deletion.sql \
-            supabase/migrations/20261121150000_ai_course_production_drafts.sql
+            supabase/migrations/20261121012000_ai_course_production_drafts.sql
           do
             psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
@@ -221,7 +221,7 @@ jobs:
           SQL
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
           BEGIN;
-          \i supabase/rollback/20261121150000_ai_course_production_drafts.rollback.sql
+          \i supabase/rollback/20261121012000_ai_course_production_drafts.rollback.sql
           DO $do$ BEGIN
             IF to_regclass('public.learnora_course_generation_jobs') IS NOT NULL
               OR to_regclass('public.learnora_lesson_production_packages') IS NOT NULL
