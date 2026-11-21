@@ -390,6 +390,7 @@ export default function TeamCourseStudioPage() {
         body: JSON.stringify({
           filename: file.name,
           file_size_bytes: file.size,
+          duration_seconds: durationSeconds,
           title,
         }),
       });
