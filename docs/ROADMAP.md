@@ -1,19 +1,25 @@
 # Learnora ME and Learnora Teams — Product Engineering Roadmap
 
-**Last reviewed:** 26 October 2026  
+**Last reviewed:** 21 November 2026  
 **Branch policy:** all documentation and implementation work requested for this effort goes directly to `main`; do not create or switch to another branch.  
 **Release policy:** documentation commits do not authorise production migrations, deployments, or destructive data changes.
 
-This roadmap records priorities, dependencies, and exit criteria. It is not a claim that unfinished items have already shipped.
+This roadmap records priorities, dependencies and exit criteria. It is not a claim that unfinished items have already shipped. Cross-cutting security, data-integrity, migration-provenance and release checks remain mandatory gates for safe individual learner delivery; they do not authorise reordering the product sequence or building deferred customer workflows.
 
-## Guiding sequence
+## Current approved product sequence
 
-1. Close security risks that could expose tenant data or corrupt financial/learning state.
-2. Reconcile migration history, actual schema grants and the test environment.
-3. Prove customer organisation and cohort workflows end-to-end.
-4. Complete learner/creator learning journeys in Learnora ME.
-5. Complete and validate internal operational journeys in Learnora Teams.
-6. Establish release, monitoring, recovery and documentation practices.
+The product sequence below is governed by [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md):
+
+1. Complete the normal individual learner experience in Learnora ME.
+2. Build the separate Learnora Teams website, including internal course/content production workflows.
+3. Return to Learnora ME for the corporate organisation experience.
+4. Build independent tutor functionality separately.
+
+Preserve existing cohort functionality, accounts, access rules, assignments, progress and historical data throughout the current individual learner phase. Cohort and corporate organisation workflows are distinct; neither is to be flattened into the other. Security and migration work in P0/P1 is performed only as necessary to protect data and make the individual learner release safe. Organisation/cohort completion, creator/tutor workflows and the full Teams website must not be pulled into the current individual learner scope.
+
+## Cross-cutting release gates
+
+P0 security containment and P1 migration/schema provenance work remain release-safety requirements where relevant to the individual learner journey. A gate may block release, but it does not change the product implementation sequence above.
 
 ## Status definitions
 
@@ -123,7 +129,9 @@ The previous reconciliation recorded differences including missing/extra columns
 
 **Acceptance:** a test fixture with a forbidden grant fails; an approved allowlisted public read still works; API lifecycle tests pass with the intended ACLs.
 
-## P2 — Organisation and cohort workflow completion
+## P2 — DEFERRED: Corporate organisation and cohort workflow completion
+
+**Delivery status:** Deferred until after the normal individual learner experience and the Learnora Teams website, in accordance with PD-001. Preserve existing cohort behaviour and data; do not implement this work during the current individual learner phase.
 
 ### P2.1 Organisation lifecycle
 
@@ -157,7 +165,9 @@ The previous reconciliation recorded differences including missing/extra columns
 
 **Acceptance:** tests prove allowed access and denial for every scope and revocation case.
 
-## P3 — Learnora ME learner and creator experience
+## P3 — CURRENT PRIORITY: Normal individual learner experience in Learnora ME
+
+**Scope restriction:** This phase is the normal individual learner journey only. Creator, tutor, cohort-management and corporate organisation workflows are not included merely because they share the Learnora ME application.
 
 ### P3.1 Public discovery and conversion
 
@@ -185,7 +195,9 @@ The previous reconciliation recorded differences including missing/extra columns
 
 **Acceptance:** browser-level journey tests use a disposable account and fixtures; API denial tests verify direct endpoint access cannot bypass UI restrictions.
 
-## P4 — Learnora Teams internal operations
+## P4 — NEXT PRODUCT PHASE: Learnora Teams internal operations
+
+**Delivery status:** Follows completion and acceptance of the normal individual learner experience. AI/content production ownership belongs to Teams; the Course Studio currently placed in Learnora ME is transitional.
 
 ### P4.1 Internal access boundary
 
@@ -209,7 +221,9 @@ For each, document the API endpoint, required role, data source, empty/loading/e
 
 **Acceptance:** each action has a tested API contract, role denial test, successful operation test, and audit evidence where sensitive.
 
-## P5 — Privacy, finance and operational hardening
+## P5 — Cross-cutting privacy, finance and operational hardening
+
+Apply only the work required to protect the current individual learner phase and the relevant platform trust boundaries. Organisation- and tutor-specific items remain deferred with their respective product phases.
 
 - Remove DOB from organisation responses unless the use case and role justify it; establish field-level privacy and retention.
 - Review encryption for sensitive dates/identifiers and migrate safely where required.
