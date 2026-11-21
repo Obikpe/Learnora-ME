@@ -41,7 +41,11 @@ MODEL_URLS = {
 
 def run(command: list[str], *, cwd: Path | None = None) -> None:
     LOGGER.debug("Running command: %s", " ".join(command))
-    subprocess.run(command, cwd=str(cwd) if cwd else None, check=True, capture_output=True, text=True)
+    try:
+        subprocess.run(command, cwd=str(cwd) if cwd else None, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or error.stdout or str(error)).strip()
+        raise RuntimeError(detail[-1200:]) from error
 
 
 def sha256_file(path: Path) -> str:
