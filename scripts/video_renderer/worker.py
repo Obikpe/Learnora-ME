@@ -250,19 +250,18 @@ def render_scene_image(
                 draw.polygon([(x + box_width + 20, mid_y - 8), (x + box_width + 32, mid_y), (x + box_width + 20, mid_y + 8)], fill="#ff6b4a")
             x += box_width + 24
     elif visual_type == "screen_demo":
-        draw.rounded_rectangle((112, 254, WIDTH - 112, 602), radius=14, fill="#f3f5f8", outline="#45546c", width=2)
-        draw.rounded_rectangle((112, 254, WIDTH - 112, 300), radius=14, fill="#e0e5ed")
-        draw.ellipse((134, 270, 146, 282), fill="#f06d6d")
-        draw.ellipse((158, 270, 170, 282), fill="#e9bd5b")
-        draw.ellipse((182, 270, 194, 282), fill="#6bbd8b")
-        draw.text((222, 267), "LEARNING DEMONSTRATION", font=font(FONT_BOLD, 15), fill="#42516a")
         rows = texts[:5]
-        y = 324
-        for index, row in enumerate(rows):
-            fill = "#dfe7f6" if index == 0 else "#ffffff"
-            draw.rounded_rectangle((146, y, WIDTH - 146, y + 44), radius=7, fill=fill, outline="#d1d9e5")
-            draw.text((166, y + 10), row[:100], font=font(FONT_REGULAR, 18), fill="#17253a")
-            y += 52
+        card_gap = 14
+        card_height = min(64, int((320 - card_gap * max(0, len(rows) - 1)) / max(1, len(rows))))
+        y = 268
+        for index, row in enumerate(rows, start=1):
+            draw.rounded_rectangle((132, y, WIDTH - 132, y + card_height), radius=12, fill="#1c2940", outline="#344767", width=1)
+            draw.ellipse((152, y + 13, 152 + 38, y + 51), fill="#5b4bdb")
+            draw.text((163, y + 19), str(index), font=font(FONT_BOLD, 18), fill="#ffffff")
+            draw_wrapped(draw, row, (212, y + 13), font(FONT_BOLD, 20), "#eef2f8", WIDTH - 380, 6, 2)
+            y += card_height + card_gap
+        draw.text((132, 588), "Follow the steps in the order shown", font=small, fill="#aebbd0")
+
     elif visual_type == "equation":
         equation = "   ".join(texts)
         equation = equation.replace(r"\(", "").replace(r"\)", "").replace("$", "").replace(r"\[", "").replace(r"\]", "")
