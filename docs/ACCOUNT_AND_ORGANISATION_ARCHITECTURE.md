@@ -36,7 +36,7 @@ Implement the individual learner path as one coherent vertical slice across back
 
 ## 1. Earlier proposed identity and access rules — target model not yet approved
 
-**Authority warning:** The rules in sections 1–4 below record an earlier proposed replacement architecture. They are not a fully approved target account/cohort model. [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) governs cross-product decisions. In particular, the target identity relationship between cohort accounts, individual accounts and corporate organisation accounts remains unresolved (UR-003). The proposal that every cohort is merely a resource scope inside one organisation is not approved as a complete cohort domain model. Do not implement identity convergence, account conversion or a migration from this proposal without explicit product-owner confirmation and a preservation plan.
+**Authority warning:** Sections 1–3 below retain earlier proposed identity and access architecture and must be read only where consistent with current approved decisions. They are not, by themselves, the final target model. Section 4 has been replaced with the current approved organisation/cohort account revocation and deletion rule. [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) governs cross-product decisions. The two-way email exclusivity rule is approved; the canonical identity registry, legacy conflict reconciliation and migration design remain unresolved. Cohorts must not be reduced to a generic organisation resource scope; their separate domain model remains governed by the cohort specifications. Do not implement identity convergence or migration without an approved preservation and transition plan.
 
 ## 1.1 Earlier proposed identity and access rules
 
