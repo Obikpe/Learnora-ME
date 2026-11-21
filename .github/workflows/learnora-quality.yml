@@ -204,7 +204,10 @@ jobs:
           DO $do$ BEGIN
             IF to_regclass('public.learnora_course_generation_jobs') IS NOT NULL
               OR to_regclass('public.learnora_lesson_production_packages') IS NOT NULL
+              OR to_regclass('public.learnora_video_render_jobs') IS NOT NULL
               OR to_regprocedure('public.create_course_from_generation_job(uuid)') IS NOT NULL
+              OR to_regprocedure('public.claim_next_learnora_video_render_job()') IS NOT NULL
+              OR to_regprocedure('public.complete_learnora_video_render_job(uuid,uuid,integer,bigint,text)') IS NOT NULL
               OR EXISTS (SELECT 1 FROM public.learnora_permissions WHERE permission_key='content.generate') THEN
               RAISE EXCEPTION 'AI course production rollback did not remove its schema and permission';
             END IF;
