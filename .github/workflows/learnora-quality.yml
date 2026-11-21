@@ -61,6 +61,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Cache Kokoro model files
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/learnora-kokoro
+          key: learnora-kokoro-v1.1-int8-${{ runner.os }}
+          restore-keys: |
+            learnora-kokoro-v1.1-int8-${{ runner.os }}
+
       - name: Install backend dependencies
         run: python -m pip install -r backend-python/requirements.txt
 
@@ -74,6 +82,15 @@ jobs:
         run: python -m compileall -q .
       - name: Compile lesson video renderer
         run: python -m py_compile scripts/video_renderer/worker.py
+      - name: Smoke-test actual TTS and MP4 rendering
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg fonts-dejavu-core espeak-ng
+          ffmpeg -hide_banner -filters | grep -q subtitles
+          python -m venv /tmp/learnora-renderer-venv
+          /tmp/learnora-renderer-venv/bin/pip install -r scripts/video_renderer/requirements.txt
+          cd scripts/video_renderer
+          /tmp/learnora-renderer-venv/bin/python self_test.py
 
       - name: Rehearse additive learner-outcome migrations and rollbacks
         run: |
