@@ -289,9 +289,22 @@ The first proposal-only prototype has been extended into a persistent draft work
 - The Course Studio now lists global Learnora ME tracks, saves an optional target-track choice, restores saved jobs after refresh, stores lesson packages, and requires an explicit staff action before creating the unpublished course draft. The target track is recorded with the draft; actual track linking remains a separate post-review/publication step.
 - A database assertion script tests the private grants/RLS, draft hierarchy, private-script separation, quiz creation and idempotent course creation. The migration rehearsal also tests rollback.
 
-**Release gate:** the migration and workflow are being rehearsed in CI. The migration has not been applied to live Pheonix, and nothing has been deployed. Until the migration is applied through an approved release, the new persistence endpoints cannot work against production. The rendering worker, TTS, captions, R2 upload/playback and publication workflow are still outstanding; the Course Studio can create a structured draft, not yet finished video courses.
+**Release gate:** the migration and workflow are being rehearsed in CI. The migration has not been applied to live Pheonix, and nothing has been deployed. Until the migration is applied through an approved release, the new persistence endpoints cannot work against production. The render-queue schema, Kokoro/FFmpeg worker source, scheduled GitHub Actions workflow, and private R2 signed-playback code have now been added. They are not live until CI passes, the migration is applied, R2 is configured, required secrets are added, and the backend/frontend are deployed. The Course Studio can create structured drafts in source; finished videos are not yet available in production.
 
 
 ### Follow-on migration state after Course Studio schema was added
 
 The exact 56-to-56 filename reconciliation above was completed before the Course Studio migration was authored. The repository now intentionally contains **57 files** in `supabase/migrations/`: the 56 applied live versions with matching filenames, plus the new, unapplied `20261121150000_ai_course_production_drafts.sql`. The live Pheonix ledger remains at 56 applied versions. This single repository-only version is the expected pending Course Studio migration, not a filename mismatch. The separate unapproved browser-privilege migration remains in `supabase/pending_migrations/`.
+
+
+## 19. Video rendering and private playback — source added, configuration pending
+
+- The Course Studio migration now also creates `learnora_video_render_jobs`, a private asynchronous queue linked to each approved production package, generation job and lesson. Course-draft creation automatically queues a render job for each video-based lesson with a scene plan; text-practice lessons are not queued.
+- Service-role-only RPCs claim jobs with `FOR UPDATE SKIP LOCKED`, complete uploads, and recover stale worker leases. Completion changes the lesson-video record and production package to `ready`; failed attempts are retried up to the configured limit.
+- The existing `lesson_videos` table already accepts the `cloudflare` provider and stores the R2 bucket/object key and media metadata. No duplicate media table is required.
+- The backend now generates one-hour R2 GET presigned URLs after normal learner course-access checks. The lesson workspace filters to ready videos and uses cross-origin playback. Signed URLs are never persisted in Supabase.
+- A GitHub Actions worker now polls every five minutes. It uses the quantized Kokoro ONNX model for English narration, deterministic Pillow slide/diagram/code scenes, FFmpeg for MP4 encoding and captions, and the S3-compatible R2 API for private upload. It does not call a paid video-generation API.
+- The Learnora ME repository is public, so standard GitHub-hosted runners are currently a practical no-extra-runner-cost pilot option. The workflow safely skips until its required Supabase and R2 secrets are configured.
+- This first renderer produces narrated visual lessons, not cinematic footage or actual recordings of Excel/desktop software. Accurate software-specific demonstrations will need dedicated renderers or verified screen recordings.
+
+**External setup still required:** create a private R2 bucket, apply the CORS policy in `docs/R2_VIDEO_BUCKET_SETUP.md`, add the R2 variables to Vercel, and add the Supabase/R2 secrets to GitHub Actions. The migration and code are not deployed, and no live R2 bucket or production secrets have been created by this work.
