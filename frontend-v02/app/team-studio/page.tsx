@@ -355,6 +355,32 @@ export default function TeamCourseStudioPage() {
       setHumanVideoErrors(current => ({ ...current, [lessonId]: "The video file must be 2 GB or smaller." }));
       return;
     }
+    let durationSeconds = 0;
+    try {
+      durationSeconds = await new Promise<number>((resolve, reject) => {
+        const objectUrl = URL.createObjectURL(file);
+        const player = document.createElement("video");
+        player.preload = "metadata";
+        player.onloadedmetadata = () => {
+          const duration = player.duration;
+          URL.revokeObjectURL(objectUrl);
+          if (Number.isFinite(duration)) resolve(Math.ceil(duration));
+          else reject(new Error("The video duration could not be read."));
+        };
+        player.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error("The MP4 duration could not be read."));
+        };
+        player.src = objectUrl;
+      });
+    } catch {
+      setHumanVideoErrors(current => ({ ...current, [lessonId]: "The MP4 duration could not be read. Choose a valid MP4 file." }));
+      return;
+    }
+    if (durationSeconds < 1 || durationSeconds > 300) {
+      setHumanVideoErrors(current => ({ ...current, [lessonId]: "Keep lesson videos to 5 minutes or less." }));
+      return;
+    }
     setHumanVideoBusy(current => ({ ...current, [lessonId]: true }));
     setHumanVideoErrors(current => ({ ...current, [lessonId]: "" }));
     try {
@@ -378,6 +404,7 @@ export default function TeamCourseStudioPage() {
         body: JSON.stringify({
           object_key: ticket.object_key,
           file_size_bytes: file.size,
+          duration_seconds: durationSeconds,
           title,
         }),
       });
