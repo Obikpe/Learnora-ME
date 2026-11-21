@@ -39,7 +39,7 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn('["active", "past_due", "paused"]', source)
 
     def test_final_erasure_retains_only_the_restricted_history_record(self):
-        migration = (ROOT / "supabase/migrations/20261109190000_erase_learner_records_after_recovery.sql").read_text(encoding="utf-8")
+        migration = (ROOT / "supabase/migrations/20261109190944_erase_learner_records_after_recovery.sql").read_text(encoding="utf-8")
         self.assertIn("INSERT INTO public.deleted_account_history", migration)
         self.assertIn("'{}'::jsonb", migration)
         self.assertIn("DELETE FROM public.users WHERE id = v_user.id", migration)
@@ -66,7 +66,7 @@ class AccountLifecycleContractTests(unittest.TestCase):
 
     def test_confirmed_deletion_starts_a_30_day_recovery_period(self):
         source = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
-        migration = (ROOT / "supabase/migrations/20261109180000_learner_deletion_grace_and_marketing_consent.sql").read_text(encoding="utf-8")
+        migration = (ROOT / "supabase/migrations/20261109190939_learner_deletion_grace_and_marketing_consent.sql").read_text(encoding="utf-8")
         self.assertIn("ACCOUNT_RECOVERY_DAYS = 30", source)
         self.assertIn('@router.post("/reactivate")', source)
         self.assertIn('@router.get("/finalize-expired")', source)
@@ -96,7 +96,7 @@ class AccountLifecycleContractTests(unittest.TestCase):
         self.assertIn("account_reactivation_token_hash", source)
 
     def test_marketing_consent_is_optional_and_can_be_withdrawn(self):
-        migration = (ROOT / "supabase/migrations/20261109180000_learner_deletion_grace_and_marketing_consent.sql").read_text(encoding="utf-8")
+        migration = (ROOT / "supabase/migrations/20261109190939_learner_deletion_grace_and_marketing_consent.sql").read_text(encoding="utf-8")
         lifecycle = (ROOT / "backend-python/routers/account_lifecycle.py").read_text(encoding="utf-8")
         signup = (ROOT / "frontend-v02/app/register/page.tsx").read_text(encoding="utf-8")
         self.assertIn("marketing_email_opt_in boolean NOT NULL DEFAULT false", migration)
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         self.assertNotIn("promotional in-app notifications", unsubscribe_page)
 
     def test_notification_automation_has_a_protected_daily_worker_and_durable_delivery_log(self):
-        migration = (ROOT / "supabase/migrations/20261116120000_notification_email_automation.sql").read_text(encoding="utf-8")
+        migration = (ROOT / "supabase/migrations/20261116072916_notification_email_automation.sql").read_text(encoding="utf-8")
         router = (ROOT / "backend-python/routers/notifications.py").read_text(encoding="utf-8")
         service = (ROOT / "backend-python/services/notification_service.py").read_text(encoding="utf-8")
         vercel = (ROOT / "backend-python/vercel.json").read_text(encoding="utf-8")
