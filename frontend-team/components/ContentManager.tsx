@@ -43,7 +43,25 @@ export default function ContentManager(){
  <Media lessonId={lessonId} busy={busy} media={media} video={video} setVideo={setVideo} resource={resource} setResource={setResource} act={act} reload={loadLesson}/></div>}</Box>
  </div></Shell>
 }
+function uploadVideoWithProgress(url:string,file:File,onProgress:(percent:number)=>void):Promise<void>{
+ return new Promise((resolve,reject)=>{
+  const request=new XMLHttpRequest();
+  request.open("PUT",url);
+  request.setRequestHeader("Content-Type",file.type);
+  request.upload.addEventListener("progress",event=>{
+   if(event.lengthComputable)onProgress(Math.min(100,Math.round(event.loaded/event.total*100)));
+  });
+  request.addEventListener("load",()=>{
+   if(request.status>=200&&request.status<300)resolve();
+   else reject(new Error("Video upload failed ("+request.status+")."));
+  });
+  request.addEventListener("error",()=>reject(new Error("Video upload failed because the connection was interrupted.")));
+  request.addEventListener("abort",()=>reject(new Error("Video upload was cancelled.")));
+  request.send(file);
+ });
+}
 function Media({lessonId,busy,media,video,setVideo,resource,setResource,act,reload}:any){
+ const [videoUploadProgress,setVideoUploadProgress]=useState<number|null>(null);
  const hasVideoReference=video.provider==="supabase"?Boolean(video.storage_path.trim()):Boolean(video.external_video_id.trim()||video.storage_path.trim());
  const hasResourceReference=Boolean(resource.external_url.trim()||resource.storage_path.trim());
  return <div className="mt-5 space-y-5 border-t border-white/[.07] pt-5">
@@ -56,15 +74,20 @@ function Media({lessonId,busy,media,video,setVideo,resource,setResource,act,relo
     <input className="field" placeholder="Video title" value={video.title} onChange={e=>setVideo({...video,title:e.target.value})}/>
     <input className="field" placeholder="External video ID or reference" value={video.external_video_id} onChange={e=>setVideo({...video,external_video_id:e.target.value})}/>
     <input className="field" placeholder="Storage path (for an existing stored video)" value={video.storage_path} onChange={e=>setVideo({...video,storage_path:e.target.value})}/>
-    <label className="block"><span className="label">Upload course video</span><input className="mt-1 block w-full text-xs text-slate-400" type="file" accept="video/mp4,video/webm,video/quicktime,video/mpeg,video/x-msvideo" onChange={e=>setVideo({...video,_file:e.target.files?.[0]||null})}/></label>
+    <label className="block"><span className="label">Upload lesson video (max 2 GB)</span><input className="mt-1 block w-full text-xs text-slate-400" type="file" accept="video/mp4,video/webm,video/quicktime,video/mpeg,video/x-msvideo" onChange={e=>setVideo({...video,_file:e.target.files?.[0]||null})}/></label>
+    {videoUploadProgress!==null&&<div className="mt-2" role="status" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--primary)] transition-all" style={{width:videoUploadProgress+"%"}}/></div><p className="mt-1 text-xs text-slate-400">Uploading lesson video · {videoUploadProgress}%</p></div>}
     <button className="action" disabled={busy||act===undefined||!video._file} onClick={()=>act(async()=>{
      const file=video._file as File;
      if(!file)throw new Error("Select a video file first.");
      if(file.size>2147483648)throw new Error("Video files must be 2 GB or smaller.");
      const ticket=await createVideoUpload(lessonId,{filename:file.name,content_type:file.type,file_size_bytes:file.size,title:video.title||file.name});
      if(!ticket.signed_url)throw new Error("Upload URL was not returned.");
-     const upload=await fetch(ticket.signed_url,{method:"PUT",headers:{"Content-Type":file.type},body:file});
-     if(!upload.ok)throw new Error("Video upload failed ("+upload.status+").");
+     setVideoUploadProgress(0);
+     try{
+      await uploadVideoWithProgress(ticket.signed_url,file,setVideoUploadProgress);
+     }finally{
+      setVideoUploadProgress(null);
+     }
      await createVideo(lessonId,{provider:"supabase",title:video.title||file.name,storage_path:ticket.path,file_size_bytes:file.size,mime_type:file.type,status:"ready",is_private:true});
      setVideo({provider:"youtube",title:"",external_video_id:"",storage_path:"",status:"ready",is_private:true});
      await reload();
