@@ -452,12 +452,15 @@ def create_or_update_video_row(
 
 
 def mark_job_failed(client: Client, job: dict[str, Any], error: Exception) -> None:
-    attempts = int(job.get("attempt_count") or 1)
-    maximum = int(job.get("max_attempts") or 3)
-    retry = attempts < maximum
-    next_status = "queued" if retry else "failed"
-    summary = f"{type(error).__name__}: {str(error)}"[:900]
     try:
+        current = client.table("learnora_video_render_jobs").select("status").eq("id", job["id"]).maybe_single().execute().data
+        if current and current.get("status") in {"completed", "cancelled"}:
+            return
+        attempts = int(job.get("attempt_count") or 1)
+        maximum = int(job.get("max_attempts") or 3)
+        retry = attempts < maximum
+        next_status = "queued" if retry else "failed"
+        summary = f"{type(error).__name__}: {str(error)}"[:900]
         client.table("learnora_video_render_jobs").update({
             "status": next_status,
             "error_summary": summary,
@@ -470,6 +473,10 @@ def mark_job_failed(client: Client, job: dict[str, Any], error: Exception) -> No
             client.table("lesson_videos").update({
                 "status": "failed",
             }).eq("id", job["lesson_video_id"]).execute()
+        else:
+            client.table("lesson_videos").update({
+                "status": "failed",
+            }).eq("lesson_id", job["lesson_id"]).eq("provider", "cloudflare").eq("storage_path", job["object_key"]).eq("status", "processing").execute()
     except Exception:
         LOGGER.exception("Could not record failure state for video job %s", job.get("id"))
 
