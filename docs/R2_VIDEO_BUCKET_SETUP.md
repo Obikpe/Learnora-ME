@@ -69,6 +69,8 @@ The worker reads `R2_WORKER_ACCESS_KEY_ID` and `R2_WORKER_SECRET_ACCESS_KEY` for
 
 ## Rendering worker
 
+Human-produced videos continue to use the existing private Supabase `learnora-course-media` bucket. Only AI-rendered videos use this R2 worker. Course Studio records the selected source per lesson and will not queue an AI render for a human-video lesson.
+
 The repository now contains:
 
 - `scripts/video_renderer/worker.py`
@@ -106,7 +108,7 @@ The Kokoro ONNX Python package is MIT-licensed and the Kokoro 82M model is Apach
 - [ ] Add the six GitHub worker secrets (Supabase URL/key, R2 account/bucket and the separate worker access/secret key) to GitHub Actions.
 - [ ] Apply the pending Course Studio/video-render migration to live Pheonix only after the migration rehearsal passes and the release is approved.
 - [ ] Deploy the backend and Learnora ME frontend only after the migration is applied.
-- [ ] Run one test lesson end to end; verify the MP4, captions, R2 object, staff preview, signed learner playback URL and learner access restriction.
+- [ ] Run one AI-video lesson and one human-video lesson end to end; verify the R2 MP4/captions, private Supabase upload, staff previews, signed learner playback URLs and learner access restrictions.
 - [ ] Review the video and lesson content before publishing the course.
 
 
