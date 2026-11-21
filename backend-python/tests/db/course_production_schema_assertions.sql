@@ -11,6 +11,8 @@ DECLARE
     v_published_course_id uuid;
     v_published_course_id_again uuid;
     v_lesson_id uuid;
+    v_human_lesson_id uuid;
+    v_human_video_id uuid;
     v_content text;
     v_course_status text;
     v_module_status text;
@@ -131,6 +133,12 @@ BEGIN
               "learning_objective":"Explain the lesson objective.",
               "lesson_format":"narrated_visual",
               "estimated_minutes":2
+            },{
+              "title":"Human Video Lesson",
+              "description":"A human-produced demonstration lesson.",
+              "learning_objective":"Apply the concept in a practical demonstration.",
+              "lesson_format":"demonstration",
+              "estimated_minutes":3
             }]
           }]
         }'::jsonb,
@@ -139,7 +147,7 @@ BEGIN
 
     INSERT INTO public.learnora_lesson_production_packages (
         job_id, module_order, lesson_order, version, module_title,
-        lesson_title, lesson_description, learning_objective, lesson_format,
+        lesson_title, lesson_description, learning_objective, lesson_format, video_source,
         teaching_script, estimated_duration_seconds, concise_note, practice_activity,
         knowledge_check, video_plan, fact_check_notes, status, provider_key, model,
         approved_by_staff_id, approved_at
@@ -147,11 +155,30 @@ BEGIN
     VALUES (
         v_job_id, 0, 0, 1, 'Test Module',
         'Test Lesson', 'A lesson created only inside this transaction.',
-        'Explain the lesson objective.', 'narrated_visual',
+        'Explain the lesson objective.', 'narrated_visual', 'ai',
         'This is the private teaching script. It explains the concept, demonstrates an example, and concludes with a recap.',
         120, 'A short learner-facing note.', 'Try applying the concept to one example.',
-        '[{"question":"Which option is correct?","options":["Option A","Option B"],"correct_option":1,"explanation":"Option B is correct."}]'::jsonb,
-        '[{"narration":"This is the opening narration for the lesson.","visual_direction":"A clean title slide with a simple concept diagram.","on_screen_text":["The key concept"],"visual_type":"slides"}]'::jsonb,
+        '[{"question":"Which option is correct?","options":["Option A","Option B"],"correct_option":1,"explanation":"Option B is correct."},{"question":"What should the learner do next?","options":["Ignore the example","Apply the concept","Skip the lesson"],"correct_option":1,"explanation":"Applying the concept reinforces understanding."}]'::jsonb,
+        '[{"narration":"This is the opening narration for the lesson.","visual_direction":"A clean title slide with a simple concept diagram.","on_screen_text":["The key concept"],"visual_type":"slides"},{"narration":"It explains the concept, demonstrates an example, and concludes with a recap.","visual_direction":"Show the example and recap.","on_screen_text":["Example","Recap"],"visual_type":"slides"}]'::jsonb,
+        ARRAY[]::text[], 'approved',
+        'openrouter', 'openrouter/free', v_staff_id, now()
+    );
+
+    INSERT INTO public.learnora_lesson_production_packages (
+        job_id, module_order, lesson_order, version, module_title,
+        lesson_title, lesson_description, learning_objective, lesson_format, video_source,
+        teaching_script, estimated_duration_seconds, concise_note, practice_activity,
+        knowledge_check, video_plan, fact_check_notes, status, provider_key, model,
+        approved_by_staff_id, approved_at
+    )
+    VALUES (
+        v_job_id, 0, 1, 1, 'Test Module',
+        'Human Video Lesson', 'A human-produced demonstration lesson.',
+        'Apply the concept in a practical demonstration.', 'demonstration', 'human',
+        'This is the presenter script for the human-produced demonstration. It explains the steps and expected learning outcome.',
+        180, 'A concise note for the human-produced lesson.', 'Complete the demonstrated steps using the supplied practice data.',
+        '[{"question":"Which option is correct?","options":["Option A","Option B"],"correct_option":1,"explanation":"Option B is correct."},{"question":"What should the learner do?","options":["Apply the demonstration","Skip the activity"],"correct_option":0,"explanation":"Applying the demonstration builds skill."}]'::jsonb,
+        '[]'::jsonb,
         ARRAY[]::text[], 'approved',
         'openrouter', 'openrouter/free', v_staff_id, now()
     );
@@ -169,7 +196,14 @@ BEGIN
       FROM public.course_modules WHERE course_id = v_course_id;
     SELECT id, status, content INTO v_lesson_id, v_lesson_status, v_content
       FROM public.learnora_lessons
-     WHERE module_id = (SELECT id FROM public.course_modules WHERE course_id = v_course_id);
+     WHERE module_id = (SELECT id FROM public.course_modules WHERE course_id = v_course_id)
+     ORDER BY order_index
+     LIMIT 1;
+
+    SELECT id INTO v_human_lesson_id
+      FROM public.learnora_lessons
+     WHERE module_id = (SELECT id FROM public.course_modules WHERE course_id = v_course_id)
+       AND order_index = 1;
 
     SELECT status INTO v_job_status
       FROM public.learnora_course_generation_jobs WHERE id = v_job_id;
@@ -200,7 +234,7 @@ BEGIN
       FROM public.quiz_questions WHERE quiz_id = v_quiz_id ORDER BY order_index LIMIT 1;
 
     IF v_quiz_id IS NULL OR v_quiz_published IS DISTINCT FROM false
-       OR v_question_count <> 1 OR v_correct_answer <> 'Option B' THEN
+       OR v_question_count <> 2 OR v_correct_answer <> 'Option B' THEN
         RAISE EXCEPTION 'Generated knowledge check was not created as an unpublished quiz with the correct answer';
     END IF;
 
@@ -210,6 +244,13 @@ BEGIN
 
     IF v_render_job_id IS NULL OR v_object_key NOT LIKE 'courses/%/modules/%/lessons/%/%.mp4' THEN
         RAISE EXCEPTION 'A private render job was not queued for the generated video lesson';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM public.learnora_video_render_jobs
+         WHERE generation_job_id = v_job_id AND lesson_id = v_human_lesson_id
+    ) THEN
+        RAISE EXCEPTION 'A human-produced lesson was incorrectly queued for AI rendering';
     END IF;
 
     v_claim := public.claim_next_learnora_video_render_job();
@@ -235,6 +276,17 @@ BEGIN
         1024, 'video/mp4', 'processing', true, 'Private teaching transcript for the test.'
     )
     RETURNING id INTO v_video_id;
+
+    INSERT INTO public.lesson_videos (
+        lesson_id, provider, storage_path, title, duration_seconds,
+        file_size_bytes, mime_type, status, is_private, transcript_text
+    )
+    VALUES (
+        v_human_lesson_id, 'supabase', 'courses/course-studio-ci/lessons/human-video.mp4',
+        'Human Video Lesson', 180, 2048, 'video/mp4', 'ready', true,
+        'Human-produced video transcript for the test.'
+    )
+    RETURNING id INTO v_human_video_id;
 
     PERFORM public.complete_learnora_video_render_job(
         v_render_job_id, v_video_id, 120, 1024, repeat('a', 64)
