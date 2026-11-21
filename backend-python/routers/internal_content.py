@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 import re
 import secrets
+from uuid import UUID
 from html import escape as html_escape
 from html.parser import HTMLParser
 from .auth import supabase
@@ -419,6 +420,20 @@ class VideoUploadRequest(BaseModel):
     file_size_bytes: int = Field(..., gt=0, le=2147483648)
     title: Optional[str] = Field(None, max_length=200)
 
+class CourseStudioVideoUploadRequest(BaseModel):
+    filename: str = Field(..., min_length=1, max_length=240)
+    file_size_bytes: int = Field(..., gt=0, le=2147483648)
+    duration_seconds: int = Field(..., ge=1, le=300)
+    title: str = Field(..., min_length=1, max_length=200)
+
+
+class CourseStudioVideoFinalizeRequest(BaseModel):
+    object_key: str = Field(..., min_length=1, max_length=700)
+    file_size_bytes: int = Field(..., gt=0, le=2147483648)
+    duration_seconds: int = Field(..., ge=1, le=300)
+    title: str = Field(..., min_length=1, max_length=200)
+
+
 class ResourceUploadRequest(BaseModel):
     filename: str = Field(..., min_length=1, max_length=255)
     content_type: Literal[
@@ -598,6 +613,69 @@ def create_video_upload(
     except Exception as exc:
         print("Video upload URL creation failed:", type(exc).__name__)
         raise HTTPException(status_code=500, detail="Unable to create video upload URL.")
+
+def _course_studio_job_for_lesson(lesson_id: str) -> str:
+    lesson = _module_for_lesson(lesson_id)
+    module = _course_for_module(str(lesson["module_id"]))
+    course_id = str(module["course_id"])
+    course = (
+        supabase.table("learnora_courses")
+        .select("id,settings")
+        .eq("id", course_id)
+        .maybe_single()
+        .execute()
+    ).data
+    settings = (course or {}).get("settings") or {}
+    if not isinstance(settings, dict) or not settings.get("ai_generated"):
+        raise HTTPException(status_code=409, detail="This upload route is only for AI-generated courses.")
+    job_id = settings.get("generation_job_id")
+    if not job_id:
+        raise HTTPException(status_code=409, detail="The AI course generation record could not be found.")
+    job = (
+        supabase.table("learnora_course_generation_jobs")
+        .select("id,created_course_id,status")
+        .eq("id", str(job_id))
+        .maybe_single()
+        .execute()
+    ).data
+    if not job or str(job.get("created_course_id")) != course_id or job.get("status") != "created":
+        raise HTTPException(status_code=409, detail="The AI course is not an editable draft.")
+    return str(job["id"])
+
+
+@router.post("/lessons/{lesson_id}/course-studio-video-upload")
+def create_course_studio_video_upload(
+    lesson_id: str,
+    payload: CourseStudioVideoUploadRequest,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.video")),
+):
+    from routers.internal_course_studio import HumanVideoUploadRequest, create_human_video_upload
+
+    job_id = _course_studio_job_for_lesson(lesson_id)
+    return create_human_video_upload(
+        UUID(job_id),
+        UUID(lesson_id),
+        HumanVideoUploadRequest(**payload.model_dump()),
+        staff,
+    )
+
+
+@router.post("/lessons/{lesson_id}/course-studio-video")
+def finalize_course_studio_video_upload(
+    lesson_id: str,
+    payload: CourseStudioVideoFinalizeRequest,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.video")),
+):
+    from routers.internal_course_studio import HumanVideoFinalizeRequest, finalize_human_video_upload
+
+    job_id = _course_studio_job_for_lesson(lesson_id)
+    return finalize_human_video_upload(
+        UUID(job_id),
+        UUID(lesson_id),
+        HumanVideoFinalizeRequest(**payload.model_dump()),
+        staff,
+    )
+
 
 @router.post("/lessons/{lesson_id}/resource-upload")
 def create_resource_upload(
