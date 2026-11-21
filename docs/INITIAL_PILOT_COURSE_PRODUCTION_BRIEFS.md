@@ -61,6 +61,11 @@ Module 1: Introduction to Data Analytics
 - Data analytics vs data analysis
 - Why organisations use data analytics
 
+Lesson production guidance:
+- For “Careers in data analytics”, make the concise note a list of relevant career roles; use the video to explain what the roles do and how they differ.
+- For “Why become a data analyst?”, give a realistic view of the work, skills and career possibilities. Do not promise salaries or guaranteed employment.
+- For “Data analytics vs data analysis”, use a short comparison note and explain the distinction with a practical example in the video.
+
 Module 2: Understanding Data
 - What is data?
 - Structured and unstructured data
