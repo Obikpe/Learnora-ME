@@ -93,6 +93,12 @@ export default function TeamCourseStudioPage() {
   const [createDraftError, setCreateDraftError] = useState("");
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
   const [canPublish, setCanPublish] = useState(false);
+  const [newTrackOpen, setNewTrackOpen] = useState(false);
+  const [newTrackName, setNewTrackName] = useState("");
+  const [newTrackSlug, setNewTrackSlug] = useState("");
+  const [newTrackDescription, setNewTrackDescription] = useState("");
+  const [trackCreateBusy, setTrackCreateBusy] = useState(false);
+  const [trackCreateError, setTrackCreateError] = useState("");
   const [publishedCourse, setPublishedCourse] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
   const [publishError, setPublishError] = useState("");
@@ -178,6 +184,29 @@ export default function TeamCourseStudioPage() {
     try { await internalRequest("/auth/logout", { method: "POST" }); } catch {}
     router.replace("/team-studio/login");
   }, [router]);
+
+  async function createTrack() {
+    if (!newTrackName.trim() || !newTrackSlug.trim() || !canPublish || trackCreateBusy) return;
+    setTrackCreateBusy(true);
+    setTrackCreateError("");
+    try {
+      const result = await internalRequest("/tracks", {
+        method: "POST",
+        body: JSON.stringify({ name: newTrackName.trim(), slug: newTrackSlug.trim(), description: newTrackDescription.trim() || null }),
+      });
+      const refreshed = await internalRequest("/course-studio/tracks");
+      setTracks(refreshed.tracks || []);
+      setTargetTrackId(result.track.id);
+      setNewTrackName("");
+      setNewTrackSlug("");
+      setNewTrackDescription("");
+      setNewTrackOpen(false);
+    } catch (error: any) {
+      setTrackCreateError(error.message || "The track could not be created.");
+    } finally {
+      setTrackCreateBusy(false);
+    }
+  }
 
   async function generateCurriculum() {
     setGenerationError("");
@@ -318,7 +347,8 @@ export default function TeamCourseStudioPage() {
                 <label className="grid gap-2 text-sm text-slate-300 sm:col-span-2">Course description<textarea value={courseDescription} onChange={e => setCourseDescription(e.target.value)} rows={3} placeholder="What should learners understand and be able to do by the end?" className="min-h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-[#d7ad35]/60" /></label>
                 <label className="grid gap-2 text-sm text-slate-300">Level<select value={level} onChange={e => setLevel(e.target.value)} className="min-h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-[#d7ad35]/60"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option><option value="mixed">Mixed</option></select></label>
                 <label className="grid gap-2 text-sm text-slate-300">Target audience<input value={audience} onChange={e => setAudience(e.target.value)} placeholder="e.g. beginners with no analytics experience" className="min-h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-[#d7ad35]/60" /></label>
-                <label className="grid gap-2 text-sm text-slate-300">Track (optional)<select value={targetTrackId} onChange={e => setTargetTrackId(e.target.value)} className="min-h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none focus:border-[#d7ad35]/60"><option value="">Standalone course</option>{tracks.map(track => <option key={track.id} value={track.id}>{track.name} · {track.status}</option>)}</select><span className="text-[11px] leading-5 text-slate-500">The selected track is linked only when the course is published, after the system rechecks that the track curriculum is not locked. Leave this blank for a standalone course.</span></label>
+                <div className="grid gap-2 text-sm text-slate-300"><label className="grid gap-2">Track (optional)<select value={targetTrackId} onChange={e => setTargetTrackId(e.target.value)} className="min-h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none focus:border-[#d7ad35]/60"><option value="">Standalone course</option>{tracks.map(track => <option key={track.id} value={track.id}>{track.name} · {track.status}</option>)}</select><span className="text-[11px] leading-5 text-slate-500">The selected track is linked only when the course is published, after the system rechecks that the track curriculum is not locked. Leave this blank for a standalone course.</span>{canPublish && <button type="button" onClick={() => setNewTrackOpen(value => !value)} className="justify-self-start text-xs font-semibold text-[#e7c76d]">{newTrackOpen ? "Cancel new track" : "Create a new track"}</button>}</label></div>
+                {newTrackOpen && <div className="rounded-xl border border-white/10 bg-black/20 p-4 sm:col-span-2"><h3 className="text-sm font-semibold">Create a learning track</h3><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="grid gap-2 text-xs text-slate-400">Track name<input value={newTrackName} onChange={event => { const value = event.target.value; setNewTrackName(value); setNewTrackSlug(value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")); }} className="min-h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-sm text-white" placeholder="Front-end Web Development"/></label><label className="grid gap-2 text-xs text-slate-400">Track slug<input value={newTrackSlug} onChange={event => setNewTrackSlug(event.target.value)} className="min-h-10 rounded-lg border border-white/10 bg-black/20 px-3 text-sm text-white" placeholder="front-end-web-development"/></label><label className="grid gap-2 text-xs text-slate-400 sm:col-span-2">Track description<textarea value={newTrackDescription} onChange={event => setNewTrackDescription(event.target.value)} rows={2} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="A structured learning journey for front-end web development."/></label></div>{trackCreateError && <p role="alert" className="mt-3 text-xs text-red-200">{trackCreateError}</p>}<button type="button" onClick={() => void createTrack()} disabled={trackCreateBusy || newTrackName.trim().length < 2 || newTrackSlug.trim().length < 2} className="mt-3 rounded-lg bg-[#d7ad35] px-4 py-2.5 text-xs font-semibold text-black disabled:opacity-40">{trackCreateBusy ? "Creating track…" : "Create track"}</button></div>}
                 <label className="grid gap-2 text-sm text-slate-300">Prerequisites (one per line)<textarea value={prerequisites} onChange={e => setPrerequisites(e.target.value)} rows={3} className="min-h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-[#d7ad35]/60" placeholder="Leave blank if none" /></label>
                 <label className="grid gap-2 text-sm text-slate-300">Learning outcomes (one per line)<textarea value={outcomes} onChange={e => setOutcomes(e.target.value)} rows={3} className="min-h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-[#d7ad35]/60" placeholder="Explain what learners should be able to do" /></label>
                 <label className="grid gap-2 text-sm text-slate-300 sm:col-span-2">Course outline<textarea value={outlineText} onChange={e => setOutlineText(e.target.value)} rows={9} className="min-h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-[#d7ad35]/60 font-mono text-xs leading-6" placeholder={"Module 1: Introduction to Data Analytics\n- What is data analytics?\n- Careers in data analytics\n- Why become a data analyst?\n- Data analytics vs data analysis\n\nModule 2: Data and Data Types\n- What is data?\n- Structured and unstructured data"} /></label>
