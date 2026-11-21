@@ -977,7 +977,7 @@ async def create_course_draft(
     try:
         render_jobs = (
             supabase.table("learnora_video_render_jobs")
-            .select("id,status,object_key,lesson_video_id")
+            .select("id,status")
             .eq("generation_job_id", str(job_id))
             .execute()
             .data or []
