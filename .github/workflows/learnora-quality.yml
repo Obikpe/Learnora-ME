@@ -71,6 +71,8 @@ jobs:
       - name: Compile backend
         working-directory: backend-python
         run: python -m compileall -q .
+      - name: Compile lesson video renderer
+        run: python -m py_compile scripts/video_renderer/worker.py
 
       - name: Rehearse additive learner-outcome migrations and rollbacks
         run: |
