@@ -8,6 +8,7 @@ assessment.manage
 assessment.view
 audit.view
 certificates.manage
+content.generate
 content.manage
 content.resources
 content.video
