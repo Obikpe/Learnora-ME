@@ -159,6 +159,13 @@ def course_studio_access(
     }
 
 
+@router.get("/human-video-access")
+def course_studio_human_video_access(
+    staff: InternalStaffContext = Depends(require_internal_permission("content.video")),
+):
+    return {"success": True, "can_upload_human_video": True}
+
+
 @router.get("/publish-access")
 def course_studio_publish_access(
     staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
