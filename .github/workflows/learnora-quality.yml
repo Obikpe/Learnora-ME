@@ -137,7 +137,13 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/migration_reconciliation_assertions.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/public_course_catalogue_assertions.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/course_production_schema_assertions.sql
-          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regprocedure('public.update_learnora_course_generation_curriculum(uuid,jsonb)')"
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $do$ BEGIN
+            IF to_regprocedure('public.update_learnora_course_generation_curriculum(uuid,jsonb)') IS NULL THEN
+              RAISE EXCEPTION 'Course Studio curriculum revision function was not installed';
+            END IF;
+          END $do$;
+          SQL
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT password_changed_at FROM public.users LIMIT 0"
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT password_changed_at FROM public.admins LIMIT 0"
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
