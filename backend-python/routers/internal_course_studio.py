@@ -258,7 +258,8 @@ async def generate_lesson_package(
         action="internal_course_lesson_package_generated",
         email=staff.email,
         account_type="staff",
-        role="staff",
+        role=",".join(staff.roles or []),
+        request=request,
         metadata={
             "staff_id": staff.staff_id,
             "course_title": payload.course_title,
