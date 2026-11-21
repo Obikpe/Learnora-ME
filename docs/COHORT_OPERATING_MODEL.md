@@ -61,16 +61,19 @@ Tutor access must remain restricted to the relevant cohort, track, courses and r
 
 The precise warning copy, how the course is selected/displayed where several course assignments exist, whether the coordinator can select multiple tutors in one operation, and the full assignment/reassignment/removal audit workflow remain to be specified. Do not silently replace the required confirmation with a hard validation error or automatic assignment.
 
-## 4. Revoking access and account deletion
+## 4. Revoking access and deleting organisation-managed accounts
 
-A cohort coordinator may:
-- Revoke a learner's access to the Learnora site.
-- Revoke a tutor's access to the Learnora site.
-- Delete the learner's or tutor's account.
+A cohort coordinator may revoke a learner's or tutor's access to Learnora. For an organisation/cohort-managed learner or tutor, revoking access means deleting that person's managed account and its associated learner/tutor data. It is not merely a suspension or removal from the current cohort roster while retaining the person's account and learning data.
 
-Access revocation and account deletion are separate operations. Revoking access must not be assumed to erase the account or learning data. Conversely, account deletion must not be treated as merely hiding the user from the cohort roster.
+The email identity is mutually exclusive across account contexts:
+- If an email is associated with an organisation/cohort-managed account, it cannot be used for a normal individual Learnora learner account.
+- If an email is associated with a normal individual learner account, it cannot be used for an organisation/cohort-managed account.
+- The same email cannot hold both contexts at once.
+- Once the organisation/cohort-managed account has been deleted, that account no longer reserves the email. The email may be used for a new account through the ordinary registration/invitation process. No deleted account data is transferred to the new account.
 
-**Unresolved before implementation:** what account is deleted (the cohort-specific access/account record or the person's wider Learnora identity), whether the person has memberships in other cohorts/organisations or an individual account, the effect on learning evidence and audit history, who can restore access, confirmation requirements, and the exact erasure/anonymisation rules. The earlier individual learner 30-day deletion workflow must not be assumed to apply to organisation-managed cohort members without an explicit decision.
+The deletion applies to the managed account and its associated learner/tutor data. Do not retain an identifiable dormant account, learner roster, personal learning history or assessment record as a workaround. Shared platform resources must not be deleted solely because the person interacted with them.
+
+The exact dependent-record inventory, atomic deletion/failure handling, security evidence that may be retained without retaining learner data, backup/log/third-party processor expiry and any legally required exceptions must be specified before implementation. Existing records must be preserved until a separately approved transition and migration plan is ready; this product decision is not authorisation to delete current production data.
 
 ## 5. Cohort end versus organisation contract end
 
@@ -84,34 +87,35 @@ When a cohort ends:
 - A future cohort may be created under the same organisation with a new cohort ID.
 - Do not delete the organisation merely because one cohort has ended.
 
-The precise retention/erasure timing for cohort-specific data when a cohort ends independently of a contract ending remains to be specified.
+A later cohort is a new cohort identity. It does not automatically revive learner accounts or restore learner/team data deleted under the organisation contract-end process.
 
 ### 5.2 The organisation contract ends
 
 When the organisation's contract ends:
 - The organisation record must remain.
-- The organisation's access to Learnora must be denied if no new contract has been signed.
-- The learner/team data covered by the product owner's retention rule must not be retained after contract end.
-- The system must retain the count of learners associated with that organisation at the contract-end point.
-- The organisation may enter a later contract and create a new cohort; the continuing organisation record must support this without reviving the previous cohort.
+- At the contract-end point, retain the numeric count of learners associated with that organisation at that time.
+- Delete the covered organisation/cohort-managed learner accounts and their associated learner data, including identifiable learner roster and team-membership data covered by this rule.
+- Do not retain an identifiable learner roster, dormant learner accounts or personal learning histories as a substitute for deletion.
+- Deny the organisation's Learnora access if no new contract is signed.
+- A later contract may permit the organisation to operate again and create a new cohort under a new cohort ID. It does not restore the deleted learner accounts or data.
 
-The learner count is an organisation-level historical count, not a retained learner roster. The product owner has not yet specified the exact counting rule (for example, whether it counts all learners ever associated with the organisation or the active learner population at the contract-end point); do not choose one without confirmation.
+The retained learner count is an organisation-level aggregate only. It is not a retained list of learners and must not allow the organisation's former learner identities to be reconstructed.
 
 ## 6. Data lifecycle and privacy constraints
 
-The approved outcome is to retain the organisation record and a learner count at contract end, while not retaining the covered learner and team data. The implementation must not quietly preserve identifiable learner/team records in an archive or merely remove them from the user interface.
+The approved contract-end outcome is to retain the organisation record and the learner count captured at contract end, while deleting the covered organisation/cohort-managed learner accounts and associated learner/team data.
 
-Before implementation, specify:
-- Which learner and team fields/records are erased, anonymised or retained as strictly necessary exceptions.
-- Whether team definitions, team membership, assignments, tutor records, progress, assessment evidence, certificates, reports and uploaded materials are included in the erasure scope.
-- How the learner count is calculated, verified and retained without retaining the learner roster.
-- Treatment of audit/security records, invoices, payment records, legal holds and other records that may have independent retention requirements.
+Before implementation, specify the technical controls needed to carry out that approved outcome safely:
+- The complete inventory of account-linked learner and tutor records to delete, including progress, assessment evidence, certificates, submissions, notes, reports, notifications, AI conversations, team membership and personal uploads where they are within the organisation-managed account data.
+- Which shared platform or organisation-owned resources must remain, with the person's attribution detached where appropriate rather than deleting the shared resource.
+- How the numeric learner count is calculated and retained without retaining learner identities or a reconstructable roster.
+- The narrow security, legal, accounting or financial records that may need separate retention, and how those records avoid preserving the learner's learning history or a usable account.
+- Atomic deletion, retries, failure handling and proof that no active access path survives completion.
 - Backup, log, cache, export and third-party processor deletion/expiry.
-- Whether a renewed contract restores any former data (no such restoration is currently approved) or starts a new cohort with new learner/team records.
-- How the contract-end process interacts with individual identities, other organisation memberships and account deletion.
-- Who authorises contract-end processing and how completion/failure is audited.
+- How the process handles invitations, sessions, tokens and any pending activation.
+- Who authorises contract-end processing and how completion/failure is audited without retaining unnecessary personal data.
 
-Do not infer that the count alone is sufficient to satisfy all legal, accounting or security retention duties. Obtain the required privacy/legal review before implementing destructive erasure. This document is a product requirement, not legal advice or authorisation to erase production data.
+These are implementation and compliance details; they do not reopen the product decision about the outcome. Do not use a broad "legal retention exception" to retain the learner roster or personal learning data without a specific reviewed basis. Obtain privacy/legal review before destructive implementation. This document is a product requirement, not legal advice or authorisation to erase production data.
 
 ## 7. Access state after contract end
 
