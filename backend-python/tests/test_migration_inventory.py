@@ -168,7 +168,7 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("learnora_lesson_production_packages", sql)
         self.assertIn("video_source text NOT NULL DEFAULT 'ai'", sql)
         self.assertIn("video_source = 'human'", sql)
-        self.assertIn("lv.provider IN ('supabase', 'cloudflare')", sql)
+        self.assertIn("p.video_source = 'human' AND lv.provider = 'cloudflare'", sql)
         self.assertIn("learnora_video_render_jobs", sql)
         self.assertIn("claim_next_learnora_video_render_job", sql)
         self.assertIn("requeue_stale_learnora_video_render_jobs", sql)
