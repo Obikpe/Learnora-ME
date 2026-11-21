@@ -1,0 +1,156 @@
+BEGIN;
+
+DO $course_production_test$
+DECLARE
+    v_user_id uuid := 'e1000000-0000-4000-8000-000000000001';
+    v_staff_id uuid := 'e1000000-0000-4000-8000-000000000002';
+    v_job_id uuid := 'e1000000-0000-4000-8000-000000000003';
+    v_course_id uuid;
+    v_second_course_id uuid;
+    v_lesson_id uuid;
+    v_content text;
+    v_course_status text;
+    v_module_status text;
+    v_lesson_status text;
+    v_job_status text;
+BEGIN
+    IF to_regclass('public.learnora_course_generation_jobs') IS NULL
+       OR to_regclass('public.learnora_lesson_production_packages') IS NULL THEN
+        RAISE EXCEPTION 'AI course production tables are missing';
+    END IF;
+
+    IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.learnora_course_generation_jobs'::regclass)
+       OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.learnora_lesson_production_packages'::regclass) THEN
+        RAISE EXCEPTION 'AI course production tables must have RLS enabled';
+    END IF;
+
+    IF has_table_privilege('anon', 'public.learnora_course_generation_jobs', 'SELECT')
+       OR has_table_privilege('authenticated', 'public.learnora_course_generation_jobs', 'SELECT')
+       OR has_table_privilege('anon', 'public.learnora_lesson_production_packages', 'SELECT')
+       OR has_table_privilege('authenticated', 'public.learnora_lesson_production_packages', 'SELECT') THEN
+        RAISE EXCEPTION 'AI course production tables must not be directly readable by browser roles';
+    END IF;
+
+    IF NOT has_table_privilege('service_role', 'public.learnora_course_generation_jobs', 'SELECT')
+       OR NOT has_table_privilege('service_role', 'public.learnora_lesson_production_packages', 'INSERT') THEN
+        RAISE EXCEPTION 'service_role is missing required AI course production table grants';
+    END IF;
+
+    IF has_function_privilege('anon', 'public.create_course_from_generation_job(uuid)', 'EXECUTE')
+       OR has_function_privilege('authenticated', 'public.create_course_from_generation_job(uuid)', 'EXECUTE')
+       OR NOT has_function_privilege('service_role', 'public.create_course_from_generation_job(uuid)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'Course creation RPC grants are not restricted to service_role';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM public.learnora_permissions WHERE permission_key = 'content.generate'
+    ) THEN
+        RAISE EXCEPTION 'content.generate permission was not seeded';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM public.learnora_staff_roles WHERE slug = 'learning_curriculum')
+       AND NOT EXISTS (
+           SELECT 1
+             FROM public.learnora_staff_role_permissions rp
+             JOIN public.learnora_staff_roles r ON r.id = rp.role_id
+             JOIN public.learnora_permissions p ON p.id = rp.permission_id
+            WHERE r.slug = 'learning_curriculum'
+              AND p.permission_key = 'content.generate'
+       ) THEN
+        RAISE EXCEPTION 'learning_curriculum role is missing content.generate';
+    END IF;
+
+    INSERT INTO public.users (id, email, name)
+    VALUES (v_user_id, 'course-studio-ci@example.invalid', 'Course Studio CI')
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.learnora_staff_accounts (id, user_id, status)
+    VALUES (v_staff_id, v_user_id, 'active')
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.learnora_course_generation_jobs (
+        id, created_by_staff_id, created_by_user_id, approved_by_staff_id,
+        course_title, course_slug, course_level, status, request_data, curriculum_data,
+        provider_key, model, approved_at
+    )
+    VALUES (
+        v_job_id, v_staff_id, v_user_id, v_staff_id,
+        'Course Studio CI Test', 'course-studio-ci-test-unique', 'beginner', 'approved',
+        '{}'::jsonb,
+        '{
+          "course_title":"Course Studio CI Test",
+          "short_description":"A private course draft used by the schema test.",
+          "course_description":"This course verifies that approved AI production packages create draft curriculum records.",
+          "learning_outcomes":["Explain the test concept."],
+          "prerequisites":[],
+          "modules":[{
+            "title":"Test Module",
+            "description":"A module created only inside this transaction.",
+            "lessons":[{
+              "title":"Test Lesson",
+              "description":"A lesson created only inside this transaction.",
+              "learning_objective":"Explain the lesson objective.",
+              "lesson_format":"narrated_visual",
+              "estimated_minutes":2
+            }]
+          }]
+        }'::jsonb,
+        'openrouter', 'openrouter/free', now()
+    );
+
+    INSERT INTO public.learnora_lesson_production_packages (
+        job_id, module_order, lesson_order, version, module_title,
+        lesson_title, lesson_description, learning_objective, lesson_format,
+        teaching_script, estimated_duration_seconds, concise_note, practice_activity,
+        knowledge_check, video_plan, fact_check_notes, status, provider_key, model,
+        approved_by_staff_id, approved_at
+    )
+    VALUES (
+        v_job_id, 0, 0, 1, 'Test Module',
+        'Test Lesson', 'A lesson created only inside this transaction.',
+        'Explain the lesson objective.', 'narrated_visual',
+        'This is the private teaching script. It explains the concept, demonstrates an example, and concludes with a recap.',
+        120, 'A short learner-facing note.', 'Try applying the concept to one example.',
+        '[]'::jsonb, '[]'::jsonb, ARRAY[]::text[], 'approved',
+        'openrouter', 'openrouter/free', v_staff_id, now()
+    );
+
+    v_course_id := public.create_course_from_generation_job(v_job_id);
+    v_second_course_id := public.create_course_from_generation_job(v_job_id);
+
+    IF v_course_id IS NULL OR v_second_course_id <> v_course_id THEN
+        RAISE EXCEPTION 'Course draft creation is not idempotent';
+    END IF;
+
+    SELECT status INTO v_course_status
+      FROM public.learnora_courses WHERE id = v_course_id;
+    SELECT status INTO v_module_status
+      FROM public.course_modules WHERE course_id = v_course_id;
+    SELECT id, status, content INTO v_lesson_id, v_lesson_status, v_content
+      FROM public.learnora_lessons
+     WHERE module_id = (SELECT id FROM public.course_modules WHERE course_id = v_course_id);
+
+    SELECT status INTO v_job_status
+      FROM public.learnora_course_generation_jobs WHERE id = v_job_id;
+
+    IF v_course_status <> 'draft' OR v_module_status <> 'draft' OR v_lesson_status <> 'draft' OR v_job_status <> 'created' THEN
+        RAISE EXCEPTION 'Generated course hierarchy was not created in draft state';
+    END IF;
+
+    IF position('A short learner-facing note.' in v_content) = 0
+       OR position('Try applying the concept' in v_content) = 0
+       OR position('private teaching script' in v_content) > 0 THEN
+        RAISE EXCEPTION 'Learner lesson content did not keep the concise note/practice separate from the private script';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM public.learnora_lesson_production_packages
+         WHERE job_id = v_job_id AND lesson_id = v_lesson_id
+           AND teaching_script LIKE '%private teaching script%'
+    ) THEN
+        RAISE EXCEPTION 'Private teaching script was not retained in the production package';
+    END IF;
+END;
+$course_production_test$;
+
+ROLLBACK;
