@@ -309,3 +309,34 @@ Do not run `supabase db push` from this repository until those 11 filenames have
 One additional repository-only migration remains intentionally pending: `20261026153000_revoke_browser_privileges_and_defaults.sql`. It is not recorded as applied in the active database. Do not apply it automatically: it revokes broad function and sequence privileges, so its effect on service-role execution grants and managed default ACLs must be reviewed against the live function/grant inventory first.
 
 The disposable CI migration rehearsal includes the three restored applied migrations and asserts their key columns, function permissions and indexes. It also now rehearses the additive `20261118141100_public_course_catalogue_rpc.sql` candidate, which consolidates the public catalogue's visibility and track lookups into one server-only RPC and adds the missing course-first track-link index. This new performance migration is **pending** and has not been applied to the active Supabase project. These source-file reconciliations did not apply or alter any live Supabase migration, schema, data or grants.
+
+
+## Current live reconciliation update — 21 November 2026
+
+This section supersedes the 18 November migration-count and public-catalogue-pending statements above. Earlier sections are retained as historical investigation records.
+
+A fresh read-only comparison was performed against the active Pheonix project on 21 November 2026:
+- Live migration ledger: **56 applied versions**.
+- Repository `supabase/migrations/`: **57 SQL files**.
+- **12 live versions have no same-version source filename in the repository.**
+- **13 repository filenames are not present in the live ledger.** Twelve are stale timestamp counterparts of applied migrations; one is the intentionally pending browser privilege/default ACL migration `20261026153000_revoke_browser_privileges_and_defaults.sql`.
+
+The 12 timestamp mismatches are:
+| Migration | Repository version | Live version |
+| --- | --- | --- |
+| shared_auth_rate_limits | 20261026150000 | 20261102210054 |
+| shared_api_rate_limit | 20261026151000 | 20261102210056 |
+| learner_deletion_grace_and_marketing_consent | 20261109180000 | 20261109190939 |
+| erase_learner_records_after_recovery | 20261109190000 | 20261109190944 |
+| notification_email_automation | 20261116120000 | 20261116072916 |
+| learner_learning_plans | 20261102090000 | 20261118090829 |
+| quiz_active_sessions | 20261102100000 | 20261118090830 |
+| certificate_revocation | 20261102110000 | 20261118090832 |
+| project_submission_integrity | 20261102120000 | 20261118090839 |
+| password_session_invalidation | 20261117210000 | 20261118090841 |
+| private_course_resources_bucket | 20261117220000 | 20261118090842 |
+| public_course_catalogue_rpc | 20261118141100 | 20261118214152 |
+
+The live ledger now contains `20261118214152_public_course_catalogue_rpc`; the earlier note that the public catalogue RPC was pending is no longer current. A read-only catalog check confirms that both `get_public_course_catalogue()` and `get_public_track_catalogue()` exist with the expected table return shapes, are invoker-security functions with an empty search path, and are executable by `service_role` but not by `anon` or `authenticated`. The expected `idx_path_courses_course_path` index also exists. This confirms the expected live objects and grants, but does not prove byte-for-byte provenance of the applied migration body against the differently timestamped repository file.
+
+**Release rule remains unchanged:** do not run `supabase db push` from the current repository. The version identifiers are the migration CLI's identity; equivalent SQL under a different timestamp is still a pending repository migration from the CLI's perspective. Reconcile the 12 filenames only after reviewing source provenance and ensuring the migration bodies are equivalent to the applied live migrations. Keep `20261026153000_revoke_browser_privileges_and_defaults.sql` separate until its grants/default ACL effects are reviewed against the active managed Supabase role configuration. No migration, schema, grant, or production data was changed during this 21 November verification.
