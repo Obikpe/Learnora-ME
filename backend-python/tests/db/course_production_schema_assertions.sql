@@ -13,6 +13,10 @@ DECLARE
     v_module_status text;
     v_lesson_status text;
     v_job_status text;
+    v_quiz_id uuid;
+    v_quiz_published boolean;
+    v_question_count integer;
+    v_correct_answer text;
 BEGIN
     IF to_regclass('public.learnora_course_generation_jobs') IS NULL
        OR to_regclass('public.learnora_lesson_production_packages') IS NULL THEN
@@ -111,7 +115,8 @@ BEGIN
         'Explain the lesson objective.', 'narrated_visual',
         'This is the private teaching script. It explains the concept, demonstrates an example, and concludes with a recap.',
         120, 'A short learner-facing note.', 'Try applying the concept to one example.',
-        '[]'::jsonb, '[]'::jsonb, ARRAY[]::text[], 'approved',
+        '[{"question":"Which option is correct?","options":["Option A","Option B"],"correct_option":1,"explanation":"Option B is correct."}]'::jsonb,
+        '[]'::jsonb, ARRAY[]::text[], 'approved',
         'openrouter', 'openrouter/free', v_staff_id, now()
     );
 
@@ -149,6 +154,18 @@ BEGIN
            AND teaching_script LIKE '%private teaching script%'
     ) THEN
         RAISE EXCEPTION 'Private teaching script was not retained in the production package';
+    END IF;
+
+    SELECT id, is_published INTO v_quiz_id, v_quiz_published
+      FROM public.quizzes WHERE lesson_id = v_lesson_id;
+    SELECT count(*)::integer INTO v_question_count
+      FROM public.quiz_questions WHERE quiz_id = v_quiz_id;
+    SELECT correct_answer #>> '{}' INTO v_correct_answer
+      FROM public.quiz_questions WHERE quiz_id = v_quiz_id ORDER BY order_index LIMIT 1;
+
+    IF v_quiz_id IS NULL OR v_quiz_published IS DISTINCT FROM false
+       OR v_question_count <> 1 OR v_correct_answer <> 'Option B' THEN
+        RAISE EXCEPTION 'Generated knowledge check was not created as an unpublished quiz with the correct answer';
     END IF;
 END;
 $course_production_test$;
