@@ -32,6 +32,7 @@ class CurriculumRequest(BaseModel):
     prerequisites: list[str] = Field(default_factory=list, max_length=12)
     learning_outcomes: list[str] = Field(..., min_length=1, max_length=15)
     outline: list[ModuleOutlineInput] = Field(..., min_length=1, max_length=12)
+    target_track_id: Optional[UUID] = None
 
 
 class GeneratedLesson(BaseModel):
