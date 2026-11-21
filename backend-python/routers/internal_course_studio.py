@@ -493,7 +493,23 @@ async def create_course_draft(
     if not job:
         raise HTTPException(status_code=404, detail="Course draft not found.")
     if job.get("status") == "created" and job.get("created_course_id"):
-        return {"success": True, "course_id": job["created_course_id"], "status": "draft", "already_created": True}
+        try:
+            existing_render_jobs = (
+                supabase.table("learnora_video_render_jobs")
+                .select("id,status")
+                .eq("generation_job_id", str(job_id))
+                .execute()
+                .data or []
+            )
+        except Exception:
+            existing_render_jobs = []
+        return {
+            "success": True,
+            "course_id": job["created_course_id"],
+            "status": "draft",
+            "already_created": True,
+            "render_jobs_queued": len(existing_render_jobs),
+        }
     if job.get("status") not in {"draft", "review", "approved"}:
         raise HTTPException(status_code=409, detail="This course draft cannot be materialised in its current state.")
 
