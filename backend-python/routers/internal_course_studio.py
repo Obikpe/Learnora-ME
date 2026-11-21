@@ -76,7 +76,7 @@ class VideoScene(BaseModel):
     narration: str = Field(..., min_length=5, max_length=1200)
     visual_direction: str = Field(..., min_length=5, max_length=700)
     on_screen_text: list[str] = Field(default_factory=list, max_length=5)
-    visual_type: Literal["slides", "diagram", "screen_demo", "code_demo", "equation", "illustration", "text"]
+    visual_type: Literal["slides", "diagram", "table", "screen_demo", "code_demo", "equation", "illustration", "text"]
 
 
 class LessonPackageOutput(BaseModel):
@@ -390,7 +390,7 @@ async def generate_lesson_package(
         "the scene excerpts together must cover the script once, in order, without adding new spoken facts. "
         "The renderer uses deterministic slide, "
         "diagram, code, table and equation layouts, not a generative video model. For slides, put 2-4 short "
-        "points in on_screen_text; for diagram, put node labels in order; for code_demo, provide exact code "
+        "points in on_screen_text; for diagram, put node labels in order; for table, use pipe-separated rows with headers first; for code_demo, provide exact code "
         "as on_screen_text and never invent execution output; for screen_demo, describe reproducible steps "
         "and use only verified interface labels; for equation, preserve exact notation in on_screen_text. "
         "Do not ask a video model to draw exact code, equations or legible instructional text. Do not "
@@ -399,7 +399,7 @@ async def generate_lesson_package(
         "estimated_duration_seconds, concise_note, practice_activity, knowledge_check, video_plan, "
         "fact_check_notes. knowledge_check items use question, options, correct_option (zero-based index), "
         "explanation. video_plan items use narration, visual_direction, on_screen_text, visual_type "
-        "(slides, diagram, screen_demo, code_demo, equation, illustration, text)."
+        "(slides, diagram, table, screen_demo, code_demo, equation, illustration, text)."
     )
     data, provider = await _generate_json(system_prompt, lesson_context, max_tokens=4200)
     try:
