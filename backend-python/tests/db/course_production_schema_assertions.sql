@@ -282,7 +282,7 @@ BEGIN
         file_size_bytes, mime_type, status, is_private, transcript_text
     )
     VALUES (
-        v_human_lesson_id, 'supabase', 'courses/course-studio-ci/lessons/human-video.mp4',
+        v_human_lesson_id, 'cloudflare', 'courses/course-studio-ci/modules/0/lessons/human-video/human.mp4',
         'Human Video Lesson', 180, 2048, 'video/mp4', 'ready', true,
         'Human-produced video transcript for the test.'
     )
