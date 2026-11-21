@@ -163,14 +163,6 @@ BEGIN
         RAISE EXCEPTION 'Course draft creation is not idempotent';
     END IF;
 
-    SELECT order_index INTO v_track_order
-      FROM public.learnora_learning_path_courses
-     WHERE path_id = v_track_id AND course_id = v_course_id;
-
-    IF v_track_order IS DISTINCT FROM 0 THEN
-        RAISE EXCEPTION 'Generated course was not linked to its selected track in the expected order';
-    END IF;
-
     SELECT status INTO v_course_status
       FROM public.learnora_courses WHERE id = v_course_id;
     SELECT status INTO v_module_status
@@ -284,6 +276,14 @@ BEGIN
        OR v_published_job_status <> 'published'
        OR v_quiz_published IS DISTINCT FROM true THEN
         RAISE EXCEPTION 'Atomic publication did not publish the course hierarchy and knowledge check together';
+    END IF;
+
+    SELECT order_index INTO v_track_order
+      FROM public.learnora_learning_path_courses
+     WHERE path_id = v_track_id AND course_id = v_course_id;
+
+    IF v_track_order IS DISTINCT FROM 0 THEN
+        RAISE EXCEPTION 'Published course was not linked to its selected track in the expected order';
     END IF;
 END;
 $course_production_test$;
