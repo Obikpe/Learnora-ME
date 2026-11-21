@@ -175,6 +175,37 @@ def list_course_tracks(
     return {"success": True, "tracks": result.data or []}
 
 
+@router.get("/jobs/{job_id}")
+def get_course_generation_job(
+    job_id: UUID,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.generate")),
+):
+    try:
+        job_result = (
+            supabase.table("learnora_course_generation_jobs")
+            .select("*")
+            .eq("id", str(job_id))
+            .maybe_single()
+            .execute()
+        )
+        if not job_result.data:
+            raise HTTPException(status_code=404, detail="Course draft not found.")
+        package_result = (
+            supabase.table("learnora_lesson_production_packages")
+            .select("*")
+            .eq("job_id", str(job_id))
+            .order("module_order")
+            .order("lesson_order")
+            .order("version", desc=True)
+            .execute()
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=500, detail="The saved course draft could not be loaded.") from None
+    return {"success": True, "job": job_result.data, "packages": package_result.data or []}
+
+
 @router.post("/curriculum")
 async def generate_curriculum(
     payload: CurriculumRequest,
