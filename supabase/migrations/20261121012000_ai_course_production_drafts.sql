@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS public.learnora_lesson_production_packages (
     learning_objective text NOT NULL,
     lesson_format text NOT NULL
         CHECK (lesson_format IN ('narrated_visual', 'demonstration', 'text_practice', 'mixed')),
+    video_source text NOT NULL DEFAULT 'ai'
+        CHECK (video_source IN ('ai', 'human')),
     teaching_script text NOT NULL,
     estimated_duration_seconds integer NOT NULL
         CHECK (estimated_duration_seconds BETWEEN 30 AND 300),
@@ -70,7 +72,9 @@ CREATE TABLE IF NOT EXISTS public.learnora_lesson_production_packages (
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT learnora_lesson_production_packages_job_position_version_key
-        UNIQUE (job_id, module_order, lesson_order, version)
+        UNIQUE (job_id, module_order, lesson_order, version),
+    CONSTRAINT learnora_lesson_production_packages_human_video_format_check
+        CHECK (video_source <> 'human' OR lesson_format <> 'text_practice')
 );
 
 CREATE INDEX IF NOT EXISTS idx_lesson_production_packages_job_position
@@ -400,7 +404,8 @@ BEGIN
                 END LOOP;
             END IF;
 
-            IF v_package.lesson_format <> 'text_practice'
+            IF v_package.video_source = 'ai'
+               AND v_package.lesson_format <> 'text_practice'
                AND jsonb_typeof(v_package.video_plan) = 'array'
                AND jsonb_array_length(v_package.video_plan) > 0 THEN
                 INSERT INTO public.learnora_video_render_jobs (
@@ -550,7 +555,8 @@ BEGIN
            )
            AND (
                (p.lesson_format = 'text_practice' AND p.status NOT IN ('approved', 'ready'))
-               OR (p.lesson_format <> 'text_practice' AND p.status <> 'ready')
+               OR (p.video_source = 'human' AND p.status NOT IN ('approved', 'ready'))
+               OR (p.video_source = 'ai' AND p.lesson_format <> 'text_practice' AND p.status <> 'ready')
            )
     ) THEN
         RAISE EXCEPTION 'Every video lesson must finish rendering and every text lesson must be approved before publication';
@@ -581,8 +587,12 @@ BEGIN
                SELECT 1
                  FROM public.lesson_videos lv
                 WHERE lv.lesson_id = l.id
-                  AND lv.provider = 'cloudflare'
                   AND lv.status = 'ready'
+                  AND lv.is_private IS TRUE
+                  AND (
+                      (p.video_source = 'ai' AND lv.provider = 'cloudflare')
+                      OR (p.video_source = 'human' AND lv.provider IN ('supabase', 'cloudflare'))
+                  )
            )
     ) THEN
         RAISE EXCEPTION 'Every video lesson must have a ready private video asset before publication';
