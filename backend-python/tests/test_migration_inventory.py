@@ -36,7 +36,7 @@ class MigrationInventoryTests(unittest.TestCase):
             "20261118090841_password_session_invalidation.sql",
             "20261120133258_learner_birthdays_and_age_attestation.sql",
             "20261120133439_clear_birthday_data_on_account_deletion.sql",
-            "20261121150000_ai_course_production_drafts.sql",
+            "20261121012000_ai_course_production_drafts.sql",
         )
         for name in expected:
             with self.subTest(migration=name):
@@ -159,8 +159,8 @@ class MigrationInventoryTests(unittest.TestCase):
 
 
     def test_ai_course_production_migration_is_private_and_reversible(self):
-        migration = ACTIVE_DIR / "20261121150000_ai_course_production_drafts.sql"
-        rollback = ROOT / "supabase" / "rollback" / "20261121150000_ai_course_production_drafts.rollback.sql"
+        migration = ACTIVE_DIR / "20261121012000_ai_course_production_drafts.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261121012000_ai_course_production_drafts.rollback.sql"
         self.assertTrue(migration.is_file())
         self.assertTrue(rollback.is_file())
         sql = migration.read_text(encoding="utf-8")
