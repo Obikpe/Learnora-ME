@@ -131,6 +131,7 @@ export default function TeamCourseStudioPage() {
       return Boolean(packages[key]) && (packages[key].video_source || "ai") === (videoSourceModes[key] || "ai");
     }));
   }, [curriculum, packages, videoSourceModes]);
+  const humanVideosReady = courseLessons.filter(lesson => lesson.video_source === "human").every(lesson => lesson.has_ready_video);
 
   useEffect(() => {
     let active = true;
@@ -333,6 +334,57 @@ export default function TeamCourseStudioPage() {
       setTrackPublishError(error.message || "The learning track could not be published.");
     } finally {
       setTrackPublishBusy(false);
+    }
+  }
+
+  async function uploadHumanVideo(lessonId: string, file: File | null, lessonTitle: string) {
+    if (!file || !jobId || !canUploadHumanVideo) return;
+    const allowedTypes = ["video/mp4", "video/webm", "video/quicktime", "video/mpeg", "video/x-msvideo"];
+    if (!allowedTypes.includes(file.type)) {
+      setHumanVideoErrors(current => ({ ...current, [lessonId]: "Choose an MP4, WebM, MOV, MPEG or AVI video file." }));
+      return;
+    }
+    if (file.size > 2147483648) {
+      setHumanVideoErrors(current => ({ ...current, [lessonId]: "The video file must be 2 GB or smaller." }));
+      return;
+    }
+    setHumanVideoBusy(current => ({ ...current, [lessonId]: true }));
+    setHumanVideoErrors(current => ({ ...current, [lessonId]: "" }));
+    try {
+      const title = lessonTitle + " — human-produced video";
+      const ticket = await internalRequest("/content/lessons/" + encodeURIComponent(lessonId) + "/video-upload", {
+        method: "POST",
+        body: JSON.stringify({
+          filename: file.name,
+          content_type: file.type,
+          file_size_bytes: file.size,
+          title,
+        }),
+      });
+      const upload = await fetch(ticket.signed_url, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!upload.ok) throw new Error("The video file could not be uploaded to private storage.");
+      await internalRequest("/content/lessons/" + encodeURIComponent(lessonId) + "/videos", {
+        method: "POST",
+        body: JSON.stringify({
+          provider: "supabase",
+          title,
+          storage_path: ticket.path,
+          file_size_bytes: file.size,
+          mime_type: file.type,
+          status: "ready",
+          is_private: true,
+        }),
+      });
+      setHumanVideoFiles(current => ({ ...current, [lessonId]: null }));
+      await refreshVideoStatus(jobId);
+    } catch (error: any) {
+      setHumanVideoErrors(current => ({ ...current, [lessonId]: error.message || "The human-produced video could not be attached." }));
+    } finally {
+      setHumanVideoBusy(current => ({ ...current, [lessonId]: false }));
     }
   }
 
