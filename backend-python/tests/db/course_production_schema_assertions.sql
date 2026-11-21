@@ -31,25 +31,35 @@ BEGIN
     END IF;
 
     IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.learnora_course_generation_jobs'::regclass)
-       OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.learnora_lesson_production_packages'::regclass) THEN
+       OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.learnora_lesson_production_packages'::regclass)
+       OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.learnora_video_render_jobs'::regclass) THEN
         RAISE EXCEPTION 'AI course production tables must have RLS enabled';
     END IF;
 
     IF has_table_privilege('anon', 'public.learnora_course_generation_jobs', 'SELECT')
        OR has_table_privilege('authenticated', 'public.learnora_course_generation_jobs', 'SELECT')
        OR has_table_privilege('anon', 'public.learnora_lesson_production_packages', 'SELECT')
-       OR has_table_privilege('authenticated', 'public.learnora_lesson_production_packages', 'SELECT') THEN
+       OR has_table_privilege('authenticated', 'public.learnora_lesson_production_packages', 'SELECT')
+       OR has_table_privilege('anon', 'public.learnora_video_render_jobs', 'SELECT')
+       OR has_table_privilege('authenticated', 'public.learnora_video_render_jobs', 'SELECT') THEN
         RAISE EXCEPTION 'AI course production tables must not be directly readable by browser roles';
     END IF;
 
     IF NOT has_table_privilege('service_role', 'public.learnora_course_generation_jobs', 'SELECT')
-       OR NOT has_table_privilege('service_role', 'public.learnora_lesson_production_packages', 'INSERT') THEN
+       OR NOT has_table_privilege('service_role', 'public.learnora_lesson_production_packages', 'INSERT')
+       OR NOT has_table_privilege('service_role', 'public.learnora_video_render_jobs', 'SELECT') THEN
         RAISE EXCEPTION 'service_role is missing required AI course production table grants';
     END IF;
 
     IF has_function_privilege('anon', 'public.create_course_from_generation_job(uuid)', 'EXECUTE')
        OR has_function_privilege('authenticated', 'public.create_course_from_generation_job(uuid)', 'EXECUTE')
-       OR NOT has_function_privilege('service_role', 'public.create_course_from_generation_job(uuid)', 'EXECUTE') THEN
+       OR NOT has_function_privilege('service_role', 'public.create_course_from_generation_job(uuid)', 'EXECUTE')
+       OR has_function_privilege('anon', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
+       OR has_function_privilege('authenticated', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
+       OR NOT has_function_privilege('service_role', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
+       OR has_function_privilege('anon', 'public.complete_learnora_video_render_job(uuid,uuid,integer,bigint,text)', 'EXECUTE')
+       OR has_function_privilege('authenticated', 'public.complete_learnora_video_render_job(uuid,uuid,integer,bigint,text)', 'EXECUTE')
+       OR NOT has_function_privilege('service_role', 'public.complete_learnora_video_render_job(uuid,uuid,integer,bigint,text)', 'EXECUTE') THEN
         RAISE EXCEPTION 'Course creation RPC grants are not restricted to service_role';
     END IF;
 
@@ -185,7 +195,7 @@ BEGIN
     END IF;
 
     v_claim := public.claim_next_learnora_video_render_job();
-    IF v_claim->>'id' <> v_render_job_id::text
+    IF v_claim IS NULL OR v_claim->>'id' <> v_render_job_id::text
        OR v_claim->>'status' <> 'processing'
        OR (v_claim->>'attempt_count')::integer <> 1 THEN
         RAISE EXCEPTION 'The video worker could not claim the queued render job';
