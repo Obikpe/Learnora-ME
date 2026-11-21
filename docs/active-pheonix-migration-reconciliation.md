@@ -340,3 +340,16 @@ The 12 timestamp mismatches are:
 The live ledger now contains `20261118214152_public_course_catalogue_rpc`; the earlier note that the public catalogue RPC was pending is no longer current. A read-only catalog check confirms that both `get_public_course_catalogue()` and `get_public_track_catalogue()` exist with the expected table return shapes, are invoker-security functions with an empty search path, and are executable by `service_role` but not by `anon` or `authenticated`. The expected `idx_path_courses_course_path` index also exists. This confirms the expected live objects and grants, but does not prove byte-for-byte provenance of the applied migration body against the differently timestamped repository file.
 
 **Release rule remains unchanged:** do not run `supabase db push` from the current repository. The version identifiers are the migration CLI's identity; equivalent SQL under a different timestamp is still a pending repository migration from the CLI's perspective. Reconcile the 12 filenames only after reviewing source provenance and ensuring the migration bodies are equivalent to the applied live migrations. Keep `20261026153000_revoke_browser_privileges_and_defaults.sql` separate until its grants/default ACL effects are reviewed against the active managed Supabase role configuration. No migration, schema, grant, or production data was changed during this 21 November verification.
+
+
+## Migration filename reconciliation completed — 21 November 2026
+
+The repository migration directory has now been reconciled to the active Pheonix ledger:
+- Live ledger: **56 applied versions**.
+- Active `supabase/migrations/`: **56 SQL files**.
+- A version-by-version comparison now reports **zero missing live sources and zero repository-only active migrations**.
+- The 12 previously mismatched filenames were moved to the exact live version identifiers. For the 11 timestamp counterparts, the prior recorded SQL-body equivalence review was relied upon. For `20261118214152_public_course_catalogue_rpc`, the live function definitions, return signatures, invoker security, empty search path, service-role-only execution grants and supporting index were checked against the repository source before the version was aligned.
+- The CI migration rehearsal now applies the selected additive migrations in live timestamp order and uses the aligned source filenames.
+- The unapplied `20261026153000_revoke_browser_privileges_and_defaults.sql` was moved out of the active migration directory to `supabase/pending_migrations/`. It is preserved for review and is not an active migration.
+
+This resolves the filename/ledger mismatch blocker for creating a new versioned migration. It does **not** mean the pending browser-privilege migration is approved, nor does it authorise applying a new migration to the live Pheonix project. Continue to test new migrations against disposable/current-schema staging first and obtain separate approval before any production application. No live schema, migration ledger, grants or data were changed by this reconciliation.
