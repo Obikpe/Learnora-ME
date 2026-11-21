@@ -1,0 +1,85 @@
+name: Learnora ME Video Renderer
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: learnora-me-video-renderer
+  cancel-in-progress: false
+
+jobs:
+  render:
+    name: Render queued lesson videos
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Check required secrets
+        id: config
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          if [[ -z "$SUPABASE_URL" || -z "$SUPABASE_SERVICE_ROLE_KEY" || -z "$R2_ACCOUNT_ID" || -z "$R2_ACCESS_KEY_ID" || -z "$R2_SECRET_ACCESS_KEY" || -z "$R2_BUCKET_NAME" ]]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Video rendering skipped: configure the Supabase and Cloudflare R2 repository secrets."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out repository
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/video_renderer/requirements.txt
+
+      - name: Cache Kokoro model files
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/learnora-kokoro
+          key: learnora-kokoro-v1.1-int8-${{ runner.os }}
+          restore-keys: |
+            learnora-kokoro-v1.1-int8-${{ runner.os }}
+
+      - name: Install FFmpeg and fonts
+        if: steps.config.outputs.configured == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          ffmpeg -hide_banner -filters | grep -q subtitles
+
+      - name: Install renderer dependencies
+        if: steps.config.outputs.configured == 'true'
+        run: python -m pip install --upgrade pip && pip install -r scripts/video_renderer/requirements.txt
+
+      - name: Process queued videos
+        if: steps.config.outputs.configured == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: python scripts/video_renderer/worker.py --max-jobs 2
+
+      - name: Explain skipped configuration
+        if: steps.config.outputs.configured != 'true'
+        run: echo "Add SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_BUCKET_NAME under repository Actions secrets to enable the renderer."
