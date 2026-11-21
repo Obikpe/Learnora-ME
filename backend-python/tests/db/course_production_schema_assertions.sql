@@ -17,6 +17,13 @@ DECLARE
     v_quiz_published boolean;
     v_question_count integer;
     v_correct_answer text;
+    v_render_job_id uuid;
+    v_claim jsonb;
+    v_object_key text;
+    v_video_id uuid;
+    v_render_status text;
+    v_package_status text;
+    v_video_status text;
 BEGIN
     IF to_regclass('public.learnora_course_generation_jobs') IS NULL
        OR to_regclass('public.learnora_lesson_production_packages') IS NULL THEN
@@ -116,7 +123,8 @@ BEGIN
         'This is the private teaching script. It explains the concept, demonstrates an example, and concludes with a recap.',
         120, 'A short learner-facing note.', 'Try applying the concept to one example.',
         '[{"question":"Which option is correct?","options":["Option A","Option B"],"correct_option":1,"explanation":"Option B is correct."}]'::jsonb,
-        '[]'::jsonb, ARRAY[]::text[], 'approved',
+        '[{"narration":"This is the opening narration for the lesson.","visual_direction":"A clean title slide with a simple concept diagram.","on_screen_text":["The key concept"],"visual_type":"slides"}]'::jsonb,
+        ARRAY[]::text[], 'approved',
         'openrouter', 'openrouter/free', v_staff_id, now()
     );
 
@@ -166,6 +174,54 @@ BEGIN
     IF v_quiz_id IS NULL OR v_quiz_published IS DISTINCT FROM false
        OR v_question_count <> 1 OR v_correct_answer <> 'Option B' THEN
         RAISE EXCEPTION 'Generated knowledge check was not created as an unpublished quiz with the correct answer';
+    END IF;
+
+    SELECT id, object_key INTO v_render_job_id, v_object_key
+      FROM public.learnora_video_render_jobs
+     WHERE generation_job_id = v_job_id AND lesson_id = v_lesson_id;
+
+    IF v_render_job_id IS NULL OR v_object_key NOT LIKE 'courses/%/modules/%/lessons/%/%.mp4' THEN
+        RAISE EXCEPTION 'A private render job was not queued for the generated video lesson';
+    END IF;
+
+    v_claim := public.claim_next_learnora_video_render_job();
+    IF v_claim->>'id' <> v_render_job_id::text
+       OR v_claim->>'status' <> 'processing'
+       OR (v_claim->>'attempt_count')::integer <> 1 THEN
+        RAISE EXCEPTION 'The video worker could not claim the queued render job';
+    END IF;
+
+    SELECT status INTO v_package_status
+      FROM public.learnora_lesson_production_packages
+     WHERE job_id = v_job_id AND lesson_id = v_lesson_id;
+    IF v_package_status <> 'rendering' THEN
+        RAISE EXCEPTION 'Claiming a video job did not move its package to rendering';
+    END IF;
+
+    INSERT INTO public.lesson_videos (
+        lesson_id, provider, storage_path, title, duration_seconds,
+        file_size_bytes, mime_type, status, is_private, transcript_text
+    )
+    VALUES (
+        v_lesson_id, 'cloudflare', v_object_key, 'Test Lesson', 120,
+        1024, 'video/mp4', 'processing', true, 'Private teaching transcript for the test.'
+    )
+    RETURNING id INTO v_video_id;
+
+    PERFORM public.complete_learnora_video_render_job(
+        v_render_job_id, v_video_id, 120, 1024, repeat('a', 64)
+    );
+
+    SELECT status INTO v_render_status
+      FROM public.learnora_video_render_jobs WHERE id = v_render_job_id;
+    SELECT status INTO v_package_status
+      FROM public.learnora_lesson_production_packages
+     WHERE job_id = v_job_id AND lesson_id = v_lesson_id;
+    SELECT status INTO v_video_status
+      FROM public.lesson_videos WHERE id = v_video_id;
+
+    IF v_render_status <> 'completed' OR v_package_status <> 'ready' OR v_video_status <> 'ready' THEN
+        RAISE EXCEPTION 'Completing a video render did not mark the render job, package and video as ready';
     END IF;
 END;
 $course_production_test$;
