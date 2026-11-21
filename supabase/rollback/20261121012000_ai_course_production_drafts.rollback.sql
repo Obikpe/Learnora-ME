@@ -9,6 +9,8 @@ DROP FUNCTION IF EXISTS public.create_course_from_generation_job(uuid);
 DROP TABLE IF EXISTS public.learnora_video_render_jobs;
 DROP TABLE IF EXISTS public.learnora_lesson_production_packages;
 DROP TABLE IF EXISTS public.learnora_course_generation_jobs;
+DROP INDEX IF EXISTS public.idx_lesson_videos_cloudflare_storage_path;
+
 DROP FUNCTION IF EXISTS public.touch_course_production_updated_at();
 
 DELETE FROM public.learnora_staff_role_permissions
