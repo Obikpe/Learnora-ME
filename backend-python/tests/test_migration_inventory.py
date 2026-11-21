@@ -168,6 +168,7 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("learnora_lesson_production_packages", sql)
         self.assertIn("learnora_video_render_jobs", sql)
         self.assertIn("claim_next_learnora_video_render_job", sql)
+        self.assertIn("requeue_stale_learnora_video_render_jobs", sql)
         self.assertIn("complete_learnora_video_render_job", sql)
         self.assertIn("ENABLE ROW LEVEL SECURITY", sql)
         self.assertIn("REVOKE ALL ON TABLE", sql)
