@@ -38,7 +38,7 @@ Implement the individual learner path as one coherent vertical slice across back
 
 **Authority warning:** Sections 1–3 below retain earlier proposed identity and access architecture and must be read only where consistent with current approved decisions. They are not, by themselves, the final target model. Section 4 has been replaced with the current approved organisation/cohort account revocation and deletion rule. [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) governs cross-product decisions. The two-way email exclusivity rule is approved; the canonical identity registry, legacy conflict reconciliation and migration design remain unresolved. Cohorts must not be reduced to a generic organisation resource scope; their separate domain model remains governed by the cohort specifications. Do not implement identity convergence or migration without an approved preservation and transition plan.
 
-## 1.1 Earlier proposed identity and access rules
+## 1.1 Identity and access invariants — historical proposal, subject to current approved decisions
 
 1. **One email address represents one account identity and one account context at a time.** The same email must never authenticate as an individual learner in one flow and an organisation learner in another, nor as separate cohort accounts in different cohorts.
 2. **Organisation-managed and individual Learnora accounts are mutually exclusive by email.** An email associated with an organisation/cohort-managed account cannot be used for an individual learner account, and an email associated with an individual learner account cannot be used for an organisation/cohort-managed account. Under the current approved lifecycle, revoking organisation/cohort access deletes the managed account and its associated data; after deletion, the email is no longer reserved by that account and may be used through the normal registration/invitation checks.
@@ -75,7 +75,7 @@ An email cannot hold two of these account classes simultaneously. In particular:
 
 ### Canonical email
 
-All account creation, invitation, lookup and release operations use a single normalisation function (trim whitespace, lowercase, validate syntax). The database must enforce uniqueness against the canonical email identity, including across individual, organisation-managed, independent-tutor and cohort-era records during migration. Case-insensitive application checks alone are not sufficient to prevent concurrent duplicate creation.
+All account creation, invitation, lookup and account-deletion operations use a single normalisation function (trim whitespace, lowercase, validate syntax). The database must enforce uniqueness against the canonical email identity, including across individual, organisation-managed, independent-tutor and cohort-era records during migration. Case-insensitive application checks alone are not sufficient to prevent concurrent duplicate creation.
 
 ## 3. Earlier proposed authentication and registration model
 
@@ -83,7 +83,7 @@ All account creation, invitation, lookup and release operations use a single nor
 
 1. Validate and canonicalise email.
 2. Check the authoritative identity registry and all legacy account sources covered by the compatibility guard.
-3. If any active, pending, invited, suspended-but-retained, or otherwise reserved organisation-managed identity exists, reject individual registration with a safe explanation: the organisation must release the account first.
+3. If any active, pending, invited, suspended-but-retained, or otherwise reserved organisation-managed identity exists, reject individual registration with a safe explanation: the organisation-managed account must first be deleted through the authorised organisation access-revocation process.
 4. If an individual or independent-tutor identity already exists, do not create another account.
 5. Create a pending individual learner identity and run the existing email verification flow. The existing free-launch and paid entitlement history remains intact.
 
