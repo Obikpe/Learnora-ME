@@ -518,7 +518,7 @@ def get_course_video_previews(
 
         video_rows = (
             supabase.table("lesson_videos")
-            .select("id,lesson_id,title,duration_seconds,status,provider,storage_path,external_video_id")
+            .select("id,lesson_id,title,duration_seconds,status,provider,storage_path,external_video_id,is_private")
             .in_("lesson_id", lesson_ids)
             .eq("provider", "cloudflare")
             .eq("status", "ready")
@@ -1069,7 +1069,7 @@ def publish_generated_course(
         if lesson_ids:
             ready_videos = (
                 supabase.table("lesson_videos")
-                .select("id,lesson_id,provider,storage_path,external_video_id")
+                .select("id,lesson_id,provider,storage_path,external_video_id,is_private")
                 .in_("lesson_id", lesson_ids)
                 .eq("provider", "cloudflare")
                 .eq("status", "ready")
