@@ -249,6 +249,23 @@ def render_scene_image(
                 draw.line((x + box_width + 3, mid_y, x + box_width + 20, mid_y), fill="#ff6b4a", width=4)
                 draw.polygon([(x + box_width + 20, mid_y - 8), (x + box_width + 32, mid_y), (x + box_width + 20, mid_y + 8)], fill="#ff6b4a")
             x += box_width + 24
+    elif visual_type == "table":
+        rows = [[cell.strip() for cell in row.split("|")] for row in texts[:7]]
+        column_count = min(4, max((len(row) for row in rows), default=1))
+        table_x, table_y, table_width = 116, 280, WIDTH - 232
+        row_height = min(48, int(320 / max(1, len(rows))))
+        column_width = table_width / column_count
+        for row_index, row in enumerate(rows):
+            for column_index in range(column_count):
+                x = int(table_x + column_index * column_width)
+                y = table_y + row_index * row_height
+                cell_fill = "#293b5b" if row_index == 0 else ("#1b2940" if row_index % 2 else "#162338")
+                draw.rounded_rectangle((x + 3, y + 2, int(x + column_width - 3), y + row_height - 3), radius=6, fill=cell_fill, outline="#344767", width=1)
+                value = row[column_index] if column_index < len(row) else ""
+                cell_font = font(FONT_BOLD if row_index == 0 else FONT_REGULAR, 17)
+                draw_wrapped(draw, value, (x + 12, y + 8), cell_font, "#f0f3f9" if row_index == 0 else "#d5deeb", int(column_width - 24), 4, 2)
+        draw.text((116, 618), "Illustrative dataset", font=small, fill="#8e9db3")
+
     elif visual_type == "screen_demo":
         rows = texts[:5]
         card_gap = 14
