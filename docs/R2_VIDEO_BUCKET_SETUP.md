@@ -24,6 +24,7 @@ Create a standard R2 bucket, keep public access disabled, and configure CORS for
   {
     "AllowedOrigins": [
       "https://learnorame.vercel.app",
+      "https://learnora-me.vercel.app",
       "http://localhost:3000"
     ],
     "AllowedMethods": ["GET", "HEAD", "PUT"],
@@ -39,7 +40,7 @@ Create a standard R2 bucket, keep public access disabled, and configure CORS for
 ]
 ```
 
-The backend signs GET access for playback and short-lived PUT access for authorised Course Studio uploads. Uploads happen only in the internal staff workflow, never on learner pages.
+The backend signs GET access for playback and short-lived PUT access for authorised Course Studio uploads. Uploads happen only in the internal staff workflow, never on learner pages. The Team content workspace also uploads human-produced videos for AI-generated courses through this same R2 path, so its production origin (`learnora-me.vercel.app`) must be allowed by the bucket CORS policy.
 
 ## Required environment variables
 
