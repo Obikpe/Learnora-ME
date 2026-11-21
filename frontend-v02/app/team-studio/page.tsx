@@ -283,7 +283,7 @@ export default function TeamCourseStudioPage() {
                   <button onClick={() => void createDraftCourse()} disabled={!jobId || Object.keys(packages).length !== lessonCount || lessonCount === 0 || Object.values(packageBusy).some(Boolean) || createDraftBusy || Boolean(createdCourseId)} className="rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{createDraftBusy ? "Creating draft…" : "I have reviewed the packages — create draft course"}</button>
                 </div>
                 {createDraftError && <p role="alert" className="mt-3 rounded-lg border border-red-400/20 bg-red-400/5 p-3 text-sm text-red-200">{createDraftError}</p>}
-                {createdCourseId && <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[.04] p-3"><p className="text-sm font-semibold text-emerald-200">Draft course created</p><p className="mt-1 text-xs text-slate-400">Course ID: {createdCourseId}. Target track: {tracks.find(track => track.id === targetTrackId)?.name || "Standalone course"}. It remains unpublished and is not visible in the learner catalogue.</p></div>}
+                {createdCourseId && <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[.04] p-3"><p className="text-sm font-semibold text-emerald-200">Draft course created</p><p className="mt-1 text-xs text-slate-400">Course ID: {createdCourseId}. Target track: {targetTrackId ? (tracks.find(track => track.id === targetTrackId)?.name || "Selected Learnora ME track") : "Standalone course"}. It remains unpublished and is not visible in the learner catalogue.</p></div>}
               </div>
             </section>}
           </div>
