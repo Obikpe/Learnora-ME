@@ -51,7 +51,7 @@ Add these to the backend project (`learnora-backend`) for the production environ
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 
-The backend needs R2 read permission to create signed playback URLs. Use a bucket-scoped R2 API token.
+The backend needs only R2 object-read permission to create signed playback URLs. Use a bucket-scoped read-only R2 API token; do not give the Vercel backend upload permission.
 
 ### GitHub — repository Actions secrets
 
@@ -61,10 +61,10 @@ In `Obikpe/Learnora-ME` → Settings → Secrets and variables → Actions, add:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `R2_ACCOUNT_ID`
 - `R2_BUCKET_NAME`
-- `R2_ACCESS_KEY_ID`
-- `R2_SECRET_ACCESS_KEY`
+- `R2_ACCESS_KEY_ID` (read-only token)
+- `R2_SECRET_ACCESS_KEY` (read-only token)
 
-The worker needs Supabase service-role access to claim render jobs and update lesson media metadata, plus R2 object write access. These secrets must never be committed to the repository, printed in logs, or exposed to browser code.
+Create a separate bucket-scoped R2 API token with object read/write permission for the worker. The worker needs Supabase service-role access to claim render jobs and update lesson media metadata, plus R2 upload permission. These secrets must never be committed to the repository, printed in logs, or exposed to browser code.
 
 ## Rendering worker
 
@@ -102,7 +102,7 @@ The Kokoro ONNX Python package is MIT-licensed and the Kokoro 82M model is Apach
 - [ ] Create a bucket-scoped R2 API token with object read/write access.
 - [ ] Configure the R2 CORS policy above, adding any real custom domain.
 - [ ] Add the four R2 variables to the Vercel backend environment.
-- [ ] Add the six Supabase/R2 secrets to GitHub Actions.
+- [ ] Add the six GitHub worker secrets (Supabase URL/key, R2 account/bucket and the separate worker access/secret key) to GitHub Actions.
 - [ ] Apply the pending Course Studio/video-render migration to live Pheonix only after the migration rehearsal passes and the release is approved.
 - [ ] Deploy the backend and Learnora ME frontend only after the migration is applied.
 - [ ] Run one test lesson end to end; verify the MP4, captions, R2 object, signed playback URL and learner access restriction.
