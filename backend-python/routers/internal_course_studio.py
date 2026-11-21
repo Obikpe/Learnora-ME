@@ -212,6 +212,21 @@ async def generate_curriculum(
             detail="The generated curriculum did not meet Learnora's required structure. Please retry or simplify the outline.",
         ) from None
 
+    if payload.target_track_id:
+        try:
+            track_result = (
+                supabase.table("learnora_learning_paths")
+                .select("id,owner_user_id,organisation_id")
+                .eq("id", str(payload.target_track_id))
+                .maybe_single()
+                .execute()
+            )
+        except Exception:
+            raise HTTPException(status_code=500, detail="The selected Learnora ME track could not be verified.") from None
+        track = track_result.data
+        if not track or track.get("owner_user_id") or track.get("organisation_id"):
+            raise HTTPException(status_code=422, detail="Only an existing Learnora ME global track can be selected here.")
+
     job_id = uuid4()
     course_slug = f"{_slugify(output.course_title)}-{job_id.hex[:8]}"
     usage = provider.get("usage") or {}
