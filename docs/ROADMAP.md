@@ -714,6 +714,7 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [x] Link a generated course to its selected global track during atomic publication, after rechecking track enrolment locks.
 - [x] Add a final publish action restricted to the existing `content.manage` permission; generation-only staff cannot publish.
 - [x] Add staff-only video previews so reviewers can watch rendered lessons before publication; block publication unless the backend can read every rendered R2 object and sign learner playback URLs.
+- [x] Let staff select AI or human video production per lesson; human-produced videos upload to the existing private Supabase media bucket and are required before publication.
 - [x] Allow authorised Course Studio staff to create a draft global track and publish it after its linked course passes validation.
 - [x] Add an atomic, permission-gated publication action that checks completed video jobs, ready media and valid knowledge checks before publishing the course hierarchy.
 - [ ] Complete real course review and publication after the video worker is configured and the migration is approved.
