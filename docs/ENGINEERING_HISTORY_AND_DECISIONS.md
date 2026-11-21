@@ -5,7 +5,7 @@
 **Scope:** Learnora ME, Learnora Teams, their shared backend, and Supabase schema/migration work.  
 **Branch rule for the current documentation task:** all three new engineering documents are committed to `main`; no alternate branch is to be used for this documentation work.
 
-This is an evidence register, not a claim that every historic issue is resolved. Historical CI links are tied to the exact SHA/run described and must not be treated as evidence for current `main` unless the SHA matches.
+This is an evidence register, not a claim that every historic issue is resolved. For current approved cross-product decisions and sequencing, use [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md); the entries below preserve historical decisions and dated implementation snapshots and do not override that register. Historical CI links are tied to the exact SHA/run described and must not be treated as evidence for current `main` unless the SHA matches. Where an earlier entry conflicts with a current approved decision, retain it as history and follow the decision register.
 
 ## 1. Product and repository decisions
 
