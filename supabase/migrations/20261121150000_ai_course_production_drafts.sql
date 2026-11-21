@@ -622,14 +622,14 @@ BEGIN
                qq.question_type <> 'multiple_choice'
                OR NULLIF(trim(qq.question), '') IS NULL
                OR jsonb_typeof(qq.options) IS DISTINCT FROM 'array'
-               OR jsonb_array_length(qq.options) < 2
+               OR CASE WHEN jsonb_typeof(qq.options) = 'array' THEN jsonb_array_length(qq.options) ELSE 0 END < 2
                OR NULLIF(qq.correct_answer #>> '{}', '') IS NULL
                OR NOT EXISTS (
                    SELECT 1
                      FROM jsonb_array_elements_text(
                          CASE WHEN jsonb_typeof(qq.options) = 'array' THEN qq.options ELSE '[]'::jsonb END
-                     ) AS option_value
-                    WHERE option_value = qq.correct_answer #>> '{}'
+                      ) AS option_item(value)
+                    WHERE option_item.value = qq.correct_answer #>> '{}'
                )
            )
     ) THEN
