@@ -2,12 +2,12 @@
 
 **Status:** Engineering source of truth (living document)  
 **Last reviewed:** 21 November 2026  
-**Repository:** `Obikpe/Pheonix-Analytics`  
+**Repository:** `Obikpe/Learnora-ME`  
 **Default and requested working branch:** `main`  
 **Products covered:** Learnora ME and Learnora Teams  
 **Implementation roots:** `frontend-v02/`, `frontend-team/`, `backend-python/`, `supabase/`
 
-This document describes the product intent, current repository structure, architecture, major workflows, security expectations, and rebuild procedure. It distinguishes implemented behaviour from intended behaviour and known gaps. Where repository evidence does not establish a detail, it is marked **needs verification** rather than invented.
+This document describes product intent, repository structure, architecture, workflows, security expectations and rebuild procedure. Cross-product decisions and implementation order are governed by [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md); this specification defines domain detail within those decisions. It distinguishes implemented behaviour from intended behaviour and known gaps. Where repository evidence does not establish a detail, it is marked **needs verification** rather than invented.
 
 ## 1. Product overview
 
@@ -15,16 +15,18 @@ Learnora is a learning and skills-development platform built around a journey fr
 
 The platform has two distinct web applications backed by a shared Python API and Supabase data platform:
 
-- **Learnora ME** is the customer-facing experience for learners, tutors/creators, public discovery, individual learning, and customer organisations.
-- **Learnora Teams** is the internal workforce application for Super Admin and staff operations. It is not the customer organisation portal; customer organisation workflows live in Learnora ME.
+- **Learnora ME** is the customer-facing learning website: public discovery and learner delivery, with customer organisation workflows planned for a later phase.
+- **Learnora Teams** is the separate internal workforce website and the intended home of authorised internal course/content production, AI orchestration, review, acceptance and publishing. It is not the customer organisation portal.
+
+The current Course Studio prototype's placement inside Learnora ME is transitional implementation history, not the target product boundary. See [AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md](AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md) and PD-003 in the decision register.
 
 ### Product principles
 
 1. Use actual API records for operational metrics and public claims.
 2. Tenant boundaries are enforced by backend scope checks and database constraints, not merely by hiding UI controls.
-3. A learner's cohort/track assignment is fixed for that cohort. A cohort-specific account may differ from the public Learnora account.
+3. A learner's cohort/track assignment is governed by the cohort's own model and remains fixed for that cohort. The repository historically uses cohort-specific login identities; whether that remains the target identity model is unresolved (see PD-005 and UR-003 in the decision register).
 4. A learner's historical user record remains for reference/statistics after cohort closure, while cohort membership and account access are deactivated according to lifecycle rules.
-5. Organisation, team, and cohort assignments are separate concepts; team/cohort scoped access must not silently become organisation-wide access.
+5. Cohort teams and corporate organisation teams are distinct domain models. Team/cohort-scoped access must not silently become organisation-wide access.
 6. Loading, empty, validation, error, success, and permission-denied states are first-class UI states.
 7. Avoid paid dependencies when the existing stack is sufficient; do not add a design/component library without a clear need.
 8. No destructive schema/data action is justified solely to make migration history or a schema diff look clean.
@@ -142,9 +144,13 @@ Target lifecycle:
 
 A scoped team/cohort entitlement is not an organisation-wide grant. A learner who loses active membership or assignment must lose the corresponding content access even if a stale enrolment row remains.
 
-### 5.4 Cohort-specific account and login
+### 5.4 Cohort account and login — current implementation; target identity unresolved
 
-Cohort learner identities are deliberately distinct from `public.users` to allow a cohort-specific identity for the same email without weakening the public user's unique-email constraint. The relevant implementation is `backend-python/routers/cohort_learners.py`; tests include `test_cohort_login_security.py`, `test_cohort_learner_workflow.py`, `test_cohort_archive_lifecycle.py`, and `test_cohort_api_lifecycle.py`.
+**Current repository behaviour:** cohort learner identities are stored separately from `public.users`, with the cohort login implementation in `backend-python/routers/cohort_learners.py`. Relevant tests include `test_cohort_login_security.py`, `test_cohort_learner_workflow.py`, `test_cohort_archive_lifecycle.py`, and `test_cohort_api_lifecycle.py`.
+
+This describes the historical/current implementation only. It does not settle the target global identity model. The account architecture's proposed identity convergence conflicts with older cohort-specific identity assumptions; PD-005 requires preservation of existing cohort access and data, while UR-003 remains unresolved. Do not convert identities or design an identity migration until the product owner has approved the target model and a preservation plan.
+
+Cohorts have their own teams. Cohort teams can include tutors assigned to tracks created by that cohort, alongside learners and other cohort-specific operations. Their exact types, responsibilities, membership rules, dashboard behaviour and permission matrix remain to be specified. Do not substitute the corporate organisation team model for this missing cohort detail.
 
 Security requirements:
 
