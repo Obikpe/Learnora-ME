@@ -175,11 +175,28 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("SECURITY DEFINER", sql)
         self.assertIn("SET search_path = ''", sql)
         self.assertIn("create_course_from_generation_job", sql)
+        self.assertIn("publish_course_from_generation_job", sql)
+        self.assertIn("published_at timestamptz", sql)
+        self.assertIn("learnora_learning_path_courses", sql)
         self.assertIn("content.generate", sql)
         self.assertIn("TO service_role", sql)
         rollback_sql = rollback.read_text(encoding="utf-8")
         self.assertIn("DROP TABLE IF EXISTS public.learnora_lesson_production_packages", rollback_sql)
         self.assertIn("DROP TABLE IF EXISTS public.learnora_course_generation_jobs", rollback_sql)
+        self.assertIn("DROP FUNCTION IF EXISTS public.publish_course_from_generation_job(uuid)", rollback_sql)
+
+    def test_video_renderer_uses_private_media_schema_and_separate_worker_credentials(self):
+        worker = (ROOT / "scripts" / "video_renderer" / "worker.py").read_text(encoding="utf-8")
+        workflow = (ROOT / ".github" / "workflows" / "learnora-video-renderer.yml").read_text(encoding="utf-8")
+        self_test = ROOT / "scripts" / "video_renderer" / "self_test.py"
+        self.assertTrue(self_test.is_file())
+        self.assertIn('R2_WORKER_ACCESS_KEY_ID', worker)
+        self.assertIn('R2_WORKER_SECRET_ACCESS_KEY', worker)
+        self.assertIn('"provider": "cloudflare"', worker)
+        self.assertIn('"storage_path": job["object_key"]', worker)
+        self.assertNotIn('"storage_bucket": bucket', worker)
+        self.assertIn('R2_WORKER_ACCESS_KEY_ID', workflow)
+        self.assertIn('R2_WORKER_SECRET_ACCESS_KEY', workflow)
 
     def test_quota_fix_preserves_unlimited_monthly_limit_contract(self):
         sql = (ACTIVE_DIR / "20261020232148_allow_unlimited_monthly_ai_quota.sql").read_text(
