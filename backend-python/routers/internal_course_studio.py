@@ -157,6 +157,13 @@ def course_studio_access(
     }
 
 
+@router.get("/publish-access")
+def course_studio_publish_access(
+    staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
+):
+    return {"success": True, "can_publish": True}
+
+
 @router.get("/tracks")
 def list_course_tracks(
     staff: InternalStaffContext = Depends(require_internal_permission("content.generate")),
@@ -511,7 +518,7 @@ async def create_course_draft(
     job = job_result.data
     if not job:
         raise HTTPException(status_code=404, detail="Course draft not found.")
-    if job.get("status") == "created" and job.get("created_course_id"):
+    if job.get("status") in {"created", "published"} and job.get("created_course_id"):
         try:
             existing_render_jobs = (
                 supabase.table("learnora_video_render_jobs")
@@ -525,7 +532,7 @@ async def create_course_draft(
         return {
             "success": True,
             "course_id": job["created_course_id"],
-            "status": "draft",
+            "status": "published" if job.get("status") == "published" else "draft",
             "already_created": True,
             "render_jobs_queued": sum(1 for item in existing_render_jobs if item.get("status") in {"queued", "processing"}),
         }
@@ -619,3 +626,91 @@ async def create_course_draft(
         },
     )
     return {"success": True, "course_id": str(course_id), "status": "draft", "already_created": False, "render_jobs_queued": sum(1 for item in render_jobs if item.get("status") in {"queued", "processing"})}
+
+
+@router.post("/jobs/{job_id}/publish")
+def publish_generated_course(
+    job_id: UUID,
+    request: Request,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
+):
+    try:
+        job_result = (
+            supabase.table("learnora_course_generation_jobs")
+            .select("id,status,created_course_id,course_title")
+            .eq("id", str(job_id))
+            .maybe_single()
+            .execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="The course publication status could not be checked.") from None
+
+    job = job_result.data
+    if not job or not job.get("created_course_id"):
+        raise HTTPException(status_code=404, detail="The generated course draft was not found.")
+    if job.get("status") == "published":
+        return {
+            "success": True,
+            "course_id": str(job["created_course_id"]),
+            "status": "published",
+            "already_published": True,
+        }
+    if job.get("status") != "created":
+        raise HTTPException(status_code=409, detail="Create and review the course draft before publishing it.")
+
+    try:
+        render_jobs = (
+            supabase.table("learnora_video_render_jobs")
+            .select("id,status")
+            .eq("generation_job_id", str(job_id))
+            .execute()
+            .data or []
+        )
+    except Exception:
+        raise HTTPException(status_code=503, detail="Video production status could not be verified. Please retry.") from None
+
+    unfinished = [item for item in render_jobs if item.get("status") != "completed"]
+    if unfinished:
+        raise HTTPException(
+            status_code=409,
+            detail="The course is not ready to publish. Finish or retry every lesson video first.",
+        )
+
+    try:
+        result = supabase.rpc(
+            "publish_course_from_generation_job",
+            {"p_job_id": str(job_id)},
+        ).execute()
+        course_id = result.data
+        if isinstance(course_id, list) and course_id:
+            course_id = course_id[0]
+        if isinstance(course_id, dict):
+            course_id = course_id.get("publish_course_from_generation_job")
+        if not course_id:
+            raise RuntimeError("The publication function did not return a course ID.")
+    except Exception:
+        raise HTTPException(
+            status_code=409,
+            detail="The course did not pass publication checks. Review its lesson packages, videos and knowledge checks before trying again.",
+        ) from None
+
+    log_audit_event(
+        action="internal_course_published",
+        email=staff.email,
+        account_type="staff",
+        role=",".join(staff.roles or []),
+        request=request,
+        metadata={
+            "staff_id": staff.staff_id,
+            "job_id": str(job_id),
+            "course_id": str(course_id),
+            "course_title": job.get("course_title"),
+            "video_count": len(render_jobs),
+        },
+    )
+    return {
+        "success": True,
+        "course_id": str(course_id),
+        "status": "published",
+        "already_published": False,
+    }
