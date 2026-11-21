@@ -381,7 +381,12 @@ export default function TeamCourseStudioPage() {
         }),
       });
       setHumanVideoFiles(current => ({ ...current, [lessonId]: null }));
-      await refreshVideoStatus(jobId);
+      setCourseLessons(current => current.map(lesson => lesson.lesson_id === lessonId ? { ...lesson, has_ready_video: true } : lesson));
+      try {
+        await refreshVideoStatus(jobId);
+      } catch {
+        setHumanVideoErrors(current => ({ ...current, [lessonId]: "The video was uploaded and attached, but its preview could not be refreshed. Use Refresh video status." }));
+      }
     } catch (error: any) {
       setHumanVideoErrors(current => ({ ...current, [lessonId]: error.message || "The human-produced video could not be attached." }));
     } finally {
