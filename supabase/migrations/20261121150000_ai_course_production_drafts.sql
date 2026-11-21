@@ -486,6 +486,10 @@ BEGIN
     END IF;
 
     IF (SELECT status FROM public.learnora_courses WHERE id = v_course_id) = 'published' THEN
+        UPDATE public.learnora_course_generation_jobs
+           SET status = 'published',
+               published_at = COALESCE(published_at, now())
+         WHERE id = p_job_id;
         RETURN v_course_id;
     END IF;
 
