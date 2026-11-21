@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from routers.auth import CurrentUser, get_current_user, supabase
 from routers.permissions import PermissionContext, require_permission
-from routers.progress import _record_learning_day
+from routers.progress import _record_learning_day, _sign_lesson_assets
 from services.audit import audit
 
 router = APIRouter(tags=["Cohort learning"])
@@ -667,7 +667,16 @@ def my_cohort_lesson_content(course_id: str, lesson_id: str, user: CurrentUser =
     )
     if not module.data:
         raise HTTPException(403, "Lesson does not belong to the assigned course.")
-    return {"success": True, "lesson": lesson, "module": module.data[0]}
+    videos = (
+        supabase.table("lesson_videos")
+        .select("*")
+        .eq("lesson_id", lesson_id)
+        .eq("status", "ready")
+        .order("created_at", desc=True)
+        .execute()
+    ).data or []
+    _sign_lesson_assets(videos)
+    return {"success": True, "lesson": lesson, "module": module.data[0], "videos": videos}
 
 
 class LessonProgressIn(BaseModel):
