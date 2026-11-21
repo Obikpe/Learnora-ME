@@ -686,3 +686,11 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [ ] Complete CI, browser/mobile acceptance and a separate deployment approval.
 
 **Important:** the current Course Studio is a proposal-generation prototype, not yet an end-to-end publisher. The next engineering gate is the private draft/persistence schema and migration reconciliation, not a video-provider migration. The Teams website itself remains a separate later build.
+
+
+### Migration readiness update — 21 November 2026
+
+- [x] Reconcile all 56 active Pheonix migration version identifiers with the repository's active migration source filenames.
+- [x] Move the unapproved browser-privilege/default-ACL migration out of the active migration directory while preserving it for separate review.
+- [x] Update the disposable migration rehearsal to apply the selected migrations in live timestamp order.
+- [ ] Design and rehearse the new private course-generation draft schema; do not apply it to live Pheonix until separately approved.
