@@ -80,7 +80,7 @@ Do not model cohorts as simply:
 - a corporate team with a different name; or
 - a single track assignment without the cohort's team and tutor operating model.
 
-The exact cohort team taxonomy, membership rules, operational responsibilities and permission matrix are not yet fully settled in this register. See the unresolved items below. Do not invent them.
+The exact cohort team taxonomy, membership rules, operational responsibilities and permission matrix are not yet fully settled in this register. See the unresolved items below. Do not invent them. Earlier assistant-generated suggestions about permanent teams, time-bound cohorts, simultaneous team/cohort memberships, 70% progression gates or specific contract-capacity rules are proposals only unless independently confirmed by the product owner; do not treat them as approved requirements.
 
 Corporate organisation teams and workflows must be documented independently. The existence of cohort teams does not define the corporate organisation team model, and vice versa.
 
@@ -143,14 +143,23 @@ Do not infer requirements from route names, code structure, schema names or isol
 
 Documentation work does not authorise application implementation, production deployments, live database mutations, migration application, storage changes, secret/configuration changes or destructive data operations. Each requires the product owner's separate explicit approval.
 
+### PD-010 — Customer operating-model scope must be defined before implementation
+
+**Status:** APPROVED — scope and modelling requirement only; detailed relationships remain unresolved  
+**Confirmed:** 20 October 2026
+
+The customer-side architecture must explicitly define and distinguish corporate organisations, learning cohorts, teams and instructor-led programmes. The operating-model work must account for cohort-based, employee and other organisation contexts, and for organisation owners/administrators, employees, team managers, cohort managers, tutors, programme managers and learners. Learnora internal administrators and internal staff are a separate product/trust boundary and are not customer organisation roles.
+
+These actor categories and domain concepts define the scope that the architecture must address. They do not, by themselves, approve a final hierarchy, role inheritance model, team/cohort duration rule, simultaneous memberships, tutor assignment cardinality, contract entitlement model or progression threshold. Those relationships must be specified and approved before implementation.
+
 ## 3. Unresolved decisions and documentation conflicts
 
 The following items are deliberately unresolved. They are not implementation permission.
 
 | ID | Topic | What must be resolved |
 |---|---|---|
-| UR-001 | Cohort team model | Define the cohort's team types, purposes, membership, tutor inclusion, tutor-to-track assignment, learner relationships, responsibilities, dashboards and permission boundaries from product-owner requirements. |
-| UR-002 | Corporate organisation model | Extract and validate the complete organisation structure, team types, roles, programmes, contracts/entitlements, tutor relationships, workflows, dashboards and permissions. Do not reduce it to a member/course mapping. |
+| UR-001 | Cohort team model | The user has confirmed that cohorts have their own teams and that cohort teams can include tutors assigned to specific tracks created by that cohort, alongside learners and other cohort-specific operations. Still define team types/purposes, membership, managers, tutor-to-track/course assignment rules, learner relationships, operations, dashboards and permissions. |
+| UR-002 | Corporate organisation model | Define distinct configurable contexts for cohort-based, employee and other organisations, and model organisations, teams, cohorts and instructor-led programmes. Account for owners/admins, employees, team managers, cohort managers, tutors, programme managers and learners. Resolve their relationships, contracts/entitlements, tutor relationships, workflows, dashboards and permissions. Do not reduce the model to a member/course mapping. |
 | UR-003 | Account identity | Reconcile the historical cohort-specific login/account model with later global identity proposals. PD-005 requires preservation; it does not approve a conversion or a new identity schema. |
 | UR-004 | Cohort versus organisation tutor lifecycle | Specify separately how tutors join, are assigned, gain access, are removed and retain/relinquish access in each context. |
 | UR-005 | Independent tutor model | Define the independent tutor product context and lifecycle separately from cohort tutors and organisation tutors. |
