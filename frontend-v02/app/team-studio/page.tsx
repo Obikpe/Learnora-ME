@@ -130,11 +130,11 @@ export default function TeamCourseStudioPage() {
         setCourseDescription(requestData.course_description || job.curriculum_data?.course_description || "");
         setLevel(job.course_level || "beginner");
         setAudience(requestData.target_audience || "");
-        setPrerequisites((requestData.prerequisites || []).join("\\n"));
-        setOutcomes((requestData.learning_outcomes || []).join("\\n"));
+        setPrerequisites((requestData.prerequisites || []).join("\n"));
+        setOutcomes((requestData.learning_outcomes || []).join("\n"));
         setTargetTrackId(job.target_track_id || "");
         setOutlineText((requestData.outline || []).map((module: any, index: number) =>
-          "Module " + (index + 1) + ": " + module.title + "\\n" + (module.lessons || []).map((lesson: string) => "- " + lesson).join("\\n")
+          "Module " + (index + 1) + ": " + module.title + "\\n" + (module.lessons || []).map((lesson: string) => "- " + lesson).join("\n")
         ).join("\\n\\n"));
         const latest: Record<string, {version:number; package:LessonPackage}> = {};
         for (const row of data.packages || []) {
