@@ -13,6 +13,7 @@ AS $function$
 DECLARE
     v_job public.learnora_course_generation_jobs%ROWTYPE;
     v_module jsonb;
+    v_lesson_count integer := 0;
 BEGIN
     SELECT *
       INTO v_job
@@ -28,20 +29,33 @@ BEGIN
         RAISE EXCEPTION 'Only an unmaterialised course proposal can be revised';
     END IF;
 
-    IF jsonb_typeof(p_curriculum_data) IS DISTINCT FROM 'object'
-       OR jsonb_typeof(p_curriculum_data->'modules') IS DISTINCT FROM 'array'
-       OR jsonb_array_length(p_curriculum_data->'modules') = 0 THEN
-        RAISE EXCEPTION 'A revised curriculum must contain at least one module';
+    IF jsonb_typeof(p_curriculum_data) IS DISTINCT FROM 'object' THEN
+        RAISE EXCEPTION 'A revised curriculum must be a JSON object';
+    END IF;
+    IF jsonb_typeof(p_curriculum_data->'modules') IS DISTINCT FROM 'array' THEN
+        RAISE EXCEPTION 'A revised curriculum must contain a module array';
+    END IF;
+    IF jsonb_array_length(p_curriculum_data->'modules') < 1
+       OR jsonb_array_length(p_curriculum_data->'modules') > 12 THEN
+        RAISE EXCEPTION 'A revised curriculum must contain between 1 and 12 modules';
     END IF;
 
     FOR v_module IN
         SELECT value FROM jsonb_array_elements(p_curriculum_data->'modules')
     LOOP
-        IF jsonb_typeof(v_module->'lessons') IS DISTINCT FROM 'array'
-           OR jsonb_array_length(v_module->'lessons') = 0 THEN
-            RAISE EXCEPTION 'Every revised module must contain at least one lesson';
+        IF jsonb_typeof(v_module->'lessons') IS DISTINCT FROM 'array' THEN
+            RAISE EXCEPTION 'Every revised module must contain a lesson array';
         END IF;
+        IF jsonb_array_length(v_module->'lessons') < 1
+           OR jsonb_array_length(v_module->'lessons') > 20 THEN
+            RAISE EXCEPTION 'Every revised module must contain between 1 and 20 lessons';
+        END IF;
+        v_lesson_count := v_lesson_count + jsonb_array_length(v_module->'lessons');
     END LOOP;
+
+    IF v_lesson_count > 60 THEN
+        RAISE EXCEPTION 'A revised curriculum cannot exceed 60 lessons';
+    END IF;
 
     UPDATE public.learnora_lesson_production_packages
        SET status = 'archived',
