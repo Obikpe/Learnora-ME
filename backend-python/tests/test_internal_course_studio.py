@@ -22,6 +22,12 @@ class CourseStudioContractTests(unittest.TestCase):
         source = inspect.getsource(generate_curriculum)
         self.assertIn('require_internal_permission("content.generate")', source)
 
+    def test_curriculum_prompt_requests_both_required_course_descriptions(self):
+        source = inspect.getsource(generate_curriculum)
+        self.assertIn("short_description", source)
+        self.assertIn("course_description", source)
+        self.assertIn("quality_review", source)
+
     def test_lesson_package_video_source_defaults_to_ai(self):
         request = LessonPackageRequest(
             job_id="e1000000-0000-4000-8000-000000000001",
