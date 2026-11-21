@@ -81,7 +81,7 @@ The worker:
 1. Claims a queued job through a service-role-only Supabase RPC.
 2. Loads the approved private teaching script and visual storyboard.
 3. Generates English narration with the quantized Kokoro ONNX model.
-4. Renders deterministic 720p slide, diagram, code and illustrative demonstration scenes with captions.
+4. Renders deterministic 720p slide, diagram, table, code and guided-step scenes with captions.
 5. Encodes a browser-friendly H.264/AAC MP4 with FFmpeg.
 6. Uploads the file to the private R2 bucket.
 7. Creates or updates the private `lesson_videos` record and marks the render job complete.
