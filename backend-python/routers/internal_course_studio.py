@@ -85,7 +85,7 @@ class LessonPackageOutput(BaseModel):
     concise_note: str = Field(..., min_length=10, max_length=700)
     practice_activity: Optional[str] = Field(None, max_length=2500)
     knowledge_check: list[KnowledgeCheckItem] = Field(default_factory=list, max_length=5)
-    video_plan: list[VideoScene] = Field(default_factory=list, max_length=12)
+    video_plan: list[VideoScene] = Field(default_factory=list, max_length=8)
     fact_check_notes: list[str] = Field(default_factory=list, max_length=10)
 
 
@@ -396,16 +396,16 @@ async def generate_lesson_package(
             raise ValueError("Generated lesson text exceeds the teaching and note length limits.")
         if lesson_context["lesson_format"] == "text_practice" and output.video_plan:
             output.video_plan = []
-        elif not output.video_plan:
-            raise ValueError("A video-based lesson must include a renderable scene plan.")
+        elif len(output.video_plan) < 2:
+            raise ValueError("A video-based lesson must include at least two renderable scenes.")
         elif output.video_plan:
-            script_words = len(re.findall(r"\b[\w'-]+\b", output.teaching_script))
-            scene_words = sum(
-                len(re.findall(r"\b[\w'-]+\b", scene.narration))
-                for scene in output.video_plan
+            script_tokens = re.findall(r"\b[\w'-]+\b", output.teaching_script.casefold())
+            scene_tokens = re.findall(
+                r"\b[\w'-]+\b",
+                " ".join(scene.narration for scene in output.video_plan).casefold(),
             )
-            if script_words == 0 or not (0.75 <= scene_words / script_words <= 1.25):
-                raise ValueError("Video scene narration must closely partition the complete teaching script.")
+            if not script_tokens or scene_tokens != script_tokens:
+                raise ValueError("Video scene narration must partition the complete teaching script exactly and in order.")
         for question in output.knowledge_check:
             if question.correct_option >= len(question.options):
                 raise ValueError("Knowledge-check answer index is outside its options.")
