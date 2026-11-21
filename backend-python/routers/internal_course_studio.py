@@ -70,6 +70,7 @@ class LessonPackageRequest(BaseModel):
 class HumanVideoUploadRequest(BaseModel):
     filename: str = Field(..., min_length=1, max_length=240)
     file_size_bytes: int = Field(..., gt=0, le=2_147_483_648)
+    duration_seconds: int = Field(..., ge=1, le=300)
     title: str = Field(..., min_length=1, max_length=200)
 
 
