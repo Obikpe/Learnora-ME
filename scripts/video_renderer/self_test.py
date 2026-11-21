@@ -21,9 +21,9 @@ def main() -> int:
         "video_plan": [
             {
                 "narration": "A spreadsheet stores information in rows and columns. Each cell is identified by a column letter and a row number.",
-                "visual_type": "slides",
-                "visual_direction": "Introduce a worksheet grid and identify a row, column and cell.",
-                "on_screen_text": ["Rows", "Columns", "Cell references"],
+                "visual_type": "table",
+                "visual_direction": "Show an illustrative worksheet-style table and identify row, column and cell references.",
+                "on_screen_text": ["Cell | Reference | Meaning", "A1 | Column A, row 1 | First cell", "B2 | Column B, row 2 | Second row, second column"],
             },
             {
                 "narration": "A formula begins with an equals sign. For example, equals SUM of B2 through B6 adds the values in those cells. Relative references adjust when a formula is copied to another cell. An absolute reference, written with dollar signs such as dollar B dollar 2, stays fixed. Choose the reference type that matches the calculation you want.",
