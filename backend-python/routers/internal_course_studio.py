@@ -761,7 +761,7 @@ async def generate_lesson_package(
         "use 4-5 minutes only when a fuller explanation or demonstration genuinely needs it; never exceed 5 minutes. Estimate duration_seconds realistically. concise_note is a separate short reinforcement item "
         "(definition, key terms, formula, short comparison or takeaways), ideally 30-80 words and never more than 100 words; "
         "it is not an essay and not a transcript. For a demonstration, describe reproducible actions; for code, do not invent execution "
-        "results; for mathematics, preserve exact notation and calculations. Add a practical_activity only when useful. Every lesson "
+        "results; for mathematics, preserve exact notation and calculations. If a practice activity is useful, return it in the `practice_activity` field; otherwise set that field to null. Every lesson "
         "must include 2-4 short multiple-choice knowledge-check questions with correct answers and explanations. The renderer uses "
         "deterministic slide, diagram, table, code and equation layouts, not a generative video model. For slides, put 2-4 short points "
         "in on_screen_text; for diagram, put no more than 5 node labels in order; for table, use 2-4 pipe-separated columns with the header row first "
