@@ -995,8 +995,8 @@ def get_lesson_workspace(
         .order("created_at", desc=True)
         .execute()
     ).data or []
-    _sign_lesson_assets(videos)
-    _sign_lesson_assets(resources, default_supabase_bucket="learnora-resources")
+    videos = _sign_lesson_assets(videos, require_private_provider=True)
+    resources = _sign_lesson_assets(resources, default_supabase_bucket="learnora-resources", require_private_provider=True)
     return {
         "success": True,
         "lesson_id": str(lesson["id"]),
@@ -1760,23 +1760,11 @@ def lesson_media(
         supabase.table("lesson_videos")
         .select("*")
         .eq("lesson_id", lesson_id)
+        .eq("status", "ready")
         .order("created_at", desc=True)
         .execute()
     ).data or []
-
-    for video in videos:
-        video["signed_url"] = None
-        if video.get("provider") == "supabase" and video.get("storage_path"):
-            try:
-                signed = supabase.storage.from_("learnora-course-media").create_signed_url(
-                    video["storage_path"],
-                    3600,
-                )
-                data = getattr(signed, "data", None) or signed
-                if isinstance(data, dict):
-                    video["signed_url"] = data.get("signedUrl") or data.get("signed_url")
-            except Exception:
-                video["signed_url"] = None
+    videos = _sign_lesson_assets(videos)
 
     resources = (
         supabase.table("lesson_resources")
@@ -1785,20 +1773,11 @@ def lesson_media(
         .order("created_at", desc=True)
         .execute()
     ).data or []
-
-    for resource in resources:
-        resource["signed_url"] = None
-        if resource.get("storage_path"):
-            try:
-                signed = supabase.storage.from_("learnora-course-media").create_signed_url(
-                    resource["storage_path"],
-                    3600,
-                )
-                data = getattr(signed, "data", None) or signed
-                if isinstance(data, dict):
-                    resource["signed_url"] = data.get("signedUrl") or data.get("signed_url")
-            except Exception:
-                resource["signed_url"] = None
+    resources = _sign_lesson_assets(
+        resources,
+        default_supabase_bucket="learnora-resources",
+        require_private_provider=True,
+    )
 
     return {
         "success": True,
