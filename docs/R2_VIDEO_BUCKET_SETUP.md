@@ -4,14 +4,14 @@
 
 ## Storage and access model
 
-- Store finished MP4 files in a **private Cloudflare R2 bucket**.
+- Store all newly produced Course Studio MP4 files—both AI-rendered and human-produced—in a **private Cloudflare R2 bucket**. Existing older course media in Supabase Storage remains unchanged.
 - Store the durable provider and object key in Supabase `lesson_videos` rows (`provider='cloudflare'`, `storage_path`). The bucket name is supplied to the backend through `R2_BUCKET_NAME`; the current `lesson_videos` schema does not have a `storage_bucket` column. Keep the video transcript in `transcript_text`.
 - Never store a time-limited signed URL in Supabase.
-- The Learnora ME backend verifies the learner's existing course access, then generates a one-hour R2 GET presigned URL. The browser receives only that temporary URL.
-- Internal Course Studio reviewers can also preview ready videos through a separate staff-permission-gated endpoint before publication.
+- The Learnora ME backend verifies the learner's existing course access, then generates a one-hour R2 GET presigned URL. The browser receives only that temporary URL. For human-produced lessons, an authorised staff member requests a short-lived R2 PUT URL from Course Studio; the backend verifies the uploaded object before creating the lesson-video metadata row.
+- Internal Course Studio reviewers can also preview ready videos through a separate staff-permission-gated endpoint before publication. Both AI and human video sources use the same private R2 playback path.
 - The learner video player uses the returned URL with cross-origin media playback enabled.
 - The object key is unique per approved lesson-production package:
-  `courses/{course_id}/modules/{module_id}/lessons/{lesson_id}/{production_package_id}.mp4`
+  AI render key: `courses/{course_id}/modules/{module_id}/lessons/{lesson_id}/{production_package_id}.mp4`\nHuman upload key: `courses/{course_id}/modules/{module_id}/lessons/{lesson_id}/{upload_uuid}.mp4`
 
 The bucket must remain private. Do not enable public bucket access or put the R2 access keys in frontend environment variables.
 
@@ -26,7 +26,7 @@ Create a standard R2 bucket, keep public access disabled, and configure CORS for
       "https://learnorame.vercel.app",
       "http://localhost:3000"
     ],
-    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedMethods": ["GET", "HEAD", "PUT"],
     "AllowedHeaders": ["Range", "Content-Type"],
     "ExposeHeaders": [
       "Accept-Ranges",
@@ -39,7 +39,7 @@ Create a standard R2 bucket, keep public access disabled, and configure CORS for
 ]
 ```
 
-The backend signs only GET access. Uploads happen in the worker, not in the learner's browser.
+The backend signs GET access for playback and short-lived PUT access for authorised Course Studio uploads. Uploads happen only in the internal staff workflow, never on learner pages.
 
 ## Required environment variables
 
@@ -52,7 +52,7 @@ Add these to the backend project (`learnora-backend`) for the production environ
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 
-The backend needs only R2 object-read permission to create signed playback URLs. Use a bucket-scoped read-only R2 API token; do not give the Vercel backend upload permission.
+The backend needs R2 object read/write permission: it signs GET URLs for playback, signs PUT URLs for human-produced video uploads, and verifies uploaded objects. Use a bucket-scoped R2 API token; never expose it to browser code.
 
 ### GitHub — repository Actions secrets
 
@@ -65,11 +65,11 @@ In `Obikpe/Learnora-ME` → Settings → Secrets and variables → Actions, add:
 - `R2_WORKER_ACCESS_KEY_ID` (worker read/write token)
 - `R2_WORKER_SECRET_ACCESS_KEY` (worker read/write token)
 
-The worker reads `R2_WORKER_ACCESS_KEY_ID` and `R2_WORKER_SECRET_ACCESS_KEY` for its separate R2 read/write token. The backend playback signer continues to read `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` from its own read-only Vercel environment. The worker needs Supabase service-role access to claim render jobs and update lesson media metadata. Keep the Vercel backend's read-only R2 token separate from this worker token. These secrets must never be committed to the repository, printed in logs, or exposed to browser code.
+The worker reads `R2_WORKER_ACCESS_KEY_ID` and `R2_WORKER_SECRET_ACCESS_KEY` for its separate R2 read/write token. The backend reads `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` from its Vercel environment for signed playback, human uploads and object verification. The worker needs Supabase service-role access to claim render jobs and update lesson media metadata. Keep the backend token separate from the worker token. These secrets must never be committed to the repository, printed in logs, or exposed to browser code.
 
 ## Rendering worker
 
-Human-produced videos continue to use the existing private Supabase `learnora-course-media` bucket. Only AI-rendered videos use this R2 worker. Course Studio records the selected source per lesson and will not queue an AI render for a human-video lesson.
+Course Studio records the selected source per lesson. AI-source lessons are rendered by the worker; human-source lessons skip the AI render queue and are uploaded directly to the same private R2 bucket using the staff-only signed PUT flow. Existing older human-uploaded media remains in Supabase Storage.
 
 The repository now contains:
 
@@ -104,11 +104,11 @@ The Kokoro ONNX Python package is MIT-licensed and the Kokoro 82M model is Apach
 - [ ] Create the private R2 bucket.
 - [ ] Create a bucket-scoped R2 API token with object read/write access.
 - [ ] Configure the R2 CORS policy above, adding any real custom domain.
-- [ ] Add the four R2 variables to the Vercel backend environment.
+- [ ] Add the four R2 variables to the Vercel backend environment with bucket-scoped read/write permission.
 - [ ] Add the six GitHub worker secrets (Supabase URL/key, R2 account/bucket and the separate worker access/secret key) to GitHub Actions.
 - [ ] Apply the pending Course Studio/video-render migration to live Pheonix only after the migration rehearsal passes and the release is approved.
 - [ ] Deploy the backend and Learnora ME frontend only after the migration is applied.
-- [ ] Run one AI-video lesson and one human-video lesson end to end; verify the R2 MP4/captions, private Supabase upload, staff previews, signed learner playback URLs and learner access restrictions.
+- [ ] Run one AI-video lesson and one human-video lesson end to end; verify the R2 MP4/captions, private R2 human upload, staff previews, signed learner playback URLs and learner access restrictions.
 - [ ] Review the video and lesson content before publishing the course.
 
 
