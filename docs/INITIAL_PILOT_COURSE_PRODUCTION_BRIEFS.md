@@ -56,8 +56,9 @@ By the end, learners should be able to:
 
 Module 1: Introduction to Data Analytics
 - What is data analytics?
-- Data analytics, data analysis and data science
-- Careers and roles in data analytics
+- Careers in data analytics
+- Why become a data analyst?
+- Data analytics vs data analysis
 - Why organisations use data analytics
 
 Module 2: Understanding Data
