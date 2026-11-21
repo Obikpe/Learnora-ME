@@ -145,8 +145,8 @@ The following issues were identified during the documentation review on 21 Novem
 | Topic | Reconciliation required |
 |---|---|
 | Cohort and corporate organisation models | Document both complete operating models separately, including their team structures, tutor relationships, track ownership, assignments, dashboards and workflows. |
-| Cohort teams | Specify cohort team types/responsibilities, membership, tutor inclusion, track assignment, learner relationships and permission boundaries. |
-| Account identity | Reconcile historical cohort-specific login handling with the newer organisation-managed identity proposal without silently changing existing accounts or records. |
+| Cohort and organisation management | Both cohorts and corporate organisations have an active manager and a formal management team. The manager creates other teams and appoints role-scoped administrators. Cohort and corporate coordinator responsibilities differ; see [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) and the approved management/invitation addendum in [ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md](ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md). |
+| Account identity and invitations | Preserve and reconcile historical identity handling. New organisation onboarding is invitation-based: the intended person creates their own password using an emailed activation link that expires after 48 hours. Resend, revoke, duplicate and expired-link recovery behaviour remains to be specified. |
 | Learnora Teams boundary | Make Teams the authoritative home of internal AI/content production, review, acceptance and publishing; identify any temporary or legacy Learnora ME implementation. |
 | Delivery sequence | Align older roadmap and learner-journey documents with the currently approved individual learner → Teams → corporate organisation → independent tutor sequence. |
 | Customer authoring | Separately specify future corporate-team authoring, cohort tutor capabilities and independent tutor capabilities. Do not assume they share permissions or AI access. |
