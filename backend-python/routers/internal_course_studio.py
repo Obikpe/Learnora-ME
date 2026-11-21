@@ -389,9 +389,13 @@ async def generate_lesson_package(
             raise ValueError("Generated lesson text exceeds the teaching and note length limits.")
         if lesson_context["lesson_format"] == "text_practice" and output.video_plan:
             output.video_plan = []
+        elif not output.video_plan:
+            raise ValueError("A video-based lesson must include a renderable scene plan.")
         for question in output.knowledge_check:
             if question.correct_option >= len(question.options):
                 raise ValueError("Knowledge-check answer index is outside its options.")
+            if any(not option.strip() for option in question.options):
+                raise ValueError("Knowledge-check options must not be empty.")
     except (ValidationError, ValueError):
         raise HTTPException(
             status_code=502,
