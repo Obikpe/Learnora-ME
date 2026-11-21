@@ -128,5 +128,59 @@ class InternalContentUploadTests(unittest.TestCase):
             )
 
 
+    def test_course_studio_job_is_resolved_from_ai_course_settings(self):
+        class BridgeQuery:
+            def __init__(self, table):
+                self.table = table
+                self.fields = ""
+                self.filters = {}
+                self.single = False
+            def select(self, fields): self.fields = fields; return self
+            def eq(self, key, value): self.filters[key] = value; return self
+            def is_(self, key, value): self.filters[key] = value; return self
+            def limit(self, _value): return self
+            def maybe_single(self): self.single = True; return self
+            def execute(self):
+                if self.table == "learnora_lessons":
+                    data = [{"id": "10000000-0000-4000-8000-000000000001", "module_id": "20000000-0000-4000-8000-000000000001"}]
+                elif self.table == "course_modules":
+                    data = [{"id": "20000000-0000-4000-8000-000000000001", "course_id": "30000000-0000-4000-8000-000000000001"}]
+                elif self.table == "learnora_courses" and "settings" in self.fields:
+                    data = {"id": "30000000-0000-4000-8000-000000000001", "settings": {"ai_generated": True, "generation_job_id": "40000000-0000-4000-8000-000000000001"}}
+                elif self.table == "learnora_courses":
+                    data = [{"id": "30000000-0000-4000-8000-000000000001"}]
+                elif self.table == "learnora_course_generation_jobs":
+                    data = {"id": "40000000-0000-4000-8000-000000000001", "created_course_id": "30000000-0000-4000-8000-000000000001", "status": "created"}
+                else:
+                    data = None if self.single else []
+                return SimpleNamespace(data=data)
+        class BridgeSupabase:
+            def table(self, name): return BridgeQuery(name)
+
+        with patch.object(internal_content, "supabase", BridgeSupabase()):
+            job_id = internal_content._course_studio_job_for_lesson("10000000-0000-4000-8000-000000000001")
+        self.assertEqual(job_id, "40000000-0000-4000-8000-000000000001")
+
+    def test_course_studio_team_upload_delegates_to_r2_course_studio_flow(self):
+        from routers import internal_course_studio
+        payload = internal_content.CourseStudioVideoUploadRequest(
+            filename="lesson.mp4",
+            file_size_bytes=1024,
+            duration_seconds=120,
+            title="Lesson video",
+        )
+        staff = SimpleNamespace(user_id="staff-1")
+        expected = {"success": True, "upload_url": "https://r2.example/upload", "object_key": "courses/course/lesson.mp4"}
+        with patch.object(internal_content, "_course_studio_job_for_lesson", return_value="40000000-0000-4000-8000-000000000001"), patch.object(
+            internal_course_studio, "create_human_video_upload", return_value=expected
+        ) as upload:
+            result = internal_content.create_course_studio_video_upload(
+                "10000000-0000-4000-8000-000000000001", payload, staff
+            )
+        self.assertEqual(result, expected)
+        self.assertEqual(upload.call_args.args[0], __import__("uuid").UUID("40000000-0000-4000-8000-000000000001"))
+        self.assertEqual(upload.call_args.args[1], __import__("uuid").UUID("10000000-0000-4000-8000-000000000001"))
+        self.assertEqual(upload.call_args.args[3], staff)
+
 if __name__ == "__main__":
     unittest.main()
