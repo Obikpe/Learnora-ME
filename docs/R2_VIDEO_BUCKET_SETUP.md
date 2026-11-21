@@ -4,7 +4,7 @@
 
 ## Storage and access model
 
-- Store all newly produced Course Studio MP4 files—both AI-rendered and human-produced—in a **private Cloudflare R2 bucket**. Existing older course media in Supabase Storage remains unchanged.
+- Store all newly produced Course Studio MP4 files—both AI-rendered and human-produced—in a **private Cloudflare R2 bucket**. Existing older lesson videos remain in the private Supabase `learnora-course-media` bucket, and lesson resources remain in the private `learnora-resources` bucket; do not migrate these legacy objects as part of the Course Studio rollout.
 - Store the durable provider and object key in Supabase `lesson_videos` rows (`provider='cloudflare'`, `storage_path`). The bucket name is supplied to the backend through `R2_BUCKET_NAME`; the current `lesson_videos` schema does not have a `storage_bucket` column. Keep the video transcript in `transcript_text`.
 - Never store a time-limited signed URL in Supabase.
 - The Learnora ME backend verifies the learner's existing course access, then generates a one-hour R2 GET presigned URL. The browser receives only that temporary URL. For human-produced lessons, an authorised staff member requests a short-lived R2 PUT URL from Course Studio; the backend verifies the uploaded object before creating the lesson-video metadata row.
