@@ -593,6 +593,7 @@ BEGIN
                 WHERE lv.lesson_id = l.id
                   AND lv.status = 'ready'
                   AND lv.is_private IS TRUE
+                  AND lv.duration_seconds BETWEEN 1 AND 300
                   AND (
                       (p.video_source = 'ai' AND lv.provider = 'cloudflare')
                       OR (p.video_source = 'human' AND lv.provider = 'cloudflare')
