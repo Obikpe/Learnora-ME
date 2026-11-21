@@ -232,6 +232,7 @@ def get_course_generation_job(
             supabase.table("learnora_lesson_production_packages")
             .select("*")
             .eq("job_id", str(job_id))
+            .neq("status", "archived")
             .order("module_order")
             .order("lesson_order")
             .order("version", desc=True)
