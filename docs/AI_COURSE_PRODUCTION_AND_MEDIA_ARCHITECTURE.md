@@ -126,7 +126,7 @@ Keep three concerns separate:
 2. **Media production:** deterministic visual composition, screen recordings, narration/TTS, captions, audio mixing, rendering and encoding. This is an asynchronous worker pipeline and must not be coupled to the LLM provider.
 3. **Media delivery:** storage, access checks, signed playback URLs, CDN/cache policy and browser playback. This is separate from generation and must reuse the existing course access boundary.
 
-A zero/low-cost first renderer can use HTML/CSS/SVG templates, deterministic diagrams, real screen recordings, an open-source TTS engine where licensing and voice quality are verified, and FFmpeg for assembly. Manim Community may be used for mathematics and technical animations. These are candidate tools, not yet installed or adopted dependencies. Rendering still consumes compute; "open source" does not mean zero operating cost.
+The initial renderer now uses Kokoro ONNX for narration, Pillow-based deterministic scenes, and FFmpeg for MP4 assembly/captions. HTML/CSS/SVG templates, real screen recordings and Manim Community remain options for richer specialised lessons. Rendering still consumes compute; open source does not mean zero operating cost.
 
 The initial implementation must not assume the current Vercel request process can run long renders. Use a job/worker model and persist state such as queued, generating, rendering, validating, ready and failed. Record retry count, timestamps, output metadata and safe error details. Never store expiring signed URLs as durable asset identity.
 
@@ -225,7 +225,7 @@ The live schema confirms:
 - `lesson_resources` stores resource metadata and storage/external references.
 - The current database has no lesson-video records for the test Introduction to Data Analytics lesson.
 
-The schema is therefore sufficient for current learner-facing text, video metadata, resources and playback, but not yet a durable AI production workspace. A production script/storyboard should not be placed in learner-visible `learnora_lessons.content`, nor hidden in an oversized course settings JSON object. Add a reviewed production-draft/job model in a migration after migration reconciliation.
+At the time of the initial audit, the live schema supported learner-facing lesson text, video metadata, resources and playback but did not provide a durable AI production workspace. The pending Course Studio migration now adds private generation jobs, versioned lesson production packages and video-render jobs. This migration remains unapplied to live Pheonix; the earlier statement describes the pre-migration live schema, not the current repository source.
 
 ### Live AI profile and permission findings
 
@@ -257,7 +257,7 @@ The following initial code has now been added to `main`:
 - The initial UI supports a course brief and a structured plain-text module/lesson outline, curriculum preview, and per-lesson generation of a full teaching script, concise learner note, practice activity, knowledge checks and deterministic video storyboard.
 - `frontend-v02/components/course/CourseWorkspace.tsx` has been updated to label authored lesson text as “Lesson notes and key ideas”, while learner-owned “My lesson notes” remain a separate feature. The player continues to use one primary video per lesson; this matches the planned AI lesson package, which produces one main teaching video per lesson. Multiple video renditions/assets remain a future player enhancement because the current progress schema tracks lesson-level rather than per-video watch state.
 
-**Current limitation:** this first slice produces reviewable proposals in the browser; it does not yet persist the course draft, production script/storyboard, or create/publish course/module/lesson records. This is deliberate until the production-draft schema and atomic course-creation path are designed and migration history is reconciled. Video rendering, TTS, caption generation and worker jobs are not implemented yet. Do not describe the Course Studio as a completed end-to-end course publisher at this stage.
+**Historical implementation note:** the original first slice produced reviewable proposals only. That limitation was superseded by the persistent draft workflow and atomic draft/publication RPCs documented in sections 18–19. The migration and application code remain source-only until an explicitly approved release; no production deployment has occurred.
 
 The live permission mapping currently grants `content.manage` only to `super_admin`; the `learning_curriculum` role does not have it. The first UI/API increment therefore fails closed for all staff without that permission. A dedicated `content.generate` permission should be added and assigned to the curriculum role only after the migration source/version discrepancy is resolved. Do not broaden access by hardcoding role names in the endpoint.
 
