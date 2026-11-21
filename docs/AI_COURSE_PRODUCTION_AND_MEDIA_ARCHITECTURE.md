@@ -355,4 +355,6 @@ The cohort lesson page now:
 - Saves video position and percentage to the existing cohort lesson-progress record periodically, on pause and at completion, and resumes from the saved position when available.
 - Keeps the lesson's course content and learner progress controls separate.
 
+The standard individual learner player now also resumes native MP4 playback from the existing `last_position_seconds` value when the video metadata loads. No new progress table or column was added.
+
 A regression test covers the authorised cohort lesson response and signed video URL. The code is committed to `main`; its current GitHub Actions test/build run is pending. No deployment or live migration was performed for this UI/API correction. A read-only inspection of the active Pheonix storage catalogue confirmed the legacy private video bucket is `learnora-course-media`, the resource bucket is `learnora-resources`, and `lesson_videos` has no `storage_bucket` column. The shared signer now chooses the correct default bucket for videos versus resources while Cloudflare assets use the configured R2 bucket. A focused unit test covers both Supabase bucket selections. No storage buckets or records were changed.
