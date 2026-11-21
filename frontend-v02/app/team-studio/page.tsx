@@ -269,9 +269,6 @@ export default function TeamCourseStudioPage() {
         body: JSON.stringify({}),
       });
       setPublishedCourse(result.status === "published");
-      const refreshed = await internalRequest("/course-studio/jobs/" + encodeURIComponent(jobId));
-      setRenderJobs(refreshed.render_jobs || []);
-      setRenderJobsQueued((refreshed.render_jobs || []).filter((job: any) => job.status === "queued" || job.status === "processing").length);
     } catch (error: any) {
       setPublishError(error.message || "The course could not be published.");
     } finally {
