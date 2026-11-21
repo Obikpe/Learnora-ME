@@ -15,6 +15,7 @@ from routers.internal_course_studio import (
     HumanVideoUploadRequest,
     HumanVideoFinalizeRequest,
     generate_curriculum,
+    generate_lesson_package,
     _extract_json,
 )
 
@@ -29,6 +30,11 @@ class CourseStudioContractTests(unittest.TestCase):
         self.assertIn("short_description", source)
         self.assertIn("course_description", source)
         self.assertIn("quality_review", source)
+
+    def test_lesson_prompt_uses_the_practice_activity_schema_field(self):
+        source = inspect.getsource(generate_lesson_package)
+        self.assertIn("practice_activity", source)
+        self.assertNotIn("practical_activity", source)
 
     def test_human_video_uploads_are_limited_to_five_minutes(self):
         upload = HumanVideoUploadRequest(
