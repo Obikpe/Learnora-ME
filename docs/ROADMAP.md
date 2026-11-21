@@ -708,10 +708,13 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [ ] Obtain approval and apply the migration to live Pheonix.
 - [x] Add the private video render queue, claim/complete/stale-recovery RPCs, Kokoro/FFmpeg worker source, and R2 signed-playback source.
 - [x] Add a sequential Course Studio action to generate all missing lesson packages.
+- [x] Prepare the first Data Analytics, Excel Fundamentals and Front-end Web Development production briefs.
 - [ ] Pass CI for the render queue and worker; configure private R2, CORS, Vercel environment and GitHub Actions secrets.
 - [ ] Deploy the verified renderer/playback integration and run an end-to-end test lesson.
 - [x] Link a generated course to its selected global track during atomic draft creation.
-- [ ] Complete course review and publication.
+- [x] Add a final publish action restricted to the existing `content.manage` permission; generation-only staff cannot publish.
+- [x] Add an atomic, permission-gated publication action that checks completed video jobs, ready media and valid knowledge checks before publishing the course hierarchy.
+- [ ] Complete real course review and publication after the video worker is configured and the migration is approved.
 - [ ] Generate the initial real course catalogue and retire the test course from discovery without deleting its two certificates or learner history.
 
 
@@ -727,3 +730,15 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - No deployment, live Supabase migration, live R2 bucket creation, or production secret change has been performed.
 
 **Next work:** complete migration/CI and worker verification, review the full draft-to-publication path, finish the real course briefs and content QA, and prepare the mock-course retirement as a separate non-destructive operation. The existing Introduction to Data Analytics test course has 2 completed enrolments, 2 lesson-progress records and 2 certificates; it must be archived/replaced only after the new course and track transition are ready. Do not hard-delete it.
+
+
+### Publication and renderer verification update — 21 November 2026
+
+- [x] Add a service-role-only atomic `publish_course_from_generation_job` RPC. It keeps the course unpublished until all required lesson packages are ready, all video render jobs are complete, all video lessons have ready private assets, and all module knowledge checks have valid questions and answers.
+- [x] Add a separate Course Studio Publish action. It requires the existing `content.manage` permission; staff who only have `content.generate` can generate and prepare drafts but cannot publish.
+- [x] Add a database assertion that exercises draft creation, track linking, video-job completion and idempotent publication in one transaction.
+- [x] Add a self-contained renderer smoke test that downloads checksum-verified Kokoro model files, synthesises narration, renders captions and produces an MP4 with FFmpeg. The CI workflow now runs this test without Supabase or R2 production credentials.
+- [x] Prepare initial production briefs for Data Analytics, Excel Fundamentals and Front-end Web Development in `docs/INITIAL_PILOT_COURSE_PRODUCTION_BRIEFS.md`.
+- [ ] Confirm the latest CI run passes with the renderer smoke test and atomic publication assertion.
+- [ ] Configure private R2 and GitHub worker secrets after the repository-side pipeline passes.
+- [ ] Apply the pending migration and deploy only after explicit user approval.
