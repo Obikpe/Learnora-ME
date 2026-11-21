@@ -131,12 +131,13 @@ def _sign_lesson_assets(rows: list[dict], require_private_provider: bool = False
         try:
             if provider == "cloudflare":
                 client = _r2_s3_client()
-                if not client or not r2_bucket:
+                bucket = item.get("storage_bucket") or r2_bucket
+                if not client or not bucket:
                     item["signed_url"] = None
                 else:
                     item["signed_url"] = client.generate_presigned_url(
                         "get_object",
-                        Params={"Bucket": r2_bucket, "Key": storage_path},
+                        Params={"Bucket": bucket, "Key": storage_path},
                         ExpiresIn=3600,
                     )
             elif provider == "supabase":
