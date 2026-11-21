@@ -259,6 +259,8 @@ def create_human_video_upload(
     storage_client = _r2_s3_client()
     if not bucket or storage_client is None:
         raise HTTPException(status_code=503, detail="Private video storage is not configured.")
+    if not payload.filename.lower().endswith(".mp4"):
+        raise HTTPException(status_code=422, detail="Upload an MP4 video file.")
 
     try:
         job = (
