@@ -508,7 +508,7 @@ async def create_course_draft(
             "course_id": job["created_course_id"],
             "status": "draft",
             "already_created": True,
-            "render_jobs_queued": len(existing_render_jobs),
+            "render_jobs_queued": sum(1 for item in existing_render_jobs if item.get("status") in {"queued", "processing"}),
         }
     if job.get("status") not in {"draft", "review", "approved"}:
         raise HTTPException(status_code=409, detail="This course draft cannot be materialised in its current state.")
@@ -599,4 +599,4 @@ async def create_course_draft(
             "course_title": job.get("course_title"),
         },
     )
-    return {"success": True, "course_id": str(course_id), "status": "draft", "already_created": False, "render_jobs_queued": len(render_jobs)}
+    return {"success": True, "course_id": str(course_id), "status": "draft", "already_created": False, "render_jobs_queued": sum(1 for item in render_jobs if item.get("status") in {"queued", "processing"})}
