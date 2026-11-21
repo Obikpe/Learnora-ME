@@ -675,7 +675,7 @@ def my_cohort_lesson_content(course_id: str, lesson_id: str, user: CurrentUser =
         .order("created_at", desc=True)
         .execute()
     ).data or []
-    _sign_lesson_assets(videos)
+    videos = _sign_lesson_assets(videos)
     return {"success": True, "lesson": lesson, "module": module.data[0], "videos": videos}
 
 
