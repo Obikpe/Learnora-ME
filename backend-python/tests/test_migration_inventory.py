@@ -33,16 +33,19 @@ class MigrationInventoryTests(unittest.TestCase):
             "20261021220327_encrypt_cohort_date_of_birth.sql",
             "20261021220333_cohort_login_rate_limits.sql",
             "20261021220849_revoke_trigger_function_browser_execute.sql",
-            "20261026153000_revoke_browser_privileges_and_defaults.sql",
-            "20261117210000_password_session_invalidation.sql",
+            "20261118090841_password_session_invalidation.sql",
             "20261120133258_learner_birthdays_and_age_attestation.sql",
             "20261120133439_clear_birthday_data_on_account_deletion.sql",
+            "20261121150000_ai_course_production_drafts.sql",
         )
         for name in expected:
             with self.subTest(migration=name):
                 sql_path = ACTIVE_DIR / name
                 self.assertTrue(sql_path.is_file(), f"Missing active migration: {name}")
                 self.assertTrue(sql_path.read_text(encoding="utf-8").strip())
+        pending = ROOT / "supabase" / "pending_migrations" / "20261026153000_revoke_browser_privileges_and_defaults.sql"
+        self.assertTrue(pending.is_file(), "The unapproved browser-privilege migration must be preserved outside the active chain.")
+        self.assertFalse((ACTIVE_DIR / pending.name).exists())
 
     def test_historical_reconstructed_sources_are_not_misrepresented_as_originals(self):
         readme = (LEGACY_DIR / "README.md").read_text(encoding="utf-8").lower()
@@ -54,7 +57,7 @@ class MigrationInventoryTests(unittest.TestCase):
             self.assertTrue((ACTIVE_DIR / name).is_file(), name)
 
     def test_active_quiz_session_migration_is_server_only_and_reversible(self):
-        migration = ACTIVE_DIR / "20261102100000_quiz_active_sessions.sql"
+        migration = ACTIVE_DIR / "20261118090830_quiz_active_sessions.sql"
         rollback = ROOT / "supabase" / "rollback" / "20261102100000_quiz_active_sessions.rollback.sql"
         self.assertTrue(migration.is_file())
         self.assertTrue(rollback.is_file())
@@ -69,7 +72,7 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("DROP TABLE IF EXISTS public.quiz_active_sessions", rollback.read_text(encoding="utf-8"))
 
     def test_certificate_revocation_migration_is_additive_and_reversible(self):
-        migration = ACTIVE_DIR / "20261102110000_certificate_revocation.sql"
+        migration = ACTIVE_DIR / "20261118090832_certificate_revocation.sql"
         rollback = ROOT / "supabase" / "rollback" / "20261102110000_certificate_revocation.rollback.sql"
         self.assertTrue(migration.is_file())
         self.assertTrue(rollback.is_file())
@@ -80,7 +83,7 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("DROP COLUMN IF EXISTS revoked_at", rollback.read_text(encoding="utf-8"))
 
     def test_project_submission_integrity_migration_is_additive_and_reversible(self):
-        migration = ACTIVE_DIR / "20261102120000_project_submission_integrity.sql"
+        migration = ACTIVE_DIR / "20261118090839_project_submission_integrity.sql"
         rollback = ROOT / "supabase" / "rollback" / "20261102120000_project_submission_integrity.rollback.sql"
         self.assertTrue(migration.is_file())
         self.assertTrue(rollback.is_file())
@@ -125,7 +128,7 @@ class MigrationInventoryTests(unittest.TestCase):
 
 
     def test_notification_automation_migration_is_server_only_and_reversible(self):
-        migration = ACTIVE_DIR / "20261116120000_notification_email_automation.sql"
+        migration = ACTIVE_DIR / "20261116072916_notification_email_automation.sql"
         rollback = ROOT / "supabase" / "rollback" / "20261116120000_notification_email_automation.rollback.sql"
         self.assertTrue(migration.is_file())
         self.assertTrue(rollback.is_file())
@@ -142,7 +145,7 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("DROP COLUMN IF EXISTS onboarding_completed_at", rollback_sql)
 
     def test_password_change_session_revocation_migration_is_non_destructive(self):
-        migration = ACTIVE_DIR / "20261117210000_password_session_invalidation.sql"
+        migration = ACTIVE_DIR / "20261118090841_password_session_invalidation.sql"
         rollback = ROOT / "supabase" / "rollback" / "20261117210000_password_session_invalidation.rollback.sql"
         self.assertTrue(migration.is_file())
         self.assertTrue(rollback.is_file())
@@ -153,6 +156,26 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("SET DEFAULT now()", sql)
         self.assertIn("SET NOT NULL", sql)
         self.assertNotIn("DROP COLUMN", rollback.read_text(encoding="utf-8"))
+
+
+    def test_ai_course_production_migration_is_private_and_reversible(self):
+        migration = ACTIVE_DIR / "20261121150000_ai_course_production_drafts.sql"
+        rollback = ROOT / "supabase" / "rollback" / "20261121150000_ai_course_production_drafts.rollback.sql"
+        self.assertTrue(migration.is_file())
+        self.assertTrue(rollback.is_file())
+        sql = migration.read_text(encoding="utf-8")
+        self.assertIn("learnora_course_generation_jobs", sql)
+        self.assertIn("learnora_lesson_production_packages", sql)
+        self.assertIn("ENABLE ROW LEVEL SECURITY", sql)
+        self.assertIn("REVOKE ALL ON TABLE", sql)
+        self.assertIn("SECURITY DEFINER", sql)
+        self.assertIn("SET search_path = ''", sql)
+        self.assertIn("create_course_from_generation_job", sql)
+        self.assertIn("content.generate", sql)
+        self.assertIn("TO service_role", sql)
+        rollback_sql = rollback.read_text(encoding="utf-8")
+        self.assertIn("DROP TABLE IF EXISTS public.learnora_lesson_production_packages", rollback_sql)
+        self.assertIn("DROP TABLE IF EXISTS public.learnora_course_generation_jobs", rollback_sql)
 
     def test_quota_fix_preserves_unlimited_monthly_limit_contract(self):
         sql = (ACTIVE_DIR / "20261020232148_allow_unlimited_monthly_ai_quota.sql").read_text(
