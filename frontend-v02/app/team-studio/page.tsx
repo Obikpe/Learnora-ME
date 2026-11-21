@@ -404,7 +404,7 @@ export default function TeamCourseStudioPage() {
   }
 
   async function publishCourse() {
-    if (!jobId || !createdCourseId || !canPublish || publishedCourse || publishBusy) return;
+    if (!jobId || !createdCourseId || !canPublish || publishedCourse || publishBusy || !humanVideosReady || renderJobs.some(job => job.status !== "completed")) return;
     setPublishBusy(true);
     setPublishError("");
     try {
@@ -420,7 +420,7 @@ export default function TeamCourseStudioPage() {
   }
 
   async function createDraftCourse() {
-    if (!jobId || !curriculum || Object.keys(packages).length !== lessonCount || Object.values(packageBusy).some(Boolean) || createdCourseId) return;
+    if (!jobId || !curriculum || !packagesReady || Object.values(packageBusy).some(Boolean) || createdCourseId) return;
     setCreateDraftBusy(true);
     setCreateDraftError("");
     try {
