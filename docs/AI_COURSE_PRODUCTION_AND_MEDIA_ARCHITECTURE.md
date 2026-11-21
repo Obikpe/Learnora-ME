@@ -275,3 +275,18 @@ A further read-only dependency check found **2 issued certificates** for the tes
 ## 17. Migration gate update — 21 November 2026
 
 The active migration filename mismatch has been resolved in the repository: all 56 live Pheonix migration versions now have exactly matching source filenames in `supabase/migrations/`, with no extra active migration. The previously pending browser-privilege/default-ACL migration is preserved outside the active chain at `supabase/pending_migrations/`. A new production-draft schema migration can now be prepared and CI-rehearsed without inheriting the old timestamp mismatch. This repository reconciliation did not apply any migration to the live database.
+
+
+## 18. Persistent draft workflow — implementation in progress, 21 November 2026
+
+The first proposal-only prototype has been extended into a persistent draft workflow in source code:
+
+- New migration source: `supabase/migrations/20261121150000_ai_course_production_drafts.sql` (not applied to live Pheonix).
+- `learnora_course_generation_jobs` stores the brief, generated curriculum, creator, provider/model metadata, approval state, optional target track and resulting course ID.
+- `learnora_lesson_production_packages` stores versioned private teaching scripts, concise notes, practice activities, knowledge checks, visual storyboards and fact-check notes. Regeneration creates a new version; course creation requires the latest version for every lesson to be approved.
+- New internal permission `content.generate` is assigned by the migration to `learning_curriculum` and `super_admin`. The Course Studio API now requires this permission rather than the broader content-management permission.
+- `create_course_from_generation_job(uuid)` is a service-role-only, security-definer RPC with an empty search path. It creates the course, modules and lessons in **draft** state in one transaction. It copies only the concise note and practice activity into learner-facing lesson content; the full teaching script and storyboard remain private in the production package. It also creates any generated knowledge checks as unpublished quizzes and questions.
+- The Course Studio now lists global Learnora ME tracks, saves an optional target-track choice, restores saved jobs after refresh, stores lesson packages, and requires an explicit staff action before creating the unpublished course draft. The target track is recorded with the draft; actual track linking remains a separate post-review/publication step.
+- A database assertion script tests the private grants/RLS, draft hierarchy, private-script separation, quiz creation and idempotent course creation. The migration rehearsal also tests rollback.
+
+**Release gate:** the migration and workflow are being rehearsed in CI. The migration has not been applied to live Pheonix, and nothing has been deployed. Until the migration is applied through an approved release, the new persistence endpoints cannot work against production. The rendering worker, TTS, captions, R2 upload/playback and publication workflow are still outstanding; the Course Studio can create a structured draft, not yet finished video courses.
