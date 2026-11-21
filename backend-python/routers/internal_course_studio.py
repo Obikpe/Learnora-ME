@@ -199,11 +199,18 @@ def get_course_generation_job(
             .order("version", desc=True)
             .execute()
         )
+        render_result = (
+            supabase.table("learnora_video_render_jobs")
+            .select("id,production_package_id,lesson_id,status,attempt_count,max_attempts,error_summary,created_at,completed_at")
+            .eq("generation_job_id", str(job_id))
+            .order("created_at")
+            .execute()
+        )
     except HTTPException:
         raise
     except Exception:
         raise HTTPException(status_code=500, detail="The saved course draft could not be loaded.") from None
-    return {"success": True, "job": job_result.data, "packages": package_result.data or []}
+    return {"success": True, "job": job_result.data, "packages": package_result.data or [], "render_jobs": render_result.data or []}
 
 
 @router.post("/curriculum")
@@ -552,6 +559,17 @@ async def create_course_draft(
             detail="The course draft could not be created. Your approved production packages are saved; retry after checking the course data.",
         ) from None
 
+    try:
+        render_jobs = (
+            supabase.table("learnora_video_render_jobs")
+            .select("id,status")
+            .eq("generation_job_id", str(job_id))
+            .execute()
+            .data or []
+        )
+    except Exception:
+        render_jobs = []
+
     log_audit_event(
         action="internal_course_draft_created",
         email=staff.email,
@@ -565,4 +583,4 @@ async def create_course_draft(
             "course_title": job.get("course_title"),
         },
     )
-    return {"success": True, "course_id": str(course_id), "status": "draft", "already_created": False}
+    return {"success": True, "course_id": str(course_id), "status": "draft", "already_created": False, "render_jobs_queued": len(render_jobs)}
