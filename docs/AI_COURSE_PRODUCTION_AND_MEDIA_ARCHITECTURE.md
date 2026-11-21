@@ -283,7 +283,7 @@ The active migration filename mismatch has been resolved in the repository: all 
 
 The first proposal-only prototype has been extended into a persistent draft workflow in source code:
 
-- New migration source: `supabase/migrations/20261121150000_ai_course_production_drafts.sql` (not applied to live Pheonix).
+- New migration source: `supabase/migrations/20261121012000_ai_course_production_drafts.sql` (not applied to live Pheonix).
 - `learnora_course_generation_jobs` stores the brief, generated curriculum, creator, provider/model metadata, approval state, optional target track and resulting course ID.
 - `learnora_lesson_production_packages` stores versioned private teaching scripts, concise notes, practice activities, knowledge checks, visual storyboards and fact-check notes. Regeneration creates a new version; course creation requires the latest version for every lesson to be approved.
 - New internal permission `content.generate` is assigned by the migration to `learning_curriculum` and `super_admin`. The Course Studio API now requires this permission rather than the broader content-management permission.
@@ -296,7 +296,7 @@ The first proposal-only prototype has been extended into a persistent draft work
 
 ### Follow-on migration state after Course Studio schema was added
 
-The exact 56-to-56 filename reconciliation above was completed before the Course Studio migration was authored. The repository now intentionally contains **57 files** in `supabase/migrations/`: the 56 applied live versions with matching filenames, plus the new, unapplied `20261121150000_ai_course_production_drafts.sql`. The live Pheonix ledger remains at 56 applied versions. This single repository-only version is the expected pending Course Studio migration, not a filename mismatch. The separate unapproved browser-privilege migration remains in `supabase/pending_migrations/`.
+The exact 56-to-56 filename reconciliation above was completed before the Course Studio migration was authored. The repository now intentionally contains **57 files** in `supabase/migrations/`: the 56 applied live versions with matching filenames, plus the new, unapplied `20261121012000_ai_course_production_drafts.sql`. The live Pheonix ledger remains at 56 applied versions. This single repository-only version is the expected pending Course Studio migration, not a filename mismatch. The separate unapproved browser-privilege migration remains in `supabase/pending_migrations/`.
 
 
 ## 19. Video rendering and private playback — source added, configuration pending
