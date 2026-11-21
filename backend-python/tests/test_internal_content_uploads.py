@@ -178,6 +178,28 @@ class InternalContentUploadTests(unittest.TestCase):
                 internal_content._course_studio_job_for_lesson("lesson-1")
         self.assertEqual(raised.exception.status_code, 409)
 
+    def test_course_studio_job_resolver_rejects_generation_job_for_another_course(self):
+        class ResolverQuery:
+            def __init__(self, table): self.table = table
+            def select(self, *_args, **_kwargs): return self
+            def eq(self, *_args, **_kwargs): return self
+            def maybe_single(self): return self
+            def execute(self):
+                if self.table == "learnora_courses":
+                    data = {"id": "course-1", "settings": {"ai_generated": True, "generation_job_id": "job-1"}}
+                else:
+                    data = {"id": "job-1", "created_course_id": "different-course", "status": "created"}
+                return SimpleNamespace(data=data)
+        class ResolverDatabase:
+            def table(self, name): return ResolverQuery(name)
+
+        with patch.object(internal_content, "_module_for_lesson", return_value={"id": "lesson-1", "module_id": "module-1"}), patch.object(
+            internal_content, "_course_for_module", return_value={"id": "module-1", "course_id": "course-1"}
+        ), patch.object(internal_content, "supabase", ResolverDatabase()):
+            with self.assertRaises(HTTPException) as raised:
+                internal_content._course_studio_job_for_lesson("lesson-1")
+        self.assertEqual(raised.exception.status_code, 409)
+
     def test_course_studio_job_resolver_rejects_non_draft_generation_jobs(self):
         class ResolverQuery:
             def __init__(self, table): self.table = table; self.fields = ""
