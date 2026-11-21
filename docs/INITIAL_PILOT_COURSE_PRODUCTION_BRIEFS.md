@@ -294,6 +294,16 @@ Module 10: Front-end Project
 
 ---
 
+## Choosing AI or human video per lesson
+
+Course Studio now lets staff select the video source independently for each lesson.
+
+- Use **AI-produced video** for concept explanations, definitions, comparisons, guided examples, diagrams, data-flow explanations and formula walkthroughs that can be shown accurately with deterministic visuals.
+- Use **human-produced video** when the learner needs to see a real person teaching, a real Excel/Power BI/SQL/Python interface, a genuine workflow, a practical demonstration or a personal explanation. Upload the finished private video from Course Studio after the draft course is created.
+- Keep a lesson **text/practice-only** when a video adds little value, such as a worksheet, checklist, reference table or independent exercise.
+
+For Data Analytics and Excel, favour human-produced videos for authentic Excel, Power BI and desktop demonstrations; AI-produced videos can cover concepts and explain examples. Do not use a simulated software interface as if it were the real application.
+
 ## Quality and publication checklist
 
 For each course:
