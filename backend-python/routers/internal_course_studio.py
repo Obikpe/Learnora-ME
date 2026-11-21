@@ -254,7 +254,9 @@ async def generate_curriculum(
     )
     try:
         output = CurriculumOutput.model_validate(data)
-    except ValidationError:
+        if sum(len(module.lessons) for module in output.modules) > 60:
+            raise ValueError("Generated curriculum exceeds the 60-lesson production limit.")
+    except (ValidationError, ValueError):
         raise HTTPException(
             status_code=502,
             detail="The generated curriculum did not meet Learnora's required structure. Please retry or simplify the outline.",
