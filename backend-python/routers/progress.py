@@ -995,7 +995,7 @@ def get_lesson_workspace(
         .order("created_at", desc=True)
         .execute()
     ).data or []
-    videos = _sign_lesson_assets(videos, require_private_provider=True)
+    videos = _sign_lesson_assets(videos)
     resources = _sign_lesson_assets(resources, default_supabase_bucket="learnora-resources", require_private_provider=True)
     return {
         "success": True,
