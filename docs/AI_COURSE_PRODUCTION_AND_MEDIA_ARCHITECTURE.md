@@ -68,9 +68,9 @@ The current player is not text-only and is already structurally capable of displ
 
 ### 4.3 Existing media storage is Supabase Storage today
 
-The backend creates signed upload URLs for the private `learnora-course-media` and `learnora-resources` Supabase buckets. Human-produced videos continue to use this existing path. The AI video-render pipeline now uses a separate private Cloudflare R2 bucket in repository source, with temporary signed playback URLs; the R2 bucket and credentials are not configured in production.
+The backend creates signed upload URLs for the private `learnora-course-media` and `learnora-resources` Supabase buckets used by existing manual media. New Course Studio courses store both AI-rendered and human-produced MP4s in a separate private Cloudflare R2 bucket, using temporary signed PUT uploads and signed playback URLs. The R2 bucket and credentials are not configured in production.
 
-**Historical note from the initial audit:** R2 was initially only a candidate. The subsequent architecture decision uses private R2 specifically for AI-rendered MP4s, while human-produced videos and other manual media remain in Supabase Storage. This is a source-code integration only; no live R2 bucket, credentials or production storage migration has been configured.
+**Historical note from the initial audit:** R2 was initially only a candidate. The subsequent architecture decision uses private R2 for both AI-rendered and human-produced MP4s created through the new Course Studio workflow. Existing manual media remains in Supabase Storage. This is a source-code integration only; no live R2 bucket or credentials have been configured.
 
 ## 5. Existing AI architecture — extend, do not replace
 
@@ -136,7 +136,7 @@ The existing lesson media tables are the current integration point. Before addin
 
 A durable media reference should identify the provider, bucket/container, object key, MIME type, byte size, duration, checksum, visibility, status and version/rendition. Lesson-to-media relationship must be stable and unique. Signed URLs are generated at playback time after backend course-access validation and must not be persisted as the canonical media location.
 
-Human-produced lesson videos and resources continue to use Supabase Storage. AI-rendered MP4s use the new private R2 worker path in repository source; this does not change existing human-uploaded media or require a live migration of existing objects. R2 credentials and bucket setup remain release prerequisites.
+For new Course Studio courses, both AI-rendered and human-produced MP4s use private Cloudflare R2. Existing older human-uploaded lesson videos and resources remain in Supabase Storage; no legacy media objects are migrated. R2 credentials and bucket setup remain release prerequisites.
 
 ## 10. Course catalogue and initial content direction
 
@@ -168,7 +168,7 @@ The existing published "Introduction to Data Analytics" test course was seeded a
 | AI gateway | Named profile and provider/model configuration exists | Existing request executor currently supports OpenRouter only; add a course-generation profile through gateway |
 | Teams content operations | Manual course/module/lesson and media management exists | Extend content operations with AI-assisted outline and lesson-package generation |
 | Lesson player | Video + text + resources + learner notes + assessments already supported | Only first attached video is rendered; improve multi-asset lesson presentation and concise note layout |
-| Video storage | Private Supabase buckets and signed upload/playback flows exist; AI-rendered MP4 source now targets private R2 | Keep human uploads on Supabase; configure and verify R2 only for AI-rendered videos |
+| Video storage | Private Supabase buckets and signed upload/playback flows exist; new Course Studio AI and human MP4s target private R2 | Configure and verify R2 for all newly produced course videos; retain legacy Supabase media |
 | Video production | No automated rendering worker confirmed in the audited active paths | Design and implement as a separate asynchronous pipeline |
 | Course review | Draft/published content and publishability checks exist | Add generation provenance and explicit human approval state |
 | Mock course | A published Introduction to Data Analytics seed is documented | Verify current live state and learner history before archive/replace |
@@ -301,10 +301,10 @@ The exact 56-to-56 filename reconciliation above was completed before the Course
 
 ## 19. Video rendering and private playback — source added, configuration pending
 
-- The Course Studio migration also creates `learnora_video_render_jobs`, a private asynchronous queue linked to each approved production package, generation job and lesson. Course-draft creation queues a render job only for AI-source video lessons with a scene plan. Human-source video lessons are uploaded to private Supabase Storage and text/practice lessons do not receive render jobs.
+- The Course Studio migration also creates `learnora_video_render_jobs`, a private asynchronous queue linked to each approved production package, generation job and lesson. Course-draft creation queues a render job only for AI-source video lessons with a scene plan. Human-source video lessons are uploaded directly to private R2 through a short-lived signed PUT URL; text/practice lessons do not receive render jobs.
 - Service-role-only RPCs claim jobs with `FOR UPDATE SKIP LOCKED`, complete uploads, recover stale worker leases, and publish a reviewed course atomically. The publication RPC checks lesson packages, completed video jobs, ready video assets and valid knowledge checks before changing quiz, lesson, module and course status to published. Failed or unfinished video jobs block publication.
 - The existing `lesson_videos` table already accepts the `cloudflare` provider and stores the object key and media metadata. The bucket name is read from the backend environment (`R2_BUCKET_NAME`) once that environment is configured; the current table does not contain a `storage_bucket` column. No duplicate media table is required.
-- The backend now generates one-hour R2 GET presigned URLs after normal learner course-access checks. The lesson workspace filters to ready videos and uses cross-origin playback. Signed URLs are never persisted in Supabase. Human-produced MP4s are uploaded to the existing private `learnora-course-media` Supabase Storage bucket and use the same learner playback/access checks. Course Studio also has a staff-only preview endpoint so reviewers can watch completed videos before publication; final publication verifies the private R2 objects and confirms that every private Supabase/R2 video can be signed for playback.
+- The backend now generates one-hour R2 GET presigned URLs after normal learner course-access checks. The lesson workspace filters to ready videos and uses cross-origin playback. Signed URLs are never persisted in Supabase. Human-produced MP4s are uploaded to the same private R2 bucket as AI-rendered videos and use the same learner playback/access checks. Course Studio also has a staff-only preview endpoint so reviewers can watch completed videos before publication; final publication verifies the private R2 objects and confirms that every private Supabase/R2 video can be signed for playback.
 - A GitHub Actions worker now polls every five minutes. It uses the quantized Kokoro ONNX model for English narration, deterministic Pillow slide/diagram/table/code/guided-step scenes, FFmpeg for MP4 encoding and captions, and the S3-compatible R2 API for private upload. It does not call a paid video-generation API.
 - The Learnora ME repository is public, so standard GitHub-hosted runners are currently a practical no-extra-runner-cost pilot option. The workflow safely skips until its required Supabase and R2 secrets are configured.
 - This first renderer produces narrated visual lessons, not cinematic footage or actual recordings of Excel/desktop software. Accurate software-specific demonstrations will need dedicated renderers or verified screen recordings.
@@ -336,6 +336,6 @@ The exact 56-to-56 filename reconciliation above was completed before the Course
 
 - The Course Studio lesson card lets authorised staff choose `AI-produced video` or `Human-produced video` for every video lesson. Text/practice lessons do not show a video-source selector.
 - A human-source package still generates the presenter-ready teaching script, concise note, practice activity and knowledge checks, but it does not create a storyboard or AI render job. The lesson remains unpublished until a private human-produced video is uploaded.
-- After the draft course exists, Course Studio exposes a per-lesson upload control for staff with `content.video`. It uses the existing `learnora-course-media` private Supabase bucket and the existing signed upload and `lesson_videos` metadata endpoints.
-- The learner workspace uses the existing signed Supabase video playback for human-produced videos and the new signed R2 playback for AI-rendered videos. Both remain private and subject to the normal learner course-access checks.
-- The publication RPC accepts a ready private Supabase or R2 video for human-source lessons; AI-source lessons require a completed render job and a ready private Cloudflare R2 video. A missing human video blocks publication.
+- After the draft course exists, Course Studio exposes a per-lesson upload control for staff with `content.video`. It uses a short-lived R2 signed PUT URL, verifies the uploaded object, and then creates the `lesson_videos` metadata row.
+- The learner workspace uses signed R2 playback for both AI-rendered and human-produced videos. Existing older Supabase-hosted videos continue to use the legacy signed Supabase playback path.
+- The publication RPC requires a ready private R2 video for human-source lessons; AI-source lessons require a completed render job and a ready private Cloudflare R2 video. A missing human video blocks publication.
