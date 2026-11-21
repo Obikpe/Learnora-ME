@@ -106,6 +106,7 @@ export default function TeamCourseStudioPage() {
   const [publishError, setPublishError] = useState("");
   const [renderJobs, setRenderJobs] = useState<Array<{id:string;status:string;attempt_count:number;max_attempts:number;error_summary?:string}>>([]);
   const [renderJobsQueued, setRenderJobsQueued] = useState<number | null>(null);
+  const [videoPreviews, setVideoPreviews] = useState<Array<{id:string;lesson_title:string;module_title:string;title:string;duration_seconds:number|null;provider:string;signed_url:string|null}>>([]);
   const [curriculumBusy, setCurriculumBusy] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [packages, setPackages] = useState<Record<string, LessonPackage>>({});
@@ -136,7 +137,7 @@ export default function TeamCourseStudioPage() {
     if (!savedJobId) return;
     let active = true;
     internalRequest("/course-studio/jobs/" + encodeURIComponent(savedJobId))
-      .then(data => {
+      .then(async data => {
         if (!active) return;
         const job = data.job;
         const requestData = job.request_data || {};
@@ -175,6 +176,12 @@ export default function TeamCourseStudioPage() {
         setPublishedCourse(job.status === "published");
         setRenderJobs(data.render_jobs || []);
         setRenderJobsQueued((data.render_jobs || []).filter((job:any) => job.status === "queued" || job.status === "processing").length);
+        try {
+          const previews = await internalRequest("/course-studio/jobs/" + encodeURIComponent(savedJobId) + "/videos");
+          if (active) setVideoPreviews(previews.videos || []);
+        } catch {
+          if (active) setVideoPreviews([]);
+        }
       })
       .catch((error: any) => {
         if (active) setGenerationError(error.message || "The saved course draft could not be restored.");
@@ -308,6 +315,14 @@ export default function TeamCourseStudioPage() {
     }
   }
 
+  async function refreshVideoStatus(currentJobId: string) {
+    const latest = await internalRequest("/course-studio/jobs/" + encodeURIComponent(currentJobId));
+    setRenderJobs(latest.render_jobs || []);
+    setRenderJobsQueued((latest.render_jobs || []).filter((job: any) => job.status === "queued" || job.status === "processing").length);
+    const previews = await internalRequest("/course-studio/jobs/" + encodeURIComponent(currentJobId) + "/videos");
+    setVideoPreviews(previews.videos || []);
+  }
+
   async function publishCourse() {
     if (!jobId || !createdCourseId || !canPublish || publishedCourse || publishBusy) return;
     setPublishBusy(true);
@@ -339,6 +354,8 @@ export default function TeamCourseStudioPage() {
       setRenderJobsQueued(result.render_jobs_queued ?? 0);
       const refreshed = await internalRequest("/course-studio/jobs/" + jobId);
       setRenderJobs(refreshed.render_jobs || []);
+      const previews = await internalRequest("/course-studio/jobs/" + jobId + "/videos");
+      setVideoPreviews(previews.videos || []);
     } catch (error: any) {
       setCreateDraftError(error.message || "The draft course could not be created.");
     } finally {
@@ -387,7 +404,7 @@ export default function TeamCourseStudioPage() {
                   <button onClick={() => void createDraftCourse()} disabled={!jobId || Object.keys(packages).length !== lessonCount || lessonCount === 0 || Object.values(packageBusy).some(Boolean) || batchBusy || createDraftBusy || Boolean(createdCourseId)} className="rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{createDraftBusy ? "Creating draft…" : "I have reviewed the packages — create draft course"}</button>
                 </div>
                 {createDraftError && <p role="alert" className="mt-3 rounded-lg border border-red-400/20 bg-red-400/5 p-3 text-sm text-red-200">{createDraftError}</p>}
-                {createdCourseId && <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[.04] p-3"><p className="text-sm font-semibold text-emerald-200">{publishedCourse ? "Course published" : "Draft course created"}</p><p className="mt-1 text-xs text-slate-400">Course ID: {createdCourseId}. Selected track: {targetTrackId ? (tracks.find(track => track.id === targetTrackId)?.name || "Learnora ME track") + (publishedCourse ? "" : " · linked on publication") : "Standalone course"}.</p><p className="mt-2 text-xs text-slate-300">{publishedCourse ? "The course is now published and available according to its course and track access settings." : "The course remains unpublished until an authorised staff member completes the final review and publication step."}</p><p className="mt-2 text-xs text-slate-300">{renderJobsQueued ?? renderJobs.filter(job => job.status === "queued" || job.status === "processing").length} video render job(s) still queued or processing.</p><div className="mt-3 flex flex-wrap items-center gap-2"><button type="button" onClick={async()=>{try{const latest=await internalRequest("/course-studio/jobs/"+jobId);setRenderJobs(latest.render_jobs||[]);setRenderJobsQueued((latest.render_jobs||[]).filter((job:any) => job.status === "queued" || job.status === "processing").length);}catch(error:any){setCreateDraftError(error.message||"Could not refresh video status.");}}} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300">Refresh video status</button>{renderJobs.map(job=><span key={job.id} className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-slate-400">{job.status}</span>)}</div>{renderJobs.some(job=>job.status==="failed")&&<p className="mt-2 text-xs text-amber-200">One or more videos need attention. Retry the failed video before publication.</p>}{canPublish && !publishedCourse && <div className="mt-4 border-t border-white/10 pt-4"><button type="button" onClick={() => void publishCourse()} disabled={publishBusy || renderJobs.some(job => job.status !== "completed")} className="rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{publishBusy ? "Publishing course…" : "Publish course"}</button>{publishError && <p role="alert" className="mt-3 text-xs text-red-200">{publishError}</p>}</div>}{publishedCourse && <p className="mt-3 text-xs font-semibold text-emerald-200">Published successfully.</p>}{publishedCourse && canPublish && targetTrackId && tracks.find(track => track.id === targetTrackId)?.status !== "published" && <div className="mt-4 border-t border-white/10 pt-4"><button type="button" onClick={() => void publishSelectedTrack()} disabled={trackPublishBusy} className="rounded-xl border border-[#d7ad35]/40 px-4 py-3 text-sm font-semibold text-[#e7c76d] disabled:opacity-40">{trackPublishBusy ? "Publishing track…" : "Publish learning track"}</button>{trackPublishError && <p role="alert" className="mt-3 text-xs text-red-200">{trackPublishError}</p>}</div>}</div>}
+                {createdCourseId && <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[.04] p-3"><p className="text-sm font-semibold text-emerald-200">{publishedCourse ? "Course published" : "Draft course created"}</p><p className="mt-1 text-xs text-slate-400">Course ID: {createdCourseId}. Selected track: {targetTrackId ? (tracks.find(track => track.id === targetTrackId)?.name || "Learnora ME track") + (publishedCourse ? "" : " · linked on publication") : "Standalone course"}.</p><p className="mt-2 text-xs text-slate-300">{publishedCourse ? "The course is now published and available according to its course and track access settings." : "The course remains unpublished until an authorised staff member completes the final review and publication step."}</p><p className="mt-2 text-xs text-slate-300">{renderJobsQueued ?? renderJobs.filter(job => job.status === "queued" || job.status === "processing").length} video render job(s) still queued or processing.</p><div className="mt-3 flex flex-wrap items-center gap-2"><button type="button" onClick={async()=>{try{await refreshVideoStatus(jobId);}catch(error:any){setCreateDraftError(error.message||"Could not refresh video status.");}}} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300">Refresh video status</button>{renderJobs.map(job=><span key={job.id} className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-slate-400">{job.status}</span>)}</div>{renderJobs.some(job=>job.status==="failed")&&<p className="mt-2 text-xs text-amber-200">One or more videos need attention. Retry the failed video before publication.</p>}{videoPreviews.length > 0 && <div className="mt-4 grid gap-4">{videoPreviews.map(video => <div key={video.id} className="rounded-xl border border-white/10 bg-black/20 p-3"><p className="text-xs font-semibold text-slate-200">{video.module_title} · {video.lesson_title}</p>{video.signed_url ? <video className="mt-3 aspect-video w-full rounded-lg bg-black" controls playsInline preload="metadata" src={video.signed_url}/> : <p className="mt-2 text-xs text-amber-200">Video is ready, but private playback credentials are not configured yet.</p>}</div>)}</div>}{canPublish && !publishedCourse && <div className="mt-4 border-t border-white/10 pt-4"><button type="button" onClick={() => void publishCourse()} disabled={publishBusy || renderJobs.some(job => job.status !== "completed")} className="rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{publishBusy ? "Publishing course…" : "Publish course"}</button>{publishError && <p role="alert" className="mt-3 text-xs text-red-200">{publishError}</p>}</div>}{publishedCourse && <p className="mt-3 text-xs font-semibold text-emerald-200">Published successfully.</p>}{publishedCourse && canPublish && targetTrackId && tracks.find(track => track.id === targetTrackId)?.status !== "published" && <div className="mt-4 border-t border-white/10 pt-4"><button type="button" onClick={() => void publishSelectedTrack()} disabled={trackPublishBusy} className="rounded-xl border border-[#d7ad35]/40 px-4 py-3 text-sm font-semibold text-[#e7c76d] disabled:opacity-40">{trackPublishBusy ? "Publishing track…" : "Publish learning track"}</button>{trackPublishError && <p role="alert" className="mt-3 text-xs text-red-200">{trackPublishError}</p>}</div>}</div>}
               </div>
             </section>}
           </div>
