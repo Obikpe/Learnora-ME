@@ -174,6 +174,7 @@ def list_course_tracks(
             .select("id,name,slug,status")
             .is_("owner_user_id", "null")
             .is_("organisation_id", "null")
+            .neq("status", "archived")
             .order("name")
             .execute()
         )
@@ -263,7 +264,7 @@ async def generate_curriculum(
         try:
             track_result = (
                 supabase.table("learnora_learning_paths")
-                .select("id,owner_user_id,organisation_id")
+                .select("id,owner_user_id,organisation_id,status")
                 .eq("id", str(payload.target_track_id))
                 .maybe_single()
                 .execute()
@@ -271,8 +272,8 @@ async def generate_curriculum(
         except Exception:
             raise HTTPException(status_code=500, detail="The selected Learnora ME track could not be verified.") from None
         track = track_result.data
-        if not track or track.get("owner_user_id") or track.get("organisation_id"):
-            raise HTTPException(status_code=422, detail="Only an existing Learnora ME global track can be selected here.")
+        if not track or track.get("owner_user_id") or track.get("organisation_id") or track.get("status") == "archived":
+            raise HTTPException(status_code=422, detail="Only an active global Learnora ME track can be selected here.")
 
     job_id = uuid4()
     course_slug = f"{_slugify(output.course_title)}-{job_id.hex[:8]}"
