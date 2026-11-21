@@ -353,3 +353,8 @@ The repository migration directory has now been reconciled to the active Pheonix
 - The unapplied `20261026153000_revoke_browser_privileges_and_defaults.sql` was moved out of the active migration directory to `supabase/pending_migrations/`. It is preserved for review and is not an active migration.
 
 This resolves the filename/ledger mismatch blocker for creating a new versioned migration. It does **not** mean the pending browser-privilege migration is approved, nor does it authorise applying a new migration to the live Pheonix project. Continue to test new migrations against disposable/current-schema staging first and obtain separate approval before any production application. No live schema, migration ledger, grants or data were changed by this reconciliation.
+
+
+### Follow-on migration state after Course Studio schema was added
+
+The exact 56-to-56 filename reconciliation above was completed before the Course Studio migration was authored. The repository now intentionally contains **57 files** in `supabase/migrations/`: the 56 applied live versions with matching filenames, plus the new, unapplied `20261121150000_ai_course_production_drafts.sql`. The live Pheonix ledger remains at 56 applied versions. This single repository-only version is the expected pending Course Studio migration, not a filename mismatch. The separate unapproved browser-privilege migration remains in `supabase/pending_migrations/`.
