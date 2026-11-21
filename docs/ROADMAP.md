@@ -707,7 +707,23 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [ ] Complete CI migration rehearsal and resolve any failures.
 - [ ] Obtain approval and apply the migration to live Pheonix.
 - [x] Add the private video render queue, claim/complete/stale-recovery RPCs, Kokoro/FFmpeg worker source, and R2 signed-playback source.
+- [x] Add a sequential Course Studio action to generate all missing lesson packages.
 - [ ] Pass CI for the render queue and worker; configure private R2, CORS, Vercel environment and GitHub Actions secrets.
 - [ ] Deploy the verified renderer/playback integration and run an end-to-end test lesson.
-- [ ] Complete course review/publication and track linking.
+- [x] Link a generated course to its selected global track during atomic draft creation.
+- [ ] Complete course review and publication.
 - [ ] Generate the initial real course catalogue and retire the test course from discovery without deleting its two certificates or learner history.
+
+
+### Current execution update — 21 November 2026
+
+- The current Learnora ME root navigation renders the `Logo` component by default, and the dashboard navigation also renders the Learnora ME wordmark. The previously reported missing brand text is not present in the current `main` source inspected for this pass. No unnecessary logo rewrite was made.
+- The learner lesson workspace is already video-capable: it renders signed native video, YouTube/Vimeo embeds, authored lesson content and learner-owned notes separately. It displays one primary video per lesson; the first AI renderer also produces one primary video per lesson.
+- The Course Studio remains an internal-staff-only route inside Learnora ME, separate from normal learner/creator/organisation navigation and permissions. The separate `frontend-team/` application remains a later website build, not part of this integration.
+- The selected global track is now linked when the unpublished course draft is created. Standalone courses remain supported.
+- The batch action now generates missing lesson packages sequentially and stops on the first failed request.
+- The video worker configuration was corrected to use dedicated R2 worker credentials and the actual `lesson_videos` schema. The backend playback credentials remain separate and read-only.
+- No learner-facing developer comments, implementation notes, or debug text have been added.
+- No deployment, live Supabase migration, live R2 bucket creation, or production secret change has been performed.
+
+**Next work:** complete migration/CI and worker verification, review the full draft-to-publication path, finish the real course briefs and content QA, and prepare the mock-course retirement as a separate non-destructive operation. The existing Introduction to Data Analytics test course has 2 completed enrolments, 2 lesson-progress records and 2 certificates; it must be archived/replaced only after the new course and track transition are ready. Do not hard-delete it.
