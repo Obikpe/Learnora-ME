@@ -128,7 +128,12 @@ export default function TeamCourseStudioPage() {
   useEffect(() => {
     let active = true;
     internalRequest("/course-studio/access")
-      .then(async data => { if (active) setStaff(data.staff); try { const trackData = await internalRequest("/course-studio/tracks"); if (active) setTracks(trackData.tracks || []); } catch {} try { await internalRequest("/course-studio/publish-access"); if (active) setCanPublish(true); } catch { if (active) setCanPublish(false); } })
+      .then(async data => {
+        if (active) setStaff(data.staff);
+        try { const trackData = await internalRequest("/course-studio/tracks"); if (active) setTracks(trackData.tracks || []); } catch {}
+        try { await internalRequest("/course-studio/publish-access"); if (active) setCanPublish(true); } catch { if (active) setCanPublish(false); }
+        try { await internalRequest("/course-studio/human-video-access"); if (active) setCanUploadHumanVideo(true); } catch { if (active) setCanUploadHumanVideo(false); }
+      })
       .catch((error: any) => {
         if (!active) return;
         if (error.status === 401) router.replace("/team-studio/login");
@@ -174,11 +179,13 @@ export default function TeamCourseStudioPage() {
                 knowledge_check: row.knowledge_check || [],
                 video_plan: row.video_plan || [],
                 fact_check_notes: row.fact_check_notes || [],
+                video_source: row.video_source || "ai",
               },
             };
           }
         }
         setPackages(Object.fromEntries(Object.entries(latest).map(([key, value]) => [key, value.package])));
+        setVideoSourceModes(Object.fromEntries(Object.entries(latest).map(([key, value]) => [key, value.package.video_source || "ai"])));
         setCreatedCourseId(["created", "published"].includes(job.status) ? job.created_course_id : null);
         setPublishedCourse(job.status === "published");
         setRenderJobs(data.render_jobs || []);
@@ -186,6 +193,7 @@ export default function TeamCourseStudioPage() {
         try {
           const previews = await internalRequest("/course-studio/jobs/" + encodeURIComponent(savedJobId) + "/videos");
           if (active) setVideoPreviews(previews.videos || []);
+          if (active) setCourseLessons(previews.lessons || []);
         } catch {
           if (active) setVideoPreviews([]);
         }
