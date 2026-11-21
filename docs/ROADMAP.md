@@ -667,3 +667,22 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - Media access is re-authorised at playback time; durable records store asset identity, not expiring signed URLs.
 - Test-course replacement preserves learner history and track relationships.
 - No production migration, storage migration or deployment is performed without separate verification and approval.
+
+
+### Progress update — 21 November 2026
+
+- [x] Read the active product, roadmap, account/organisation, learner journey and migration reconciliation documents; inspect active Learnora ME, Learnora Teams and FastAPI paths.
+- [x] Add the AI Course Production and Media Architecture Audit and link it from the README and Product Engineering Specification.
+- [x] Record the current Pheonix schema, live migration ledger discrepancy, AI profile, staff permission mapping and test-course enrolment/progress evidence.
+- [x] Restore Learnora ME branding in the landing-page top navigation.
+- [x] Add the first internal Course Studio entry point inside Learnora ME, with a separate staff sign-in route and backend permission checks.
+- [x] Add validated AI curriculum and lesson-package proposal endpoints using the existing `content_generation` profile.
+- [x] Clarify the authored lesson note in the learner player; confirm the existing video playback path is already present.
+- [ ] Add the dedicated `content.generate` permission for the learning-curriculum role after migration reconciliation.
+- [ ] Add durable private course-generation drafts and atomic draft-to-course persistence; keep generated teaching scripts out of learner-visible lesson content.
+- [ ] Add the review/edit/approve/publish workflow and ensure draft courses remain invisible to learners.
+- [ ] Implement the asynchronous video/TTS/caption/rendering pipeline and secure playback validation.
+- [ ] Generate the initial real course catalogue, then retire the test Introduction to Data Analytics course without deleting its completed enrolments or progress.
+- [ ] Complete CI, browser/mobile acceptance and a separate deployment approval.
+
+**Important:** the current Course Studio is a proposal-generation prototype, not yet an end-to-end publisher. The next engineering gate is the private draft/persistence schema and migration reconciliation, not a video-provider migration. The Teams website itself remains a separate later build.
