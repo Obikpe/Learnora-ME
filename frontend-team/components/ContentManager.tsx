@@ -91,7 +91,7 @@ function Media({lessonId,busy,media,video,setVideo,resource,setResource,act,relo
      await createVideo(lessonId,{provider:"supabase",title:video.title||file.name,storage_path:ticket.path,file_size_bytes:file.size,mime_type:file.type,status:"ready",is_private:true});
      setVideo({provider:"youtube",title:"",external_video_id:"",storage_path:"",status:"ready",is_private:true});
      await reload();
-    },"Video uploaded and attached.")}>Upload & attach video</button>
+    },"Video uploaded and attached.")}>{videoUploadProgress!==null?"Uploading video…":"Upload & attach video"}</button>
     <label className="block text-xs text-slate-500">Processing state<select className="field mt-1" value={video.status} onChange={e=>setVideo({...video,status:e.target.value})}><option value="pending">Pending</option><option value="processing">Processing</option><option value="ready">Ready</option><option value="failed">Failed</option></select></label>
     <button className="action" disabled={busy||!hasVideoReference} onClick={()=>act(async()=>{
      await createVideo(lessonId,{...video,external_video_id:video.external_video_id.trim()||null,storage_path:video.storage_path.trim()||null,title:video.title.trim()||null});
