@@ -56,6 +56,42 @@ class UploadSupabase:
 
 
 class InternalContentUploadTests(unittest.TestCase):
+    def test_video_upload_returns_private_signed_upload_details(self):
+        db = UploadSupabase()
+        payload = internal_content.VideoUploadRequest(
+            filename="../lesson demonstration.mp4",
+            content_type="video/mp4",
+            file_size_bytes=2048,
+            title="Lesson demonstration",
+        )
+        with patch.object(internal_content, "supabase", db):
+            result = internal_content.create_video_upload(
+                "lesson-1", payload, staff=SimpleNamespace(user_id="staff-1")
+            )
+        self.assertEqual(db.storage.bucket_name, "learnora-course-media")
+        self.assertTrue(result["path"].startswith("courses/course-1/lessons/lesson-1/"))
+        self.assertNotIn("../", result["path"])
+        self.assertEqual(result["token"], "signed-token")
+        self.assertEqual(result["title"], "Lesson demonstration")
+        self.assertEqual(result["content_type"], "video/mp4")
+        self.assertEqual(db.storage.bucket.options, {"upsert": "false"})
+
+    def test_video_upload_rejects_unsupported_mime_types(self):
+        with self.assertRaises(ValidationError):
+            internal_content.VideoUploadRequest(
+                filename="lesson.exe",
+                content_type="application/x-msdownload",
+                file_size_bytes=1024,
+            )
+
+    def test_video_upload_rejects_files_over_2gb(self):
+        with self.assertRaises(ValidationError):
+            internal_content.VideoUploadRequest(
+                filename="lesson.mp4",
+                content_type="video/mp4",
+                file_size_bytes=2147483649,
+            )
+
     def test_resource_upload_returns_private_signed_upload_details(self):
         db = UploadSupabase()
         payload = internal_content.ResourceUploadRequest(
