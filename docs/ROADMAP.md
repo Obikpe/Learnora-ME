@@ -704,12 +704,13 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [x] Persist generated curriculum and lesson packages; add explicit staff approval before course draft creation.
 - [x] Add optional global-track targeting and saved-draft restoration.
 - [x] Add migration assertions and rollback rehearsal to CI.
-- [ ] Complete CI migration rehearsal and resolve any failures.
+- [x] Complete CI migration rehearsal and resolve the Course Studio schema/rollback checks.
 - [ ] Obtain approval and apply the migration to live Pheonix.
 - [x] Add the private video render queue, claim/complete/stale-recovery RPCs, Kokoro/FFmpeg worker source, and R2 signed-playback source.
 - [x] Add a sequential Course Studio action to generate all missing lesson packages.
 - [x] Prepare the first Data Analytics, Excel Fundamentals and Front-end Web Development production briefs.
-- [ ] Pass CI for the render queue and worker; configure private R2, CORS, Vercel environment and GitHub Actions secrets.
+- [x] Pass full CI for backend tests, Course Studio migration/rollback rehearsal, Kokoro/FFmpeg MP4 smoke test, and both website builds (commit `e776c2613f`).
+- [ ] Configure private R2, CORS, Vercel backend environment and GitHub Actions worker secrets; then run the actual queued render workflow.
 - [ ] Deploy the verified renderer/playback integration and run an end-to-end test lesson.
 - [x] Link a generated course to its selected global track during atomic publication, after rechecking track enrolment locks.
 - [x] Add a final publish action restricted to the existing `content.manage` permission; generation-only staff cannot publish.
@@ -732,7 +733,7 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - The batch action now generates missing lesson packages sequentially and stops on the first failed request.
 - The video worker configuration uses dedicated R2 worker credentials and the actual `lesson_videos` schema. The backend R2 token is separate and bucket-scoped; it needs object read access for playback/verification and write access for authorised human-video uploads.
 - The latest scheduled renderer workflow completed without errors but skipped its render steps because the required Supabase and R2 GitHub Actions secrets are not configured. This is a configuration check, not an end-to-end rendering result.
-- The latest full production check identified a nullable Course Studio job-ID type error. The refresh action now guards the missing ID; the corrected full run is pending.
+- The Course Studio video-status refresh now guards a missing job ID. The full Learnora production checks and the Cohort Learning Access Tests both passed on commit `e776c2613f`.
 - No learner-facing developer comments, implementation notes, or debug text have been added.
 - No deployment, live Supabase migration, live R2 bucket creation, or production secret change has been performed.
 
