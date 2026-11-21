@@ -203,8 +203,7 @@ export default function TeamCourseStudioPage() {
         method: "POST",
         body: JSON.stringify({ name: newTrackName.trim(), slug: newTrackSlug.trim(), description: newTrackDescription.trim() || null }),
       });
-      const refreshed = await internalRequest("/course-studio/tracks");
-      setTracks(refreshed.tracks || []);
+      setTracks(current => [...current.filter(track => track.id !== result.track.id), result.track].sort((a, b) => a.name.localeCompare(b.name)));
       setTargetTrackId(result.track.id);
       setNewTrackName("");
       setNewTrackSlug("");
@@ -302,12 +301,11 @@ export default function TeamCourseStudioPage() {
     setTrackPublishBusy(true);
     setTrackPublishError("");
     try {
-      await internalRequest("/tracks/" + encodeURIComponent(targetTrackId), {
+      const result = await internalRequest("/tracks/" + encodeURIComponent(targetTrackId), {
         method: "PATCH",
         body: JSON.stringify({ status: "published" }),
       });
-      const refreshed = await internalRequest("/course-studio/tracks");
-      setTracks(refreshed.tracks || []);
+      setTracks(current => current.map(track => track.id === targetTrackId ? { ...track, status: result.track?.status || "published" } : track));
     } catch (error: any) {
       setTrackPublishError(error.message || "The learning track could not be published.");
     } finally {
