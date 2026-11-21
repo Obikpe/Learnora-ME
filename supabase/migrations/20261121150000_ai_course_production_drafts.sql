@@ -268,6 +268,28 @@ BEGIN
     RETURNING id INTO v_course_id;
 
     IF v_job.target_track_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1
+              FROM public.learnora_learning_paths lp
+             WHERE lp.id = v_job.target_track_id
+               AND lp.owner_user_id IS NULL
+               AND lp.organisation_id IS NULL
+               AND lp.status <> 'archived'
+        ) THEN
+            RAISE EXCEPTION 'The selected global track is no longer available for course production';
+        END IF;
+
+        IF EXISTS (
+            SELECT 1
+              FROM public.learnora_learning_path_courses lpc
+              JOIN public.learnora_enrolments e ON e.course_id = lpc.course_id
+             WHERE lpc.path_id = v_job.target_track_id
+               AND e.source_type = 'track_enrolment:' || v_job.target_track_id::text
+               AND e.status IN ('active', 'completed')
+        ) THEN
+            RAISE EXCEPTION 'The selected track curriculum is locked by learner enrolments; create a successor track instead';
+        END IF;
+
         INSERT INTO public.learnora_learning_path_courses (
             path_id, course_id, order_index, required
         )
@@ -495,6 +517,17 @@ BEGIN
 
     IF (SELECT status FROM public.learnora_courses WHERE id = v_course_id) <> 'draft' THEN
         RAISE EXCEPTION 'Only a draft course can be published';
+    END IF;
+
+    IF v_job.target_track_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1
+          FROM public.learnora_learning_paths lp
+         WHERE lp.id = v_job.target_track_id
+           AND lp.owner_user_id IS NULL
+           AND lp.organisation_id IS NULL
+           AND lp.status <> 'archived'
+    ) THEN
+        RAISE EXCEPTION 'The selected global track is no longer available for publication';
     END IF;
 
     SELECT count(*)::integer, max(order_index)
