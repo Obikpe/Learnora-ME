@@ -118,6 +118,10 @@ CREATE INDEX IF NOT EXISTS idx_learnora_video_render_jobs_generation_job
 CREATE INDEX IF NOT EXISTS idx_learnora_video_render_jobs_lesson
     ON public.learnora_video_render_jobs (lesson_id);
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lesson_videos_cloudflare_storage_path
+    ON public.lesson_videos (lesson_id, storage_path)
+    WHERE provider = 'cloudflare' AND storage_path IS NOT NULL;
+
 ALTER TABLE public.learnora_course_generation_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.learnora_lesson_production_packages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.learnora_video_render_jobs ENABLE ROW LEVEL SECURITY;
