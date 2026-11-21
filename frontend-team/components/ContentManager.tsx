@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from "react";
 import Shell from "./Shell";
 import RichTextEditor from "./RichTextEditor";
-import {contentCourses,contentCourse,contentModules,contentLessons,contentLesson,contentLessonMedia,courseStructure,createCourse,updateCourse,archiveCourse,createModule,createLesson,updateLesson,archiveModule,archiveLesson,reorderModules,reorderLessons,createVideoUpload,createVideo,createResourceUpload,createResource} from "../lib/content";
+import {contentCourses,contentCourse,contentModules,contentLessons,contentLesson,contentLessonMedia,courseStructure,createCourse,updateCourse,archiveCourse,createModule,createLesson,updateLesson,archiveModule,archiveLesson,reorderModules,reorderLessons,createVideoUpload,createCourseStudioVideoUpload,finalizeCourseStudioVideoUpload,createVideo,createResourceUpload,createResource} from "../lib/content";
 import {teamMe} from "../lib/api";
 
 const types=["video","article","text","practice","quiz","assignment","project","mixed"];
@@ -40,7 +40,7 @@ export default function ContentManager(){
  <Box title="Modules"><div className="flex gap-2"><input className="field" placeholder="New module" value={newMod} onChange={e=>setNewMod(e.target.value)}/><button className="action" disabled={!newMod.trim()||busy} onClick={()=>act(async()=>{const r=await createModule(course,{title:newMod,order_index:mods.length,status:"draft"});setNewMod("");await loadMods();setMod(String(r.module.id))},"Module created.")}>Add</button></div>{mods.map((m,i)=><div className={"item "+(String(m.id)===mod?"active":"")} key={m.id}><button onClick={()=>setMod(String(m.id))} className="flex-1 text-left">{m.title}<span>{m.status}</span></button><button className="mini" disabled={!i} onClick={()=>act(async()=>{const a=[...mods];[a[i-1],a[i]]=[a[i],a[i-1]];setMods(a);await reorderModules(course,a.map((x,j)=>({id:String(x.id),order_index:j})))},"Order saved.")}>↑</button><button className="mini" disabled={i===mods.length-1} onClick={()=>act(async()=>{const a=[...mods];[a[i],a[i+1]]=[a[i+1],a[i]];setMods(a);await reorderModules(course,a.map((x,j)=>({id:String(x.id),order_index:j})))},"Order saved.")}>↓</button></div>)}{mod&&<button className="danger mt-2" onClick={()=>act(async()=>{await archiveModule(mod);await loadMods()},"Module archived.")}>Archive module</button>}</Box>
  <Box title="Lessons"><div className="flex gap-2"><input className="field" placeholder="New lesson" value={newLesson} onChange={e=>setNewLesson(e.target.value)}/><button className="action" disabled={!newLesson.trim()||busy} onClick={()=>act(async()=>{const r=await createLesson(mod,{title:newLesson,order_index:lessons.length,lesson_type:"mixed",status:"draft"});setNewLesson("");await loadLessons();setLessonId(String(r.lesson.id))},"Lesson created.")}>Add</button></div>{lessons.map((l,i)=><div className={"item "+(String(l.id)===lessonId?"active":"")} key={l.id}><button onClick={()=>setLessonId(String(l.id))} className="flex-1 text-left">{l.title}<span>{l.lesson_type} · {l.status}</span></button><button className="mini" disabled={!i} onClick={()=>act(async()=>{const a=[...lessons];[a[i-1],a[i]]=[a[i],a[i-1]];setLessons(a);await reorderLessons(mod,a.map((x,j)=>({id:String(x.id),order_index:j})))},"Order saved.")}>↑</button><button className="mini" disabled={i===lessons.length-1} onClick={()=>act(async()=>{const a=[...lessons];[a[i],a[i+1]]=[a[i+1],a[i]];setLessons(a);await reorderLessons(mod,a.map((x,j)=>({id:String(x.id),order_index:j})))},"Order saved.")}>↓</button></div>)}</Box>
  <Box title={lesson?.title||"Lesson detail"} className="xl:col-span-3">{!lesson?<Muted>Select a lesson.</Muted>:<div className="space-y-3"><input className="field" value={title} onChange={e=>setTitle(e.target.value)}/><textarea className="field min-h-20" placeholder="Description" value={desc} onChange={e=>setDesc(e.target.value)}/><div className="grid grid-cols-2 gap-2"><select className="field" value={type} onChange={e=>setType(e.target.value)}>{types.map(x=><option key={x}>{x}</option>)}</select><select className="field" value={status} onChange={e=>setStatus(e.target.value)}>{["draft","published","archived"].map(x=><option key={x}>{x}</option>)}</select></div><input type="number" min="0" className="field" placeholder="Duration minutes" value={duration} onChange={e=>setDuration(e.target.value)}/><RichTextEditor value={body} onChange={setBody}/><button className="action" disabled={busy} onClick={()=>act(async()=>{await updateLesson(lessonId,{title,description:desc,content:body,lesson_type:type,status,duration_minutes:duration?Number(duration):null});await loadLesson()},"Lesson saved.")}>Save lesson</button><button className="danger ml-2" onClick={()=>act(async()=>{await archiveLesson(lessonId);await loadLessons()},"Lesson archived.")}>Archive</button>
- <Media lessonId={lessonId} busy={busy} media={media} video={video} setVideo={setVideo} resource={resource} setResource={setResource} act={act} reload={loadLesson}/></div>}</Box>
+ <Media lessonId={lessonId} isAiGenerated={Boolean(courseData?.settings?.ai_generated)} busy={busy} media={media} video={video} setVideo={setVideo} resource={resource} setResource={setResource} act={act} reload={loadLesson}/></div>}</Box>
  </div></Shell>
 }
 function uploadVideoWithProgress(url:string,file:File,onProgress:(percent:number)=>void):Promise<void>{
@@ -60,7 +60,23 @@ function uploadVideoWithProgress(url:string,file:File,onProgress:(percent:number
   request.send(file);
  });
 }
-function Media({lessonId,busy,media,video,setVideo,resource,setResource,act,reload}:any){
+function readVideoDuration(file:File):Promise<number>{
+ return new Promise((resolve,reject)=>{
+  const objectUrl=URL.createObjectURL(file);
+  const player=document.createElement("video");
+  player.preload="metadata";
+  const cleanup=()=>URL.revokeObjectURL(objectUrl);
+  player.onloadedmetadata=()=>{
+   const duration=player.duration;
+   cleanup();
+   if(Number.isFinite(duration))resolve(Math.ceil(duration));
+   else reject(new Error("The video duration could not be read."));
+  };
+  player.onerror=()=>{cleanup();reject(new Error("The MP4 duration could not be read."));};
+  player.src=objectUrl;
+ });
+}
+function Media({lessonId,isAiGenerated=false,busy,media,video,setVideo,resource,setResource,act,reload}:any){
  const [videoUploadProgress,setVideoUploadProgress]=useState<number|null>(null);
  const hasVideoReference=video.provider==="supabase"?Boolean(video.storage_path.trim()):Boolean(video.external_video_id.trim()||video.storage_path.trim());
  const hasResourceReference=Boolean(resource.external_url.trim()||resource.storage_path.trim());
@@ -74,21 +90,37 @@ function Media({lessonId,busy,media,video,setVideo,resource,setResource,act,relo
     <input className="field" placeholder="Video title" value={video.title} onChange={e=>setVideo({...video,title:e.target.value})}/>
     <input className="field" placeholder="External video ID or reference" value={video.external_video_id} onChange={e=>setVideo({...video,external_video_id:e.target.value})}/>
     <input className="field" placeholder="Storage path (for an existing stored video)" value={video.storage_path} onChange={e=>setVideo({...video,storage_path:e.target.value})}/>
-    <label className="block"><span className="label">Upload lesson video (max 2 GB)</span><input className="mt-1 block w-full text-xs text-slate-400" type="file" accept="video/mp4,video/webm,video/quicktime,video/mpeg,video/x-msvideo" onChange={e=>setVideo({...video,_file:e.target.files?.[0]||null})}/></label>
+    <label className="block"><span className="label">{isAiGenerated?"Upload human-produced lesson video (MP4, max 5 minutes)":"Upload lesson video (max 2 GB)"}</span><input className="mt-1 block w-full text-xs text-slate-400" type="file" accept={isAiGenerated?"video/mp4":"video/mp4,video/webm,video/quicktime,video/mpeg,video/x-msvideo"} onChange={e=>setVideo({...video,_file:e.target.files?.[0]||null})}/></label>{isAiGenerated&&<p className="text-xs leading-5 text-slate-500">This lesson must be set to Human-produced video in Course Studio. AI-rendered lessons cannot be replaced from this workspace.</p>}
     {videoUploadProgress!==null&&<div className="mt-2" role="status" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--primary)] transition-all" style={{width:videoUploadProgress+"%"}}/></div><p className="mt-1 text-xs text-slate-400">Uploading lesson video · {videoUploadProgress}%</p></div>}
     <button className="action" disabled={busy||act===undefined||!video._file} onClick={()=>act(async()=>{
      const file=video._file as File;
      if(!file)throw new Error("Select a video file first.");
      if(file.size>2147483648)throw new Error("Video files must be 2 GB or smaller.");
-     const ticket=await createVideoUpload(lessonId,{filename:file.name,content_type:file.type,file_size_bytes:file.size,title:video.title||file.name});
-     if(!ticket.signed_url)throw new Error("Upload URL was not returned.");
-     setVideoUploadProgress(0);
-     try{
-      await uploadVideoWithProgress(ticket.signed_url,file,setVideoUploadProgress);
-     }finally{
-      setVideoUploadProgress(null);
+     const title=video.title.trim()||file.name;
+     if(isAiGenerated){
+      if(file.type!=="video/mp4")throw new Error("AI-generated courses require an MP4 video.");
+      const durationSeconds=await readVideoDuration(file);
+      if(durationSeconds<1||durationSeconds>300)throw new Error("Keep lesson videos to 5 minutes or less.");
+      const ticket=await createCourseStudioVideoUpload(lessonId,{filename:file.name,file_size_bytes:file.size,duration_seconds:durationSeconds,title});
+      if(!ticket.upload_url||!ticket.object_key)throw new Error("Private video upload details were not returned.");
+      setVideoUploadProgress(0);
+      try{
+       await uploadVideoWithProgress(ticket.upload_url,file,setVideoUploadProgress);
+      }finally{
+       setVideoUploadProgress(null);
+      }
+      await finalizeCourseStudioVideoUpload(lessonId,{object_key:ticket.object_key,file_size_bytes:file.size,duration_seconds:durationSeconds,title});
+     }else{
+      const ticket=await createVideoUpload(lessonId,{filename:file.name,content_type:file.type,file_size_bytes:file.size,title});
+      if(!ticket.signed_url)throw new Error("Upload URL was not returned.");
+      setVideoUploadProgress(0);
+      try{
+       await uploadVideoWithProgress(ticket.signed_url,file,setVideoUploadProgress);
+      }finally{
+       setVideoUploadProgress(null);
+      }
+      await createVideo(lessonId,{provider:"supabase",title,storage_path:ticket.path,file_size_bytes:file.size,mime_type:file.type,status:"ready",is_private:true});
      }
-     await createVideo(lessonId,{provider:"supabase",title:video.title||file.name,storage_path:ticket.path,file_size_bytes:file.size,mime_type:file.type,status:"ready",is_private:true});
      setVideo({provider:"youtube",title:"",external_video_id:"",storage_path:"",status:"ready",is_private:true});
      await reload();
     },"Video uploaded and attached.")}>{videoUploadProgress!==null?"Uploading video…":"Upload & attach video"}</button>
