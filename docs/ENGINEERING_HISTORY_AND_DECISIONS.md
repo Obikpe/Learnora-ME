@@ -834,3 +834,5 @@ The frontend lint steps now lint only changed JavaScript/TypeScript files relati
 - The curriculum prompt was aligned with the Pydantic contract: it explicitly requests both the required short catalogue description and full course description, uses only fields represented by the module schema, and states the 1–5 minute lesson estimate range. A regression test guards the required description fields.
 - The Data Analytics pilot brief now follows the agreed Module 1 lesson sequence and includes the short-note guidance for careers, career motivation and the data analytics/data analysis comparison.
 - These follow-up worker/schema/prompt changes are committed to `main`; the next full production CI run is pending.
+
+- Human-produced lesson video uploads now read local MP4 metadata before requesting a signed R2 upload ticket and enforce a 1–300 second duration in both upload/finalisation request models. The atomic course-publication RPC also rejects ready video assets without a duration in that range.
