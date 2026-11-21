@@ -174,11 +174,16 @@ BEGIN
         v_course_slug := v_course_slug || '-' || substr(replace(p_job_id::text, '-', ''), 1, 8);
     END IF;
 
-    SELECT COALESCE(sum(p.estimated_duration_seconds), 0)::numeric / 3600
+    SELECT COALESCE(sum(latest.estimated_duration_seconds), 0)::numeric / 3600
       INTO v_estimated_hours
-      FROM public.learnora_lesson_production_packages p
-     WHERE p.job_id = p_job_id
-       AND p.status = 'approved';
+      FROM (
+          SELECT DISTINCT ON (p.module_order, p.lesson_order)
+                 p.estimated_duration_seconds
+            FROM public.learnora_lesson_production_packages p
+           WHERE p.job_id = p_job_id
+             AND p.status = 'approved'
+           ORDER BY p.module_order, p.lesson_order, p.version DESC
+      ) AS latest;
 
     INSERT INTO public.learnora_courses (
         title, slug, short_description, description, level, status,
@@ -229,8 +234,14 @@ BEGIN
              WHERE p.job_id = p_job_id
                AND p.module_order = v_module_order
                AND p.lesson_order = v_lesson_order
+               AND p.version = (
+                   SELECT max(p2.version)
+                     FROM public.learnora_lesson_production_packages p2
+                    WHERE p2.job_id = p_job_id
+                      AND p2.module_order = v_module_order
+                      AND p2.lesson_order = v_lesson_order
+               )
                AND p.status = 'approved'
-             ORDER BY p.version DESC
              LIMIT 1;
 
             IF NOT FOUND THEN
