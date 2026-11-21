@@ -8,6 +8,7 @@
 - Store the durable provider and object key in Supabase `lesson_videos` rows (`provider='cloudflare'`, `storage_path`). The bucket name is supplied to the backend through `R2_BUCKET_NAME`; the current `lesson_videos` schema does not have a `storage_bucket` column. Keep the video transcript in `transcript_text`.
 - Never store a time-limited signed URL in Supabase.
 - The Learnora ME backend verifies the learner's existing course access, then generates a one-hour R2 GET presigned URL. The browser receives only that temporary URL.
+- Internal Course Studio reviewers can also preview ready videos through a separate staff-permission-gated endpoint before publication.
 - The learner video player uses the returned URL with cross-origin media playback enabled.
 - The object key is unique per approved lesson-production package:
   `courses/{course_id}/modules/{module_id}/lessons/{lesson_id}/{production_package_id}.mp4`
@@ -105,7 +106,7 @@ The Kokoro ONNX Python package is MIT-licensed and the Kokoro 82M model is Apach
 - [ ] Add the six GitHub worker secrets (Supabase URL/key, R2 account/bucket and the separate worker access/secret key) to GitHub Actions.
 - [ ] Apply the pending Course Studio/video-render migration to live Pheonix only after the migration rehearsal passes and the release is approved.
 - [ ] Deploy the backend and Learnora ME frontend only after the migration is applied.
-- [ ] Run one test lesson end to end; verify the MP4, captions, R2 object, signed playback URL and learner access restriction.
+- [ ] Run one test lesson end to end; verify the MP4, captions, R2 object, staff preview, signed learner playback URL and learner access restriction.
 - [ ] Review the video and lesson content before publishing the course.
 
 
