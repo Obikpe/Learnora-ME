@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from routers.internal_course_studio import (
     CurriculumOutput,
     LessonPackageOutput,
+    LessonPackageRequest,
     generate_curriculum,
     _extract_json,
 )
@@ -20,6 +21,23 @@ class CourseStudioContractTests(unittest.TestCase):
     def test_curriculum_generation_uses_the_dedicated_generation_permission(self):
         source = inspect.getsource(generate_curriculum)
         self.assertIn('require_internal_permission("content.generate")', source)
+
+    def test_lesson_package_video_source_defaults_to_ai(self):
+        request = LessonPackageRequest(
+            job_id="e1000000-0000-4000-8000-000000000001",
+            module_order=0,
+            lesson_order=0,
+        )
+        self.assertEqual(request.video_source, "ai")
+
+    def test_lesson_package_accepts_human_video_source(self):
+        request = LessonPackageRequest(
+            job_id="e1000000-0000-4000-8000-000000000001",
+            module_order=0,
+            lesson_order=0,
+            video_source="human",
+        )
+        self.assertEqual(request.video_source, "human")
 
     def test_extracts_json_from_markdown_fence(self):
         value = _extract_json('```json\n{"course_title":"Excel"}\n```')
