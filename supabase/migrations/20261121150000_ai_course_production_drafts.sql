@@ -327,11 +327,15 @@ BEGIN
                       FROM jsonb_array_elements(v_package.knowledge_check)
                            WITH ORDINALITY AS questions(value, ordinality)
                 LOOP
-                    v_correct_index := (v_question->>'correct_option')::integer;
-                    IF jsonb_typeof(v_question->'options') IS DISTINCT FROM 'array'
+                    v_correct_index := NULLIF(v_question->>'correct_option', '')::integer;
+                    IF jsonb_typeof(v_question->'options') IS DISTINCT FROM 'array' THEN
+                        RAISE EXCEPTION 'Knowledge-check options are invalid for lesson %', v_lesson_order;
+                    END IF;
+                    IF v_correct_index IS NULL
                        OR v_correct_index < 0
-                       OR v_correct_index >= jsonb_array_length(v_question->'options') THEN
-                        RAISE EXCEPTION 'Knowledge-check answer index is invalid for lesson %', v_lesson_order;
+                       OR v_correct_index >= jsonb_array_length(v_question->'options')
+                       OR NULLIF(trim(v_question->>'question'), '') IS NULL THEN
+                        RAISE EXCEPTION 'Knowledge-check answer or question is invalid for lesson %', v_lesson_order;
                     END IF;
 
                     v_correct_answer := v_question->'options'->>v_correct_index;
