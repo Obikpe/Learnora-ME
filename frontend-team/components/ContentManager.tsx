@@ -80,6 +80,7 @@ function Media({lessonId,isAiGenerated=false,busy,media,video,setVideo,resource,
  const [videoUploadProgress,setVideoUploadProgress]=useState<number|null>(null);
  const hasVideoReference=video.provider==="supabase"?Boolean(video.storage_path.trim()):Boolean(video.external_video_id.trim()||video.storage_path.trim());
  const hasResourceReference=Boolean(resource.external_url.trim()||resource.storage_path.trim());
+ const hasReadyPrivateVideo=(media.videos||[]).some((item:any)=>item.provider==="cloudflare"&&item.status==="ready");
  return <div className="mt-5 space-y-5 border-t border-white/[.07] pt-5">
   <h3 className="font-semibold">Media & resources</h3>
   <section>
@@ -90,9 +91,9 @@ function Media({lessonId,isAiGenerated=false,busy,media,video,setVideo,resource,
     <input className="field" placeholder="Video title" value={video.title} onChange={e=>setVideo({...video,title:e.target.value})}/>
     <input className="field" placeholder="External video ID or reference" value={video.external_video_id} onChange={e=>setVideo({...video,external_video_id:e.target.value})}/>
     <input className="field" placeholder="Storage path (for an existing stored video)" value={video.storage_path} onChange={e=>setVideo({...video,storage_path:e.target.value})}/>
-    <label className="block"><span className="label">{isAiGenerated?"Upload human-produced lesson video (MP4, max 5 minutes)":"Upload lesson video (max 2 GB)"}</span><input className="mt-1 block w-full text-xs text-slate-400" type="file" accept={isAiGenerated?"video/mp4":"video/mp4,video/webm,video/quicktime,video/mpeg,video/x-msvideo"} onChange={e=>setVideo({...video,_file:e.target.files?.[0]||null})}/></label>{isAiGenerated&&<p className="text-xs leading-5 text-slate-500">This lesson must be set to Human-produced video in Course Studio. AI-rendered lessons cannot be replaced from this workspace.</p>}
+    <label className="block"><span className="label">{isAiGenerated?"Upload human-produced lesson video (MP4, max 5 minutes)":"Upload lesson video (max 2 GB)"}</span><input className="mt-1 block w-full text-xs text-slate-400" type="file" accept={isAiGenerated?"video/mp4":"video/mp4,video/webm,video/quicktime,video/mpeg,video/x-msvideo"} onChange={e=>setVideo({...video,_file:e.target.files?.[0]||null})}/></label>{isAiGenerated&&<p className="text-xs leading-5 text-slate-500">This lesson must be set to Human-produced video in Course Studio. AI-rendered lessons cannot be replaced from this workspace.</p>}{isAiGenerated&&hasReadyPrivateVideo&&<p className="text-xs text-emerald-200">A private lesson video is already attached and ready.</p>}
     {videoUploadProgress!==null&&<div className="mt-2" role="status" aria-live="polite"><div className="h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--primary)] transition-all" style={{width:videoUploadProgress+"%"}}/></div><p className="mt-1 text-xs text-slate-400">Uploading lesson video · {videoUploadProgress}%</p></div>}
-    <button className="action" disabled={busy||act===undefined||!video._file} onClick={()=>act(async()=>{
+    <button className="action" disabled={busy||act===undefined||!video._file||(isAiGenerated&&hasReadyPrivateVideo)} onClick={()=>act(async()=>{
      const file=video._file as File;
      if(!file)throw new Error("Select a video file first.");
      if(file.size>2147483648)throw new Error("Video files must be 2 GB or smaller.");
