@@ -240,7 +240,7 @@ def get_course_video_previews(
         if not job:
             raise HTTPException(status_code=404, detail="Course draft not found.")
         if not job.get("created_course_id"):
-            return {"success": True, "videos": []}
+            return {"success": True, "videos": [], "lessons": []}
 
         modules = (
             supabase.table("course_modules")
@@ -252,7 +252,7 @@ def get_course_video_previews(
         )
         module_ids = [str(module["id"]) for module in modules]
         if not module_ids:
-            return {"success": True, "videos": []}
+            return {"success": True, "videos": [], "lessons": []}
 
         lessons = (
             supabase.table("learnora_lessons")
@@ -264,7 +264,7 @@ def get_course_video_previews(
         )
         lesson_ids = [str(lesson["id"]) for lesson in lessons]
         if not lesson_ids:
-            return {"success": True, "videos": []}
+            return {"success": True, "videos": [], "lessons": []}
 
         video_rows = (
             supabase.table("lesson_videos")
@@ -274,11 +274,42 @@ def get_course_video_previews(
             .execute()
             .data or []
         )
+        packages = (
+            supabase.table("learnora_lesson_production_packages")
+            .select("module_order,lesson_order,version,lesson_format,video_source")
+            .eq("job_id", str(job_id))
+            .order("version", desc=True)
+            .execute()
+            .data or []
+        )
+        latest_packages = {}
+        for package in packages:
+            position = (int(package["module_order"]), int(package["lesson_order"]))
+            latest_packages.setdefault(position, package)
+
         from routers.progress import _sign_lesson_assets
 
         signed_rows = _sign_lesson_assets(video_rows, require_private_provider=True)
         module_by_id = {str(module["id"]): module for module in modules}
         lesson_by_id = {str(lesson["id"]): lesson for lesson in lessons}
+        module_order_by_id = {str(module["id"]): int(module.get("order_index") or 0) for module in modules}
+        ready_video_lesson_ids = {str(video.get("lesson_id")) for video in video_rows}
+        course_lessons = []
+        for lesson in lessons:
+            module_id = str(lesson.get("module_id"))
+            module = module_by_id.get(module_id) or {}
+            position = (module_order_by_id.get(module_id, 0), int(lesson.get("order_index") or 0))
+            package = latest_packages.get(position) or {}
+            course_lessons.append({
+                "lesson_id": str(lesson["id"]),
+                "lesson_title": lesson.get("title"),
+                "module_title": module.get("title"),
+                "module_order": position[0],
+                "lesson_order": position[1],
+                "lesson_format": package.get("lesson_format"),
+                "video_source": package.get("video_source", "ai"),
+                "has_ready_video": str(lesson["id"]) in ready_video_lesson_ids,
+            })
         previews = []
         for video in signed_rows:
             lesson = lesson_by_id.get(str(video.get("lesson_id")))
@@ -295,7 +326,7 @@ def get_course_video_previews(
                 "provider": video.get("provider"),
                 "signed_url": video.get("signed_url"),
             })
-        return {"success": True, "videos": previews}
+        return {"success": True, "videos": previews, "lessons": course_lessons}
     except HTTPException:
         raise
     except Exception:
