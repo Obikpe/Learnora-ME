@@ -10,11 +10,13 @@ os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "unit-test-service-key")
 from pydantic import ValidationError
 from routers.internal_course_studio import (
     CurriculumOutput,
+    CurriculumRevisionRequest,
     LessonPackageOutput,
     LessonPackageRequest,
     HumanVideoUploadRequest,
     HumanVideoFinalizeRequest,
     generate_curriculum,
+    revise_course_curriculum,
     generate_lesson_package,
     _extract_json,
 )
@@ -30,6 +32,34 @@ class CourseStudioContractTests(unittest.TestCase):
         self.assertIn("short_description", source)
         self.assertIn("course_description", source)
         self.assertIn("quality_review", source)
+
+    def test_curriculum_revision_requires_the_validated_curriculum_contract(self):
+        request = CurriculumRevisionRequest(curriculum={
+            "course_title": "Revised Excel Fundamentals",
+            "short_description": "Learn spreadsheet essentials.",
+            "course_description": "A practical course for new spreadsheet users.",
+            "learning_outcomes": ["Build a structured workbook."],
+            "prerequisites": [],
+            "modules": [{
+                "title": "Foundations",
+                "description": "Start with workbook basics.",
+                "lessons": [{
+                    "title": "Workbook structure",
+                    "description": "Understand workbook components.",
+                    "learning_objective": "Distinguish worksheets from workbooks.",
+                    "lesson_format": "narrated_visual",
+                    "estimated_minutes": 2,
+                }],
+            }],
+            "quality_review": [],
+        })
+        self.assertEqual(request.curriculum.course_title, "Revised Excel Fundamentals")
+
+    def test_curriculum_revision_is_permission_checked_and_archives_old_packages(self):
+        source = inspect.getsource(revise_course_curriculum)
+        self.assertIn('require_internal_permission("content.generate")', source)
+        self.assertIn("update_learnora_course_generation_curriculum", source)
+        self.assertIn("lesson_count > 60", source)
 
     def test_lesson_prompt_uses_the_practice_activity_schema_field(self):
         source = inspect.getsource(generate_lesson_package)
