@@ -62,7 +62,7 @@ jobs:
         if: steps.config.outputs.configured == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          sudo apt-get install -y ffmpeg fonts-dejavu-core espeak-ng
           ffmpeg -hide_banner -filters | grep -q subtitles
 
       - name: Install renderer dependencies
