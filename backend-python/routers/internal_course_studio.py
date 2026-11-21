@@ -60,6 +60,10 @@ class CurriculumOutput(BaseModel):
     quality_review: list[str] = Field(default_factory=list, max_length=12)
 
 
+class CurriculumRevisionRequest(BaseModel):
+    curriculum: CurriculumOutput
+
+
 class LessonPackageRequest(BaseModel):
     job_id: UUID
     module_order: int = Field(..., ge=0, le=11)
@@ -687,6 +691,69 @@ async def generate_curriculum(
         },
     )
     return {"success": True, "job_id": str(job_id), "curriculum": output.model_dump(), "generation": provider, "status": "draft_proposal"}
+
+
+@router.put("/jobs/{job_id}/curriculum")
+def revise_course_curriculum(
+    job_id: UUID,
+    payload: CurriculumRevisionRequest,
+    request: Request,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.generate")),
+):
+    curriculum = payload.curriculum
+    lesson_count = sum(len(module.lessons) for module in curriculum.modules)
+    if lesson_count > 60:
+        raise HTTPException(
+            status_code=422,
+            detail="Please keep a curriculum proposal to 60 lessons or fewer.",
+        )
+
+    try:
+        existing = (
+            supabase.table("learnora_course_generation_jobs")
+            .select("id,status,created_course_id")
+            .eq("id", str(job_id))
+            .maybe_single()
+            .execute()
+        ).data
+    except Exception:
+        raise HTTPException(status_code=500, detail="The course proposal could not be loaded.") from None
+
+    if not existing:
+        raise HTTPException(status_code=404, detail="Course draft not found.")
+    if existing.get("status") not in {"draft", "review"} or existing.get("created_course_id"):
+        raise HTTPException(status_code=409, detail="Only an unmaterialised course proposal can be revised.")
+
+    curriculum_data = curriculum.model_dump()
+    try:
+        supabase.rpc(
+            "update_learnora_course_generation_curriculum",
+            {
+                "p_job_id": str(job_id),
+                "p_curriculum_data": curriculum_data,
+            },
+        ).execute()
+    except Exception:
+        raise HTTPException(
+            status_code=409,
+            detail="The curriculum could not be revised. Refresh the proposal and try again.",
+        ) from None
+
+    log_audit_event(
+        action="internal_course_curriculum_revised",
+        email=staff.email,
+        account_type="staff",
+        role=",".join(staff.roles or []),
+        request=request,
+        metadata={
+            "staff_id": staff.staff_id,
+            "job_id": str(job_id),
+            "course_title": curriculum.course_title,
+            "module_count": len(curriculum.modules),
+            "lesson_count": lesson_count,
+        },
+    )
+    return {"success": True, "job_id": str(job_id), "curriculum": curriculum_data}
 
 
 @router.post("/lesson-package")
