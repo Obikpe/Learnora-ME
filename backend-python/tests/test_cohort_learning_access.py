@@ -62,6 +62,63 @@ class CohortLearningAccessTests(unittest.TestCase):
 
 
 
+    def test_assigned_cohort_lesson_returns_ready_video_with_signed_url(self):
+        user = CurrentUser(
+            id="5ed8ab6d-310a-40d4-baaa-bf6f21a0c9a8",
+            name="Learner",
+            email="learner@example.invalid",
+            role="learner",
+            sub_status="inactive",
+            account_type="cohort",
+        )
+
+        def query_with(data):
+            query = MagicMock()
+            for method in ("select", "eq", "limit", "order"):
+                getattr(query, method).return_value = query
+            query.execute.return_value = SimpleNamespace(data=data)
+            return query
+
+        queries = {
+            "cohort_member_course_assignments": query_with([{"id": "assignment-1"}]),
+            "cohort_member_lesson_assignments": query_with([{"id": "lesson-assignment-1"}]),
+            "learnora_lessons": query_with([{
+                "id": "lesson-1",
+                "module_id": "module-1",
+                "title": "What is data analytics?",
+                "content": "A concise learner note.",
+                "status": "published",
+            }]),
+            "course_modules": query_with([{"id": "module-1", "course_id": "course-1", "title": "Introduction"}]),
+            "lesson_videos": query_with([{
+                "id": "video-1",
+                "lesson_id": "lesson-1",
+                "provider": "cloudflare",
+                "storage_path": "courses/course-1/lesson-1/video.mp4",
+                "status": "ready",
+            }]),
+        }
+        db = MagicMock()
+        db.table.side_effect = lambda name: queries[name]
+
+        def sign_assets(rows):
+            rows[0]["signed_url"] = "https://media.example.invalid/signed-video"
+            return rows
+
+        with patch.object(cohort_learning, "_active_cohort_member", return_value=(
+            {"id": "account-1", "cohort_id": "cohort-1"},
+            {"id": "member-1"},
+        )), patch.object(cohort_learning, "supabase", db), patch.object(
+            cohort_learning, "_sign_lesson_assets", side_effect=sign_assets
+        ) as sign:
+            result = cohort_learning.my_cohort_lesson_content("course-1", "lesson-1", user)
+
+        self.assertEqual(result["lesson"]["id"], "lesson-1")
+        self.assertEqual(result["module"]["id"], "module-1")
+        self.assertEqual(result["videos"][0]["id"], "video-1")
+        self.assertEqual(result["videos"][0]["signed_url"], "https://media.example.invalid/signed-video")
+        sign.assert_called_once()
+
     def test_progress_write_rejects_unassigned_lesson(self):
         user = CurrentUser(
             id="5ed8ab6d-310a-40d4-baaa-bf6f21a0c9a8",
