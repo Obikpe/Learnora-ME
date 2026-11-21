@@ -351,10 +351,14 @@ export default function TeamCourseStudioPage() {
       setPublishedCourse(false);
       setPublishError("");
       setRenderJobsQueued(result.render_jobs_queued ?? 0);
-      const refreshed = await internalRequest("/course-studio/jobs/" + jobId);
-      setRenderJobs(refreshed.render_jobs || []);
-      const previews = await internalRequest("/course-studio/jobs/" + jobId + "/videos");
-      setVideoPreviews(previews.videos || []);
+      try {
+        const refreshed = await internalRequest("/course-studio/jobs/" + jobId);
+        setRenderJobs(refreshed.render_jobs || []);
+        const previews = await internalRequest("/course-studio/jobs/" + jobId + "/videos");
+        setVideoPreviews(previews.videos || []);
+      } catch {
+        setCreateDraftError("The draft was created, but video status could not be refreshed. Use Refresh video status.");
+      }
     } catch (error: any) {
       setCreateDraftError(error.message || "The draft course could not be created.");
     } finally {
