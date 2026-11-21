@@ -74,7 +74,7 @@ APPLIED_VERSIONS = [
 # The only active repository-only version is the new, unapplied Course Studio migration.
 LIVE_VERSION_ALIASES = {}
 
-PENDING_VERSIONS = ["20261121150000"]
+PENDING_VERSIONS = ["20261121012000"]
 EXPECTED_VERSIONS = sorted(set(APPLIED_VERSIONS) | set(PENDING_VERSIONS))
 
 
