@@ -8,7 +8,7 @@ import os
 import re
 from datetime import datetime, timezone
 from typing import Literal, Optional
-from uuid import UUID, uuid4
+from uuid import UUID, uuid4, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError
@@ -65,6 +65,19 @@ class LessonPackageRequest(BaseModel):
     module_order: int = Field(..., ge=0, le=11)
     lesson_order: int = Field(..., ge=0, le=19)
     video_source: Literal["ai", "human"] = "ai"
+
+
+class HumanVideoUploadRequest(BaseModel):
+    filename: str = Field(..., min_length=1, max_length=240)
+    file_size_bytes: int = Field(..., gt=0, le=2_147_483_648)
+    title: str = Field(..., min_length=1, max_length=200)
+
+
+class HumanVideoFinalizeRequest(BaseModel):
+    object_key: str = Field(..., min_length=1, max_length=700)
+    file_size_bytes: int = Field(..., gt=0, le=2_147_483_648)
+    title: str = Field(..., min_length=1, max_length=200)
+    duration_seconds: int | None = Field(default=None, ge=1, le=3600)
 
 
 class KnowledgeCheckItem(BaseModel):
@@ -163,7 +176,10 @@ def course_studio_access(
 def course_studio_human_video_access(
     staff: InternalStaffContext = Depends(require_internal_permission("content.video")),
 ):
-    return {"success": True, "can_upload_human_video": True}
+    from routers.progress import _r2_s3_client
+
+    ready = bool(os.getenv("R2_BUCKET_NAME")) and _r2_s3_client() is not None
+    return {"success": True, "can_upload_human_video": ready}
 
 
 @router.get("/publish-access")
@@ -228,6 +244,218 @@ def get_course_generation_job(
     except Exception:
         raise HTTPException(status_code=500, detail="The saved course draft could not be loaded.") from None
     return {"success": True, "job": job_result.data, "packages": package_result.data or [], "render_jobs": render_result.data or []}
+
+
+@router.post("/jobs/{job_id}/lessons/{lesson_id}/video-upload")
+def create_human_video_upload(
+    job_id: UUID,
+    lesson_id: UUID,
+    payload: HumanVideoUploadRequest,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.video")),
+):
+    from routers.progress import _r2_s3_client
+
+    bucket = os.getenv("R2_BUCKET_NAME")
+    storage_client = _r2_s3_client()
+    if not bucket or storage_client is None:
+        raise HTTPException(status_code=503, detail="Private video storage is not configured.")
+
+    try:
+        job = (
+            supabase.table("learnora_course_generation_jobs")
+            .select("id,created_course_id,status")
+            .eq("id", str(job_id))
+            .maybe_single()
+            .execute()
+            .data
+        )
+        if not job or job.get("status") != "created" or not job.get("created_course_id"):
+            raise HTTPException(status_code=409, detail="Create the course draft before attaching its human-produced videos.")
+
+        modules = (
+            supabase.table("course_modules")
+            .select("id,order_index")
+            .eq("course_id", str(job["created_course_id"]))
+            .execute()
+            .data or []
+        )
+        module_by_id = {str(module["id"]): module for module in modules}
+        lesson = (
+            supabase.table("learnora_lessons")
+            .select("id,module_id,title")
+            .eq("id", str(lesson_id))
+            .maybe_single()
+            .execute()
+            .data
+        )
+        if not lesson or str(lesson.get("module_id")) not in module_by_id:
+            raise HTTPException(status_code=404, detail="The lesson does not belong to this course draft.")
+
+        package = (
+            supabase.table("learnora_lesson_production_packages")
+            .select("video_source")
+            .eq("job_id", str(job_id))
+            .eq("lesson_id", str(lesson_id))
+            .order("version", desc=True)
+            .limit(1)
+            .execute()
+            .data or []
+        )
+        if not package or package[0].get("video_source") != "human":
+            raise HTTPException(status_code=409, detail="This lesson is not set to use a human-produced video.")
+
+        existing = (
+            supabase.table("lesson_videos")
+            .select("id")
+            .eq("lesson_id", str(lesson_id))
+            .eq("provider", "cloudflare")
+            .eq("status", "ready")
+            .maybe_single()
+            .execute()
+            .data
+        )
+        if existing:
+            raise HTTPException(status_code=409, detail="A private video is already attached to this lesson.")
+
+        module = module_by_id[str(lesson["module_id"])]
+        object_key = (
+            f"courses/{job['created_course_id']}/modules/{module['id']}/"
+            f"lessons/{lesson_id}/{uuid4()}.mp4"
+        )
+        upload_url = storage_client.generate_presigned_url(
+            "put_object",
+            Params={
+                "Bucket": bucket,
+                "Key": object_key,
+                "ContentType": "video/mp4",
+                "ContentLength": payload.file_size_bytes,
+            },
+            ExpiresIn=900,
+        )
+        return {
+            "success": True,
+            "upload_url": upload_url,
+            "object_key": object_key,
+            "expires_in": 900,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail="A private video upload could not be prepared.") from None
+
+
+@router.post("/jobs/{job_id}/lessons/{lesson_id}/video")
+def finalize_human_video_upload(
+    job_id: UUID,
+    lesson_id: UUID,
+    payload: HumanVideoFinalizeRequest,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.video")),
+):
+    from routers.progress import _r2_s3_client
+
+    bucket = os.getenv("R2_BUCKET_NAME")
+    storage_client = _r2_s3_client()
+    if not bucket or storage_client is None:
+        raise HTTPException(status_code=503, detail="Private video storage is not configured.")
+
+    try:
+        job = (
+            supabase.table("learnora_course_generation_jobs")
+            .select("id,created_course_id,status")
+            .eq("id", str(job_id))
+            .maybe_single()
+            .execute()
+            .data
+        )
+        if not job or job.get("status") != "created" or not job.get("created_course_id"):
+            raise HTTPException(status_code=409, detail="The course draft is not available for video attachment.")
+
+        modules = (
+            supabase.table("course_modules")
+            .select("id")
+            .eq("course_id", str(job["created_course_id"]))
+            .execute()
+            .data or []
+        )
+        module_ids = [str(module["id"]) for module in modules]
+        lesson = (
+            supabase.table("learnora_lessons")
+            .select("id,module_id,title")
+            .eq("id", str(lesson_id))
+            .maybe_single()
+            .execute()
+            .data
+        )
+        if not lesson or str(lesson.get("module_id")) not in module_ids:
+            raise HTTPException(status_code=404, detail="The lesson does not belong to this course draft.")
+
+        package = (
+            supabase.table("learnora_lesson_production_packages")
+            .select("video_source,teaching_script")
+            .eq("job_id", str(job_id))
+            .eq("lesson_id", str(lesson_id))
+            .order("version", desc=True)
+            .limit(1)
+            .execute()
+            .data or []
+        )
+        if not package or package[0].get("video_source") != "human":
+            raise HTTPException(status_code=409, detail="This lesson is not set to use a human-produced video.")
+
+        module = (
+            supabase.table("course_modules")
+            .select("id")
+            .eq("id", str(lesson["module_id"]))
+            .maybe_single()
+            .execute()
+            .data
+        )
+        expected_prefix = f"courses/{job['created_course_id']}/modules/{module['id']}/lessons/{lesson_id}/"
+        if not payload.object_key.startswith(expected_prefix) or not payload.object_key.endswith(".mp4"):
+            raise HTTPException(status_code=400, detail="The uploaded video key does not match this lesson.")
+
+        existing = (
+            supabase.table("lesson_videos")
+            .select("id")
+            .eq("lesson_id", str(lesson_id))
+            .eq("provider", "cloudflare")
+            .eq("storage_path", payload.object_key)
+            .maybe_single()
+            .execute()
+            .data
+        )
+        if existing:
+            return {"success": True, "video_id": existing["id"]}
+
+        head = storage_client.head_object(Bucket=bucket, Key=payload.object_key)
+        actual_size = int(head.get("ContentLength") or 0)
+        if actual_size != payload.file_size_bytes or head.get("ContentType") != "video/mp4":
+            raise HTTPException(status_code=400, detail="The uploaded MP4 size or content type does not match the upload request.")
+
+        inserted = (
+            supabase.table("lesson_videos")
+            .insert({
+                "lesson_id": str(lesson_id),
+                "provider": "cloudflare",
+                "storage_path": payload.object_key,
+                "title": payload.title,
+                "duration_seconds": payload.duration_seconds,
+                "file_size_bytes": actual_size,
+                "mime_type": "video/mp4",
+                "status": "ready",
+                "is_private": True,
+                "transcript_text": None,
+            })
+            .execute()
+            .data
+        )
+        if not inserted:
+            raise RuntimeError("The human-produced video metadata was not saved.")
+        return {"success": True, "video_id": inserted[0]["id"]}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail="The uploaded video could not be verified and attached.") from None
 
 
 @router.get("/jobs/{job_id}/videos")
