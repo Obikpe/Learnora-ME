@@ -591,7 +591,7 @@ BEGIN
                   AND lv.is_private IS TRUE
                   AND (
                       (p.video_source = 'ai' AND lv.provider = 'cloudflare')
-                      OR (p.video_source = 'human' AND lv.provider IN ('supabase', 'cloudflare'))
+                      OR (p.video_source = 'human' AND lv.provider = 'cloudflare')
                   )
            )
     ) THEN
