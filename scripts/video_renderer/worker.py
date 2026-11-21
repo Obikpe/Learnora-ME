@@ -430,7 +430,6 @@ def create_or_update_video_row(
     row = {
         "lesson_id": job["lesson_id"],
         "provider": "cloudflare",
-        "storage_bucket": bucket,
         "storage_path": job["object_key"],
         "title": lesson.get("title") or "Lesson video",
         "duration_seconds": duration,
