@@ -313,6 +313,21 @@ BEGIN
         RAISE EXCEPTION 'Completing a video render did not mark the render job, package and video as ready';
     END IF;
 
+    UPDATE public.lesson_videos
+       SET duration_seconds = 301
+     WHERE id = v_human_video_id;
+    BEGIN
+        PERFORM public.publish_course_from_generation_job(v_job_id);
+        RAISE EXCEPTION 'Course publication accepted a human video longer than five minutes';
+    EXCEPTION WHEN raise_exception THEN
+        IF SQLERRM <> 'Every video lesson must have a ready private video asset before publication' THEN
+            RAISE;
+        END IF;
+    END;
+    UPDATE public.lesson_videos
+       SET duration_seconds = 180
+     WHERE id = v_human_video_id;
+
     v_published_course_id := public.publish_course_from_generation_job(v_job_id);
     v_published_course_id_again := public.publish_course_from_generation_job(v_job_id);
 
