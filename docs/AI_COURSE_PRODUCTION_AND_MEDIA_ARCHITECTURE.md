@@ -290,3 +290,8 @@ The first proposal-only prototype has been extended into a persistent draft work
 - A database assertion script tests the private grants/RLS, draft hierarchy, private-script separation, quiz creation and idempotent course creation. The migration rehearsal also tests rollback.
 
 **Release gate:** the migration and workflow are being rehearsed in CI. The migration has not been applied to live Pheonix, and nothing has been deployed. Until the migration is applied through an approved release, the new persistence endpoints cannot work against production. The rendering worker, TTS, captions, R2 upload/playback and publication workflow are still outstanding; the Course Studio can create a structured draft, not yet finished video courses.
+
+
+### Follow-on migration state after Course Studio schema was added
+
+The exact 56-to-56 filename reconciliation above was completed before the Course Studio migration was authored. The repository now intentionally contains **57 files** in `supabase/migrations/`: the 56 applied live versions with matching filenames, plus the new, unapplied `20261121150000_ai_course_production_drafts.sql`. The live Pheonix ledger remains at 56 applied versions. This single repository-only version is the expected pending Course Studio migration, not a filename mismatch. The separate unapproved browser-privilege migration remains in `supabase/pending_migrations/`.
