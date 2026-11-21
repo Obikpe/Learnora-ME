@@ -495,13 +495,14 @@ BEGIN
                claimed_at = NULL
          WHERE j.status = 'processing'
            AND j.claimed_at < now() - make_interval(mins => greatest(5, p_stale_minutes))
-         RETURNING j.production_package_id, j.lesson_video_id, j.status
+         RETURNING j.production_package_id, j.lesson_video_id, j.lesson_id, j.object_key, j.status
     ),
     failed_videos AS (
         UPDATE public.lesson_videos lv
            SET status = 'failed'
           FROM stale s
-         WHERE lv.id = s.lesson_video_id
+         WHERE (lv.id = s.lesson_video_id
+                OR (lv.lesson_id = s.lesson_id AND lv.provider = 'cloudflare' AND lv.storage_path = s.object_key))
            AND lv.status = 'processing'
         RETURNING lv.id
     )
