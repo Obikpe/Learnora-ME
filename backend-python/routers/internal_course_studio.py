@@ -77,7 +77,7 @@ class HumanVideoFinalizeRequest(BaseModel):
     object_key: str = Field(..., min_length=1, max_length=700)
     file_size_bytes: int = Field(..., gt=0, le=2_147_483_648)
     title: str = Field(..., min_length=1, max_length=200)
-    duration_seconds: int | None = Field(default=None, ge=1, le=3600)
+    duration_seconds: int = Field(..., ge=1, le=300)
 
 
 class KnowledgeCheckItem(BaseModel):
