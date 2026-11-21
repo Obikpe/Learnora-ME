@@ -427,6 +427,19 @@ def finalize_human_video_upload(
         if existing:
             return {"success": True, "video_id": existing["id"]}
 
+        existing_ready = (
+            supabase.table("lesson_videos")
+            .select("id")
+            .eq("lesson_id", str(lesson_id))
+            .eq("provider", "cloudflare")
+            .eq("status", "ready")
+            .maybe_single()
+            .execute()
+            .data
+        )
+        if existing_ready:
+            raise HTTPException(status_code=409, detail="A private video is already attached to this lesson.")
+
         head = storage_client.head_object(Bucket=bucket, Key=payload.object_key)
         actual_size = int(head.get("ContentLength") or 0)
         if actual_size != payload.file_size_bytes or head.get("ContentType") != "video/mp4":
@@ -505,7 +518,7 @@ def get_course_video_previews(
             supabase.table("lesson_videos")
             .select("id,lesson_id,title,duration_seconds,status,provider,storage_path,external_video_id")
             .in_("lesson_id", lesson_ids)
-            .in_("provider", ["supabase", "cloudflare"])
+            .eq("provider", "cloudflare")
             .eq("status", "ready")
             .eq("is_private", True)
             .execute()
