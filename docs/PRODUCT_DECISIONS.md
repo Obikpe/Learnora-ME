@@ -190,21 +190,51 @@ The customer-side architecture must explicitly define and distinguish corporate 
 
 These actor categories and domain concepts define the scope that the architecture must address. They do not, by themselves, approve a final hierarchy, role inheritance model, team/cohort duration rule, simultaneous memberships, tutor assignment cardinality, contract entitlement model or progression threshold. Those relationships must be specified and approved before implementation.
 
+
+### PD-012 — Cohort tutor assignment, access revocation and organisation contract-end lifecycle
+
+**Status:** APPROVED for the behaviours explicitly stated below; account-erasure mechanics and detailed retention controls remain unresolved  
+**Confirmed:** 21 November 2026
+
+#### Cohort track tutor assignments
+
+- Every learning track configured for a cohort must have at least one tutor assigned.
+- A tutor may be assigned to more than one track. This is permitted but not compulsory.
+- A tutor may be assigned to another track even when already assigned elsewhere, but the coordinator must first see a warning identifying the course to which that tutor is already assigned and must explicitly confirm the additional assignment before it is made.
+- A track may have more than one tutor. If a coordinator attempts to assign a second tutor to a track that already has a tutor, the system must display a warning that a tutor is already assigned and require explicit confirmation before adding the additional tutor.
+- These warnings are confirmation gates, not hard prohibitions. The assignment must not proceed until the coordinator confirms.
+- Tutor assignment must remain scoped to the relevant cohort, track and courses. The warning must identify the existing course/assignment context accurately; the exact display wording and handling of multiple existing assignments remain UI details to specify.
+
+#### Cohort learner and tutor access control
+
+A cohort coordinator may revoke a learner's or tutor's access to the Learnora site and may initiate deletion of that person's account. Revocation of site access and account deletion are distinct actions and must not be treated as interchangeable. The exact account scope, effects on other organisation memberships or account contexts, confirmation steps, audit record and recovery/erasure behaviour remain unresolved and must be specified before implementation.
+
+#### Organisation contract end and cohort succession
+
+- When an organisation's contract ends, the organisation record itself must not be deleted.
+- The organisation's learner/team operating data is not retained after the contract ends. At the contract-end point, retain the organisation record and a count of the learners associated with that organisation at that time; do not retain the learner or team data covered by this rule.
+- A cohort ending does not mean that its parent organisation ends or should be deleted. The same organisation may start another cohort under a new cohort identity.
+- If no new contract is signed, access for that organisation must be denied. The organisation record remains.
+- Organisation-level continuity must therefore be separate from each cohort's lifecycle. Ending one cohort must not erase the parent organisation or prevent a later cohort from being created under it.
+
+This decision does not define the technical erasure process, legal retention exceptions, backup expiry, treatment of financial/audit records, aggregate-count calculation, or how account deletion interacts with a person's other Learnora identities or memberships. Those details remain unresolved and require a documented privacy, identity and data-lifecycle design before implementation. This decision does not authorise deletion, anonymisation, account changes, database operations or deployment.
+
 ## 3. Unresolved decisions and documentation conflicts
 
 The following items are deliberately unresolved. They are not implementation permission.
 
 | ID | Topic | What must be resolved |
 |---|---|---|
-| UR-001 | Cohort team model | The cohort has a management team led by its active manager. The manager creates other cohort teams and appoints role-scoped administrators. The cohort coordinator places learners into configured tracks and assigns tutors to those tracks. Cohort-specific team membership, tutor/learner relationships, additional team types, dashboards and detailed permissions still require specification. Do not create separate support, assessment, operations or reporting teams by default. |
+| UR-001 | Cohort operating/team model | The cohort has a management team led by its active manager. The manager creates other cohort teams and appoints role-scoped administrators. The coordinator places learners into configured tracks and assigns tutors. Every track requires at least one tutor; multiple tutors per track and one tutor across multiple tracks are allowed only after the specified confirmation warnings. The formal relationship between tracks, teaching groups/teams and learner groups, the complete team taxonomy, membership rules, dashboards and detailed permissions remain unresolved. Do not create separate support, assessment, operations or reporting teams by default. |
 | UR-002 | Corporate organisation model | Corporate organisations have an active manager and management team. The manager creates other teams and appoints role-scoped administrators. The corporate coordinator onboards learners/employees into the relevant learning teams. Corporate team taxonomy, team managers, cohort-based/employee/other contexts, programmes, tutor relationships, contracts/entitlements, dashboards and detailed permissions still require specification. |
 | UR-003 | Account identity and activation | Preserve existing identity records while specifying the target identity model. For new organisation onboarding, staff initiate invitations but the intended person personally activates the account and creates their password through a 48-hour link. Canonical identity uniqueness, existing cohort-account compatibility and the exact identity schema remain unresolved. |
-| UR-004 | Invitation lifecycle and tutor lifecycle | Specify resend, revoke, duplicate and expired invitation recovery, plus separately how tutors join, are assigned, gain access, are removed and retain/relinquish access in cohort and corporate contexts. |
+| UR-004 | Invitation, tutor and account lifecycle | Specify invitation resend/revoke/duplicate/recovery; tutor joining and assignment lifecycle; effects of revoking a learner's or tutor's site access; and what 'delete account' means where the person may have other memberships or identity contexts. Define audit, recovery and erasure behaviour before implementation. |
 | UR-005 | Independent tutor model | Define the independent tutor product context and lifecycle separately from cohort tutors and organisation tutors. |
 | UR-006 | Customer authoring | Define what selected corporate organisations may author, whether any AI capability is allowed, and the distinct non-AI authoring/upload/review/publishing rules for tutors and cohort teams. |
 | UR-007 | Transitional Course Studio | Define the eventual transition from the current Learnora ME Course Studio prototype to Learnora Teams, including shared APIs, data ownership, media upload, review and publishing. Do not move code until dependencies and acceptance criteria are documented. |
 | UR-008 | Roadmap alignment | Rewrite older roadmap/phase sequencing so it follows PD-001 while preserving security, migration and release gates that remain prerequisites to safe individual learner delivery. |
 | UR-009 | Current implementation versus live state | Revalidate dated code/schema/CI/deployment claims before presenting them as current. Historical audit snapshots must retain their dates and limitations. |
+| UR-010 | Contract-end data lifecycle | Specify the approved outcome (retain the organisation record and learner count at contract end; do not retain covered learner/team data; deny access without a renewed contract) as a safe, auditable erasure/de-identification process. Resolve retention exceptions, backups, aggregate counts, cohort closure versus organisation continuity, and account identity consequences. |
 
 ## 4. Required document alignment
 
