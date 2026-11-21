@@ -38,15 +38,12 @@ A track is not a course, and a course is not a module. Do not flatten these leve
 
 Example catalogue direction (illustrative, not a seed instruction):
 - Track: Data Analytics
-  - Course: Introduction to Data Analytics
-  - Course: Excel for Data Analytics
-  - Course: SQL for Data Analytics
+  - Course: Data Analytics (with an Excel module as part of its own course curriculum, alongside SQL, analysis and visualisation modules)
+  - Course: Excel Fundamentals (a separate standalone Excel course, which can also be included in this track)
+  - Course: SQL Fundamentals
   - Course: Data Visualisation
-- Standalone course: Excel Fundamentals (may also be included in an appropriate track)
 - Track: Front-end Web Development
-  - Course: HTML and CSS
-  - Course: JavaScript
-  - Course: Responsive Interfaces
+  - Course: Front-end Web Development (with HTML, CSS, JavaScript and responsive-interface modules)
 
 The same course may be reusable in a track where curriculum and access rules allow it. Track order and required-course settings remain authoritative for track progression.
 
