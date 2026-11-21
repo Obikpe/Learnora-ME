@@ -479,6 +479,46 @@ REVOKE ALL ON FUNCTION public.claim_next_learnora_video_render_job() FROM PUBLIC
 GRANT EXECUTE ON FUNCTION public.claim_next_learnora_video_render_job() TO service_role;
 
 
+CREATE OR REPLACE FUNCTION public.requeue_stale_learnora_video_render_jobs(p_stale_minutes integer DEFAULT 20)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+    v_count integer;
+BEGIN
+    WITH stale AS (
+        UPDATE public.learnora_video_render_jobs j
+           SET status = CASE WHEN j.attempt_count < j.max_attempts THEN 'queued' ELSE 'failed' END,
+               error_summary = 'Render worker lease expired before completion',
+               claimed_at = NULL
+         WHERE j.status = 'processing'
+           AND j.claimed_at < now() - make_interval(mins => greatest(5, p_stale_minutes))
+         RETURNING j.production_package_id, j.lesson_video_id, j.status
+    ),
+    failed_videos AS (
+        UPDATE public.lesson_videos lv
+           SET status = 'failed'
+          FROM stale s
+         WHERE lv.id = s.lesson_video_id
+           AND lv.status = 'processing'
+        RETURNING lv.id
+    )
+    UPDATE public.learnora_lesson_production_packages p
+       SET status = CASE WHEN s.status = 'queued' THEN 'approved' ELSE 'failed' END
+      FROM stale s
+     WHERE p.id = s.production_package_id;
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RETURN v_count;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.requeue_stale_learnora_video_render_jobs(integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.requeue_stale_learnora_video_render_jobs(integer) TO service_role;
+
+
 CREATE OR REPLACE FUNCTION public.complete_learnora_video_render_job(
     p_job_id uuid,
     p_lesson_video_id uuid,
