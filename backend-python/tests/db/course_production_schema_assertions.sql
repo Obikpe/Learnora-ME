@@ -34,6 +34,8 @@ DECLARE
     v_published_lesson_status text;
     v_published_job_status text;
     v_track_order integer;
+    v_revision_package_status text;
+    v_revision_title text;
 BEGIN
     IF to_regclass('public.learnora_course_generation_jobs') IS NULL
        OR to_regclass('public.learnora_lesson_production_packages') IS NULL THEN
@@ -125,7 +127,7 @@ BEGIN
     )
     VALUES (
         v_job_id, v_staff_id, v_user_id, v_staff_id, v_track_id,
-        'Course Studio CI Test', 'course-studio-ci-test-unique', 'beginner', 'approved',
+        'Course Studio CI Test', 'course-studio-ci-test-unique', 'beginner', 'draft',
         '{}'::jsonb,
         '{
           "course_title":"Course Studio CI Test",
@@ -153,6 +155,47 @@ BEGIN
         }'::jsonb,
         'openrouter', 'openrouter/free', now()
     );
+
+    INSERT INTO public.learnora_lesson_production_packages (
+        job_id, module_order, lesson_order, version, module_title,
+        lesson_title, lesson_description, learning_objective, lesson_format, video_source,
+        teaching_script, estimated_duration_seconds, concise_note, practice_activity,
+        knowledge_check, video_plan, fact_check_notes, status
+    )
+    VALUES (
+        v_job_id, 11, 19, 1, 'Superseded Module',
+        'Superseded Lesson', 'A package from the prior curriculum.',
+        'This package must be archived.', 'narrated_visual', 'ai',
+        'A prior private teaching script.', 60, 'Prior concise note.', NULL,
+        '[]'::jsonb, '[]'::jsonb, ARRAY[]::text[], 'draft'
+    );
+
+    PERFORM public.update_learnora_course_generation_curriculum(
+        v_job_id,
+        jsonb_set(
+            (SELECT curriculum_data FROM public.learnora_course_generation_jobs WHERE id = v_job_id),
+            '{course_title}',
+            to_jsonb('Course Studio CI Revised Test'::text)
+        )
+    );
+
+    SELECT status INTO v_revision_package_status
+      FROM public.learnora_lesson_production_packages
+     WHERE job_id = v_job_id AND module_order = 11 AND lesson_order = 19;
+    SELECT course_title INTO v_revision_title
+      FROM public.learnora_course_generation_jobs WHERE id = v_job_id;
+
+    IF v_revision_package_status <> 'archived'
+       OR v_revision_title <> 'Course Studio CI Revised Test'
+       OR (SELECT status FROM public.learnora_course_generation_jobs WHERE id = v_job_id) <> 'draft' THEN
+        RAISE EXCEPTION 'Curriculum revision did not archive old packages and reset the proposal to draft';
+    END IF;
+
+    UPDATE public.learnora_course_generation_jobs
+       SET status = 'approved',
+           approved_by_staff_id = v_staff_id,
+           approved_at = now()
+     WHERE id = v_job_id;
 
     INSERT INTO public.learnora_lesson_production_packages (
         job_id, module_order, lesson_order, version, module_title,
