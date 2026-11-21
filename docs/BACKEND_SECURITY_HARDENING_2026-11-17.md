@@ -92,7 +92,7 @@ Some repository migration files are reconstructed equivalents of changes already
 ## AI-generated video storage boundary — 21 November 2026
 
 - Existing human-uploaded lesson videos and resources continue to use the existing private Supabase Storage buckets and their current access checks.
-- The AI lesson renderer now has source code to upload finished MP4s to a separate private Cloudflare R2 bucket. The backend creates temporary playback URLs only after the normal learner course/module/lesson access checks. R2 credentials remain server-side; the renderer uses a separate write-capable worker token.
-- The R2 bucket, CORS policy, Vercel backend credentials and GitHub Actions worker secrets have **not** been configured. No live storage-bucket change or production deployment has occurred.
+- The AI lesson renderer and Course Studio human-video upload flow now target a separate private Cloudflare R2 bucket. The backend creates temporary playback URLs only after normal learner course/module/lesson access checks and creates short-lived upload URLs only for authorised internal staff. R2 credentials remain server-side; the renderer uses a separate write-capable worker token. Existing legacy Supabase media remains unchanged.
+- The R2 bucket, CORS policy, Vercel backend read/write credentials and GitHub Actions worker secrets have **not** been configured. No live storage-bucket change or production deployment has occurred.
 - The Course Studio migration adds a service-role-only render queue and publication RPC. Publication remains blocked until every video lesson has a completed render job and a ready private video record.
 - See `docs/R2_VIDEO_BUCKET_SETUP.md` for the configuration checklist and `docs/AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md` for the full workflow.
