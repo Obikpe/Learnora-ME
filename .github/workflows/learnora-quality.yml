@@ -90,7 +90,8 @@ jobs:
             supabase/migrations/20261118214152_public_course_catalogue_rpc.sql \
             supabase/migrations/20261119224623_course_completion_skill_badges.sql \
             supabase/migrations/20261120133258_learner_birthdays_and_age_attestation.sql \
-            supabase/migrations/20261120133439_clear_birthday_data_on_account_deletion.sql
+            supabase/migrations/20261120133439_clear_birthday_data_on_account_deletion.sql \\
+            supabase/migrations/20261121150000_ai_course_production_drafts.sql
           do
             psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
@@ -101,6 +102,7 @@ jobs:
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/notification_automation_assertions.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/migration_reconciliation_assertions.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/public_course_catalogue_assertions.sql
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f backend-python/tests/db/course_production_schema_assertions.sql
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT password_changed_at FROM public.users LIMIT 0"
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT password_changed_at FROM public.admins LIMIT 0"
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
@@ -180,6 +182,19 @@ jobs:
               WHERE criteria->>'course_id' = 'e89cdf59-f4ad-4453-ab14-73e372fbce7e'
             ) THEN
               RAISE EXCEPTION 'course-completion badge rollback did not remove the seeded skill and badge';
+            END IF;
+          END $do$;
+          ROLLBACK;
+          SQL
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          \\i supabase/rollback/20261121150000_ai_course_production_drafts.rollback.sql
+          DO $do$ BEGIN
+            IF to_regclass('public.learnora_course_generation_jobs') IS NOT NULL
+              OR to_regclass('public.learnora_lesson_production_packages') IS NOT NULL
+              OR to_regprocedure('public.create_course_from_generation_job(uuid)') IS NOT NULL
+              OR EXISTS (SELECT 1 FROM public.learnora_permissions WHERE permission_key='content.generate') THEN
+              RAISE EXCEPTION 'AI course production rollback did not remove its schema and permission';
             END IF;
           END $do$;
           ROLLBACK;
