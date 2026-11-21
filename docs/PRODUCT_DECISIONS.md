@@ -109,7 +109,7 @@ Internal Learnora Teams AI production permission does not automatically extend t
 - independent tutors; or
 - ordinary learners.
 
-Any later customer-facing course authoring capability must be specified separately for its relevant product context, with its own roles, resource ownership, review/publication authority and permission rules. AI authoring access for selected organisations requires an explicit product decision. External tutors must not be assumed to have AI course-building access.
+Any later customer-facing course authoring capability must be specified separately for its relevant product context, with its own roles, resource ownership, review/publication authority and permission rules. AI production access is not implied for every organisation; any selected-organisation AI build capability requires an explicit product-owner decision and permission model. External/independent tutors do not receive AI course-building access.
 
 ### PD-007 — Historical examples are not evidence of current customer access
 
