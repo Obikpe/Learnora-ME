@@ -689,7 +689,7 @@ async def create_course_draft(
     try:
         render_jobs = (
             supabase.table("learnora_video_render_jobs")
-            .select("id,status")
+            .select("id,status,object_key,lesson_video_id")
             .eq("generation_job_id", str(job_id))
             .execute()
             .data or []
@@ -764,11 +764,23 @@ def publish_generated_course(
     if render_jobs:
         from routers.progress import _r2_s3_client
 
-        if not os.getenv("R2_BUCKET_NAME") or _r2_s3_client() is None:
+        bucket = os.getenv("R2_BUCKET_NAME")
+        storage_client = _r2_s3_client()
+        if not bucket or storage_client is None:
             raise HTTPException(
                 status_code=409,
                 detail="Private lesson-video playback is not configured. Complete the backend video-storage setup before publishing.",
             )
+        try:
+            for render_job in render_jobs:
+                if not render_job.get("lesson_video_id") or not render_job.get("object_key"):
+                    raise RuntimeError("A completed video job has no media record or storage key.")
+                storage_client.head_object(Bucket=bucket, Key=render_job["object_key"])
+        except Exception:
+            raise HTTPException(
+                status_code=409,
+                detail="The backend cannot read every rendered video from private storage. Verify the R2 read credentials and stored video objects before publishing.",
+            ) from None
 
     try:
         result = supabase.rpc(
