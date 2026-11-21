@@ -16,7 +16,7 @@ This guide establishes how the documents relate to one another. It does not sile
 
 Use the following precedence when documents disagree:
 
-1. **Latest explicit product-owner decision** recorded in the current authoritative product decisions document.
+1. **Latest explicit product-owner decision** recorded in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md). This is the cross-product decision register; domain specifications define detailed workflows within those approved boundaries.
 2. **Current product and system architecture specifications** for the relevant domain.
 3. **Approved feature/workflow specifications and acceptance criteria.**
 4. **Current implementation and operational runbooks**, which describe how an approved design is implemented or operated.
@@ -162,7 +162,7 @@ This register is a work queue, not a claim that the listed architecture has alre
 Before changing a feature, the implementer must:
 
 1. Read this guide.
-2. Read the current product decision register.
+2. Read [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md), the authoritative cross-product decision register.
 3. Read the complete specification for the relevant product context.
 4. Read the applicable workflow, security, data and operational documents.
 5. Check the reconciliation register for unresolved conflicts.
@@ -175,6 +175,7 @@ If a required decision is unresolved, stop at that boundary and ask for clarific
 
 The documents in this directory are grouped by purpose:
 
+- **Product governance and decisions:** this guide and [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md).
 - **Product architecture and requirements:** account/organisation architecture, product engineering specification, AI course production/media architecture.
 - **Learner experience:** learner journey phases, learner outcomes, public catalogue/SEO, learner notifications/marketing automation.
 - **Delivery and commercial strategy:** free launch/paid expansion, roadmap, initial pilot course production briefs.
