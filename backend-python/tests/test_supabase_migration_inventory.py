@@ -69,29 +69,12 @@ APPLIED_VERSIONS = [
     "20261120133439",
 ]
 
-# Repository filenames still using an older version timestamp, mapped to the
-# matching applied live version. SQL bodies were checked against the live
-# migration ledger; do not use db push until these filenames are reconciled.
-LIVE_VERSION_ALIASES = {
-    "20261026150000": "20261102210054",
-    "20261026151000": "20261102210056",
-    "20261109180000": "20261109190939",
-    "20261109190000": "20261109190944",
-    "20261116120000": "20261116072916",
-    "20261102090000": "20261118090829",
-    "20261102100000": "20261118090830",
-    "20261102110000": "20261118090832",
-    "20261102120000": "20261118090839",
-    "20261117210000": "20261118090841",
-    "20261117220000": "20261118090842",
-}
+# All applied live versions now have exact matching source filenames.
+# The only active repository-only version is the new, unapplied Course Studio migration.
+LIVE_VERSION_ALIASES = {}
 
-PENDING_VERSIONS = ["20261026153000", "20261118141100"]
-EXPECTED_VERSIONS = sorted(
-    (set(APPLIED_VERSIONS) - set(LIVE_VERSION_ALIASES.values()))
-    | set(LIVE_VERSION_ALIASES)
-    | set(PENDING_VERSIONS)
-)
+PENDING_VERSIONS = ["20261121150000"]
+EXPECTED_VERSIONS = sorted(set(APPLIED_VERSIONS) | set(PENDING_VERSIONS))
 
 
 class SupabaseMigrationInventoryTests(unittest.TestCase):
@@ -104,6 +87,9 @@ class SupabaseMigrationInventoryTests(unittest.TestCase):
         self.assertTrue(set(LIVE_VERSION_ALIASES.values()).issubset(set(APPLIED_VERSIONS)))
         self.assertTrue(all(re.fullmatch(r"\d{14}", version) for version in versions))
         self.assertTrue(all(path.stat().st_size > 0 for path in files))
+        pending_source = REPO_ROOT / "supabase" / "pending_migrations" / "20261026153000_revoke_browser_privileges_and_defaults.sql"
+        self.assertTrue(pending_source.is_file())
+        self.assertFalse((ACTIVE_MIGRATIONS / pending_source.name).exists())
         account_deletion = (ACTIVE_MIGRATIONS / "20261109160440_learner_account_deletion_lifecycle.sql").read_text(encoding="utf-8")
         self.assertIn("deleted_account_history", account_deletion)
         self.assertIn("complete_learner_account_deletion", account_deletion)
