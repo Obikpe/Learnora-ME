@@ -694,3 +694,18 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [x] Move the unapproved browser-privilege/default-ACL migration out of the active migration directory while preserving it for separate review.
 - [x] Update the disposable migration rehearsal to apply the selected migrations in live timestamp order.
 - [ ] Design and rehearse the new private course-generation draft schema; do not apply it to live Pheonix until separately approved.
+
+
+### Persistent Course Studio update — 21 November 2026
+
+- [x] Add versioned private course-generation job and lesson-production-package schema source, with RLS and service-role-only access.
+- [x] Add a service-role-only atomic RPC that creates draft courses, modules, lessons and unpublished knowledge-check quizzes from approved packages.
+- [x] Add the dedicated `content.generate` permission mapping for curriculum staff and super admins in the pending migration.
+- [x] Persist generated curriculum and lesson packages; add explicit staff approval before course draft creation.
+- [x] Add optional global-track targeting and saved-draft restoration.
+- [x] Add migration assertions and rollback rehearsal to CI.
+- [ ] Complete CI migration rehearsal and resolve any failures.
+- [ ] Obtain approval and apply the migration to live Pheonix.
+- [ ] Implement and verify video rendering, TTS, captions, R2 storage and signed playback.
+- [ ] Complete course review/publication and track linking.
+- [ ] Generate the initial real course catalogue and retire the test course from discovery without deleting its two certificates or learner history.
