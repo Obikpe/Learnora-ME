@@ -1049,27 +1049,6 @@ def publish_generated_course(
             detail="The course is not ready to publish. Finish or retry every lesson video first.",
         )
 
-    if render_jobs:
-        from routers.progress import _r2_s3_client
-
-        bucket = os.getenv("R2_BUCKET_NAME")
-        storage_client = _r2_s3_client()
-        if not bucket or storage_client is None:
-            raise HTTPException(
-                status_code=409,
-                detail="Private lesson-video playback is not configured. Complete the backend video-storage setup before publishing.",
-            )
-        try:
-            for render_job in render_jobs:
-                if not render_job.get("lesson_video_id") or not render_job.get("object_key"):
-                    raise RuntimeError("A completed video job has no media record or storage key.")
-                storage_client.head_object(Bucket=bucket, Key=render_job["object_key"])
-        except Exception:
-            raise HTTPException(
-                status_code=409,
-                detail="The backend cannot read every rendered video from private storage. Verify the R2 read credentials and stored video objects before publishing.",
-            ) from None
-
     course_modules = (
         supabase.table("course_modules")
         .select("id")
@@ -1099,13 +1078,30 @@ def publish_generated_course(
                 .data or []
             )
             if ready_videos:
-                from routers.progress import _sign_lesson_assets
+                from routers.progress import _r2_s3_client, _sign_lesson_assets
 
+                bucket = os.getenv("R2_BUCKET_NAME")
+                storage_client = _r2_s3_client()
+                if not bucket or storage_client is None:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Private lesson-video storage is not configured. Complete the R2 backend setup before publishing.",
+                    )
+                try:
+                    for video in ready_videos:
+                        if not video.get("storage_path"):
+                            raise RuntimeError("A private lesson video has no R2 object key.")
+                        storage_client.head_object(Bucket=bucket, Key=video["storage_path"])
+                except Exception:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="The backend cannot read every private lesson video from R2. Verify the R2 credentials and stored objects before publishing.",
+                    ) from None
                 signed_videos = _sign_lesson_assets(ready_videos, require_private_provider=True)
                 if any(not video.get("signed_url") for video in signed_videos):
                     raise HTTPException(
                         status_code=409,
-                        detail="One or more private lesson videos cannot be signed for playback. Verify the Supabase and R2 media objects before publishing.",
+                        detail="One or more private lesson videos cannot be signed for playback. Verify the R2 media objects before publishing.",
                     )
 
     try:
