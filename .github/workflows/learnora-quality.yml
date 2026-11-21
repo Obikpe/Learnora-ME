@@ -17,6 +17,7 @@ on:
       - "frontend-v02/**"
       - "frontend-team/**"
       - "supabase/**"
+      - "scripts/video_renderer/**"
       - ".github/workflows/**"
 
 permissions:
