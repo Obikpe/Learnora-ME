@@ -8,7 +8,7 @@ import os
 import re
 from datetime import datetime, timezone
 from typing import Literal, Optional
-from uuid import UUID, uuid4, uuid4
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError
