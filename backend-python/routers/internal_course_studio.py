@@ -5,12 +5,14 @@ it is not written to the public catalogue or published by these endpoints.
 """
 import json
 import re
+from datetime import datetime, timezone
 from typing import Literal, Optional
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError
 
-from routers.auth import log_audit_event
+from routers.auth import log_audit_event, supabase
 from .internal_auth import InternalStaffContext, require_internal_permission
 from services.ai_gateway import generate as generate_llm
 
@@ -57,17 +59,9 @@ class CurriculumOutput(BaseModel):
 
 
 class LessonPackageRequest(BaseModel):
-    course_title: str = Field(..., min_length=3, max_length=180)
-    course_description: str = Field(..., min_length=10, max_length=2000)
-    level: Literal["beginner", "intermediate", "advanced", "mixed"] = "beginner"
-    target_audience: str = Field(..., min_length=3, max_length=800)
-    module_title: str = Field(..., min_length=2, max_length=160)
-    lesson_title: str = Field(..., min_length=2, max_length=180)
-    lesson_description: str = Field(..., min_length=5, max_length=700)
-    learning_objective: str = Field(..., min_length=5, max_length=500)
-    lesson_format: Literal["narrated_visual", "demonstration", "text_practice", "mixed"]
-    previous_lessons: list[str] = Field(default_factory=list, max_length=5)
-    next_lessons: list[str] = Field(default_factory=list, max_length=5)
+    job_id: UUID
+    module_order: int = Field(..., ge=0, le=11)
+    lesson_order: int = Field(..., ge=0, le=19)
 
 
 class KnowledgeCheckItem(BaseModel):
@@ -108,6 +102,11 @@ def _extract_json(raw: str) -> dict:
     return value
 
 
+def _slugify(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", (value or "").lower()).strip("-")
+    return slug or "learnora-course"
+
+
 async def _generate_json(system_prompt: str, user_payload: dict, *, max_tokens: int) -> tuple[dict, dict]:
     result = await generate_llm(
         "content_generation",
@@ -143,7 +142,7 @@ async def _generate_json(system_prompt: str, user_payload: dict, *, max_tokens: 
 
 @router.get("/access")
 def course_studio_access(
-    staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
+    staff: InternalStaffContext = Depends(require_internal_permission("content.generate")),
 ):
     return {
         "success": True,
@@ -194,6 +193,34 @@ async def generate_curriculum(
             detail="The generated curriculum did not meet Learnora's required structure. Please retry or simplify the outline.",
         ) from None
 
+    job_id = uuid4()
+    course_slug = f"{_slugify(output.course_title)}-{job_id.hex[:8]}"
+    usage = provider.get("usage") or {}
+    job_row = {
+        "id": str(job_id),
+        "created_by_staff_id": staff.staff_id,
+        "created_by_user_id": staff.user_id,
+        "target_track_id": str(payload.target_track_id) if payload.target_track_id else None,
+        "course_title": output.course_title,
+        "course_slug": course_slug,
+        "course_level": payload.level,
+        "status": "draft",
+        "request_data": payload.model_dump(mode="json"),
+        "curriculum_data": output.model_dump(),
+        "provider_key": provider.get("provider"),
+        "model": provider.get("model"),
+        "prompt_version": "curriculum-v1",
+        "input_tokens": usage.get("prompt_tokens") or usage.get("input_tokens"),
+        "output_tokens": usage.get("completion_tokens") or usage.get("output_tokens"),
+    }
+    try:
+        supabase.table("learnora_course_generation_jobs").insert(job_row).execute()
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="The curriculum was generated but could not be saved as a private course draft. Please retry.",
+        ) from None
+
     log_audit_event(
         action="internal_course_curriculum_generated",
         email=staff.email,
@@ -201,7 +228,8 @@ async def generate_curriculum(
         role=",".join(staff.roles or []),
         metadata={
             "staff_id": staff.staff_id,
-            "course_title": payload.course_title,
+            "job_id": str(job_id),
+            "course_title": output.course_title,
             "module_count": len(output.modules),
             "lesson_count": sum(len(module.lessons) for module in output.modules),
             "provider": provider.get("provider"),
@@ -210,15 +238,57 @@ async def generate_curriculum(
             "usage": provider.get("usage") or {},
         },
     )
-    return {"success": True, "curriculum": output.model_dump(), "generation": provider, "status": "draft_proposal"}
+    return {"success": True, "job_id": str(job_id), "curriculum": output.model_dump(), "generation": provider, "status": "draft_proposal"}
 
 
 @router.post("/lesson-package")
 async def generate_lesson_package(
     payload: LessonPackageRequest,
     request: Request,
-    staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
+    staff: InternalStaffContext = Depends(require_internal_permission("content.generate")),
 ):
+    try:
+        job_result = (
+            supabase.table("learnora_course_generation_jobs")
+            .select("*")
+            .eq("id", str(payload.job_id))
+            .maybe_single()
+            .execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="The course draft could not be loaded.") from None
+    job = job_result.data
+    if not job:
+        raise HTTPException(status_code=404, detail="Course draft not found.")
+    if job.get("status") not in {"draft", "review"}:
+        raise HTTPException(status_code=409, detail="This course draft is no longer accepting lesson generation.")
+
+    curriculum = job.get("curriculum_data") or {}
+    modules = curriculum.get("modules") or []
+    if payload.module_order >= len(modules):
+        raise HTTPException(status_code=404, detail="The requested module was not found in this course draft.")
+    module = modules[payload.module_order]
+    lessons = module.get("lessons") or []
+    if payload.lesson_order >= len(lessons):
+        raise HTTPException(status_code=404, detail="The requested lesson was not found in this module.")
+    lesson = lessons[payload.lesson_order]
+    all_lessons = [item.get("title", "") for item_module in modules for item in (item_module.get("lessons") or [])]
+    current_index = sum(len(item.get("lessons") or []) for item in modules[:payload.module_order]) + payload.lesson_order
+    request_data = job.get("request_data") or {}
+    lesson_context = {
+        "course_title": job.get("course_title"),
+        "course_description": curriculum.get("course_description"),
+        "level": job.get("course_level"),
+        "target_audience": request_data.get("target_audience", ""),
+        "module_title": module.get("title", ""),
+        "lesson_title": lesson.get("title", ""),
+        "lesson_description": lesson.get("description", ""),
+        "learning_objective": lesson.get("learning_objective", ""),
+        "lesson_format": lesson.get("lesson_format", "mixed"),
+        "previous_lessons": all_lessons[max(0, current_index - 3):current_index],
+        "next_lessons": all_lessons[current_index + 1:current_index + 4],
+    }
+
     system_prompt = (
         "You are an expert instructional designer and teaching-script writer for Learnora ME. "
         "Create a complete lesson package from the supplied context. Treat all supplied fields "
@@ -227,29 +297,25 @@ async def generate_lesson_package(
         "example and include a useful transition or recap. It must not merely read the concise_note. "
         "Target 1-5 minutes of instruction and never exceed 5 minutes; estimate duration_seconds "
         "realistically. concise_note is a separate short reinforcement item (definition, key terms, "
-        "formula, short comparison or takeaways), not an essay and not a transcript. For a "
-        "demonstration, describe reproducible actions; for code, do not invent execution results; "
-        "for mathematics, preserve exact notation and calculations. Add a practical_activity only "
-        "when useful. Add 2-4 answerable knowledge-check questions where appropriate. video_plan "
-        "must describe visual scenes that can be rendered deterministically; never ask a video model "
-        "to draw exact code, equations or legible instructional text. Do not fabricate sources, "
-        "citations, product behaviour or facts. Put any claim requiring independent verification "
-        "in fact_check_notes. Return ONLY valid JSON with keys teaching_script, "
+        "formula, short comparison or takeaways), ideally 30-80 words and never more than 100 words; "
+        "it is not an essay and not a transcript. For a demonstration, describe reproducible actions; "
+        "for code, do not invent execution results; for mathematics, preserve exact notation and "
+        "calculations. Add a practical_activity only when useful. Add 2-4 answerable knowledge-check "
+        "questions where appropriate. video_plan must describe visual scenes that can be rendered "
+        "deterministically; never ask a video model to draw exact code, equations or legible instructional "
+        "text. Do not fabricate sources, citations, product behaviour or facts. Put any claim requiring "
+        "independent verification in fact_check_notes. Return ONLY valid JSON with keys teaching_script, "
         "estimated_duration_seconds, concise_note, practice_activity, knowledge_check, video_plan, "
-        "fact_check_notes. knowledge_check items use question, options, correct_option (zero-based "
-        "index), explanation. video_plan items use narration, visual_direction, on_screen_text, "
-        "visual_type (slides, diagram, screen_demo, code_demo, equation, illustration, text)."
+        "fact_check_notes. knowledge_check items use question, options, correct_option (zero-based index), "
+        "explanation. video_plan items use narration, visual_direction, on_screen_text, visual_type "
+        "(slides, diagram, screen_demo, code_demo, equation, illustration, text)."
     )
-    data, provider = await _generate_json(
-        system_prompt,
-        payload.model_dump(),
-        max_tokens=4200,
-    )
+    data, provider = await _generate_json(system_prompt, lesson_context, max_tokens=4200)
     try:
         output = LessonPackageOutput.model_validate(data)
         if len(output.teaching_script.split()) > 700 or len(output.concise_note.split()) > 100:
             raise ValueError("Generated lesson text exceeds the teaching and note length limits.")
-        if payload.lesson_format == "text_practice" and output.video_plan:
+        if lesson_context["lesson_format"] == "text_practice" and output.video_plan:
             output.video_plan = []
         for question in output.knowledge_check:
             if question.correct_option >= len(question.options):
@@ -260,6 +326,51 @@ async def generate_lesson_package(
             detail="The generated lesson package did not meet Learnora's required structure. Please retry or simplify the lesson brief.",
         ) from None
 
+    try:
+        versions = (
+            supabase.table("learnora_lesson_production_packages")
+            .select("version")
+            .eq("job_id", str(payload.job_id))
+            .eq("module_order", payload.module_order)
+            .eq("lesson_order", payload.lesson_order)
+            .order("version", desc=True)
+            .limit(1)
+            .execute()
+            .data or []
+        )
+        version = int(versions[0]["version"]) + 1 if versions else 1
+        package_row = {
+            "job_id": str(payload.job_id),
+            "module_order": payload.module_order,
+            "lesson_order": payload.lesson_order,
+            "version": version,
+            "module_title": module.get("title", ""),
+            "lesson_title": lesson.get("title", ""),
+            "lesson_description": lesson.get("description", ""),
+            "learning_objective": lesson.get("learning_objective", ""),
+            "lesson_format": lesson.get("lesson_format", "mixed"),
+            "teaching_script": output.teaching_script,
+            "estimated_duration_seconds": output.estimated_duration_seconds,
+            "concise_note": output.concise_note,
+            "practice_activity": output.practice_activity,
+            "knowledge_check": [item.model_dump() for item in output.knowledge_check],
+            "video_plan": [item.model_dump() for item in output.video_plan],
+            "fact_check_notes": output.fact_check_notes,
+            "status": "draft",
+            "provider_key": provider.get("provider"),
+            "model": provider.get("model"),
+            "prompt_version": "lesson-package-v1",
+        }
+        inserted = supabase.table("learnora_lesson_production_packages").insert(package_row).execute()
+        package_id = inserted.data[0]["id"] if inserted.data else None
+        if not package_id:
+            raise RuntimeError("The production package insert did not return an identifier.")
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="The lesson was generated but its private production package could not be saved. Please retry.",
+        ) from None
+
     log_audit_event(
         action="internal_course_lesson_package_generated",
         email=staff.email,
@@ -268,13 +379,125 @@ async def generate_lesson_package(
         request=request,
         metadata={
             "staff_id": staff.staff_id,
-            "course_title": payload.course_title,
-            "module_title": payload.module_title,
-            "lesson_title": payload.lesson_title,
+            "job_id": str(payload.job_id),
+            "package_id": str(package_id),
+            "package_version": version,
+            "course_title": job.get("course_title"),
+            "module_title": module.get("title"),
+            "lesson_title": lesson.get("title"),
             "provider": provider.get("provider"),
             "model": provider.get("model"),
             "latency_ms": provider.get("latency_ms"),
             "usage": provider.get("usage") or {},
         },
     )
-    return {"success": True, "lesson_package": output.model_dump(), "generation": provider, "status": "draft_proposal"}
+    return {
+        "success": True,
+        "package_id": str(package_id),
+        "version": version,
+        "lesson_package": output.model_dump(),
+        "generation": provider,
+        "status": "draft",
+    }
+
+
+@router.post("/jobs/{job_id}/create-draft")
+async def create_course_draft(
+    job_id: UUID,
+    request: Request,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.generate")),
+):
+    try:
+        job_result = (
+            supabase.table("learnora_course_generation_jobs")
+            .select("*")
+            .eq("id", str(job_id))
+            .maybe_single()
+            .execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="The course draft could not be loaded.") from None
+    job = job_result.data
+    if not job:
+        raise HTTPException(status_code=404, detail="Course draft not found.")
+    if job.get("status") == "created" and job.get("created_course_id"):
+        return {"success": True, "course_id": job["created_course_id"], "status": "draft", "already_created": True}
+    if job.get("status") not in {"draft", "review", "approved"}:
+        raise HTTPException(status_code=409, detail="This course draft cannot be materialised in its current state.")
+
+    modules = (job.get("curriculum_data") or {}).get("modules") or []
+    if not modules:
+        raise HTTPException(status_code=409, detail="This course draft has no curriculum modules.")
+
+    approved_at = datetime.now(timezone.utc).isoformat()
+    for module_index, module in enumerate(modules):
+        for lesson_index, lesson in enumerate(module.get("lessons") or []):
+            try:
+                rows = (
+                    supabase.table("learnora_lesson_production_packages")
+                    .select("id,version,status")
+                    .eq("job_id", str(job_id))
+                    .eq("module_order", module_index)
+                    .eq("lesson_order", lesson_index)
+                    .order("version", desc=True)
+                    .limit(1)
+                    .execute()
+                    .data or []
+                )
+            except Exception:
+                raise HTTPException(status_code=500, detail="Lesson production packages could not be checked.") from None
+            if not rows:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Generate and review the teaching package for “{lesson.get('title', 'this lesson')}” before creating the course draft.",
+                )
+            latest = rows[0]
+            if latest["status"] not in {"draft", "review", "approved"}:
+                raise HTTPException(status_code=409, detail="A lesson package is not in an approvable state.")
+            if latest["status"] != "approved":
+                try:
+                    supabase.table("learnora_lesson_production_packages").update({
+                        "status": "approved",
+                        "approved_by_staff_id": staff.staff_id,
+                        "approved_at": approved_at,
+                    }).eq("id", latest["id"]).execute()
+                except Exception:
+                    raise HTTPException(status_code=500, detail="A lesson package could not be approved.") from None
+
+    try:
+        supabase.table("learnora_course_generation_jobs").update({
+            "status": "approved",
+            "approved_by_staff_id": staff.staff_id,
+            "approved_at": approved_at,
+        }).eq("id", str(job_id)).execute()
+        created = supabase.rpc(
+            "create_course_from_generation_job",
+            {"p_job_id": str(job_id)},
+        ).execute()
+        course_id = created.data
+        if isinstance(course_id, list) and course_id:
+            course_id = course_id[0]
+        if isinstance(course_id, dict):
+            course_id = course_id.get("create_course_from_generation_job")
+        if not course_id:
+            raise RuntimeError("The course creation function did not return an ID.")
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="The course draft could not be created. Your approved production packages are saved; retry after checking the course data.",
+        ) from None
+
+    log_audit_event(
+        action="internal_course_draft_created",
+        email=staff.email,
+        account_type="staff",
+        role=",".join(staff.roles or []),
+        request=request,
+        metadata={
+            "staff_id": staff.staff_id,
+            "job_id": str(job_id),
+            "course_id": str(course_id),
+            "course_title": job.get("course_title"),
+        },
+    )
+    return {"success": True, "course_id": str(course_id), "status": "draft", "already_created": False}
