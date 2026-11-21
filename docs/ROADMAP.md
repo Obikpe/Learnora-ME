@@ -725,10 +725,13 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 
 - The current Learnora ME root navigation renders the `Logo` component by default, and the dashboard navigation also renders the Learnora ME wordmark. The previously reported missing brand text is not present in the current `main` source inspected for this pass. No unnecessary logo rewrite was made.
 - The learner lesson workspace is already video-capable: it renders signed native video, YouTube/Vimeo embeds, authored lesson content and learner-owned notes separately. It displays one primary video per lesson; the first AI renderer also produces one primary video per lesson.
+- The cohort learner lesson route previously displayed text only. The cohort lesson API now returns only ready media after the existing course/lesson assignment checks, and the cohort page plays the primary signed video before its concise notes. Video position and percentage are saved to the existing cohort progress record. A regression test covers the authorised media response; the latest CI run is pending.
 - The Course Studio remains an internal-staff-only route inside Learnora ME, separate from normal learner/creator/organisation navigation and permissions. The separate `frontend-team/` application remains a later website build, not part of this integration. The current Course Studio also includes only the small track create/publish controls needed to prepare the first catalogue; the full Teams track/content management workspace remains separate.
 - The selected global track is linked only during final publication, after the database rechecks the track's enrolment lock. Authorised super-admin staff can create a new draft global track from Course Studio and publish it once its linked course is ready. Standalone courses remain supported.
 - The batch action now generates missing lesson packages sequentially and stops on the first failed request.
 - The video worker configuration was corrected to use dedicated R2 worker credentials and the actual `lesson_videos` schema. The backend playback credentials remain separate and read-only.
+- The latest scheduled renderer workflow completed without errors but skipped its render steps because the required Supabase and R2 GitHub Actions secrets are not configured. This is a configuration check, not an end-to-end rendering result.
+- The latest full production check identified a nullable Course Studio job-ID type error. The refresh action now guards the missing ID; the corrected full run is pending.
 - No learner-facing developer comments, implementation notes, or debug text have been added.
 - No deployment, live Supabase migration, live R2 bucket creation, or production secret change has been performed.
 
