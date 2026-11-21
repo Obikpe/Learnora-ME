@@ -71,10 +71,10 @@ APPLIED_VERSIONS = [
 ]
 
 # All applied live versions now have exact matching source filenames.
-# The only active repository-only version is the new, unapplied Course Studio migration.
+# The active repository-only versions are the unapplied Course Studio schema and curriculum-revision migrations.
 LIVE_VERSION_ALIASES = {}
 
-PENDING_VERSIONS = ["20261121012000"]
+PENDING_VERSIONS = ["20261121012000", "20261121170000"]
 EXPECTED_VERSIONS = sorted(set(APPLIED_VERSIONS) | set(PENDING_VERSIONS))
 
 
