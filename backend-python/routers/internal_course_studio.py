@@ -457,7 +457,7 @@ async def generate_lesson_package(
             "status": "draft",
             "provider_key": provider.get("provider"),
             "model": provider.get("model"),
-            "prompt_version": "lesson-package-v1",
+            "prompt_version": "lesson-package-v2",
         }
         inserted = supabase.table("learnora_lesson_production_packages").insert(package_row).execute()
         package_id = inserted.data[0]["id"] if inserted.data else None
