@@ -135,6 +135,11 @@ DECLARE
     v_lesson_type text;
     v_duration_minutes integer;
     v_package public.learnora_lesson_production_packages%ROWTYPE;
+    v_quiz_id uuid;
+    v_question jsonb;
+    v_question_order integer;
+    v_correct_index integer;
+    v_correct_answer text;
     v_estimated_hours numeric;
 BEGIN
     SELECT *
@@ -299,6 +304,53 @@ BEGIN
             UPDATE public.learnora_lesson_production_packages
                SET lesson_id = v_lesson_id
              WHERE id = v_package.id;
+
+            IF jsonb_typeof(v_package.knowledge_check) = 'array'
+               AND jsonb_array_length(v_package.knowledge_check) > 0 THEN
+                INSERT INTO public.quizzes (
+                    course_id, module_id, lesson_id, title, description,
+                    passing_score, is_published
+                )
+                VALUES (
+                    v_course_id,
+                    v_module_id,
+                    v_lesson_id,
+                    'Quick check: ' || (v_lesson->>'title'),
+                    'Check your understanding of ' || (v_lesson->>'title') || '.',
+                    70,
+                    false
+                )
+                RETURNING id INTO v_quiz_id;
+
+                FOR v_question, v_question_order IN
+                    SELECT value, ordinality::integer - 1
+                      FROM jsonb_array_elements(v_package.knowledge_check)
+                           WITH ORDINALITY AS questions(value, ordinality)
+                LOOP
+                    v_correct_index := (v_question->>'correct_option')::integer;
+                    IF jsonb_typeof(v_question->'options') IS DISTINCT FROM 'array'
+                       OR v_correct_index < 0
+                       OR v_correct_index >= jsonb_array_length(v_question->'options') THEN
+                        RAISE EXCEPTION 'Knowledge-check answer index is invalid for lesson %', v_lesson_order;
+                    END IF;
+
+                    v_correct_answer := v_question->'options'->>v_correct_index;
+                    INSERT INTO public.quiz_questions (
+                        quiz_id, question, question_type, options, correct_answer,
+                        explanation, points, order_index
+                    )
+                    VALUES (
+                        v_quiz_id,
+                        v_question->>'question',
+                        'single_choice',
+                        v_question->'options',
+                        to_jsonb(v_correct_answer),
+                        v_question->>'explanation',
+                        1,
+                        v_question_order
+                    );
+                END LOOP;
+            END IF;
         END LOOP;
     END LOOP;
 
