@@ -734,6 +734,8 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - The video worker configuration uses dedicated R2 worker credentials and the actual `lesson_videos` schema. The backend R2 token is separate and bucket-scoped; it needs object read access for playback/verification and write access for authorised human-video uploads.
 - The latest scheduled renderer workflow completed without errors but skipped its render steps because the required Supabase and R2 GitHub Actions secrets are not configured. This is a configuration check, not an end-to-end rendering result.
 - The Course Studio video-status refresh now guards a missing job ID. The full Learnora production checks and the Cohort Learning Access Tests both passed on commit `e776c2613f`.
+- After that passing checkpoint, the curriculum prompt was aligned with the required `short_description`/`course_description` schema, the lesson player was enabled to return approved YouTube/Vimeo embeds, and the renderer now reuses existing media rows on retry with a partial unique R2 object index. The renderer self-test covers retry idempotency; a new full CI run is pending for these latest changes.
+- The Data Analytics pilot brief now includes the agreed Module 1 lesson topics and short-note guidance for careers, career motivation and the data analytics/data analysis comparison.
 - No learner-facing developer comments, implementation notes, or debug text have been added.
 - No deployment, live Supabase migration, live R2 bucket creation, or production secret change has been performed.
 
