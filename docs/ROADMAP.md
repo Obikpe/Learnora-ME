@@ -746,8 +746,8 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 
 ### Verified CI checkpoint — 21 November 2026
 
-- On commit `78e3ba2`, GitHub Actions completed the Kokoro/FFmpeg real-render smoke test, the additive migration-and-rollback rehearsal, backend compilation/import checks, and the complete backend test suite successfully. The learner frontend build was still running when later commits superseded that run.
-- The subsequent commits add the final Course Studio track controls, stricter lesson knowledge-check validation and the curriculum-permission correction. Those latest changes are awaiting their own full CI run; do not treat the earlier checkpoint as verification of the newest commit.
+- On commit `3fd30fd0`, GitHub Actions completed the Kokoro/FFmpeg real-render smoke test, additive migration-and-rollback rehearsal, backend compilation/import checks, complete backend test suite, learner frontend build and Teams frontend build successfully.
+- Subsequent commits add the table visual renderer, generic-editor publication guard, enrolment-lock recheck hardening and UTC-ordered migration filename. The latest full CI run for those final changes is pending; do not treat the earlier checkpoint as verification of the newest commit.
 
 ### Permission and publication hardening — 21 November 2026
 
