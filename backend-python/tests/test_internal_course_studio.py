@@ -18,6 +18,7 @@ from routers.internal_course_studio import (
     generate_curriculum,
     revise_course_curriculum,
     generate_lesson_package,
+    get_course_generation_job,
     _extract_json,
 )
 
@@ -60,6 +61,10 @@ class CourseStudioContractTests(unittest.TestCase):
         self.assertIn('require_internal_permission("content.generate")', source)
         self.assertIn("update_learnora_course_generation_curriculum", source)
         self.assertIn("lesson_count > 60", source)
+
+    def test_restored_curriculum_excludes_archived_lesson_packages(self):
+        source = inspect.getsource(get_course_generation_job)
+        self.assertIn('.neq("status", "archived")', source)
 
     def test_lesson_prompt_uses_the_practice_activity_schema_field(self):
         source = inspect.getsource(generate_lesson_package)
