@@ -84,7 +84,7 @@ class LessonPackageOutput(BaseModel):
     estimated_duration_seconds: int = Field(..., ge=30, le=300)
     concise_note: str = Field(..., min_length=10, max_length=700)
     practice_activity: Optional[str] = Field(None, max_length=2500)
-    knowledge_check: list[KnowledgeCheckItem] = Field(default_factory=list, max_length=5)
+    knowledge_check: list[KnowledgeCheckItem] = Field(..., min_length=2, max_length=4)
     video_plan: list[VideoScene] = Field(default_factory=list, max_length=8)
     fact_check_notes: list[str] = Field(default_factory=list, max_length=10)
 
@@ -380,7 +380,7 @@ async def generate_lesson_package(
         "it is not an essay and not a transcript. For a demonstration, describe reproducible actions; "
         "for code, do not invent execution results; for mathematics, preserve exact notation and "
         "calculations. Add a practical_activity only when useful. Add 2-4 answerable knowledge-check "
-        "questions where appropriate. video_plan must contain 2-8 renderable scenes for video lessons and cover the teaching_script "
+        "Every lesson must include 2-4 short multiple-choice knowledge-check questions with correct answers and explanations. video_plan must contain 2-8 renderable scenes for video lessons and cover the teaching_script "
         "in the same teaching order. Each scene narration must be a continuous excerpt from the teaching_script; "
         "the scene excerpts together must cover the script once, in order, without adding new spoken facts. "
         "The renderer uses deterministic slide, "
