@@ -346,7 +346,6 @@ export default function TeamCourseStudioPage() {
     try {
       const result = await internalRequest("/course-studio/jobs/" + jobId + "/create-draft", {
         method: "POST",
-        body: JSON.stringify({}),
       });
       setCreatedCourseId(result.course_id);
       setPublishedCourse(false);
