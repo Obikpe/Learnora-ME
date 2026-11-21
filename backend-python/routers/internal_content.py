@@ -266,7 +266,7 @@ def get_course(course_id: str, staff: InternalStaffContext = Depends(require_int
 def update_course(course_id: str, payload: CourseWrite, staff: InternalStaffContext = Depends(require_internal_permission("content.manage"))):
     current_result = (
         supabase.table("learnora_courses")
-        .select("id,status,ownership,organisation_id")
+        .select("id,status,ownership,organisation_id,settings")
         .eq("id", course_id)
         .eq("ownership", "learnora")
         .is_("organisation_id", "null")
@@ -282,6 +282,21 @@ def update_course(course_id: str, payload: CourseWrite, staff: InternalStaffCont
     if resulting_ownership != "learnora":
         raise HTTPException(status_code=403, detail="This workspace manages global Learnora-owned courses only.")
     if resulting_status == "published" and current_course.get("status") != "published":
+        settings = current_course.get("settings") or {}
+        if settings.get("ai_generated"):
+            generation_job_id = settings.get("generation_job_id")
+            generation_job = (
+                supabase.table("learnora_course_generation_jobs")
+                .select("status")
+                .eq("id", str(generation_job_id))
+                .maybe_single()
+                .execute()
+            ).data
+            if not generation_job or generation_job.get("status") != "published":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Publish this AI-generated course from Course Studio after its lesson videos and assessments are ready.",
+                )
         _assert_course_publishable(course_id)
     if resulting_status != "published" or resulting_ownership != "learnora" or current_course.get("organisation_id") is not None:
         _assert_course_not_in_published_global_track(course_id)
