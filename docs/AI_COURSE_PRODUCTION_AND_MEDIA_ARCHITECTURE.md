@@ -232,13 +232,13 @@ At the time of the initial audit, the live schema supported learner-facing lesso
 - The live `content_generation` AI profile exists, is enabled, and is configured as `openrouter/free` with a stored default maximum of 2,000 output tokens.
 - The active gateway can override output tokens per call, but the model/provider's actual response limits and output validity still need runtime verification.
 - The internal permission `content.manage` exists. In the live staff-role permission mapping it is currently assigned only to `super_admin`.
-- The `learning_curriculum` staff role exists but does not currently have `content.manage`. Therefore the first generation API is restricted to super-admin staff until a dedicated course-generation permission is safely added and assigned to the curriculum role. Do not bypass the permission system with a hardcoded role check.
+- The pending Course Studio migration adds the dedicated `content.generate` permission for the `learning_curriculum` staff role. Generation endpoints require `content.generate`; final course and track publication still requires `content.manage`, which remains restricted to super-admin staff. Do not bypass the permission system with a hardcoded role check.
 - The current generation endpoints use the existing `content_generation` profile and require internal staff permissions. The persistent Course Studio flow now creates private job/package records and an unpublished course draft after explicit staff approval; it does not publish course records.
 
 ### Test course — preserve history when replacing
 
 A read-only live query confirmed that the test course is not an empty disposable record:
-- Course: **Introduction to Data Analytics**, published and Learnora-owned.
+- Course: **Introduction to Data Analytics**, published and Learnora-owned (`introduction-to-data-analytics`, record ID `e89cdf59-f4ad-4453-ab14-73e372fbce7e`).
 - It is linked to the published **Data Analytics** track.
 - It currently has one published module and one published article lesson, **What Is Data Analytics?**
 - The lesson is marked as 35 minutes and contains 10,655 characters of written content.
@@ -259,7 +259,7 @@ The following initial code has now been added to `main`:
 
 **Historical implementation note:** the original first slice produced reviewable proposals only. That limitation was superseded by the persistent draft workflow and atomic draft/publication RPCs documented in sections 18–19. The migration and application code remain source-only until an explicitly approved release; no production deployment has occurred.
 
-The live permission mapping currently grants `content.manage` only to `super_admin`; the `learning_curriculum` role does not have it. The first UI/API increment therefore fails closed for all staff without that permission. A dedicated `content.generate` permission should be added and assigned to the curriculum role only after the migration source/version discrepancy is resolved. Do not broaden access by hardcoding role names in the endpoint.
+The pending Course Studio migration grants `content.generate` to the `learning_curriculum` role while retaining `content.manage` for `super_admin`. Generation and publication remain separate backend permission checks. This mapping is source-only until the migration is explicitly approved and applied; do not broaden access by hardcoding role names in the endpoint.
 
 ### Corrected test-course retirement evidence
 
