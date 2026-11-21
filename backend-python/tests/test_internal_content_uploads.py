@@ -161,6 +161,25 @@ class InternalContentUploadTests(unittest.TestCase):
             job_id = internal_content._course_studio_job_for_lesson("10000000-0000-4000-8000-000000000001")
         self.assertEqual(job_id, "40000000-0000-4000-8000-000000000001")
 
+    def test_course_studio_team_upload_finalization_uses_course_studio_verification(self):
+        from routers import internal_course_studio
+        payload = internal_content.CourseStudioVideoFinalizeRequest(
+            object_key="courses/course/modules/module/lessons/lesson/video.mp4",
+            file_size_bytes=1024,
+            duration_seconds=120,
+            title="Lesson video",
+        )
+        staff = SimpleNamespace(user_id="staff-1")
+        expected = {"success": True, "video_id": "video-1"}
+        with patch.object(internal_content, "_course_studio_job_for_lesson", return_value="40000000-0000-4000-8000-000000000001"), patch.object(
+            internal_course_studio, "finalize_human_video_upload", return_value=expected
+        ) as finalize:
+            result = internal_content.finalize_course_studio_video_upload(
+                "10000000-0000-4000-8000-000000000001", payload, staff
+            )
+        self.assertEqual(result, expected)
+        self.assertEqual(finalize.call_args.args[3], staff)
+
     def test_course_studio_team_upload_delegates_to_r2_course_studio_flow(self):
         from routers import internal_course_studio
         payload = internal_content.CourseStudioVideoUploadRequest(
