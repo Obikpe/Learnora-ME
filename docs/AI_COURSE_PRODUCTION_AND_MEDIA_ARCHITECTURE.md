@@ -140,6 +140,8 @@ Current storage provider remains Supabase Storage. Cloudflare R2 is a cost/egres
 
 ## 10. Course catalogue and initial content direction
 
+The first three pilot course briefs and their outline structures are maintained in `docs/INITIAL_PILOT_COURSE_PRODUCTION_BRIEFS.md`. They are planning documents, not live course records. The Data Analytics course is the first production priority; Excel Fundamentals is a separate course and may also be linked to the Data Analytics track; Front-end Web Development belongs to its own track.
+
 The platform must support both standalone courses and courses grouped into tracks. Examples of future catalogue breadth include a standalone Excel course, a broader Data Analytics course that includes Excel in its own curriculum, and a Front-end Web Development course/track. Avoid making the whole catalogue a single monolithic Data Analytics course.
 
 The existing published "Introduction to Data Analytics" test course was seeded as a mock/test introduction. It must be replaced by the real AI-produced course once the generation workflow can create, review and publish its replacement. Do not delete it prematurely: first confirm its current production record, track links, enrolments, learner progress and references. If it has no learner history, archive/delete only through an approved, verified data operation; if learners have progress, preserve history and replace it without destructive deletion. Remove mock/test labelling and test content only after the replacement is ready and the access/track links are reconciled.
