@@ -143,6 +143,44 @@ Do not infer requirements from route names, code structure, schema names or isol
 
 Documentation work does not authorise application implementation, production deployments, live database mutations, migration application, storage changes, secret/configuration changes or destructive data operations. Each requires the product owner's separate explicit approval.
 
+### PD-011 — Shared organisation management and invitation-based account activation
+
+**Status:** APPROVED
+**Confirmed:** 21 November 2026
+
+When a customer organisation request is processed and an organisation is created, its type must be established as either a **cohort** or a **corporate organisation**. The two types share a top-level management pattern but retain distinct operating models, team structures and administrator responsibilities.
+
+Both organisation types have:
+- An active **manager** who coordinates the organisation's overall operation.
+- A formal **management team**. The manager belongs to and leads this team.
+- Other teams created under that organisation by the manager.
+- Administrators appointed by the manager, each with a defined role and responsibilities.
+
+The manager has organisation-wide management access to everything that the specific organisation is entitled to access, including its teams. This does not grant access to other organisations or internal Learnora staff capabilities. The manager establishes the organisation's teams and appoints its administrators.
+
+Administrators do not automatically inherit the manager's full access. Their permissions and responsibilities follow their assigned roles. For example:
+- In a **cohort**, the coordinator is responsible for placing learners into the cohort's configured tracks and assigning tutors to those tracks. Other cohort administration duties are assigned according to each administrator's role.
+- In a **corporate organisation**, the coordinator onboards the organisation's learners/employees into the relevant learning teams. Other corporate administration duties are assigned according to each administrator's role.
+
+The management team is a real organisation team, not merely a label for a collection of unrelated platform functions. Learner support, assessment/quality, programme operations and reporting do not need separate teams by default; the manager, coordinator or an administrator may take responsibility for those functions.
+
+#### Organisation onboarding and account activation
+
+Managers, coordinators and administrators may initiate onboarding and create an invitation/provisioning record for an intended person, including the intended organisation, team or learning context and assigned role. They must not create the person's completed login credentials or set the person's password on their behalf.
+
+For every organisation type:
+1. An authorised manager or administrator initiates the person's onboarding and supplies the relevant organisation and role details.
+2. The system sends an invitation email to the intended person's email address. The email identifies the relevant organisation and communicates the role/context for which the person is being onboarded.
+3. The email contains an activation link.
+4. The intended person follows the link and is taken to the account activation flow, where they create their own password and complete account activation.
+5. The invitation/activation link expires **48 hours** after it is issued.
+
+The organisation-side action is therefore an invitation/onboarding action, not full account creation. The invited person must personally complete activation. This rule applies to managers, coordinators, administrators, tutors, learners/employees and other organisation users; no organisation role may bypass the person's own activation step.
+
+The invitation flow must be designed so that an expired or invalid link cannot activate an account. The exact resend, revoke, duplicate-invitation and expired-invitation recovery behaviour remains to be specified before implementation. Invitation tokens must be treated as sensitive, single-purpose credentials and must not expose passwords or reusable secrets in email content.
+
+This decision establishes intended product behaviour. It does not approve a database migration, live account provisioning, email-provider/configuration change or deployment.
+
 ### PD-010 — Customer operating-model scope must be defined before implementation
 
 **Status:** APPROVED — scope and modelling requirement only; detailed relationships remain unresolved  
@@ -158,10 +196,10 @@ The following items are deliberately unresolved. They are not implementation per
 
 | ID | Topic | What must be resolved |
 |---|---|---|
-| UR-001 | Cohort team model | The user has confirmed that cohorts have their own teams and that cohort teams can include tutors assigned to specific tracks created by that cohort, alongside learners and other cohort-specific operations. Still define team types/purposes, membership, managers, tutor-to-track/course assignment rules, learner relationships, operations, dashboards and permissions. |
-| UR-002 | Corporate organisation model | Define distinct configurable contexts for cohort-based, employee and other organisations, and model organisations, teams, cohorts and instructor-led programmes. Account for owners/admins, employees, team managers, cohort managers, tutors, programme managers and learners. Resolve their relationships, contracts/entitlements, tutor relationships, workflows, dashboards and permissions. Do not reduce the model to a member/course mapping. |
-| UR-003 | Account identity | Reconcile the historical cohort-specific login/account model with later global identity proposals. PD-005 requires preservation; it does not approve a conversion or a new identity schema. |
-| UR-004 | Cohort versus organisation tutor lifecycle | Specify separately how tutors join, are assigned, gain access, are removed and retain/relinquish access in each context. |
+| UR-001 | Cohort team model | The cohort has a management team led by its active manager. The manager creates other cohort teams and appoints role-scoped administrators. The cohort coordinator places learners into configured tracks and assigns tutors to those tracks. Cohort-specific team membership, tutor/learner relationships, additional team types, dashboards and detailed permissions still require specification. Do not create separate support, assessment, operations or reporting teams by default. |
+| UR-002 | Corporate organisation model | Corporate organisations have an active manager and management team. The manager creates other teams and appoints role-scoped administrators. The corporate coordinator onboards learners/employees into the relevant learning teams. Corporate team taxonomy, team managers, cohort-based/employee/other contexts, programmes, tutor relationships, contracts/entitlements, dashboards and detailed permissions still require specification. |
+| UR-003 | Account identity and activation | Preserve existing identity records while specifying the target identity model. For new organisation onboarding, staff initiate invitations but the intended person personally activates the account and creates their password through a 48-hour link. Canonical identity uniqueness, existing cohort-account compatibility and the exact identity schema remain unresolved. |
+| UR-004 | Invitation lifecycle and tutor lifecycle | Specify resend, revoke, duplicate and expired invitation recovery, plus separately how tutors join, are assigned, gain access, are removed and retain/relinquish access in cohort and corporate contexts. |
 | UR-005 | Independent tutor model | Define the independent tutor product context and lifecycle separately from cohort tutors and organisation tutors. |
 | UR-006 | Customer authoring | Define what selected corporate organisations may author, whether any AI capability is allowed, and the distinct non-AI authoring/upload/review/publishing rules for tutors and cohort teams. |
 | UR-007 | Transitional Course Studio | Define the eventual transition from the current Learnora ME Course Studio prototype to Learnora Teams, including shared APIs, data ownership, media upload, review and publishing. Do not move code until dependencies and acceptance criteria are documented. |
