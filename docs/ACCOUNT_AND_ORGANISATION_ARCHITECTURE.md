@@ -41,8 +41,8 @@ Implement the individual learner path as one coherent vertical slice across back
 ## 1.1 Earlier proposed identity and access rules
 
 1. **One email address represents one account identity and one account context at a time.** The same email must never authenticate as an individual learner in one flow and an organisation learner in another, nor as separate cohort accounts in different cohorts.
-2. **Organisation-managed and independent Learnora accounts are mutually exclusive.** An organisation learner who wants to become an independent Learnora learner must first have their organisation-managed account closed/released through an authorised organisation process. Only after the release is complete may the email register as an individual account.
-3. **An account belongs to one account class and, when organisation-managed, one organisation context.** Cohorts, tracks and tutor assignments are resource scopes inside that context; they are not separate login identities.
+2. **Organisation-managed and individual Learnora accounts are mutually exclusive by email.** An email associated with an organisation/cohort-managed account cannot be used for an individual learner account, and an email associated with an individual learner account cannot be used for an organisation/cohort-managed account. Under the current approved lifecycle, revoking organisation/cohort access deletes the managed account and its associated data; after deletion, the email is no longer reserved by that account and may be used through the normal registration/invitation checks.
+3. **An email has one mutually exclusive account context at a time.** Cohorts, tracks and tutor assignments are resource scopes inside the organisation-managed context; they are not separate login identities. An individual learner identity and an organisation/cohort-managed identity must never coexist for the same email.
 4. **No silent identity fallback.** A failed password for one account class must never cause the server to try another account table and authenticate the same email through a different identity.
 5. **Organisation learners are not individual catalogue users.** They see only organisation-owned or organisation-assigned content and only courses assigned to their cohort/track or explicitly granted to their organisation account. They do not receive public catalogue discovery.
 6. **Organisation access is enforced by the API and database policies**, not by frontend routing or hidden navigation.
@@ -93,7 +93,7 @@ The public registration endpoint must never create an individual account simply 
 
 1. An organisation admin enters an email and selects the organisation role (learner, tutor/instructor, admin, or owner subject to existing permission constraints).
 2. The backend checks the global identity boundary before issuing an invitation.
-3. If the email already belongs to an individual learner, independent tutor, platform administrator, or another organisation, provisioning is rejected. The organisation must not silently take over that identity.
+3. If the email already belongs to an individual learner, independent tutor, platform administrator, or another organisation, provisioning is rejected. The organisation must not silently take over that identity. The reverse restriction also applies: an email already associated with an organisation/cohort-managed identity cannot register as an individual learner.
 4. For a new email, create a pending organisation-managed identity reservation tied to exactly one organisation. The invitation is single-use, expiring, and bound to that email and organisation.
 5. The recipient activates the organisation-managed account and establishes credentials. The email is reserved globally for that account class.
 6. Re-inviting an existing organisation account within the same organisation updates the invitation or membership state; it does not create a second identity.
@@ -123,24 +123,23 @@ If no identity exists, return a generic invalid-credentials response. If an iden
 
 Platform-admin/internal authentication remains a separately guarded flow and cannot be reached by learner account fallback.
 
-## 4. Earlier proposed organisation account release and conversion to individual use
+## 4. Organisation-managed account revocation and deletion — current approved rule
 
-An organisation learner who wants independent Learnora access must use an explicit **organisation account release** lifecycle. The public individual registration endpoint cannot perform this conversion automatically.
+**Authority:** PD-012 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md), clarified 21 November 2026. This section replaces the earlier account-release proposal in this document.
 
-### Required release sequence
+An organisation/cohort-managed learner or tutor whose access is revoked has their managed account deleted together with its associated learner/tutor data. Revocation is not merely a membership suspension, soft deactivation or account release that preserves personal learning history.
 
-1. A release is requested by the learner or initiated by an authorised organisation admin, according to the organisation's policy.
-2. The backend verifies the actor's authority and the exact organisation/account relationship.
-3. The organisation admin confirms release, or the configured organisation offboarding policy authorises it. The learner cannot bypass this by changing email case, using a second login route, or registering before release.
-4. Revoke active sessions, refresh tokens, activation links and outstanding invitation tokens for the organisation identity.
-5. Remove active cohort memberships and organisation entitlements; mark the organisation account as released/closed. Do not delete the organisation, cohort, audit or historical learning evidence records.
-6. Preserve learner progress and assessment evidence according to the product's retention policy, detached from active organisation access. Historical organisation reports must retain their provenance and must not become visible to the new individual account unless a separately authorised transfer policy is defined.
-7. Release the canonical email reservation only after the state transition has committed successfully and all active access paths are revoked.
-8. The user may then register a new individual account and verify the email. The new identity receives no inherited organisation course access, organisation tutor permissions, organisation role, or organisation sessions.
+The email identity is exclusive across account contexts:
+- An email already associated with an organisation/cohort-managed account cannot be used for an individual Learnora learner account.
+- An email already associated with an individual learner account cannot be used for an organisation/cohort-managed account.
+- Once the organisation/cohort-managed account is deleted, that account no longer reserves the email. The email may then be used for a new account through the ordinary registration/invitation checks.
+- No account data, progress, role, entitlement or history is transferred to the new account.
 
-**Atomicity:** The release operation must be transactional (or implemented through a durable state machine/outbox with a fail-closed intermediate state). There must be no interval in which both the organisation identity and a new individual identity can authenticate. If any required revocation or state update fails, keep the email reserved and the account inaccessible until recovery completes.
+The deletion must remove the managed identity's associated learner/tutor data and revoke sessions, tokens, invitations and other access paths. Shared platform or organisation-owned resources must not be deleted merely because the person interacted with them; personal attribution may need to be detached. The precise dependent-record inventory, atomic deletion and failure handling, non-identifying security audit evidence, backup/log/processor expiry and any narrowly required legal/financial exceptions must be specified before implementation.
 
-**Data retention:** "Delete organisation account" means close/release the operational identity and its active access. It does not mean cascading deletion of audit logs, cohort records, assessment evidence, certificates, billing records or organisation-owned content. Any true erasure request is a separate privacy workflow with its own legal and retention checks.
+The earlier proposal to preserve organisation learner progress and assessment evidence, close/release the account while retaining that data, and then allow the email to register individually is **superseded**. Do not implement that earlier proposal.
+
+The separate 30-day recovery and erasure rule documented for individual learner self-service deletion applies to individual learner accounts only. It must not be assumed to apply to organisation/cohort-managed account revocation.
 
 ## 5. Organisation, cohort and tutor model — incomplete domain specification
 
@@ -439,7 +438,7 @@ This section supersedes earlier status statements above where they described the
 - Added focused mocked regression tests for literal reserved-email matching, fail-closed reserved-identity lookup, fail-closed current-user membership resolution, duplicate user/admin email rows, and unresolved cohort identity context. Added source-contract checks for conflict-aware verification/password recovery and single-use reset-token claims; none have been executed. Added an account-lifecycle contract check for the final managed-identity recheck; none have been executed. These tests have been committed but have **not** been executed. Added source-contract regression checks for individual enrolment scope, withdrawn-enrolment reactivation and fail-closed duplicate handling; none of these tests have been executed. Added source-contract checks for course/lesson publication visibility across progress and course-content endpoints, plus the AI tutor's use of the shared enrolment resolver; none have been executed. No fresh production build, browser journey, deployment, CI workflow, SQL migration or live database operation was run.
 - Email uniqueness remains an application-level guard across separate identity tables. It is not race-safe against simultaneous individual registration and managed-account provisioning. The global canonical email registry/unique constraint and its backfill/conflict-resolution procedure remain a future additive migration; do not apply it without explicit approval and a reviewed live-schema/data plan.
 - The current schema baseline also has a unique constraint on `learnora_enrolments(user_id, course_id, organisation_id)`. Because individual rows use `organisation_id = NULL` (and PostgreSQL treats NULL values as distinct for ordinary unique constraints), this does not prevent concurrent duplicate individual enrolments. The new route handles existing duplicates by failing closed, but race-safe prevention needs a reviewed partial unique index over `(user_id, course_id)` for rows where both `organisation_id` and `cohort_id` are NULL, after a read-only duplicate preflight. Do not apply that migration without approval. The complete read-only design and rollout sequence are in [STEP_8_GLOBAL_IDENTITY_AND_ENROLMENT_CONSTRAINTS_PLAN.md](../backend-python/migrations/STEP_8_GLOBAL_IDENTITY_AND_ENROLMENT_CONSTRAINTS_PLAN.md).
-- The organisation-controlled release workflow is not implemented. A managed email is blocked from individual registration until the managed identity is formally released through an authorised workflow. The self-deletion confirmation endpoint now rechecks retained organisation/cohort identity immediately before finalising deletion, so a membership added after the confirmation email was sent prevents deletion. Do not delete or anonymise existing managed identities as an automatic workaround.
+- The code audit at this date described an organisation-controlled release workflow as not implemented; that historical implementation observation does not define the current product target. The approved target is now account deletion on organisation/cohort access revocation, with associated managed learner/tutor data deleted and the email reservation ending with that identity. The older release-and-preserve-history proposal is superseded by PD-012. Any existing self-deletion guard or release-related code must be reconciled against this target only in a separately authorised implementation pass; do not alter existing records during documentation work.
 - Existing legacy `witstart` role compatibility remains in active auth/session code pending the full audit of historical rows and the separate cohort login path. Historical records and migration history must remain untouched; remove active product-specific role handling only after a safe compatibility transition is designed.
 - The full learner vertical slice is still being audited: registration/verification/recovery, login/session revocation, public catalogue visibility, enrolment, course/lesson content, assessment, progress, evidence and completion must each be reconciled across backend and frontend before launch readiness can be claimed.
 
@@ -572,17 +571,19 @@ This addendum documents approved target behaviour only. The organisation portal 
 Do not infer that the current database schema, legacy cohort login flow or existing invitation code already satisfies this target model. Before implementation, reconcile current source and live schema read-only, define compatibility with existing cohort accounts and progress, specify the unresolved invitation lifecycle, and obtain the required implementation authorisation. No account conversion, migration, email-provider change, live database mutation or deployment is authorised by this documentation decision.
 
 
-### 12.8 Cohort tutor coverage, assignment confirmations and access control
+### 12.8 Cohort tutor coverage, assignment confirmations and managed-account deletion
 
-The cohort-specific operating model is detailed in [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md) and governed by PD-012 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md). The approved requirements are:
+The cohort-specific operating model is detailed in [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md) and governed by PD-012 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md).
 
 - Every learning track in a cohort must have at least one tutor.
-- A tutor may be assigned to more than one track. If the coordinator attempts an additional track assignment for a tutor who already has an assignment, the system must warn the coordinator, identify the course associated with the existing assignment, and require explicit confirmation before proceeding.
+- A tutor may be assigned to more than one track. If the coordinator attempts an additional track assignment for a tutor who already has an assignment, the system must warn the coordinator, identify the existing course/assignment and require explicit confirmation before proceeding.
 - A track may have more than one tutor. If the coordinator attempts to add another tutor to a track that already has a tutor, the system must warn and require explicit confirmation before proceeding.
-- These warnings are confirmation gates, not assignment prohibitions. No additional assignment may be made before confirmation.
+- These warnings are confirmation gates, not assignment prohibitions.
 - Tutor access remains scoped to the cohort, assigned track(s), courses and responsibilities.
 
-A cohort coordinator may revoke a learner's or tutor's access to the Learnora site and may delete that person's account. These are distinct actions. The meaning and scope of account deletion, impact on other memberships or identity contexts, learning-evidence retention, restoration and audit requirements remain unresolved. Do not implement account deletion based on an assumption that the coordinator is deleting only a cohort membership or, conversely, the person's global identity.
+A cohort coordinator may revoke a learner's or tutor's access. Revocation of an organisation/cohort-managed learner or tutor means deleting that managed account and its associated learner/tutor data. It is not merely removing a membership or disabling access while retaining the person's account and learning history.
+
+The email identity is mutually exclusive: an email used by an organisation/cohort-managed account cannot be used by an individual learner account, and an email used by an individual learner account cannot be used by an organisation/cohort-managed account. Once the managed account is deleted, its email reservation ends and the email may be used for a new account through normal checks. No deleted data is transferred. The earlier account-release proposal that preserved learner history is superseded by PD-012.
 
 ### 12.9 Cohort, organisation and contract-end data lifecycle
 
@@ -591,9 +592,9 @@ A cohort ending and a parent organisation's contract ending are distinct events:
 - An ended cohort does not cause its parent organisation record to be deleted.
 - The same organisation may start a later cohort under a new cohort identity.
 - When an organisation contract ends, the organisation record remains.
+- At the contract-end point, retain the numeric count of learners associated with that organisation at that time.
+- Delete the covered organisation/cohort-managed learner accounts and associated learner/team data. Do not retain an identifiable learner roster, dormant learner accounts or personal learning histories as a substitute.
 - If no new contract has been signed, the organisation's Learnora access must be denied.
-- The approved retention outcome at contract end is to retain the organisation record and a count of its learners at that point, but not retain the learner/team data covered by the product owner's rule.
+- A later contract may permit a new cohort under a new cohort ID; it does not restore deleted accounts or data from the previous cohort.
 
-The exact learner-count definition, data categories to erase, legally/operationally required exceptions, audit and backup treatment, erasure timing, renewal/reactivation behaviour and impact on wider account identities remain unresolved. A retained learner count must not be mistaken for permission to retain an identifiable learner roster. No technical erasure strategy or production deletion is authorised by this requirement.
-
-See [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md) for the approved behaviour and unresolved data-lifecycle questions. These organisation/cohort workflows remain deferred under the approved implementation sequence.
+The retained count is an organisation-level aggregate, not a retained roster. Technical erasure, atomicity, backup/log/processor expiry, narrow legal/financial exceptions and non-identifying security audit requirements must be specified before implementation. Those technical details do not reopen the approved outcome. See [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md). These organisation/cohort workflows remain deferred under the approved implementation sequence.
