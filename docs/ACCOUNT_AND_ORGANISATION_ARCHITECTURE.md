@@ -570,3 +570,30 @@ These are specification gaps, not permission to choose convenient defaults. The 
 This addendum documents approved target behaviour only. The organisation portal and invitation workflows remain deferred according to the approved product implementation sequence. Do not implement them during the current individual learner phase.
 
 Do not infer that the current database schema, legacy cohort login flow or existing invitation code already satisfies this target model. Before implementation, reconcile current source and live schema read-only, define compatibility with existing cohort accounts and progress, specify the unresolved invitation lifecycle, and obtain the required implementation authorisation. No account conversion, migration, email-provider change, live database mutation or deployment is authorised by this documentation decision.
+
+
+### 12.8 Cohort tutor coverage, assignment confirmations and access control
+
+The cohort-specific operating model is detailed in [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md) and governed by PD-012 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md). The approved requirements are:
+
+- Every learning track in a cohort must have at least one tutor.
+- A tutor may be assigned to more than one track. If the coordinator attempts an additional track assignment for a tutor who already has an assignment, the system must warn the coordinator, identify the course associated with the existing assignment, and require explicit confirmation before proceeding.
+- A track may have more than one tutor. If the coordinator attempts to add another tutor to a track that already has a tutor, the system must warn and require explicit confirmation before proceeding.
+- These warnings are confirmation gates, not assignment prohibitions. No additional assignment may be made before confirmation.
+- Tutor access remains scoped to the cohort, assigned track(s), courses and responsibilities.
+
+A cohort coordinator may revoke a learner's or tutor's access to the Learnora site and may delete that person's account. These are distinct actions. The meaning and scope of account deletion, impact on other memberships or identity contexts, learning-evidence retention, restoration and audit requirements remain unresolved. Do not implement account deletion based on an assumption that the coordinator is deleting only a cohort membership or, conversely, the person's global identity.
+
+### 12.9 Cohort, organisation and contract-end data lifecycle
+
+A cohort ending and a parent organisation's contract ending are distinct events:
+
+- An ended cohort does not cause its parent organisation record to be deleted.
+- The same organisation may start a later cohort under a new cohort identity.
+- When an organisation contract ends, the organisation record remains.
+- If no new contract has been signed, the organisation's Learnora access must be denied.
+- The approved retention outcome at contract end is to retain the organisation record and a count of its learners at that point, but not retain the learner/team data covered by the product owner's rule.
+
+The exact learner-count definition, data categories to erase, legally/operationally required exceptions, audit and backup treatment, erasure timing, renewal/reactivation behaviour and impact on wider account identities remain unresolved. A retained learner count must not be mistaken for permission to retain an identifiable learner roster. No technical erasure strategy or production deletion is authorised by this requirement.
+
+See [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md) for the approved behaviour and unresolved data-lifecycle questions. These organisation/cohort workflows remain deferred under the approved implementation sequence.
