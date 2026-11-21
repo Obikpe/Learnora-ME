@@ -77,7 +77,7 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIn("file_size_bytes: int = Field(..., gt=0, le=2147483648)", source)
         self.assertIn("file_size_bytes: int = Field(..., gt=0, le=104857600)", source)
         ops = (REPO / "supabase/ops/harden_course_upload_buckets.sql").read_text()
-        migration = (REPO / "supabase/migrations/20261117220000_private_course_resources_bucket.sql").read_text()
+        migration = (REPO / "supabase/migrations/20261118090842_private_course_resources_bucket.sql").read_text()
         self.assertIn("SET public = false", ops)
         self.assertIn("file_size_limit = 104857600", ops)
         self.assertIn("'learnora-resources'", migration)
@@ -142,7 +142,7 @@ class BackendSecurityHardeningTests(unittest.TestCase):
         self.assertIn('if not changed_at:', source)
 
     def test_password_change_migration_supplies_the_live_session_timestamp_column(self):
-        migration = (REPO / "supabase/migrations/20261117210000_password_session_invalidation.sql").read_text()
+        migration = (REPO / "supabase/migrations/20261118090841_password_session_invalidation.sql").read_text()
         self.assertIn("ALTER TABLE public.users", migration)
         self.assertIn("ALTER TABLE public.admins", migration)
         self.assertIn("password_changed_at", migration)
