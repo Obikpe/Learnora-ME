@@ -342,6 +342,7 @@ The exact 56-to-56 filename reconciliation above was completed before the Course
 - After the draft course exists, Course Studio exposes a per-lesson upload control for staff with `content.video`. It uses a short-lived R2 signed PUT URL, verifies the uploaded object, and then creates the `lesson_videos` metadata row.
 - The learner workspace uses signed R2 playback for both AI-rendered and human-produced videos. Existing older Supabase-hosted videos continue to use the legacy signed Supabase playback path.
 - The publication RPC requires a ready private R2 video for human-source lessons; AI-source lessons require a completed render job and a ready private Cloudflare R2 video. A missing human video blocks publication.
+- Human video upload tickets and finalisation now require a measured browser MP4 duration from 1–300 seconds; the learner publication RPC also rejects a ready video without a duration in that range. The staff UI reads the local MP4 metadata before uploading, so lessons remain within the five-minute limit.
 
 ## 20. Cohort learner video playback — 21 November 2026
 
