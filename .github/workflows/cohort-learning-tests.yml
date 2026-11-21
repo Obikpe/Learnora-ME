@@ -102,14 +102,18 @@ jobs:
           API_TEST_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/cohort_api_staging
         run: |
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/baselines/active-pheonix-public-schema.sql
-          # Apply only the new release-candidate migrations on top of the catalog
-          # snapshot so the API test exercises the exact post-migration schema.
+          # Replay every applied migration after the 2026-10-21 catalog baseline.
+          # The pending Course Studio migration is rehearsed by the production-check workflow separately.
           for migration in \
             supabase/migrations/20261021220303_revoke_browser_table_grants.sql \
             supabase/migrations/20261021220321_process_creator_payout_atomically.sql \
             supabase/migrations/20261021220327_encrypt_cohort_date_of_birth.sql \
             supabase/migrations/20261021220333_cohort_login_rate_limits.sql \
             supabase/migrations/20261021220849_revoke_trigger_function_browser_execute.sql \
+            supabase/migrations/20261028171902_paystack_subscription_cancellation.sql \
+            supabase/migrations/20261102210054_shared_auth_rate_limits.sql \
+            supabase/migrations/20261102210056_shared_api_rate_limit.sql \
+            supabase/migrations/20261103041002_add_lesson_video_transcript_text.sql \
             supabase/migrations/20261103155243_learner_learning_sessions_and_streaks.sql \
             supabase/migrations/20261103155546_atomic_learner_learning_session_accounting.sql \
             supabase/migrations/20261103155555_fix_atomic_learner_session_elapsed_accounting.sql \
@@ -123,7 +127,14 @@ jobs:
             supabase/migrations/20261118090830_quiz_active_sessions.sql \
             supabase/migrations/20261118090832_certificate_revocation.sql \
             supabase/migrations/20261118090839_project_submission_integrity.sql \
-            supabase/migrations/20261118090841_password_session_invalidation.sql
+            supabase/migrations/20261118090841_password_session_invalidation.sql \
+            supabase/migrations/20261118090842_private_course_resources_bucket.sql \
+            supabase/migrations/20261118091000_feature_foreign_key_indexes.sql \
+            supabase/migrations/20261118214152_public_course_catalogue_rpc.sql \
+            supabase/migrations/20261119223222_revoked_auth_tokens.sql \
+            supabase/migrations/20261119224623_course_completion_skill_badges.sql \
+            supabase/migrations/20261120133258_learner_birthdays_and_age_attestation.sql \
+            supabase/migrations/20261120133439_clear_birthday_data_on_account_deletion.sql
           do
             psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
