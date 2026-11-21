@@ -266,6 +266,19 @@ BEGIN
     )
     RETURNING id INTO v_course_id;
 
+    IF v_job.target_track_id IS NOT NULL THEN
+        INSERT INTO public.learnora_learning_path_courses (
+            path_id, course_id, order_index, required
+        )
+        SELECT
+            v_job.target_track_id,
+            v_course_id,
+            COALESCE(MAX(lpc.order_index) + 1, 0),
+            true
+          FROM public.learnora_learning_path_courses lpc
+         WHERE lpc.path_id = v_job.target_track_id;
+    END IF;
+
     FOR v_module, v_module_order IN
         SELECT value, ordinality::integer - 1
           FROM jsonb_array_elements(v_job.curriculum_data->'modules')
