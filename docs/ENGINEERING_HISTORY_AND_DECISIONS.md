@@ -1,6 +1,6 @@
 # Learnora Engineering History, Decisions and Open Risks
 
-**Last updated:** 3 November 2026  
+**Last updated:** 21 November 2026  
 **Purpose:** preserve product decisions and the work already carried out so a new engineer can understand the present state without relying on chat history.  
 **Scope:** Learnora ME, Learnora Teams, their shared backend, and Supabase schema/migration work.  
 **Branch rule for the current documentation task:** all three new engineering documents are committed to `main`; no alternate branch is to be used for this documentation work.
@@ -817,3 +817,14 @@ The frontend lint steps now lint only changed JavaScript/TypeScript files relati
 - Prepared pilot briefs for Data Analytics, Excel Fundamentals and Front-end Web Development. The mock Introduction to Data Analytics course is not deleted; its retirement is deferred until the replacement is published and its existing learner history is preserved.
 - Added migration assertions, backend tests and a CI smoke test for real Kokoro narration and FFmpeg MP4 rendering. A CI checkpoint passed the renderer smoke test, migration rehearsal and backend suite; later changes are awaiting a complete run.
 - **Release boundary:** no production Supabase migration, R2 bucket/secret configuration, Vercel environment change or deployment has been performed. These remain explicit approval gates.
+## 21 November 2026 — cohort lesson media and release verification
+
+- The individual learner workspace already returned ready lesson videos and generated short-lived Supabase/R2 playback URLs after the normal course enrolment and module-unlock checks.
+- The cohort lesson API previously returned only the assigned lesson and module. It now returns ready lesson-video records only after active cohort membership, active course assignment, active lesson assignment, published lesson status and course/module ownership have all been verified.
+- Cohort lesson responses use the shared media signer. Private Cloudflare R2 and legacy private Supabase videos receive short-lived signed URLs; supported YouTube/Vimeo records remain available to the existing player. Render jobs, draft lesson packages and private teaching scripts are never returned to learners.
+- The cohort learner page now plays the primary video before the concise lesson notes and persists video position/percentage to the existing cohort progress record. It resumes from the saved position when the video metadata is loaded.
+- Regression coverage was added for an assigned cohort learner receiving a ready video with a signed URL. The current test/build run is pending.
+- The latest full production CI run before this correction passed backend compilation, renderer smoke test, migration/rollback rehearsal and the backend suite, but the Learnora ME frontend build failed on a nullable Course Studio job ID passed to the video-status refresh function. The action now checks the ID and is disabled while it is absent. The corrected full CI run is pending.
+- The scheduled renderer workflow's latest run completed successfully as a workflow but skipped its rendering steps because the required Supabase and R2 worker secrets are not configured. This must not be described as an end-to-end render test.
+- The landing page currently passes `hideBrand={false}` to `PublicNav`; the shared `Logo` renders “Learnora ME”. The signed-in dashboard navigation also renders the wordmark. The earlier missing-brand report is not reproducible from current `main` source, so no additional logo edits were made.
+- No deployment, production migration, live R2 bucket creation, production secret change, or test-course retirement was performed.
