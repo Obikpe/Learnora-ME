@@ -172,7 +172,7 @@ The previous reconciliation recorded differences including missing/extra columns
 ### P3.1 Public discovery and conversion
 
 - Audit every public route and ensure the navigation and metadata are correct.
-- Use accurate course/tutor records and honest claims.
+- Use accurate course records and honest claims.
 - Make registration, sign-in, verification, reset and activation resilient.
 - Test responsive layout, keyboard access, form validation and errors.
 
@@ -184,7 +184,9 @@ The previous reconciliation recorded differences including missing/extra columns
 - AI learning assistance behind permissions and quota.
 - Resume/re-entry behaviour and unavailable-content states.
 
-### P3.3 Creator/tutor workflows
+### P3.3 Deferred creator and independent-tutor workflows
+
+The following capabilities are not part of the current individual learner phase. Preserve their existing code and data, and schedule them only within the separately approved future tutor/creator product work:
 
 - Application and status display.
 - Approval/permission transitions.
@@ -193,7 +195,7 @@ The previous reconciliation recorded differences including missing/extra columns
 - Course-level learner submission access and grading.
 - Grade revision policy and audit trail.
 
-**Acceptance:** browser-level journey tests use a disposable account and fixtures; API denial tests verify direct endpoint access cannot bypass UI restrictions.
+Do not treat the existence of these routes or APIs as permission to build or expose them during P3. Independent tutor functionality follows the product sequence in PD-001; cohort and corporate organisation tutor capabilities remain separately scoped.
 
 ## P4 — NEXT PRODUCT PHASE: Learnora Teams internal operations
 
