@@ -54,66 +54,66 @@ By the end, learners should be able to:
 
 ### Course outline
 
-**Module 1: Introduction to Data Analytics**
+Module 1: Introduction to Data Analytics
 - What is data analytics?
 - Data analytics, data analysis and data science
 - Careers and roles in data analytics
 - Why organisations use data analytics
 
-**Module 2: Understanding Data**
+Module 2: Understanding Data
 - What is data?
 - Structured and unstructured data
 - Qualitative and quantitative data
 - Common data types and measurement scales
 
-**Module 3: The Data Analytics Process**
+Module 3: The Data Analytics Process
 - From a business question to an analytical question
 - Collecting and understanding data
 - Preparing and analysing data
 - Interpreting and communicating findings
 
-**Module 4: Excel for Data Analytics**
+Module 4: Excel for Data Analytics
 - Understanding workbooks, worksheets, rows and columns
 - Entering and formatting analytical data
 - Sorting and filtering records
 - Essential formulas and cell references
 - Using common functions to summarise data
 
-**Module 5: Data Cleaning and Preparation**
+Module 5: Data Cleaning and Preparation
 - Why data quality matters
 - Identifying missing and duplicate records
 - Correcting inconsistent values and formats
 - Working with dates, text and categories
 - Checking a dataset before analysis
 
-**Module 6: Introduction to SQL**
+Module 6: Introduction to SQL
 - What a database table represents
 - Selecting columns and limiting results
 - Filtering records with WHERE
 - Sorting and grouping records
 - Aggregating data with COUNT, SUM and AVG
 
-**Module 7: Python for Data Analysis**
+Module 7: Python for Data Analysis
 - What Python contributes to analytics
 - Working with notebooks and scripts
 - Loading a dataset with Pandas
 - Inspecting columns, types and missing values
 - Filtering, grouping and summarising data
 
-**Module 8: Data Visualisation**
+Module 8: Data Visualisation
 - Why visualisation matters
 - Choosing a suitable chart
 - Building clear charts from analytical results
 - Understanding filters, measures and dimensions
 - Creating a simple dashboard
 
-**Module 9: Communicating Insights**
+Module 9: Communicating Insights
 - Turning analysis into a clear finding
 - Separating evidence from assumptions
 - Explaining trends and comparisons
 - Making practical recommendations
 
-**Module 10: Guided Analytics Project**
+Module 10: Guided Analytics Project
 - Understanding the project question and dataset
 - Preparing and analysing the dataset
 - Presenting findings and recommendations
@@ -144,51 +144,51 @@ By the end, learners should be able to:
 
 ### Course outline
 
-**Module 1: Getting Started with Excel**
+Module 1: Getting Started with Excel
 - What Excel is used for
 - Workbooks, worksheets, rows, columns and cells
 - Navigating the Excel interface
 - Creating, saving and organising a workbook
 
-**Module 2: Entering and Formatting Data**
+Module 2: Entering and Formatting Data
 - Entering and editing cell values
 - Number, date and text formats
 - Adjusting columns, rows and worksheet layout
 - Applying readable cell formatting
 
-**Module 3: Formulas and Cell References**
+Module 3: Formulas and Cell References
 - Writing a basic formula
 - Arithmetic operators and order of operations
 - Relative and absolute cell references
 - Copying formulas safely
 
-**Module 4: Essential Excel Functions**
+Module 4: Essential Excel Functions
 - Using SUM, AVERAGE, MIN and MAX
 - Counting values with COUNT and COUNTA
 - Conditional logic with IF
 - Conditional counting and summing with COUNTIF and SUMIF
 
-**Module 5: Organising and Cleaning Data**
+Module 5: Organising and Cleaning Data
 - Sorting records
 - Filtering a dataset
 - Removing duplicates
 - Finding and correcting inconsistent entries
 - Using data validation
 
-**Module 6: Lookup and Reference Functions**
+Module 6: Lookup and Reference Functions
 - Why lookups are useful
 - Using XLOOKUP where supported
 - Understanding VLOOKUP in existing workbooks
 - Handling missing lookup results
 - Combining information from separate tables
 
-**Module 7: Tables, PivotTables and Charts**
+Module 7: Tables, PivotTables and Charts
 - Converting a range into an Excel Table
 - Summarising data with a PivotTable
 - Grouping and filtering a PivotTable
 - Choosing and formatting a suitable chart
 
-**Module 8: Practical Spreadsheet Report**
+Module 8: Practical Spreadsheet Report
 - Understanding a reporting task
 - Preparing a small source dataset
 - Building calculations and summaries
@@ -222,68 +222,68 @@ By the end, learners should be able to:
 
 ### Course outline
 
-**Module 1: How the Web Works**
+Module 1: How the Web Works
 - What happens when a website is opened
 - Websites, web pages, browsers and servers
 - The roles of HTML, CSS and JavaScript
 - Setting up a code editor and project folder
 
-**Module 2: HTML Foundations**
+Module 2: HTML Foundations
 - HTML document structure
 - Headings, paragraphs and text elements
 - Links, images and file paths
 - Lists and tables
 - Semantic page structure
 
-**Module 3: Forms and Accessible HTML**
+Module 3: Forms and Accessible HTML
 - Building a form
 - Labels and input types
 - Buttons and form submission
 - Semantic landmarks and accessible names
 
-**Module 4: CSS Foundations**
+Module 4: CSS Foundations
 - Connecting CSS to HTML
 - Selectors and declarations
 - Colours, typography and spacing
 - The box model
 - Reusable classes and component styling
 
-**Module 5: Layout and Responsive Design**
+Module 5: Layout and Responsive Design
 - Normal document flow
 - Flexbox layouts
 - CSS Grid layouts
 - Media queries and responsive breakpoints
 - Testing layouts on mobile and desktop
 
-**Module 6: JavaScript Foundations**
+Module 6: JavaScript Foundations
 - Values, variables and data types
 - Operators and expressions
 - Conditions and loops
 - Functions and parameters
 - Arrays and objects
 
-**Module 7: JavaScript in the Browser**
+Module 7: JavaScript in the Browser
 - Understanding the DOM
 - Selecting and updating elements
 - Handling user events
 - Validating form input
 - Managing simple interface state
 
-**Module 8: Working with Data and APIs**
+Module 8: Working with Data and APIs
 - What an API is
 - HTTP requests and JSON
 - Fetching data with JavaScript
 - Loading, success and error states
 - Displaying API data in a page
 
-**Module 9: Git, GitHub and Publishing**
+Module 9: Git, GitHub and Publishing
 - Why version control matters
 - Initialising and committing a project
 - Creating and updating a GitHub repository
 - Understanding branches and basic collaboration
 - Publishing a static front-end website
 
-**Module 10: Front-end Project**
+Module 10: Front-end Project
 - Planning a small website
 - Building the HTML structure
 - Styling responsive layouts
