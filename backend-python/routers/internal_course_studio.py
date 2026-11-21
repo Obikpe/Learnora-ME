@@ -157,6 +157,24 @@ def course_studio_access(
     }
 
 
+@router.get("/tracks")
+def list_course_tracks(
+    staff: InternalStaffContext = Depends(require_internal_permission("content.generate")),
+):
+    try:
+        result = (
+            supabase.table("learnora_learning_paths")
+            .select("id,name,slug,status")
+            .is_("owner_user_id", "null")
+            .is_("organisation_id", "null")
+            .order("name")
+            .execute()
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Learnora ME tracks could not be loaded.") from None
+    return {"success": True, "tracks": result.data or []}
+
+
 @router.post("/curriculum")
 async def generate_curriculum(
     payload: CurriculumRequest,
