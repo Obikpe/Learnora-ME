@@ -6,6 +6,16 @@ from routers import progress
 
 
 class LessonMediaSigningTests(unittest.TestCase):
+    def test_approved_external_video_providers_remain_available_to_the_player(self):
+        videos = progress._sign_lesson_assets([
+            {"id": "youtube-1", "provider": "youtube", "external_video_id": "video123"},
+            {"id": "vimeo-1", "provider": "vimeo", "external_video_id": "456789"},
+        ])
+
+        self.assertEqual([video["provider"] for video in videos], ["youtube", "vimeo"])
+        self.assertEqual(videos[0]["external_video_id"], "video123")
+        self.assertEqual(videos[1]["external_video_id"], "456789")
+
     def test_legacy_video_and_resource_media_use_their_private_buckets(self):
         storage = MagicMock()
         storage.from_.return_value.create_signed_url.return_value = SimpleNamespace(
