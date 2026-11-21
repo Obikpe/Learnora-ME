@@ -102,8 +102,10 @@ class CohortLearningAccessTests(unittest.TestCase):
         db.table.side_effect = lambda name: queries[name]
 
         def sign_assets(rows):
-            rows[0]["signed_url"] = "https://media.example.invalid/signed-video"
-            return rows
+            return [
+                {**row, "signed_url": "https://media.example.invalid/signed-video"}
+                for row in rows
+            ]
 
         with patch.object(cohort_learning, "_active_cohort_member", return_value=(
             {"id": "account-1", "cohort_id": "cohort-1"},
