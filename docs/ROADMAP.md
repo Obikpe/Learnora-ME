@@ -706,6 +706,8 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [x] Add migration assertions and rollback rehearsal to CI.
 - [ ] Complete CI migration rehearsal and resolve any failures.
 - [ ] Obtain approval and apply the migration to live Pheonix.
-- [ ] Implement and verify video rendering, TTS, captions, R2 storage and signed playback.
+- [x] Add the private video render queue, claim/complete/stale-recovery RPCs, Kokoro/FFmpeg worker source, and R2 signed-playback source.
+- [ ] Pass CI for the render queue and worker; configure private R2, CORS, Vercel environment and GitHub Actions secrets.
+- [ ] Deploy the verified renderer/playback integration and run an end-to-end test lesson.
 - [ ] Complete course review/publication and track linking.
 - [ ] Generate the initial real course catalogue and retire the test course from discovery without deleting its two certificates or learner history.
