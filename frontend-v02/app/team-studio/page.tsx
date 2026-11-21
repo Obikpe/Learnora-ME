@@ -168,14 +168,15 @@ export default function TeamCourseStudioPage() {
         setCurriculum(job.curriculum_data);
         setCurriculumDirty(false);
         setCourseTitle(job.course_title || requestData.course_title || "");
-        setCourseDescription(requestData.course_description || job.curriculum_data?.course_description || "");
+        setCourseDescription(job.curriculum_data?.course_description || requestData.course_description || "");
         setLevel(job.course_level || "beginner");
         setAudience(requestData.target_audience || "");
-        setPrerequisites((requestData.prerequisites || []).join("\n"));
-        setOutcomes((requestData.learning_outcomes || []).join("\n"));
+        setPrerequisites((job.curriculum_data?.prerequisites || requestData.prerequisites || []).join("\n"));
+        setOutcomes((job.curriculum_data?.learning_outcomes || requestData.learning_outcomes || []).join("\n"));
         setTargetTrackId(job.target_track_id || "");
-        setOutlineText((requestData.outline || []).map((module: any, index: number) =>
-          "Module " + (index + 1) + ": " + module.title + "\n" + (module.lessons || []).map((lesson: string) => "- " + lesson).join("\n")
+        const savedModules = job.curriculum_data?.modules || requestData.outline || [];
+        setOutlineText(savedModules.map((module: any, index: number) =>
+          "Module " + (index + 1) + ": " + module.title + "\n" + (module.lessons || []).map((lesson: any) => "- " + (typeof lesson === "string" ? lesson : lesson.title)).join("\n")
         ).join("\n\n"));
         const latest: Record<string, {version:number; package:LessonPackage}> = {};
         for (const row of data.packages || []) {
@@ -303,6 +304,13 @@ export default function TeamCourseStudioPage() {
       });
       setCurriculum(result.curriculum);
       setCurriculumDirty(false);
+      setCourseTitle(result.curriculum.course_title);
+      setCourseDescription(result.curriculum.course_description);
+      setPrerequisites((result.curriculum.prerequisites || []).join("\n"));
+      setOutcomes((result.curriculum.learning_outcomes || []).join("\n"));
+      setOutlineText(result.curriculum.modules.map((module: any, index: number) =>
+        "Module " + (index + 1) + ": " + module.title + "\n" + module.lessons.map((lesson: any) => "- " + lesson.title).join("\n")
+      ).join("\n\n"));
       setPackages({});
       setPackageErrors({});
       setVideoSourceModes({});
