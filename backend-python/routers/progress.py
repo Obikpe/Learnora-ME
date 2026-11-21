@@ -114,7 +114,11 @@ def _r2_s3_client():
     )
 
 
-def _sign_lesson_assets(rows: list[dict], require_private_provider: bool = False) -> list[dict]:
+def _sign_lesson_assets(
+    rows: list[dict],
+    require_private_provider: bool = False,
+    default_supabase_bucket: str = "learnora-course-media",
+) -> list[dict]:
     """Attach short-lived playback URLs without persisting bearer URLs in Supabase."""
     signed = []
     r2_bucket = os.getenv("R2_BUCKET_NAME")
@@ -141,7 +145,7 @@ def _sign_lesson_assets(rows: list[dict], require_private_provider: bool = False
                         ExpiresIn=3600,
                     )
             elif provider == "supabase":
-                bucket = item.get("storage_bucket") or "course-resources"
+                bucket = item.get("storage_bucket") or default_supabase_bucket
                 result = supabase.storage.from_(bucket).create_signed_url(storage_path, 3600)
                 data = result.get("data") if isinstance(result, dict) else getattr(result, "data", None)
                 item["signed_url"] = (
@@ -992,7 +996,7 @@ def get_lesson_workspace(
         .execute()
     ).data or []
     _sign_lesson_assets(videos, require_private_provider=True)
-    _sign_lesson_assets(resources)
+    _sign_lesson_assets(resources, default_supabase_bucket="learnora-resources")
     return {
         "success": True,
         "lesson_id": str(lesson["id"]),
