@@ -247,3 +247,23 @@ A read-only live query confirmed that the test course is not an empty disposable
 
 Do not hard-delete this course or its lesson. When the real AI-produced course is ready, retire the test version from new discovery while preserving those enrolments and progress records. The existing track curriculum may be frozen by its enrolment history, so the replacement may require a successor track/version and a reviewed transition plan rather than editing the current track in place. Verify the current learner access and track-lock behaviour before any retirement operation.
 
+
+
+## 16. First implementation slice — 21 November 2026
+
+The following initial code has now been added to `main`:
+- `backend-python/routers/internal_course_studio.py` provides backend-protected access, curriculum proposal generation and lesson-package generation. It uses the existing `content_generation` profile through `services/ai_gateway.py`, validates the returned JSON against Pydantic contracts, constrains lesson durations to 1–5 minutes, and records staff generation events in `audit_logs`.
+- `backend-python/main.py` registers the new router.
+- `frontend-v02/app/team-studio/login/page.tsx` and `frontend-v02/app/team-studio/page.tsx` add a staff-only Course Studio route inside the Learnora ME website. It uses the existing separate internal staff authentication cookie and checks permission with the backend. It does not trust the ordinary learner/admin session.
+- The initial UI supports a course brief and a structured plain-text module/lesson outline, curriculum preview, and per-lesson generation of a full teaching script, concise learner note, practice activity, knowledge checks and deterministic video storyboard.
+- `frontend-v02/components/course/CourseWorkspace.tsx` has been extended to present multiple lesson videos in creation order, switch between them, advance to the next video when one ends, and label authored lesson text as “Lesson notes and key ideas”. Learner-owned “My lesson notes” remain a separate feature.
+
+**Current limitation:** this first slice produces reviewable proposals in the browser; it does not yet persist the course draft, production script/storyboard, or create/publish course/module/lesson records. This is deliberate until the production-draft schema and atomic course-creation path are designed and migration history is reconciled. Video rendering, TTS, caption generation and worker jobs are not implemented yet. Do not describe the Course Studio as a completed end-to-end course publisher at this stage.
+
+The live permission mapping currently grants `content.manage` only to `super_admin`; the `learning_curriculum` role does not have it. The first UI/API increment therefore fails closed for all staff without that permission. A dedicated `content.generate` permission should be added and assigned to the curriculum role only after the migration source/version discrepancy is resolved. Do not broaden access by hardcoding role names in the endpoint.
+
+### Corrected test-course retirement evidence
+
+A further read-only query found that the existing Data Analytics track has **zero track-level enrolments** (the track curriculum is not locked by the current track-enrolment lock), one course link, and two linked course enrolments. Both course enrolments are completed self-enrolments, and the single lesson has two progress records. The mock course has no videos.
+
+This corrects the earlier tentative statement that the track might be locked: it is not locked by track-level enrolments. The replacement path can likely retain the existing Data Analytics track, replace its course link with the real course, and archive the old test course. However, the old course must not be hard-deleted. Preserve its completed enrolments, lesson progress and any certificate/history references, and verify archived-course review access before retiring it from new catalogue discovery.
