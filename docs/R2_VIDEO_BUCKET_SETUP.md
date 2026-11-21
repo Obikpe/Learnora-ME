@@ -5,7 +5,7 @@
 ## Storage and access model
 
 - Store finished MP4 files in a **private Cloudflare R2 bucket**.
-- Store the durable bucket name and object key in Supabase `lesson_videos` rows (`provider='cloudflare'`, `storage_bucket`, `storage_path`). Keep the video transcript in `transcript_text`.
+- Store the durable provider and object key in Supabase `lesson_videos` rows (`provider='cloudflare'`, `storage_path`). The bucket name is supplied to the backend through `R2_BUCKET_NAME`; the current `lesson_videos` schema does not have a `storage_bucket` column. Keep the video transcript in `transcript_text`.
 - Never store a time-limited signed URL in Supabase.
 - The Learnora ME backend verifies the learner's existing course access, then generates a one-hour R2 GET presigned URL. The browser receives only that temporary URL.
 - The learner video player uses the returned URL with cross-origin media playback enabled.
@@ -64,7 +64,7 @@ In `Obikpe/Learnora-ME` → Settings → Secrets and variables → Actions, add:
 - `R2_WORKER_ACCESS_KEY_ID` (worker read/write token)
 - `R2_WORKER_SECRET_ACCESS_KEY` (worker read/write token)
 
-The worker needs Supabase service-role access to claim render jobs and update lesson media metadata, plus R2 object read/write permission. Keep the Vercel backend's read-only R2 token separate from this worker token. These secrets must never be committed to the repository, printed in logs, or exposed to browser code.
+The worker reads `R2_WORKER_ACCESS_KEY_ID` and `R2_WORKER_SECRET_ACCESS_KEY` for its separate R2 read/write token. The backend playback signer continues to read `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` from its own read-only Vercel environment. The worker needs Supabase service-role access to claim render jobs and update lesson media metadata. Keep the Vercel backend's read-only R2 token separate from this worker token. These secrets must never be committed to the repository, printed in logs, or exposed to browser code.
 
 ## Rendering worker
 
