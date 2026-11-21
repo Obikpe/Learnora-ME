@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, LoaderCircle, Save } from "lucide-react";
@@ -14,6 +14,8 @@ export default function CohortLessonPage() {
   const courseId = String(params.courseId || "");
   const lessonId = String(params.lessonId || "");
   const [lesson, setLesson] = useState<any>(null);
+  const [videos, setVideos] = useState<any[]>([]);
+  const lastVideoSave = useRef(0);
   const [progress, setProgress] = useState<any>({ progress_percent: 0, completed: false, last_position_seconds: 0 });
   const [percent, setPercent] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,8 @@ export default function CohortLessonPage() {
         request("/cohort-learning/me/courses/" + encodeURIComponent(courseId) + "/progress"),
       ]);
       setLesson(lessonResult.lesson);
+      setVideos(lessonResult.videos || []);
+      lastVideoSave.current = 0;
       const saved = (progressResult.progress || []).find((row: any) => String(row.lesson_id) === lessonId) || { progress_percent: 0, completed: false, last_position_seconds: 0 };
       setProgress(saved);
       setPercent(Number(saved.progress_percent || 0));
@@ -43,7 +47,7 @@ export default function CohortLessonPage() {
 
   useEffect(() => { if (courseId && lessonId) void load(); }, [load, courseId, lessonId]);
 
-  async function saveProgress(completed = false) {
+  async function saveProgress(completed = false, videoPercent?: number, positionSeconds?: number) {
     setSaving(true);
     setError("");
     setNotice("");
@@ -51,9 +55,9 @@ export default function CohortLessonPage() {
       const result: any = await request("/cohort-learning/me/courses/" + encodeURIComponent(courseId) + "/lessons/" + encodeURIComponent(lessonId) + "/progress", {
         method: "PUT",
         body: JSON.stringify({
-          progress_percent: completed ? 100 : percent,
+          progress_percent: completed ? 100 : Math.max(0, Math.min(100, Math.floor(videoPercent ?? percent))),
           completed,
-          last_position_seconds: Number(progress.last_position_seconds || 0),
+          last_position_seconds: Math.max(0, Math.floor(positionSeconds ?? Number(progress.last_position_seconds || 0))),
         }),
       });
       const saved = result.progress || { progress_percent: completed ? 100 : percent, completed };
@@ -85,14 +89,55 @@ export default function CohortLessonPage() {
         {lesson.description && <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--text-muted)]">{lesson.description}</p>}
       </section>
 
-      <article className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-8">
-        {lesson.content
-          ? <RichContent content={typeof lesson.content === "string" ? lesson.content : JSON.stringify(lesson.content, null, 2)}/>
-          : <div className="py-10 text-center">
-              <p className="font-semibold text-[var(--text-heading)]">Lesson material is not available in text form.</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Your assigned lesson is accessible, but it does not currently contain readable text content.</p>
-            </div>}
-      </article>
+      {videos[0]?.signed_url ? <video
+        key={videos[0].id}
+        className="mt-6 aspect-video w-full rounded-xl bg-black object-contain"
+        controls
+        crossOrigin="anonymous"
+        playsInline
+        preload="metadata"
+        src={videos[0].signed_url}
+        onLoadedMetadata={event => {
+          const player = event.currentTarget;
+          const resumeAt = Number(progress.last_position_seconds || 0);
+          if (resumeAt > 0 && resumeAt < Math.max(0, player.duration - 3)) {
+            player.currentTime = resumeAt;
+            lastVideoSave.current = resumeAt;
+          }
+        }}
+        onTimeUpdate={event => {
+          const player = event.currentTarget;
+          if (player.duration && player.currentTime - lastVideoSave.current >= 30) {
+            lastVideoSave.current = player.currentTime;
+            void saveProgress(false, player.currentTime / player.duration * 100, player.currentTime);
+          }
+        }}
+        onPause={event => {
+          const player = event.currentTarget;
+          if (player.duration && !player.ended) {
+            lastVideoSave.current = player.currentTime;
+            void saveProgress(false, player.currentTime / player.duration * 100, player.currentTime);
+          }
+        }}
+        onEnded={event => {
+          const player = event.currentTarget;
+          lastVideoSave.current = player.currentTime;
+          void saveProgress(true, 100, player.currentTime);
+        }}
+      /> : videos[0]?.provider === "youtube" && videos[0]?.external_video_id
+        ? <iframe title={lesson.title || "Lesson video"} className="mt-6 aspect-video w-full rounded-xl bg-black" src={"https://www.youtube.com/embed/" + encodeURIComponent(videos[0].external_video_id)} allowFullScreen/>
+        : videos[0]?.provider === "vimeo" && videos[0]?.external_video_id
+          ? <iframe title={lesson.title || "Lesson video"} className="mt-6 aspect-video w-full rounded-xl bg-black" src={"https://player.vimeo.com/video/" + encodeURIComponent(videos[0].external_video_id)} allowFullScreen/>
+          : null}
+
+      {lesson.content
+        ? <article className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-8">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-[var(--text-muted)]">Lesson notes and key ideas</h2>
+            <RichContent content={typeof lesson.content === "string" ? lesson.content : JSON.stringify(lesson.content, null, 2)}/>
+          </article>
+        : !videos.length ? <article className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-8">
+            <p className="py-6 text-center font-semibold text-[var(--text-heading)]">Lesson material is not available yet.</p>
+          </article> : null}
 
       <section className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
