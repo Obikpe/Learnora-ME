@@ -131,7 +131,7 @@ export default function TeamCourseStudioPage() {
       return Boolean(packages[key]) && (packages[key].video_source || "ai") === (videoSourceModes[key] || "ai");
     }));
   }, [curriculum, packages, videoSourceModes]);
-  const humanVideosReady = courseLessons.filter(lesson => lesson.video_source === "human").every(lesson => lesson.has_ready_video);
+  const humanVideosReady = !createdCourseId || (courseLessons.length > 0 && courseLessons.filter(lesson => lesson.video_source === "human").every(lesson => lesson.has_ready_video));
 
   useEffect(() => {
     let active = true;
@@ -204,6 +204,7 @@ export default function TeamCourseStudioPage() {
           if (active) setCourseLessons(previews.lessons || []);
         } catch {
           if (active) setVideoPreviews([]);
+          if (active) setCourseLessons([]);
         }
       })
       .catch((error: any) => {
