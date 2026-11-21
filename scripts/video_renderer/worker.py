@@ -388,8 +388,8 @@ def r2_client():
     return boto3.client(
         "s3",
         endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
-        aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+        aws_access_key_id=os.environ["R2_WORKER_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["R2_WORKER_SECRET_ACCESS_KEY"],
         region_name="auto",
         config=Config(signature_version="s3v4"),
     )
@@ -541,7 +541,7 @@ def main() -> int:
 
     required = [
         "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "R2_ACCOUNT_ID",
-        "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME",
+        "R2_WORKER_ACCESS_KEY_ID", "R2_WORKER_SECRET_ACCESS_KEY", "R2_BUCKET_NAME",
     ]
     missing = [name for name in required if not os.getenv(name)]
     if missing:
