@@ -86,6 +86,10 @@ export default function TeamCourseStudioPage() {
   const [outcomes, setOutcomes] = useState("");
   const [outlineText, setOutlineText] = useState("");
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [createDraftBusy, setCreateDraftBusy] = useState(false);
+  const [createDraftError, setCreateDraftError] = useState("");
+  const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
   const [curriculumBusy, setCurriculumBusy] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [packages, setPackages] = useState<Record<string, LessonPackage>>({});
@@ -117,6 +121,9 @@ export default function TeamCourseStudioPage() {
     setGenerationError("");
     setPackages({});
     setPackageErrors({});
+    setJobId(null);
+    setCreatedCourseId(null);
+    setCreateDraftError("");
     if (!courseTitle.trim() || !courseDescription.trim() || !audience.trim() || !outcomes.trim() || !outline.length) {
       setGenerationError("Complete the course brief, audience, learning outcomes and at least one module with lessons.");
       return;
@@ -135,6 +142,7 @@ export default function TeamCourseStudioPage() {
           outline,
         }),
       });
+      setJobId(result.job_id);
       setCurriculum(result.curriculum);
     } catch (error: any) {
       setGenerationError(error.message || "The curriculum could not be generated.");
@@ -144,29 +152,17 @@ export default function TeamCourseStudioPage() {
   }
 
   async function generateLessonPackage(moduleIndex: number, lessonIndex: number) {
-    if (!curriculum) return;
+    if (!curriculum || !jobId || createdCourseId) return;
     const key = moduleIndex + ":" + lessonIndex;
-    const module = curriculum.modules[moduleIndex];
-    const lesson = module.lessons[lessonIndex];
-    const allLessons = curriculum.modules.flatMap(item => item.lessons.map(x => x.title));
-    const currentIndex = allLessons.indexOf(lesson.title);
     setPackageBusy(old => ({ ...old, [key]: true }));
     setPackageErrors(old => ({ ...old, [key]: "" }));
     try {
       const result = await internalRequest("/course-studio/lesson-package", {
         method: "POST",
         body: JSON.stringify({
-          course_title: curriculum.course_title,
-          course_description: curriculum.course_description,
-          level,
-          target_audience: audience.trim(),
-          module_title: module.title,
-          lesson_title: lesson.title,
-          lesson_description: lesson.description,
-          learning_objective: lesson.learning_objective,
-          lesson_format: lesson.lesson_format,
-          previous_lessons: allLessons.slice(Math.max(0, currentIndex - 3), currentIndex),
-          next_lessons: allLessons.slice(currentIndex + 1, currentIndex + 4),
+          job_id: jobId,
+          module_order: moduleIndex,
+          lesson_order: lessonIndex,
         }),
       });
       setPackages(old => ({ ...old, [key]: result.lesson_package }));
@@ -174,6 +170,23 @@ export default function TeamCourseStudioPage() {
       setPackageErrors(old => ({ ...old, [key]: error.message || "Lesson package generation failed." }));
     } finally {
       setPackageBusy(old => ({ ...old, [key]: false }));
+    }
+  }
+
+  async function createDraftCourse() {
+    if (!jobId || !curriculum || Object.keys(packages).length !== lessonCount || createdCourseId) return;
+    setCreateDraftBusy(true);
+    setCreateDraftError("");
+    try {
+      const result = await internalRequest("/course-studio/jobs/" + jobId + "/create-draft", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      setCreatedCourseId(result.course_id);
+    } catch (error: any) {
+      setCreateDraftError(error.message || "The draft course could not be created.");
+    } finally {
+      setCreateDraftBusy(false);
     }
   }
 
@@ -206,17 +219,25 @@ export default function TeamCourseStudioPage() {
             </div>
 
             {curriculum && <section className="space-y-4">
-              <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Step 2</p><h2 className="mt-2 text-2xl font-semibold">Curriculum proposal</h2><p className="mt-1 text-sm text-slate-400">{curriculum.modules.length} modules · {lessonCount} lessons · review before accepting</p></div><button onClick={() => { setCurriculum(null); setPackages({}); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400">Discard proposal</button></div>
+              <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Step 2</p><h2 className="mt-2 text-2xl font-semibold">Curriculum proposal</h2><p className="mt-1 text-sm text-slate-400">{curriculum.modules.length} modules · {lessonCount} lessons · review before accepting</p></div><button onClick={() => { setCurriculum(null); setPackages({}); setJobId(null); setCreatedCourseId(null); setCreateDraftError(""); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400">Discard proposal</button></div>
               <div className="rounded-2xl border border-white/10 bg-white/[.025] p-5"><h3 className="text-xl font-semibold">{curriculum.course_title}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{curriculum.short_description}</p><p className="mt-3 text-sm leading-6 text-slate-300">{curriculum.course_description}</p><div className="mt-4 grid gap-4 sm:grid-cols-2"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Learning outcomes</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">{curriculum.learning_outcomes.map((x,i)=><li key={i}>{x}</li>)}</ul></div><div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Prerequisites</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">{(curriculum.prerequisites||[]).map((x,i)=><li key={i}>{x}</li>)}</ul></div></div></div>
-              {curriculum.modules.map((module, mi) => <article key={mi} className="rounded-2xl border border-white/10 bg-white/[.025] p-5"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#d7ad35]">Module {mi+1}</p><h3 className="mt-2 text-lg font-semibold">{module.title}</h3><p className="mt-1 text-sm text-slate-400">{module.description}</p><div className="mt-4 space-y-3">{module.lessons.map((lesson, li) => { const key = mi + ":" + li; const pkg = packages[key]; return <div key={key} className="rounded-xl border border-white/[.08] bg-black/20 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1"><h4 className="font-medium">{lesson.title}</h4><p className="mt-1 text-xs leading-5 text-slate-400">{lesson.description}</p><p className="mt-2 text-[11px] text-slate-500">{lesson.lesson_format.replaceAll("_"," ")} · {lesson.estimated_minutes} min · {lesson.learning_objective}</p></div><button onClick={() => void generateLessonPackage(mi,li)} disabled={Boolean(packageBusy[key])} className="shrink-0 rounded-lg border border-[#d7ad35]/30 px-3 py-2 text-xs font-semibold text-[#e7c76d] disabled:opacity-50">{packageBusy[key] ? "Generating…" : pkg ? "Regenerate package" : "Generate lesson package"}</button></div>{packageErrors[key] && <p role="alert" className="mt-3 text-xs text-red-200">{packageErrors[key]}</p>}{pkg && <div className="mt-4 border-t border-white/10 pt-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold uppercase tracking-wider text-[#d7ad35]">Teaching package</p><span className="text-[11px] text-slate-500">{formatDuration(pkg.estimated_duration_seconds)}</span></div><h5 className="mt-3 text-sm font-semibold">Teaching script</h5><p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-300">{pkg.teaching_script}</p><h5 className="mt-4 text-sm font-semibold">Short learner note</h5><p className="mt-2 whitespace-pre-wrap rounded-lg bg-white/[.035] p-3 text-sm leading-6 text-slate-300">{pkg.concise_note}</p>{pkg.practice_activity && <><h5 className="mt-4 text-sm font-semibold">Practical activity</h5><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">{pkg.practice_activity}</p></>}{pkg.video_plan?.length>0 && <><h5 className="mt-4 text-sm font-semibold">Video storyboard</h5><div className="mt-2 grid gap-2">{pkg.video_plan.map((scene,i)=><div key={i} className="rounded-lg border border-white/[.07] p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">Scene {i+1} · {scene.visual_type.replaceAll("_"," ")}</p><p className="mt-2 text-xs leading-5 text-slate-300">{scene.visual_direction}</p><p className="mt-1 text-xs leading-5 text-slate-500">Narration: {scene.narration}</p>{scene.on_screen_text?.length>0 && <p className="mt-1 text-xs text-slate-400">On screen: {scene.on_screen_text.join(" · ")}</p>}</div>)}</div></>}{pkg.knowledge_check?.length>0 && <><h5 className="mt-4 text-sm font-semibold">Knowledge check draft</h5><ol className="mt-2 list-decimal space-y-3 pl-5 text-sm text-slate-300">{pkg.knowledge_check.map((q,i)=><li key={i}><p>{q.question}</p><ul className="mt-1 list-disc pl-5 text-xs text-slate-400">{q.options.map((option,j)=><li key={j}>{option}{j===q.correct_option?" — answer":""}</li>)}</ul><p className="mt-1 text-xs text-slate-500">{q.explanation}</p></li>)}</ol></>}{pkg.fact_check_notes?.length>0 && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[.04] p-3"><p className="text-xs font-semibold text-amber-200">Needs fact-checking</p><ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-100/80">{pkg.fact_check_notes.map((x,i)=><li key={i}>{x}</li>)}</ul></div>}</div>}</div>})}</div></article>)}
+              {curriculum.modules.map((module, mi) => <article key={mi} className="rounded-2xl border border-white/10 bg-white/[.025] p-5"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#d7ad35]">Module {mi+1}</p><h3 className="mt-2 text-lg font-semibold">{module.title}</h3><p className="mt-1 text-sm text-slate-400">{module.description}</p><div className="mt-4 space-y-3">{module.lessons.map((lesson, li) => { const key = mi + ":" + li; const pkg = packages[key]; return <div key={key} className="rounded-xl border border-white/[.08] bg-black/20 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1"><h4 className="font-medium">{lesson.title}</h4><p className="mt-1 text-xs leading-5 text-slate-400">{lesson.description}</p><p className="mt-2 text-[11px] text-slate-500">{lesson.lesson_format.replaceAll("_"," ")} · {lesson.estimated_minutes} min · {lesson.learning_objective}</p></div><button onClick={() => void generateLessonPackage(mi,li)} disabled={Boolean(packageBusy[key]) || Boolean(createdCourseId)} className="shrink-0 rounded-lg border border-[#d7ad35]/30 px-3 py-2 text-xs font-semibold text-[#e7c76d] disabled:opacity-50">{packageBusy[key] ? "Generating…" : pkg ? "Regenerate package" : "Generate lesson package"}</button></div>{packageErrors[key] && <p role="alert" className="mt-3 text-xs text-red-200">{packageErrors[key]}</p>}{pkg && <div className="mt-4 border-t border-white/10 pt-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold uppercase tracking-wider text-[#d7ad35]">Teaching package</p><span className="text-[11px] text-slate-500">{formatDuration(pkg.estimated_duration_seconds)}</span></div><h5 className="mt-3 text-sm font-semibold">Teaching script</h5><p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-300">{pkg.teaching_script}</p><h5 className="mt-4 text-sm font-semibold">Short learner note</h5><p className="mt-2 whitespace-pre-wrap rounded-lg bg-white/[.035] p-3 text-sm leading-6 text-slate-300">{pkg.concise_note}</p>{pkg.practice_activity && <><h5 className="mt-4 text-sm font-semibold">Practical activity</h5><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">{pkg.practice_activity}</p></>}{pkg.video_plan?.length>0 && <><h5 className="mt-4 text-sm font-semibold">Video storyboard</h5><div className="mt-2 grid gap-2">{pkg.video_plan.map((scene,i)=><div key={i} className="rounded-lg border border-white/[.07] p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">Scene {i+1} · {scene.visual_type.replaceAll("_"," ")}</p><p className="mt-2 text-xs leading-5 text-slate-300">{scene.visual_direction}</p><p className="mt-1 text-xs leading-5 text-slate-500">Narration: {scene.narration}</p>{scene.on_screen_text?.length>0 && <p className="mt-1 text-xs text-slate-400">On screen: {scene.on_screen_text.join(" · ")}</p>}</div>)}</div></>}{pkg.knowledge_check?.length>0 && <><h5 className="mt-4 text-sm font-semibold">Knowledge check draft</h5><ol className="mt-2 list-decimal space-y-3 pl-5 text-sm text-slate-300">{pkg.knowledge_check.map((q,i)=><li key={i}><p>{q.question}</p><ul className="mt-1 list-disc pl-5 text-xs text-slate-400">{q.options.map((option,j)=><li key={j}>{option}{j===q.correct_option?" — answer":""}</li>)}</ul><p className="mt-1 text-xs text-slate-500">{q.explanation}</p></li>)}</ol></>}{pkg.fact_check_notes?.length>0 && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[.04] p-3"><p className="text-xs font-semibold text-amber-200">Needs fact-checking</p><ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-100/80">{pkg.fact_check_notes.map((x,i)=><li key={i}>{x}</li>)}</ul></div>}</div>}</div>})}</div></article>)}
               {curriculum.quality_review?.length>0 && <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[.04] p-5"><h3 className="font-semibold text-amber-200">Curriculum review notes</h3><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-100/80">{curriculum.quality_review.map((x,i)=><li key={i}>{x}</li>)}</ul></div>}
+              <div className="rounded-2xl border border-white/10 bg-white/[.025] p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><h3 className="font-semibold">Create the course draft</h3><p className="mt-1 text-xs leading-5 text-slate-500">Generate and review every lesson package first. This action creates unpublished course, module and lesson records; it does not publish to learners.</p></div>
+                  <button onClick={() => void createDraftCourse()} disabled={!jobId || Object.keys(packages).length !== lessonCount || lessonCount === 0 || createDraftBusy || Boolean(createdCourseId)} className="rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{createDraftBusy ? "Creating draft…" : "I have reviewed the packages — create draft course"}</button>
+                </div>
+                {createDraftError && <p role="alert" className="mt-3 rounded-lg border border-red-400/20 bg-red-400/5 p-3 text-sm text-red-200">{createDraftError}</p>}
+                {createdCourseId && <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[.04] p-3"><p className="text-sm font-semibold text-emerald-200">Draft course created</p><p className="mt-1 text-xs text-slate-400">Course ID: {createdCourseId}. It remains unpublished and is not visible in the learner catalogue.</p></div>}
+              </div>
             </section>}
           </div>
 
           <aside className="h-fit rounded-2xl border border-white/10 bg-white/[.025] p-5 lg:sticky lg:top-6">
             <p className="text-xs font-bold uppercase tracking-[.16em] text-[#d7ad35]">Production rules</p>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-400"><li>One lesson should teach one manageable idea.</li><li>Videos should usually be 1–3 minutes and never exceed 5 minutes.</li><li>The script teaches; the short note reinforces. They are not the same thing.</li><li>Use a real screen demonstration for software and code where appropriate.</li><li>Do not force video into lessons better taught through text or practice.</li><li>AI output is a draft. A human review and explicit publication step are required.</li></ul>
-            <div className="mt-5 border-t border-white/10 pt-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Current status</p><p className="mt-2 text-sm text-slate-300">{curriculum ? "Curriculum proposal generated" : "Waiting for course brief"}</p><p className="mt-1 text-xs leading-5 text-slate-500">This first increment generates reviewable proposals. Saving course records and rendering videos will be enabled after the production-draft schema and worker pipeline are verified.</p></div>
+            <div className="mt-5 border-t border-white/10 pt-4"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Current status</p><p className="mt-2 text-sm text-slate-300">{createdCourseId ? "Draft course created — awaiting publication" : curriculum ? "Curriculum proposal saved as a private draft" : "Waiting for course brief"}</p><p className="mt-1 text-xs leading-5 text-slate-500">Course outlines and lesson packages are saved privately. Creating a draft course requires explicit staff approval; video rendering and publication are separate later steps.</p></div>
           </aside>
         </section>
       </div>
