@@ -144,7 +144,7 @@ The following issues were identified during the documentation review on 21 Novem
 
 | Topic | Reconciliation required |
 |---|---|
-| Cohort and corporate organisation models | Document both complete operating models separately, including their team structures, tutor relationships, track ownership, assignments, dashboards and workflows. |
+| Cohort and corporate organisation models | Document both complete operating models separately, including their team structures, tutor relationships, track ownership, assignments, dashboards and workflows. The approved cohort tutor-coverage, confirmation, access-revocation and contract-end requirements are recorded in [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md); remaining taxonomy and lifecycle details are explicitly unresolved. |
 | Cohort and organisation management | Both cohorts and corporate organisations have an active manager and a formal management team. The manager creates other teams and appoints role-scoped administrators. Cohort and corporate coordinator responsibilities differ; see [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) and the approved management/invitation addendum in [ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md](ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md). |
 | Account identity and invitations | Preserve and reconcile historical identity handling. New organisation onboarding is invitation-based: the intended person creates their own password using an emailed activation link that expires after 48 hours. Resend, revoke, duplicate and expired-link recovery behaviour remains to be specified. |
 | Learnora Teams boundary | Make Teams the authoritative home of internal AI/content production, review, acceptance and publishing; identify any temporary or legacy Learnora ME implementation. |
@@ -176,7 +176,7 @@ If a required decision is unresolved, stop at that boundary and ask for clarific
 The documents in this directory are grouped by purpose:
 
 - **Product governance and decisions:** this guide and [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md).
-- **Product architecture and requirements:** account/organisation architecture, product engineering specification, AI course production/media architecture.
+- **Product architecture and requirements:** account/organisation architecture, [cohort operating model](COHORT_OPERATING_MODEL.md), product engineering specification, AI course production/media architecture.
 - **Learner experience:** learner journey phases, learner outcomes, public catalogue/SEO, learner notifications/marketing automation.
 - **Delivery and commercial strategy:** free launch/paid expansion, roadmap, initial pilot course production briefs.
 - **Security and reliability:** backend security hardening, security/reliability review, shared rate-limit rollout, scalability audits.
