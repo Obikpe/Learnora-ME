@@ -748,3 +748,11 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 
 - On commit `78e3ba2`, GitHub Actions completed the Kokoro/FFmpeg real-render smoke test, the additive migration-and-rollback rehearsal, backend compilation/import checks, and the complete backend test suite successfully. The learner frontend build was still running when later commits superseded that run.
 - The subsequent commits add the final Course Studio track controls, stricter lesson knowledge-check validation and the curriculum-permission correction. Those latest changes are awaiting their own full CI run; do not treat the earlier checkpoint as verification of the newest commit.
+
+### Permission and publication hardening — 21 November 2026
+
+- [x] Correct curriculum proposal generation to use `content.generate`, matching the Course Studio access check and the curriculum staff permission mapping.
+- [x] Prevent the legacy generic course editor from publishing an AI-generated course unless the Course Studio publication RPC has completed.
+- [x] Filter archived tracks from Course Studio selection and validate track availability before saving the course draft.
+- [x] Recheck all linked track enrolment locks during final publication so a course cannot silently change a learner's locked track sequence.
+- [x] Require 2–4 knowledge-check questions in every generated lesson package and preserve the existing assessment unlock rules.
