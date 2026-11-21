@@ -4,6 +4,7 @@ DO $course_production_test$
 DECLARE
     v_user_id uuid := 'e1000000-0000-4000-8000-000000000001';
     v_staff_id uuid := 'e1000000-0000-4000-8000-000000000002';
+    v_track_id uuid := 'e1000000-0000-4000-8000-000000000004';
     v_job_id uuid := 'e1000000-0000-4000-8000-000000000003';
     v_course_id uuid;
     v_second_course_id uuid;
@@ -24,6 +25,7 @@ DECLARE
     v_render_status text;
     v_package_status text;
     v_video_status text;
+    v_track_order integer;
 BEGIN
     IF to_regclass('public.learnora_course_generation_jobs') IS NULL
        OR to_regclass('public.learnora_lesson_production_packages') IS NULL THEN
@@ -92,13 +94,17 @@ BEGIN
     VALUES (v_staff_id, v_user_id, 'active')
     ON CONFLICT (id) DO NOTHING;
 
+    INSERT INTO public.learnora_learning_paths (id, name, slug, status)
+    VALUES (v_track_id, 'Course Studio CI Track', 'course-studio-ci-track', 'draft')
+    ON CONFLICT (id) DO NOTHING;
+
     INSERT INTO public.learnora_course_generation_jobs (
-        id, created_by_staff_id, created_by_user_id, approved_by_staff_id,
+        id, created_by_staff_id, created_by_user_id, approved_by_staff_id, target_track_id,
         course_title, course_slug, course_level, status, request_data, curriculum_data,
         provider_key, model, approved_at
     )
     VALUES (
-        v_job_id, v_staff_id, v_user_id, v_staff_id,
+        v_job_id, v_staff_id, v_user_id, v_staff_id, v_track_id,
         'Course Studio CI Test', 'course-studio-ci-test-unique', 'beginner', 'approved',
         '{}'::jsonb,
         '{
@@ -146,6 +152,14 @@ BEGIN
 
     IF v_course_id IS NULL OR v_second_course_id <> v_course_id THEN
         RAISE EXCEPTION 'Course draft creation is not idempotent';
+    END IF;
+
+    SELECT order_index INTO v_track_order
+      FROM public.learnora_learning_path_courses
+     WHERE path_id = v_track_id AND course_id = v_course_id;
+
+    IF v_track_order IS DISTINCT FROM 0 THEN
+        RAISE EXCEPTION 'Generated course was not linked to its selected track in the expected order';
     END IF;
 
     SELECT status INTO v_course_status
