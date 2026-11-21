@@ -21,6 +21,7 @@ type LessonPackage = {
   knowledge_check: Array<{ question: string; options: string[]; correct_option: number; explanation: string }>;
   video_plan: Array<{ narration: string; visual_direction: string; on_screen_text: string[]; visual_type: string }>;
   fact_check_notes: string[];
+  video_source: "ai" | "human";
 };
 
 async function internalRequest(path: string, init: RequestInit = {}) {
@@ -93,6 +94,12 @@ export default function TeamCourseStudioPage() {
   const [createDraftError, setCreateDraftError] = useState("");
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
   const [canPublish, setCanPublish] = useState(false);
+  const [canUploadHumanVideo, setCanUploadHumanVideo] = useState(false);
+  const [videoSourceModes, setVideoSourceModes] = useState<Record<string, "ai" | "human">>({});
+  const [courseLessons, setCourseLessons] = useState<Array<{lesson_id:string;lesson_title:string;module_title:string;module_order:number;lesson_order:number;lesson_format:string|null;video_source:"ai"|"human";has_ready_video:boolean}>>([]);
+  const [humanVideoFiles, setHumanVideoFiles] = useState<Record<string, File | null>>({});
+  const [humanVideoBusy, setHumanVideoBusy] = useState<Record<string, boolean>>({});
+  const [humanVideoErrors, setHumanVideoErrors] = useState<Record<string, string>>({});
   const [newTrackOpen, setNewTrackOpen] = useState(false);
   const [newTrackName, setNewTrackName] = useState("");
   const [newTrackSlug, setNewTrackSlug] = useState("");
