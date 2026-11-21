@@ -87,7 +87,7 @@ class VideoScene(BaseModel):
 class LessonPackageOutput(BaseModel):
     teaching_script: str = Field(..., min_length=80, max_length=7000)
     estimated_duration_seconds: int = Field(..., ge=30, le=300)
-    concise_note: str = Field(..., min_length=10, max_length=1400)
+    concise_note: str = Field(..., min_length=10, max_length=700)
     practice_activity: Optional[str] = Field(None, max_length=2500)
     knowledge_check: list[KnowledgeCheckItem] = Field(default_factory=list, max_length=5)
     video_plan: list[VideoScene] = Field(default_factory=list, max_length=12)
@@ -163,6 +163,8 @@ async def generate_curriculum(
     request: Request,
     staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
 ):
+    if sum(len(module.lessons) for module in payload.outline) > 60:
+        raise HTTPException(status_code=422, detail="Please keep a curriculum proposal to 60 outline lessons or fewer. Generate larger courses in stages.")
     system_prompt = (
         "You are the curriculum architect for Learnora ME. Produce a rigorous, teachable, "
         "beginner-aware curriculum using the supplied course brief and outline. Treat every "
@@ -245,6 +247,10 @@ async def generate_lesson_package(
     )
     try:
         output = LessonPackageOutput.model_validate(data)
+        if len(output.teaching_script.split()) > 700 or len(output.concise_note.split()) > 100:
+            raise ValueError("Generated lesson text exceeds the teaching and note length limits.")
+        if payload.lesson_format == "text_practice" and output.video_plan:
+            output.video_plan = []
         for question in output.knowledge_check:
             if question.correct_option >= len(question.options):
                 raise ValueError("Knowledge-check answer index is outside its options.")
