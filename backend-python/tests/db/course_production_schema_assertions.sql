@@ -46,6 +46,15 @@ BEGIN
         RAISE EXCEPTION 'AI course production tables must have RLS enabled';
     END IF;
 
+    IF NOT EXISTS (
+        SELECT 1
+          FROM pg_indexes
+         WHERE schemaname = 'public'
+           AND indexname = 'idx_lesson_videos_cloudflare_storage_path'
+    ) THEN
+        RAISE EXCEPTION 'Cloudflare lesson-video storage identity must be unique for retry safety';
+    END IF;
+
     IF has_table_privilege('anon', 'public.learnora_course_generation_jobs', 'SELECT')
        OR has_table_privilege('authenticated', 'public.learnora_course_generation_jobs', 'SELECT')
        OR has_table_privilege('anon', 'public.learnora_lesson_production_packages', 'SELECT')
