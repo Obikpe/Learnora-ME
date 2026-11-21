@@ -330,7 +330,6 @@ def create_human_video_upload(
                 "Bucket": bucket,
                 "Key": object_key,
                 "ContentType": "video/mp4",
-                "ContentLength": payload.file_size_bytes,
             },
             ExpiresIn=900,
         )
@@ -445,6 +444,10 @@ def finalize_human_video_upload(
         head = storage_client.head_object(Bucket=bucket, Key=payload.object_key)
         actual_size = int(head.get("ContentLength") or 0)
         if actual_size != payload.file_size_bytes or head.get("ContentType") != "video/mp4":
+            try:
+                storage_client.delete_object(Bucket=bucket, Key=payload.object_key)
+            except Exception:
+                pass
             raise HTTPException(status_code=400, detail="The uploaded MP4 size or content type does not match the upload request.")
 
         inserted = (
