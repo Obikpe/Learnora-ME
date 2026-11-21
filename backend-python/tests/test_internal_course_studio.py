@@ -1,4 +1,5 @@
 """Validation tests for the internal AI Course Studio draft contracts."""
+import inspect
 import os
 import unittest
 
@@ -10,11 +11,16 @@ from pydantic import ValidationError
 from routers.internal_course_studio import (
     CurriculumOutput,
     LessonPackageOutput,
+    generate_curriculum,
     _extract_json,
 )
 
 
 class CourseStudioContractTests(unittest.TestCase):
+    def test_curriculum_generation_uses_the_dedicated_generation_permission(self):
+        source = inspect.getsource(generate_curriculum)
+        self.assertIn('require_internal_permission("content.generate")', source)
+
     def test_extracts_json_from_markdown_fence(self):
         value = _extract_json('```json\n{"course_title":"Excel"}\n```')
         self.assertEqual(value["course_title"], "Excel")
