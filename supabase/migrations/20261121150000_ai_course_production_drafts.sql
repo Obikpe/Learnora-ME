@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS public.learnora_course_generation_jobs (
     course_slug text NOT NULL,
     course_level text NOT NULL CHECK (course_level IN ('beginner', 'intermediate', 'advanced', 'mixed')),
     status text NOT NULL DEFAULT 'draft'
-        CHECK (status IN ('draft', 'review', 'approved', 'created', 'failed', 'cancelled')),
+        CHECK (status IN ('draft', 'review', 'approved', 'created', 'published', 'failed', 'cancelled')),
+    published_at timestamptz,
     request_data jsonb NOT NULL DEFAULT '{}'::jsonb,
     curriculum_data jsonb NOT NULL DEFAULT '{}'::jsonb,
     provider_key text,
@@ -194,7 +195,7 @@ BEGIN
         RAISE EXCEPTION 'Course generation job was not found';
     END IF;
 
-    IF v_job.status = 'created' AND v_job.created_course_id IS NOT NULL THEN
+    IF v_job.status IN ('created', 'published') AND v_job.created_course_id IS NOT NULL THEN
         RETURN v_job.created_course_id;
     END IF;
 
@@ -446,6 +447,224 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.create_course_from_generation_job(uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_course_from_generation_job(uuid) TO service_role;
+
+
+CREATE OR REPLACE FUNCTION public.publish_course_from_generation_job(p_job_id uuid)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+    v_job public.learnora_course_generation_jobs%ROWTYPE;
+    v_course_id uuid;
+    v_module_count integer;
+    v_last_module_order integer;
+BEGIN
+    SELECT *
+      INTO v_job
+      FROM public.learnora_course_generation_jobs
+     WHERE id = p_job_id
+     FOR UPDATE;
+
+    IF NOT FOUND OR v_job.created_course_id IS NULL
+       OR v_job.status NOT IN ('created', 'published') THEN
+        RAISE EXCEPTION 'A created course draft is required before publication';
+    END IF;
+
+    v_course_id := v_job.created_course_id;
+
+    PERFORM 1
+      FROM public.learnora_courses
+     WHERE id = v_course_id
+       AND ownership = 'learnora'
+       AND organisation_id IS NULL
+     FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'The generated global course could not be found';
+    END IF;
+
+    IF (SELECT status FROM public.learnora_courses WHERE id = v_course_id) = 'published' THEN
+        RETURN v_course_id;
+    END IF;
+
+    IF (SELECT status FROM public.learnora_courses WHERE id = v_course_id) <> 'draft' THEN
+        RAISE EXCEPTION 'Only a draft course can be published';
+    END IF;
+
+    SELECT count(*)::integer, max(order_index)
+      INTO v_module_count, v_last_module_order
+      FROM public.course_modules
+     WHERE course_id = v_course_id;
+
+    IF v_module_count = 0 THEN
+        RAISE EXCEPTION 'A course must contain at least one module before publication';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+          FROM public.course_modules m
+         WHERE m.course_id = v_course_id
+           AND NOT EXISTS (
+               SELECT 1
+                 FROM public.learnora_lessons l
+                WHERE l.module_id = m.id
+           )
+    ) THEN
+        RAISE EXCEPTION 'Every course module must contain at least one lesson before publication';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+          FROM public.learnora_lessons l
+          JOIN public.course_modules m ON m.id = l.module_id
+         WHERE m.course_id = v_course_id
+           AND NOT EXISTS (
+               SELECT 1
+                 FROM public.learnora_lesson_production_packages p
+                WHERE p.lesson_id = l.id
+                  AND p.version = (
+                      SELECT max(p2.version)
+                        FROM public.learnora_lesson_production_packages p2
+                       WHERE p2.lesson_id = l.id
+                  )
+           )
+    ) THEN
+        RAISE EXCEPTION 'Every generated lesson must have a saved production package before publication';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+          FROM public.learnora_lesson_production_packages p
+          JOIN public.learnora_lessons l ON l.id = p.lesson_id
+          JOIN public.course_modules m ON m.id = l.module_id
+         WHERE m.course_id = v_course_id
+           AND p.version = (
+               SELECT max(p2.version)
+                 FROM public.learnora_lesson_production_packages p2
+                WHERE p2.lesson_id = l.id
+           )
+           AND (
+               (p.lesson_format = 'text_practice' AND p.status NOT IN ('approved', 'ready'))
+               OR (p.lesson_format <> 'text_practice' AND p.status <> 'ready')
+           )
+    ) THEN
+        RAISE EXCEPTION 'Every video lesson must finish rendering and every text lesson must be approved before publication';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+          FROM public.learnora_video_render_jobs j
+         WHERE j.generation_job_id = p_job_id
+           AND j.status <> 'completed'
+    ) THEN
+        RAISE EXCEPTION 'All lesson videos must finish rendering before publication';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+          FROM public.learnora_lesson_production_packages p
+          JOIN public.learnora_lessons l ON l.id = p.lesson_id
+          JOIN public.course_modules m ON m.id = l.module_id
+         WHERE m.course_id = v_course_id
+           AND p.version = (
+               SELECT max(p2.version)
+                 FROM public.learnora_lesson_production_packages p2
+                WHERE p2.lesson_id = l.id
+           )
+           AND p.lesson_format <> 'text_practice'
+           AND NOT EXISTS (
+               SELECT 1
+                 FROM public.lesson_videos lv
+                WHERE lv.lesson_id = l.id
+                  AND lv.provider = 'cloudflare'
+                  AND lv.status = 'ready'
+           )
+    ) THEN
+        RAISE EXCEPTION 'Every video lesson must have a ready private video asset before publication';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+          FROM public.course_modules m
+         WHERE m.course_id = v_course_id
+           AND m.order_index < v_last_module_order
+           AND NOT EXISTS (
+               SELECT 1
+                 FROM public.quizzes q
+                WHERE q.course_id = v_course_id
+                  AND q.module_id = m.id
+           )
+    ) THEN
+        RAISE EXCEPTION 'Every module before the final module needs a knowledge check before publication';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+          FROM public.quizzes q
+         WHERE q.course_id = v_course_id
+           AND NOT EXISTS (
+               SELECT 1
+                 FROM public.quiz_questions qq
+                WHERE qq.quiz_id = q.id
+           )
+    ) THEN
+        RAISE EXCEPTION 'Every knowledge check must contain at least one question before publication';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+          FROM public.quizzes q
+          JOIN public.quiz_questions qq ON qq.quiz_id = q.id
+         WHERE q.course_id = v_course_id
+           AND (
+               qq.question_type <> 'multiple_choice'
+               OR NULLIF(trim(qq.question), '') IS NULL
+               OR jsonb_typeof(qq.options) IS DISTINCT FROM 'array'
+               OR jsonb_array_length(qq.options) < 2
+               OR NULLIF(qq.correct_answer #>> '{}', '') IS NULL
+               OR NOT EXISTS (
+                   SELECT 1
+                     FROM jsonb_array_elements_text(
+                         CASE WHEN jsonb_typeof(qq.options) = 'array' THEN qq.options ELSE '[]'::jsonb END
+                     ) AS option_value
+                    WHERE option_value = qq.correct_answer #>> '{}'
+               )
+           )
+    ) THEN
+        RAISE EXCEPTION 'Every knowledge-check question must have valid options and a correct answer';
+    END IF;
+
+    UPDATE public.quizzes
+       SET is_published = true
+     WHERE course_id = v_course_id;
+
+    UPDATE public.learnora_lessons l
+       SET status = 'published'
+      FROM public.course_modules m
+     WHERE m.id = l.module_id
+       AND m.course_id = v_course_id;
+
+    UPDATE public.course_modules
+       SET status = 'published'
+     WHERE course_id = v_course_id;
+
+    UPDATE public.learnora_courses
+       SET status = 'published'
+     WHERE id = v_course_id;
+
+    UPDATE public.learnora_course_generation_jobs
+       SET status = 'published',
+           published_at = now()
+     WHERE id = p_job_id;
+
+    RETURN v_course_id;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.publish_course_from_generation_job(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.publish_course_from_generation_job(uuid) TO service_role;
 
 
 CREATE OR REPLACE FUNCTION public.claim_next_learnora_video_render_job()
