@@ -4,6 +4,7 @@
 DROP FUNCTION IF EXISTS public.complete_learnora_video_render_job(uuid, uuid, integer, bigint, text);
 DROP FUNCTION IF EXISTS public.requeue_stale_learnora_video_render_jobs(integer);
 DROP FUNCTION IF EXISTS public.claim_next_learnora_video_render_job();
+DROP FUNCTION IF EXISTS public.publish_course_from_generation_job(uuid);
 DROP FUNCTION IF EXISTS public.create_course_from_generation_job(uuid);
 DROP TABLE IF EXISTS public.learnora_video_render_jobs;
 DROP TABLE IF EXISTS public.learnora_lesson_production_packages;
