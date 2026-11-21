@@ -52,6 +52,7 @@ BEGIN
 
     UPDATE public.learnora_course_generation_jobs
        SET course_title = p_curriculum_data->>'course_title',
+           course_slug = trim(both '-' from regexp_replace(lower(p_curriculum_data->>'course_title'), '[^a-z0-9]+', '-', 'g')),
            curriculum_data = p_curriculum_data,
            status = 'draft',
            approved_by_staff_id = NULL,
