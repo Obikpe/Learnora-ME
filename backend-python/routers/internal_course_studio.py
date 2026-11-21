@@ -390,7 +390,7 @@ async def generate_lesson_package(
         "the scene excerpts together must cover the script once, in order, without adding new spoken facts. "
         "The renderer uses deterministic slide, "
         "diagram, code, table and equation layouts, not a generative video model. For slides, put 2-4 short "
-        "points in on_screen_text; for diagram, put node labels in order; for table, use pipe-separated rows with headers first; for code_demo, provide exact code "
+        "points in on_screen_text; for diagram, put node labels in order; for table, use 2-4 pipe-separated columns with the header row first and no more than 5 rows; for code_demo, provide exact code "
         "as on_screen_text and never invent execution output; for screen_demo, describe reproducible steps "
         "and use only verified interface labels; for equation, preserve exact notation in on_screen_text. "
         "Do not ask a video model to draw exact code, equations or legible instructional text. Do not "
