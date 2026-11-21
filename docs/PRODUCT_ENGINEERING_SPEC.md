@@ -92,7 +92,8 @@ Payment providers and email/notification integrations appear in the repository h
 - **Approved tutor/creator:** manages permitted creator/course work, content and submissions within granted ownership and roles.
 - **Organisation owner/manager:** accesses only the organisation(s) they are authorised to manage; manages teams, cohorts, learner memberships, programmes, courses, tutors, contracts/entitlements, and progress according to grants.
 - **Organisation team manager/member:** accesses only permitted team operations and assigned learning.
-- **Cohort learner:** authenticates with a cohort-specific account, sees only assigned learning, and follows the cohort's fixed track and lifecycle.
+- **Cohort learner:** uses the cohort's own access and learning context, sees only assigned learning, and follows the cohort's fixed track and lifecycle.
+- **Cohort tutor/team member:** participates in a cohort team and may be assigned to specific tracks created by that cohort; access is limited to the cohort/team/resources assigned. Detailed cohort team types, responsibilities and permissions remain unresolved.
 
 ### Learnora Teams personas
 
@@ -119,15 +120,19 @@ Target user journey:
 
 A route existing in the tree does not by itself prove that its full journey has been browser-tested. Verify each end-to-end flow.
 
-### 5.2 Tutor/creator lifecycle
+### 5.2 Future independent tutor/creator lifecycle — deferred
+
+Independent tutor functionality is a separate future product context under PD-001, not part of the current individual learner phase. It must not be conflated with cohort tutors or corporate organisation tutors.
 
 The customer app includes an application-to-teach flow and creator dashboard. The intended lifecycle is application → review/approval → authorised creator workspace → course/content creation or management → publication according to permissions → learner engagement and grading where allowed. Do not infer creator approval from the existence of a user account.
 
 Course ownership, organisation affiliation, and instructor assignment must be checked server-side. Creator/finance operations require separation of duties and auditable state transitions.
 
-### 5.3 Customer organisation onboarding and workspaces
+### 5.3 Corporate organisation onboarding and workspaces — deferred
 
-Customer organisation workflows belong to Learnora ME. The engineering scope includes organisation owners/managers, teams, cohorts, programmes, tutors, learners, course access, contracts/entitlements, AI use, and progression.
+Corporate organisation workflows belong to Learnora ME but are deferred until after the individual learner experience and Learnora Teams website. This section records an earlier proposed organisation workflow, not a complete specification of the cohort domain. Cohorts have their own teams and tutor/track relationships; do not assume that the corporate organisation team model or this organisation lifecycle describes cohort operations. See PD-004 and UR-001/UR-002 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md).
+
+The eventual corporate organisation scope includes organisation owners/managers, teams, programmes, tutors, learners, course access, contracts/entitlements, AI use, and progression.
 
 Target lifecycle:
 
@@ -400,7 +405,7 @@ When these sources disagree, inspect the current `main` code and active database
 
 ## 13. Staged launch direction — free learner launch, then paid expansion (31 October 2026)
 
-This is a dated product-direction addendum to the original specification. Sections 1–12 above remain intact as the original product and engineering plan. This section clarifies the immediate launch scope and how it coexists with the original commercial model. The detailed implementation plan is in [FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md](FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md).
+This is a dated product-direction addendum to the original specification. Sections 1–12 above remain intact as the original product and engineering plan. This section records the 31 October 2026 launch strategy and how it coexists with the original commercial model. Its application sequencing is historical and is superseded by PD-001 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md). The free-access and paid-system preservation rules remain relevant. The detailed historical plan is in [FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md](FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md).
 
 ### 13.1 Launch strategy
 
@@ -414,7 +419,9 @@ A central, reversible, server-enforced free-access mode will grant the intended 
 
 Free mode must not weaken authentication, staff permissions, tenant isolation, RLS, creator ownership, unpublished/private content controls, or media access. It must not grant organisation or administrative privileges. Do not rewrite historical subscription/payment records to simulate free access.
 
-### 13.3 Immediate application scope
+### 13.3 Historical immediate application scope — superseded 21 November 2026
+
+The following records the earlier 31 October sequence in which Teams content operations were prioritised before the learner journey. It is retained as history and must not be used as the current delivery order. Under PD-001, complete the normal individual learner experience first, then build the separate Learnora Teams website.
 
 - **Learnora Teams (frontend-team/):** content operations for tracks, ordered track-course relationships, courses, modules, lessons, video/resource upload and publishing; learner lookup/progress views; trustworthy platform analytics.
 - **Learnora ME (frontend-v02/):** free catalogue discovery, track/course enrolment, lesson/media consumption, supported assessments/activities, progress persistence/resume, and accurate course/track completion.
