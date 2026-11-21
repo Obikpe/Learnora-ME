@@ -77,16 +77,17 @@ jobs:
           sudo apt-get install --yes postgresql-client
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/baselines/active-pheonix-public-schema.sql
           for migration in \
-            supabase/migrations/20261102090000_learner_learning_plans.sql \
-            supabase/migrations/20261102100000_quiz_active_sessions.sql \
-            supabase/migrations/20261102110000_certificate_revocation.sql \
-            supabase/migrations/20261102120000_project_submission_integrity.sql \
             supabase/migrations/20261103041002_add_lesson_video_transcript_text.sql \
             supabase/migrations/20261109160440_learner_account_deletion_lifecycle.sql \
-            supabase/migrations/20261116120000_notification_email_automation.sql \
-            supabase/migrations/20261117210000_password_session_invalidation.sql \
+            supabase/migrations/20261116072916_notification_email_automation.sql \
+            supabase/migrations/20261118090829_learner_learning_plans.sql \
+            supabase/migrations/20261118090830_quiz_active_sessions.sql \
+            supabase/migrations/20261118090832_certificate_revocation.sql \
+            supabase/migrations/20261118090839_project_submission_integrity.sql \
+            supabase/migrations/20261118090841_password_session_invalidation.sql \
+            supabase/migrations/20261118090842_private_course_resources_bucket.sql \
             supabase/migrations/20261118091000_feature_foreign_key_indexes.sql \
-            supabase/migrations/20261118141100_public_course_catalogue_rpc.sql \
+            supabase/migrations/20261118214152_public_course_catalogue_rpc.sql \
             supabase/migrations/20261119224623_course_completion_skill_badges.sql \
             supabase/migrations/20261120133258_learner_birthdays_and_age_attestation.sql \
             supabase/migrations/20261120133439_clear_birthday_data_on_account_deletion.sql
