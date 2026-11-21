@@ -267,3 +267,6 @@ The live permission mapping currently grants `content.manage` only to `super_adm
 A further read-only query found that the existing Data Analytics track has **zero track-level enrolments** (the track curriculum is not locked by the current track-enrolment lock), one course link, and two linked course enrolments. Both course enrolments are completed self-enrolments, and the single lesson has two progress records. The mock course has no videos.
 
 This corrects the earlier tentative statement that the track might be locked: it is not locked by track-level enrolments. The replacement path can likely retain the existing Data Analytics track, replace its course link with the real course, and archive the old test course. However, the old course must not be hard-deleted. Preserve its completed enrolments, lesson progress and any certificate/history references, and verify archived-course review access before retiring it from new catalogue discovery.
+
+
+The Learnora ME public footer now includes a **Staff access** entry pointing to `/team-studio/login`. This makes the internal workspace discoverable within the Learnora ME website; the page and every generation endpoint still require the separate internal staff session and backend permission.
