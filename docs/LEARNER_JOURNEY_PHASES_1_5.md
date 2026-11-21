@@ -2,10 +2,10 @@
 
 **Implementation date:** 2 November 2026  
 **Working branch:** `main` only  
-**Scope:** Learnora ME learner journey and Learnora Teams internal content operations  
+**Scope:** Historical record of the Learnora ME learner journey and the associated Teams/internal content operations work recorded at that time  
 **Product rule:** Learnora should help a learner become capable of doing something with what they have learned—not merely accumulate course completions.
 
-This document records the implementation work for the five requested phases. It is additive to the original product specification, roadmap, and free-launch plan. It does not cancel later certificate, Practice Lab, skill-map, portfolio, community, organisation, instructor, creator, or paid-expansion work.
+This document records the implementation work and verification snapshot for the five phases as of 2 November 2026. It is a historical implementation record, not authority to combine the current individual learner phase with new Teams development. Under PD-001 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md), complete the normal individual learner experience first; the separate Learnora Teams website and internal content-production work follow as the next product phase. Preserve the historical implementation and acceptance notes below, but do not treat their combined scope as the current delivery order. It does not cancel later learner outcomes, organisation, cohort, tutor, creator or paid-expansion work.
 
 ## 1. Canonical learning architecture
 
@@ -112,10 +112,10 @@ General tutor use remains available without a course context. The contextual pat
 
 ## 7. Next milestone and Phase 6 sequence
 
-The next milestone is deliberately limited to two release-readiness workstreams:
+The following was the next milestone recorded on 2 November 2026. Its historical acceptance list included both learner and Teams workflows; current execution must follow PD-001, so Teams-specific work is deferred until the Teams product phase:
 
 1. **Live Supabase verification:** regain a working read-only connection to the active Pheonix project, verify the live SQL catalogue, migration ledger, RLS and grants against the checked-in baseline, reconcile the additive learning-plan migration, and document an approved, reversible migration plan. Do not apply a production migration or mutate production data without separate explicit approval.
-2. **Browser-based acceptance:** exercise learner discovery/enrolment, course and track progress, optional learning-plan generation and fallback, quiz/assignment completion, Teams assessment authoring/grading/performance, and contextual tutor behaviour. Specifically verify the tutor is completely unavailable throughout every active quiz state. Record browser evidence and defects on the exact candidate SHA; production builds alone are insufficient.
+2. **Browser-based acceptance:** exercise learner discovery/enrolment, course and track progress, optional learning-plan generation and fallback, quiz/assignment completion, and contextual tutor behaviour. Specifically verify the tutor is completely unavailable throughout every active quiz state. Teams assessment authoring/grading/performance acceptance belongs to the later Teams phase. Record browser evidence and defects on the exact candidate SHA; production builds alone are insufficient.
 
 Once those two workstreams pass and any separately required migration approval is obtained, proceed directly to **Phase 6 — track completion and learner feedback**: completion-gated, dismissible feedback; optional rating/comment; explicit consent before public display; staff moderation; duplicate prevention; and privacy-safe public rendering. Do not insert unrelated feature phases between this acceptance milestone and Phase 6.
 
