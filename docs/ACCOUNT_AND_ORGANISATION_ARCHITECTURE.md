@@ -467,3 +467,106 @@ The approved product rule is:
 - Shared platform catalogue and organisation resources are not deleted solely because a learner created or was assigned as their actor; the learner attribution is detached where appropriate.
 
 The implementation is represented by migrations `20261109180000_learner_deletion_grace_and_marketing_consent.sql` and `20261109190000_erase_learner_records_after_recovery.sql`. They remain unapplied to production until separately authorised. Keep `ACCOUNT_DELETION_FINALIZER_ENABLED=false` until migrations, schema checks and deletion tests are complete. The Terms and Privacy Policy wording will be reviewed and updated in a separate documentation/legal-review pass after the feature set is complete.
+
+
+---
+
+## 12. Approved organisation management and invitation model — 21 November 2026
+
+**Authority:** This addendum records the product owner's approved shared management and onboarding rules. It supplements the earlier architecture audit and proposed identity model. Where older proposed rules conflict with this addendum or [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md), the approved decision register and this addendum take precedence. It does not authorise implementation or migration.
+
+### 12.1 Organisation type is established at creation
+
+When a customer organisation request is processed and the organisation is created, its type must be established as one of:
+
+- **Cohort**
+- **Corporate organisation**
+
+This classification determines the organisation's operating model, team responsibilities, administrator duties and learning workflows. A cohort is not simply a corporate organisation with a different label. The two types share the management pattern below but retain distinct team and operational models.
+
+### 12.2 Shared management structure
+
+Every cohort and corporate organisation has:
+
+1. An **active manager** responsible for coordinating the organisation as a whole.
+2. A formal **management team**, led by that manager.
+3. Other teams created under the organisation by the manager.
+4. Administrators appointed by the manager, each with an assigned role and defined responsibilities.
+
+The manager has organisation-wide management access to everything that the specific organisation is entitled to access, including its teams. This scope does not extend to other organisations or privileged Learnora internal staff capabilities.
+
+The manager establishes the organisation's other teams and appoints its administrators. The management team is a real team within the organisation, not simply a generic label for unrelated functions.
+
+Administrators receive permissions appropriate to their assigned roles. Appointment as an administrator does not automatically grant the manager's full organisation-wide access.
+
+The manager, coordinator or another administrator may take responsibility for functions such as learner support, assessment and quality, programme operations and reporting. These functions do not need to become separate teams by default. Create a separate team only where there is an actual distinct working group with members and defined responsibilities.
+
+### 12.3 Organisation-specific coordinator responsibilities
+
+The shared management structure does not make cohort and corporate coordinator workflows interchangeable.
+
+**Cohort coordinator**
+
+The cohort coordinator is responsible for:
+- Adding/onboarding learners into the cohort's configured learning tracks.
+- Assigning tutors to the relevant tracks.
+- Carrying out other cohort coordination tasks permitted by the coordinator's assigned role.
+
+The cohort's configured tracks and the cohort-specific tutor/learner relationships remain part of the cohort domain model. A coordinator's authority must not be interpreted as unrestricted access beyond the cohort and assigned responsibilities.
+
+**Corporate organisation coordinator**
+
+The corporate coordinator is responsible for:
+- Onboarding the organisation's learners/employees into the relevant learning teams.
+- Carrying out other corporate coordination tasks permitted by the coordinator's assigned role.
+
+Corporate team structures and learning workflows must be specified independently of cohort tracks and tutor assignment rules.
+
+### 12.4 Invitation-based onboarding and self-service password creation
+
+Organisation managers, coordinators and authorised administrators can initiate onboarding for another person. They do not complete that person's account activation and must not create or set that person's password.
+
+The required flow applies to both cohorts and corporate organisations:
+
+1. An authorised organisation manager or administrator initiates onboarding for the intended person.
+2. The onboarding record identifies the organisation and the intended role. Where relevant, it also identifies the team, cohort, track or other learning context for which access is being requested.
+3. The system sends an invitation email to the intended person's email address. The email includes the relevant organisation information and details of the role or context for which the person is being onboarded.
+4. The email contains an activation link.
+5. The intended person follows the link and is redirected to the account activation flow.
+6. The intended person creates their own password and completes the activation process.
+7. The activation link expires **48 hours after issuance**.
+
+The organisation-side action is an invitation/onboarding action, not the creation of a fully activated account. A manager or administrator cannot bypass the invited person's own activation step. This applies to all organisation users, including administrators, coordinators, tutors, learners and employees.
+
+The invitation must be bound to the intended recipient and the specified organisation/role context. An expired, invalid or already-consumed link must not activate an account. Email content must not contain a password or reusable credential.
+
+### 12.5 Invitation lifecycle details still requiring specification
+
+The following behaviours have not yet been decided and must not be invented during implementation:
+
+- Whether and how an authorised administrator can resend an invitation.
+- Whether a new invitation invalidates any previously issued link.
+- Whether an invitation can be revoked, and which roles may revoke it.
+- How duplicate invitations or an already-existing account are handled.
+- What the user sees after following an expired link and how a fresh invitation is requested.
+- Whether the intended person's email can be changed after an invitation has been issued.
+- The exact activation-token storage, hashing, single-use enforcement, audit and rate-limit design.
+
+These are specification gaps, not permission to choose convenient defaults. The 48-hour expiry and recipient-completed password creation are approved requirements.
+
+### 12.6 Access and security boundaries
+
+- The manager's broad access is confined to the specific organisation and its entitled resources.
+- Administrators operate under their assigned roles and permissions.
+- Coordinators perform the onboarding and learning-structure duties assigned to their organisation type and role.
+- Invitation initiation does not mean the invited person is already an active authenticated user.
+- Only the intended recipient completes account activation and chooses their password.
+- Invitation links are time-limited credentials and must be protected against disclosure, replay and use by a different recipient.
+- Organisation roles do not confer Learnora internal staff or platform-administrator privileges.
+- Cohort and corporate team membership, tutor assignments and learning-resource access remain scoped to their respective organisation and assigned responsibilities.
+
+### 12.7 Implementation and preservation boundary
+
+This addendum documents approved target behaviour only. The organisation portal and invitation workflows remain deferred according to the approved product implementation sequence. Do not implement them during the current individual learner phase.
+
+Do not infer that the current database schema, legacy cohort login flow or existing invitation code already satisfies this target model. Before implementation, reconcile current source and live schema read-only, define compatibility with existing cohort accounts and progress, specify the unresolved invitation lifecycle, and obtain the required implementation authorisation. No account conversion, migration, email-provider change, live database mutation or deployment is authorised by this documentation decision.
