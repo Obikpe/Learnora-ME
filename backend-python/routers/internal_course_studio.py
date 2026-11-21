@@ -399,9 +399,9 @@ async def generate_lesson_package(
         elif not output.video_plan:
             raise ValueError("A video-based lesson must include a renderable scene plan.")
         elif output.video_plan:
-            script_words = len(re.findall(r"\\b[\\w'-]+\\b", output.teaching_script))
+            script_words = len(re.findall(r"\b[\w'-]+\b", output.teaching_script))
             scene_words = sum(
-                len(re.findall(r"\\b[\\w'-]+\\b", scene.narration))
+                len(re.findall(r"\b[\w'-]+\b", scene.narration))
                 for scene in output.video_plan
             )
             if script_words == 0 or not (0.75 <= scene_words / script_words <= 1.25):
