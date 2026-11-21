@@ -165,14 +165,14 @@ The existing published "Introduction to Data Analytics" test course was seeded a
 |---|---|---|
 | Product separation | Two active websites: ME and Teams | Keep Teams as later website-build phase; shared API integration only now |
 | Curriculum | Global track → ordered courses → modules → lessons exists | Preserve semantics; make standalone course creation first-class in authoring flow |
-| AI gateway | Named profile and provider/model configuration exists | Existing request executor currently supports OpenRouter only; add a course-generation profile through gateway |
+| AI gateway | The existing `services/ai_gateway.py` and `content_generation` profile are used by Course Studio | Keep the existing provider/model abstraction; do not replace the gateway or hardcode a model in course production |
 | Teams content operations | Manual course/module/lesson and media management exists | Extend content operations with AI-assisted outline and lesson-package generation |
-| Lesson player | Video + text + resources + learner notes + assessments already supported | Only first attached video is rendered; improve multi-asset lesson presentation and concise note layout |
+| Lesson player | The individual learner workspace supports signed native video, YouTube/Vimeo embeds, concise lesson content, resources and private learner notes. The cohort lesson endpoint and page now also return and play authorised ready videos. | The current product uses one primary video per lesson. Multiple-asset galleries and per-video progress are not required for the first course pilot. |
 | Video storage | Private Supabase buckets and signed upload/playback flows exist; new Course Studio AI and human MP4s target private R2 | Configure and verify R2 for all newly produced course videos; retain legacy Supabase media |
-| Video production | No automated rendering worker confirmed in the audited active paths | Design and implement as a separate asynchronous pipeline |
+| Video production | An asynchronous render queue, service-role claim/complete/recovery RPCs, Kokoro ONNX/FFmpeg worker and scheduled GitHub Actions workflow exist in source. The renderer workflow completed successfully but skipped processing because external secrets are not configured. | Configure private R2 and worker secrets, pass the latest full CI run, then perform an approved end-to-end test. |
 | Course review | Draft/published content and publishability checks exist | Add generation provenance and explicit human approval state |
 | Mock course | A published Introduction to Data Analytics seed is documented | Verify current live state and learner history before archive/replace |
-| Brand | Landing page currently passes `hideBrand` to `PublicNav` | Remove the flag so Learnora ME brand appears in the landing-page top navigation |
+| Brand | The current landing page passes `hideBrand={false}` and `PublicNav` renders the Learnora ME `Logo`; the signed-in dashboard navigation also renders the Learnora ME wordmark. | The reported missing brand is not present in current `main` source; no unnecessary logo rewrite is required. |
 
 ## 13. Audit boundaries and outstanding verification
 
@@ -339,3 +339,20 @@ The exact 56-to-56 filename reconciliation above was completed before the Course
 - After the draft course exists, Course Studio exposes a per-lesson upload control for staff with `content.video`. It uses a short-lived R2 signed PUT URL, verifies the uploaded object, and then creates the `lesson_videos` metadata row.
 - The learner workspace uses signed R2 playback for both AI-rendered and human-produced videos. Existing older Supabase-hosted videos continue to use the legacy signed Supabase playback path.
 - The publication RPC requires a ready private R2 video for human-source lessons; AI-source lessons require a completed render job and a ready private Cloudflare R2 video. A missing human video blocks publication.
+
+## 20. Cohort learner video playback — 21 November 2026
+
+The standard individual learner workspace already played signed private videos, but the separate cohort lesson page previously rendered only lesson text. This mattered for learners accessing a global course through an assigned cohort.
+
+The cohort lesson API now:
+- Performs the existing active cohort membership, course assignment, lesson assignment, published lesson and course/module ownership checks before retrieving media.
+- Returns only ready lesson-video records and attaches short-lived signed playback URLs through the shared media signer. It supports private Supabase and Cloudflare R2 media, plus external video records already supported by the player.
+- Does not expose render jobs, private teaching scripts, staff-only production packages or unpublished media.
+
+The cohort lesson page now:
+- Displays the primary lesson video before the concise lesson notes.
+- Supports signed MP4 playback and existing YouTube/Vimeo embed types.
+- Saves video position and percentage to the existing cohort lesson-progress record periodically, on pause and at completion, and resumes from the saved position when available.
+- Keeps the lesson's course content and learner progress controls separate.
+
+A regression test covers the authorised cohort lesson response and signed video URL. The code is committed to `main`; its current GitHub Actions test/build run is pending. No deployment or live migration was performed for this UI/API correction.
