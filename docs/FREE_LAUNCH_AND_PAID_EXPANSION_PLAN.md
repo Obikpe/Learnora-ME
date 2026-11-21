@@ -3,13 +3,13 @@
 **Decision date:** 31 October 2026  
 **Status:** Approved product direction; implementation not yet started by this document update  
 **Applies to:** Learnora ME, Learnora Teams, shared FastAPI backend, and the existing active Pheonix Supabase project  
-**Relationship to existing plans:** This is a dated strategic addendum. It does not replace, erase, or retrospectively rewrite the original product specification, roadmap, security findings, migration history, or organisation/instructor plans.
+**Relationship to existing plans:** This is a dated strategic addendum. Its 31 October 2026 execution sequence is a historical launch plan and is superseded by [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) for current product ordering. Its free-launch/commercial preservation rules remain relevant unless separately superseded. It does not replace, erase, or retrospectively rewrite the original product specification, roadmap, security findings, migration history, or organisation/instructor plans.
 
 ## 1. Why this addendum exists
 
 The original Learnora plan describes a broader commercial learning platform, including individual learners, creators/instructors, customer organisations, cohorts, subscriptions, payments, entitlements, and internal operations. Considerable product, backend, database, billing, and security work has already been completed toward that model.
 
-The product owner has now chosen a staged launch strategy:
+The product owner chose the following staged launch strategy on 31 October 2026. Its implementation order was later superseded on 21 November 2026 by PD-001; the historical rationale and scope are retained here:
 
 1. Make the learner-facing Learnora service temporarily free to use, without requiring a payment method, payment, subscription purchase, or trial-expiry date.
 2. Concentrate implementation on two applications: **Learnora ME** (the learner experience) and **Learnora Teams** (internal course/content operations and platform oversight).
@@ -24,7 +24,7 @@ This is a sequencing change, not a cancellation of the original commercial produ
 ## 2. Source-of-truth and preservation rules
 
 - Keep the original sections of `PRODUCT_ENGINEERING_SPEC.md`, `ROADMAP.md`, and the migration/security records. Do not replace them with this plan.
-- Treat this document as the current product sequencing addendum. The roadmap should link to it and state which execution order is current.
+- Treat [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) as the current cross-product sequencing authority. This document records the earlier 31 October launch plan and the still-relevant free-access and paid-system preservation rules.
 - Keep the original paid implementation, payment provider integration, subscription records, trial logic, entitlement logic, pricing concepts, and Pro planning. Do not delete them, rewrite history, or comment out large blocks of code as a substitute for a controlled feature switch.
 - Record new decisions and actual implementation evidence in `ENGINEERING_HISTORY_AND_DECISIONS.md`.
 - Keep deferred organisation and instructor work in the roadmap. Mark it deferred by sequencing, not removed.
@@ -202,9 +202,16 @@ Before charging users, define and document:
 
 No pricing or paid launch date is set by this addendum. A later explicit product decision must approve the commercial rollout.
 
-## 7. Revised execution sequence and acceptance gates
+## 7. Historical execution sequence and acceptance gates — superseded 21 November 2026
 
-The sequence below governs immediate implementation. The original roadmap phases remain preserved as the wider engineering/security backlog; their unresolved security and release gates still apply wherever they are prerequisites for safe work.
+The table below preserves the 31 October 2026 launch sequence as a historical planning snapshot. It is not the current implementation order. The current product sequence is governed by PD-001 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md):
+
+1. Complete the normal individual learner experience in Learnora ME.
+2. Build the separate Learnora Teams website, including internal course/content production workflows.
+3. Return to Learnora ME for the corporate organisation experience.
+4. Build independent tutor functionality separately.
+
+Cross-cutting security, migration and release gates remain mandatory where they protect the individual learner release. Do not use the historical table below to pull Teams content-production implementation ahead of the current individual learner phase.
 
 | Order | Workstream | Acceptance evidence |
 |---|---|---|
