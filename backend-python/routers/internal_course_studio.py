@@ -761,7 +761,7 @@ async def generate_lesson_package(
         "must include 2-4 short multiple-choice knowledge-check questions with correct answers and explanations. The renderer uses "
         "deterministic slide, diagram, table, code and equation layouts, not a generative video model. For slides, put 2-4 short points "
         "in on_screen_text; for diagram, put no more than 5 node labels in order; for table, use 2-4 pipe-separated columns with the header row first "
-        "and no more than 5 total rows; for code_demo, provide exact code as on_screen_text, use no more than 10 short lines per scene, split "
+        "and no more than 5 total rows; for code_demo, provide exact code as on_screen_text, use no more than 10 short lines of at most 72 characters per scene, split "
         "longer examples across scenes, and never invent execution output; for screen_demo, describe 2-5 reproducible steps and use only "
         "verified interface labels; for equation, preserve exact notation in on_screen_text. "
         "Do not ask a video model to draw exact code, equations or legible instructional text. Do not fabricate sources, citations, "
