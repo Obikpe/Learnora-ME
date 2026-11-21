@@ -7,7 +7,7 @@ import json
 import re
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError
 
 from routers.auth import log_audit_event
@@ -160,6 +160,7 @@ def course_studio_access(
 @router.post("/curriculum")
 async def generate_curriculum(
     payload: CurriculumRequest,
+    request: Request,
     staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
 ):
     system_prompt = (
@@ -195,7 +196,7 @@ async def generate_curriculum(
         action="internal_course_curriculum_generated",
         email=staff.email,
         account_type="staff",
-        role="staff",
+        role=",".join(staff.roles or []),
         metadata={
             "staff_id": staff.staff_id,
             "course_title": payload.course_title,
@@ -213,6 +214,7 @@ async def generate_curriculum(
 @router.post("/lesson-package")
 async def generate_lesson_package(
     payload: LessonPackageRequest,
+    request: Request,
     staff: InternalStaffContext = Depends(require_internal_permission("content.manage")),
 ):
     system_prompt = (
@@ -265,6 +267,7 @@ async def generate_lesson_package(
             "provider": provider.get("provider"),
             "model": provider.get("model"),
             "latency_ms": provider.get("latency_ms"),
+            "usage": provider.get("usage") or {},
         },
     )
     return {"success": True, "lesson_package": output.model_dump(), "generation": provider, "status": "draft_proposal"}
