@@ -61,10 +61,10 @@ In `Obikpe/Learnora-ME` → Settings → Secrets and variables → Actions, add:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `R2_ACCOUNT_ID`
 - `R2_BUCKET_NAME`
-- `R2_ACCESS_KEY_ID` (read-only token)
-- `R2_SECRET_ACCESS_KEY` (read-only token)
+- `R2_WORKER_ACCESS_KEY_ID` (worker read/write token)
+- `R2_WORKER_SECRET_ACCESS_KEY` (worker read/write token)
 
-Create a separate bucket-scoped R2 API token with object read/write permission for the worker. The worker needs Supabase service-role access to claim render jobs and update lesson media metadata, plus R2 upload permission. These secrets must never be committed to the repository, printed in logs, or exposed to browser code.
+The worker needs Supabase service-role access to claim render jobs and update lesson media metadata, plus R2 object read/write permission. Keep the Vercel backend's read-only R2 token separate from this worker token. These secrets must never be committed to the repository, printed in logs, or exposed to browser code.
 
 ## Rendering worker
 
