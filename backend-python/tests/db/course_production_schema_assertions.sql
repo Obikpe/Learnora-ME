@@ -8,6 +8,8 @@ DECLARE
     v_job_id uuid := 'e1000000-0000-4000-8000-000000000003';
     v_course_id uuid;
     v_second_course_id uuid;
+    v_published_course_id uuid;
+    v_published_course_id_again uuid;
     v_lesson_id uuid;
     v_content text;
     v_course_status text;
@@ -25,6 +27,10 @@ DECLARE
     v_render_status text;
     v_package_status text;
     v_video_status text;
+    v_published_course_status text;
+    v_published_module_status text;
+    v_published_lesson_status text;
+    v_published_job_status text;
     v_track_order integer;
 BEGIN
     IF to_regclass('public.learnora_course_generation_jobs') IS NULL
@@ -56,6 +62,9 @@ BEGIN
     IF has_function_privilege('anon', 'public.create_course_from_generation_job(uuid)', 'EXECUTE')
        OR has_function_privilege('authenticated', 'public.create_course_from_generation_job(uuid)', 'EXECUTE')
        OR NOT has_function_privilege('service_role', 'public.create_course_from_generation_job(uuid)', 'EXECUTE')
+       OR has_function_privilege('anon', 'public.publish_course_from_generation_job(uuid)', 'EXECUTE')
+       OR has_function_privilege('authenticated', 'public.publish_course_from_generation_job(uuid)', 'EXECUTE')
+       OR NOT has_function_privilege('service_role', 'public.publish_course_from_generation_job(uuid)', 'EXECUTE')
        OR has_function_privilege('anon', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
        OR has_function_privilege('authenticated', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
        OR NOT has_function_privilege('service_role', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
@@ -249,6 +258,32 @@ BEGIN
 
     IF v_render_status <> 'completed' OR v_package_status <> 'ready' OR v_video_status <> 'ready' THEN
         RAISE EXCEPTION 'Completing a video render did not mark the render job, package and video as ready';
+    END IF;
+
+    v_published_course_id := public.publish_course_from_generation_job(v_job_id);
+    v_published_course_id_again := public.publish_course_from_generation_job(v_job_id);
+
+    IF v_published_course_id <> v_course_id OR v_published_course_id_again <> v_course_id THEN
+        RAISE EXCEPTION 'Course publication is not idempotent';
+    END IF;
+
+    SELECT status INTO v_published_course_status
+      FROM public.learnora_courses WHERE id = v_course_id;
+    SELECT status INTO v_published_module_status
+      FROM public.course_modules WHERE course_id = v_course_id;
+    SELECT status INTO v_published_lesson_status
+      FROM public.learnora_lessons WHERE id = v_lesson_id;
+    SELECT status INTO v_published_job_status
+      FROM public.learnora_course_generation_jobs WHERE id = v_job_id;
+    SELECT is_published INTO v_quiz_published
+      FROM public.quizzes WHERE id = v_quiz_id;
+
+    IF v_published_course_status <> 'published'
+       OR v_published_module_status <> 'published'
+       OR v_published_lesson_status <> 'published'
+       OR v_published_job_status <> 'published'
+       OR v_quiz_published IS DISTINCT FROM true THEN
+        RAISE EXCEPTION 'Atomic publication did not publish the course hierarchy and knowledge check together';
     END IF;
 END;
 $course_production_test$;
