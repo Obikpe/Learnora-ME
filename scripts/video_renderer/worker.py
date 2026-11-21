@@ -227,11 +227,11 @@ def render_scene_image(
         code = "\n".join(texts)
         code_lines = []
         for raw_line in code.splitlines():
-            code_lines.extend(textwrap.wrap(raw_line, width=86, replace_whitespace=False, drop_whitespace=False) or [""])
+            code_lines.extend(textwrap.wrap(raw_line, width=72, replace_whitespace=False, drop_whitespace=False) or [""])
         y = 322
         for line_number, line in enumerate(code_lines[:10], start=1):
             draw.text((140, y), f"{line_number:02d}", font=small, fill="#61738f")
-            draw.text((190, y), line[:88], font=mono, fill="#e5eaf3")
+            draw.text((190, y), line[:72], font=mono, fill="#e5eaf3")
             y += 27
     elif visual_type == "diagram":
         labels = texts[:5]
