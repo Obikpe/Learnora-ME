@@ -1,9 +1,9 @@
 # Account, Organisation and Cohort Architecture
 
-**Status:** Replacement architecture documented after source audit; implementation not yet changed.  
+**Status:** Historical source audit and proposed architecture; target identity decisions remain partly unresolved.  
 **Repository:** `Obikpe/Learnora-ME`  
 **Audited branch:** `main`  
-**Audit snapshot:** 4 November 2026  
+**Audit snapshot:** 4 November 2026; later implementation notes are individually dated below.  
 **Scope:** Authentication identity, organisation-managed accounts, cohorts, tutors, course visibility, access control, WitStart retirement and account lifecycle.
 
 ---
@@ -34,7 +34,11 @@ Learnora Teams is not the focus of this learner-flow implementation. Its interna
 
 Implement the individual learner path as one coherent vertical slice across backend authentication, account provisioning guards, individual course/progress access and the Learnora ME frontend. Review cohort/organisation/creator paths where they share those services, but change them only when required to prevent a regression or preserve a future-safe contract. Do not build the deferred workflows merely because the architecture describes them.
 
-## 1. Decisions and non-negotiable rules
+## 1. Earlier proposed identity and access rules — target model not yet approved
+
+**Authority warning:** The rules in sections 1–4 below record an earlier proposed replacement architecture. They are not a fully approved target account/cohort model. [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) governs cross-product decisions. In particular, the target identity relationship between cohort accounts, individual accounts and corporate organisation accounts remains unresolved (UR-003). The proposal that every cohort is merely a resource scope inside one organisation is not approved as a complete cohort domain model. Do not implement identity convergence, account conversion or a migration from this proposal without explicit product-owner confirmation and a preservation plan.
+
+## 1.1 Earlier proposed identity and access rules
 
 1. **One email address represents one account identity and one account context at a time.** The same email must never authenticate as an individual learner in one flow and an organisation learner in another, nor as separate cohort accounts in different cohorts.
 2. **Organisation-managed and independent Learnora accounts are mutually exclusive.** An organisation learner who wants to become an independent Learnora learner must first have their organisation-managed account closed/released through an authorised organisation process. Only after the release is complete may the email register as an individual account.
@@ -50,7 +54,7 @@ Implement the individual learner path as one coherent vertical slice across back
 12. **WitStart is retired from active product behaviour.** Do not delete, rewrite, migrate, or otherwise modify existing WitStart database rows or already-applied historical migrations.
 13. Preserve the existing free-launch behaviour and reversible paid subscription/Paystack implementation. Do not remove billing code as part of account cleanup.
 
-## 2. Account classes and identity boundary
+## 2. Earlier proposed account classes and identity boundary
 
 The target model has one exclusive account class for a canonicalised email address:
 
@@ -73,7 +77,7 @@ An email cannot hold two of these account classes simultaneously. In particular:
 
 All account creation, invitation, lookup and release operations use a single normalisation function (trim whitespace, lowercase, validate syntax). The database must enforce uniqueness against the canonical email identity, including across individual, organisation-managed, independent-tutor and cohort-era records during migration. Case-insensitive application checks alone are not sufficient to prevent concurrent duplicate creation.
 
-## 3. Authentication and registration
+## 3. Earlier proposed authentication and registration model
 
 ### 3.1 Individual registration
 
@@ -119,7 +123,7 @@ If no identity exists, return a generic invalid-credentials response. If an iden
 
 Platform-admin/internal authentication remains a separately guarded flow and cannot be reached by learner account fallback.
 
-## 4. Organisation account release and conversion to individual use
+## 4. Earlier proposed organisation account release and conversion to individual use
 
 An organisation learner who wants independent Learnora access must use an explicit **organisation account release** lifecycle. The public individual registration endpoint cannot perform this conversion automatically.
 
@@ -138,7 +142,9 @@ An organisation learner who wants independent Learnora access must use an explic
 
 **Data retention:** "Delete organisation account" means close/release the operational identity and its active access. It does not mean cascading deletion of audit logs, cohort records, assessment evidence, certificates, billing records or organisation-owned content. Any true erasure request is a separate privacy workflow with its own legal and retention checks.
 
-## 5. Organisation, cohort and tutor model
+## 5. Organisation, cohort and tutor model — incomplete domain specification
+
+The following sections contain an earlier organisation-centred model and source audit. They do not fully specify the cohort product. Cohorts have their own teams; those teams can include tutors assigned to tracks created by that cohort, as well as learners and other cohort-specific operations. Cohort and corporate organisation team structures, responsibilities, tutor relationships, dashboards, assignments and permissions must be documented separately. The detailed cohort team model remains unresolved under UR-001. Do not assume that the organisation admin/team workflow below is the cohort workflow.
 
 ### 5.1 Organisation roles
 
@@ -151,7 +157,9 @@ Remove legacy product-specific administrator/learner roles. Use generic organisa
 
 Role names alone are insufficient for tutor access. Tutor permissions require resource assignments and organisation scoping.
 
-### 5.2 Cohort and track configuration
+### 5.2 Earlier proposed organisation-owned cohort and track configuration
+
+The following sequence is retained as an earlier proposal for an organisation-owned cohort arrangement. It is not a complete or approved definition of every cohort context; confirm the cohort's actual owner, teams and operating model before relying on it.
 
 1. Organisation admin creates a cohort.
 2. Admin creates/selects organisation tracks and enables the tracks offered in the cohort.
