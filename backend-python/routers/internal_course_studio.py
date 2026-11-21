@@ -221,6 +221,85 @@ def get_course_generation_job(
     return {"success": True, "job": job_result.data, "packages": package_result.data or [], "render_jobs": render_result.data or []}
 
 
+@router.get("/jobs/{job_id}/videos")
+def get_course_video_previews(
+    job_id: UUID,
+    staff: InternalStaffContext = Depends(require_internal_permission("content.generate")),
+):
+    try:
+        job_result = (
+            supabase.table("learnora_course_generation_jobs")
+            .select("id,created_course_id")
+            .eq("id", str(job_id))
+            .maybe_single()
+            .execute()
+        )
+        job = job_result.data
+        if not job:
+            raise HTTPException(status_code=404, detail="Course draft not found.")
+        if not job.get("created_course_id"):
+            return {"success": True, "videos": []}
+
+        modules = (
+            supabase.table("course_modules")
+            .select("id,title,order_index")
+            .eq("course_id", str(job["created_course_id"]))
+            .order("order_index")
+            .execute()
+            .data or []
+        )
+        module_ids = [str(module["id"]) for module in modules]
+        if not module_ids:
+            return {"success": True, "videos": []}
+
+        lessons = (
+            supabase.table("learnora_lessons")
+            .select("id,title,module_id,order_index")
+            .in_("module_id", module_ids)
+            .order("order_index")
+            .execute()
+            .data or []
+        )
+        lesson_ids = [str(lesson["id"]) for lesson in lessons]
+        if not lesson_ids:
+            return {"success": True, "videos": []}
+
+        video_rows = (
+            supabase.table("lesson_videos")
+            .select("id,lesson_id,title,duration_seconds,status,provider,storage_path,external_video_id")
+            .in_("lesson_id", lesson_ids)
+            .eq("status", "ready")
+            .execute()
+            .data or []
+        )
+        from routers.progress import _sign_lesson_assets
+
+        signed_rows = _sign_lesson_assets(video_rows, require_private_provider=True)
+        module_by_id = {str(module["id"]): module for module in modules}
+        lesson_by_id = {str(lesson["id"]): lesson for lesson in lessons}
+        previews = []
+        for video in signed_rows:
+            lesson = lesson_by_id.get(str(video.get("lesson_id")))
+            if not lesson:
+                continue
+            module = module_by_id.get(str(lesson.get("module_id"))) or {}
+            previews.append({
+                "id": video.get("id"),
+                "lesson_id": video.get("lesson_id"),
+                "lesson_title": lesson.get("title"),
+                "module_title": module.get("title"),
+                "title": video.get("title"),
+                "duration_seconds": video.get("duration_seconds"),
+                "provider": video.get("provider"),
+                "signed_url": video.get("signed_url"),
+            })
+        return {"success": True, "videos": previews}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail="Generated lesson videos could not be loaded for review.") from None
+
+
 @router.post("/curriculum")
 async def generate_curriculum(
     payload: CurriculumRequest,
