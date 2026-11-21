@@ -825,6 +825,43 @@ def publish_generated_course(
                 detail="The backend cannot read every rendered video from private storage. Verify the R2 read credentials and stored video objects before publishing.",
             ) from None
 
+    course_modules = (
+        supabase.table("course_modules")
+        .select("id")
+        .eq("course_id", str(job["created_course_id"]))
+        .execute()
+        .data or []
+    )
+    module_ids = [str(module["id"]) for module in course_modules]
+    if module_ids:
+        course_lessons = (
+            supabase.table("learnora_lessons")
+            .select("id")
+            .in_("module_id", module_ids)
+            .execute()
+            .data or []
+        )
+        lesson_ids = [str(lesson["id"]) for lesson in course_lessons]
+        if lesson_ids:
+            ready_videos = (
+                supabase.table("lesson_videos")
+                .select("id,lesson_id,provider,storage_path,external_video_id")
+                .in_("lesson_id", lesson_ids)
+                .eq("status", "ready")
+                .eq("is_private", True)
+                .execute()
+                .data or []
+            )
+            if ready_videos:
+                from routers.progress import _sign_lesson_assets
+
+                signed_videos = _sign_lesson_assets(ready_videos, require_private_provider=True)
+                if any(not video.get("signed_url") for video in signed_videos):
+                    raise HTTPException(
+                        status_code=409,
+                        detail="One or more private lesson videos cannot be signed for playback. Verify the Supabase and R2 media objects before publishing.",
+                    )
+
     try:
         result = supabase.rpc(
             "publish_course_from_generation_job",
