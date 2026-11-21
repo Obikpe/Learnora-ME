@@ -743,3 +743,8 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [ ] Confirm the latest CI run passes with the renderer smoke test and atomic publication assertion.
 - [ ] Configure private R2 and GitHub worker secrets after the repository-side pipeline passes.
 - [ ] Apply the pending migration and deploy only after explicit user approval.
+
+### Verified CI checkpoint — 21 November 2026
+
+- On commit `78e3ba2`, GitHub Actions completed the Kokoro/FFmpeg real-render smoke test, the additive migration-and-rollback rehearsal, backend compilation/import checks, and the complete backend test suite successfully. The learner frontend build was still running when later commits superseded that run.
+- The subsequent commits add the final Course Studio track controls, stricter lesson knowledge-check validation and the curriculum-permission correction. Those latest changes are awaiting their own full CI run; do not treat the earlier checkpoint as verification of the newest commit.
