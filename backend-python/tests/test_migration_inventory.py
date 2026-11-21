@@ -178,6 +178,8 @@ class MigrationInventoryTests(unittest.TestCase):
         self.assertIn("publish_course_from_generation_job", sql)
         self.assertIn("published_at timestamptz", sql)
         self.assertIn("learnora_learning_path_courses", sql)
+        self.assertIn("track_enrolment:", sql)
+        self.assertIn("published_at = COALESCE(published_at, now())", sql)
         self.assertIn("content.generate", sql)
         self.assertIn("TO service_role", sql)
         rollback_sql = rollback.read_text(encoding="utf-8")
