@@ -747,7 +747,11 @@ async def generate_lesson_package(
         "For text_practice lessons, return an empty video_plan. For all other AI-produced video lessons, "
         "video_plan must contain 2-8 renderable scenes that cover the teaching_script in the same teaching order. "
         "Each scene narration must be a continuous excerpt from the teaching_script; the scene excerpts together "
-        "must cover the script once, in order, without adding new spoken facts."
+        "must cover the script once, in order, without adding new spoken facts. The AI renderer creates deterministic "
+        "slides, diagrams, tables, code cards and numbered instruction cards; it does not capture or imitate real "
+        "software interfaces. Never present a generated screen_demo as an actual Excel, Power BI, SQL editor or IDE "
+        "screen. If a lesson requires a real application interface, staff must select human video source and upload "
+        "a verified recording of that interface."
     )
     system_prompt = (
         "You are an expert instructional designer and teaching-script writer for Learnora ME. "
