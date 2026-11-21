@@ -283,9 +283,10 @@ export default function TeamCourseStudioPage() {
           job_id: jobId,
           module_order: moduleIndex,
           lesson_order: lessonIndex,
+          video_source: videoSourceModes[key] || "ai",
         }),
       });
-      setPackages(old => ({ ...old, [key]: result.lesson_package }));
+      setPackages(old => ({ ...old, [key]: { ...result.lesson_package, video_source: result.lesson_package.video_source || videoSourceModes[key] || "ai" } }));
       return true;
     } catch (error: any) {
       setPackageErrors(old => ({ ...old, [key]: error.message || "Lesson package generation failed." }));
@@ -299,7 +300,7 @@ export default function TeamCourseStudioPage() {
     if (!curriculum || !jobId || batchBusy || createdCourseId) return;
     const missing = curriculum.modules.flatMap((module, moduleIndex) =>
       module.lessons.map((_, lessonIndex) => ({ moduleIndex, lessonIndex, key: moduleIndex + ":" + lessonIndex }))
-    ).filter(item => !packages[item.key]);
+    ).filter(item => !packages[item.key] || (packages[item.key].video_source || "ai") !== (videoSourceModes[item.key] || "ai"));
     if (!missing.length) return;
     setBatchBusy(true);
     setBatchProgress({ completed: 0, total: missing.length });
@@ -334,6 +335,7 @@ export default function TeamCourseStudioPage() {
     setRenderJobsQueued((latest.render_jobs || []).filter((job: any) => job.status === "queued" || job.status === "processing").length);
     const previews = await internalRequest("/course-studio/jobs/" + encodeURIComponent(currentJobId) + "/videos");
     setVideoPreviews(previews.videos || []);
+    setCourseLessons(previews.lessons || []);
   }
 
   async function publishCourse() {
@@ -369,6 +371,7 @@ export default function TeamCourseStudioPage() {
         setRenderJobs(refreshed.render_jobs || []);
         const previews = await internalRequest("/course-studio/jobs/" + jobId + "/videos");
         setVideoPreviews(previews.videos || []);
+        setCourseLessons(previews.lessons || []);
       } catch {
         setCreateDraftError("The draft was created, but video status could not be refreshed. Use Refresh video status.");
       }
