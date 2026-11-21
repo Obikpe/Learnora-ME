@@ -374,8 +374,9 @@ async def generate_lesson_package(
         "for code, do not invent execution results; for mathematics, preserve exact notation and "
         "calculations. Add a practical_activity only when useful. Add 2-4 answerable knowledge-check "
         "questions where appropriate. video_plan must contain 2-8 renderable scenes for video lessons and cover the teaching_script "
-        "in the same teaching order. Scene narration is a short summary of that scene for visual timing; "
-        "do not add facts that are absent from the teaching_script. The renderer uses deterministic slide, "
+        "in the same teaching order. Each scene narration must be a continuous excerpt from the teaching_script; "
+        "the scene excerpts together must cover the script once, in order, without adding new spoken facts. "
+        "The renderer uses deterministic slide, "
         "diagram, code, table and equation layouts, not a generative video model. For slides, put 2-4 short "
         "points in on_screen_text; for diagram, put node labels in order; for code_demo, provide exact code "
         "as on_screen_text and never invent execution output; for screen_demo, describe reproducible steps "
@@ -397,6 +398,14 @@ async def generate_lesson_package(
             output.video_plan = []
         elif not output.video_plan:
             raise ValueError("A video-based lesson must include a renderable scene plan.")
+        elif output.video_plan:
+            script_words = len(re.findall(r"\\b[\\w'-]+\\b", output.teaching_script))
+            scene_words = sum(
+                len(re.findall(r"\\b[\\w'-]+\\b", scene.narration))
+                for scene in output.video_plan
+            )
+            if script_words == 0 or not (0.75 <= scene_words / script_words <= 1.25):
+                raise ValueError("Video scene narration must closely partition the complete teaching script.")
         for question in output.knowledge_check:
             if question.correct_option >= len(question.options):
                 raise ValueError("Knowledge-check answer index is outside its options.")
