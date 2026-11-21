@@ -75,4 +75,4 @@ Current product sequencing is documented in [the Free Launch → Paid Expansion 
 
 The current AI-assisted course-production architecture, existing video/media capabilities and implementation gates are documented in [AI Course Production and Media Architecture Audit](docs/AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md). Learnora Teams remains a separate internal website; AI course production is restricted to authorised internal staff and is not a creator or customer-organisation feature.
 
-Private video storage, R2 CORS, signed playback and the scheduled rendering worker setup are documented in [R2 Video Bucket Setup](docs/R2_VIDEO_BUCKET_SETUP.md).
+Initial Data Analytics, Excel Fundamentals and Front-end Web Development production briefs are documented in [Initial Pilot Course Production Briefs](docs/INITIAL_PILOT_COURSE_PRODUCTION_BRIEFS.md). Private video storage, R2 CORS, signed playback and the scheduled rendering worker setup are documented in [R2 Video Bucket Setup](docs/R2_VIDEO_BUCKET_SETUP.md).
