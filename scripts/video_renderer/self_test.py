@@ -2,11 +2,54 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
-from worker import load_tts, render_video
+from worker import create_or_update_video_row, load_tts, render_video
+
+
+def verify_video_metadata_retry_is_idempotent() -> None:
+    client = MagicMock()
+    lesson_table = MagicMock()
+    lookup = MagicMock()
+    lookup.select.return_value = lookup
+    lookup.eq.return_value = lookup
+    lookup.maybe_single.return_value = lookup
+    lookup.execute.return_value = SimpleNamespace(data={"id": "existing-video-id"})
+    lesson_table.select.return_value = lookup
+
+    update = MagicMock()
+    update.eq.return_value = update
+    update.execute.return_value = SimpleNamespace(data=[])
+    lesson_table.update.return_value = update
+
+    job_table = MagicMock()
+    job_update = MagicMock()
+    job_update.eq.return_value = job_update
+    job_update.execute.return_value = SimpleNamespace(data=[])
+    job_table.update.return_value = job_update
+    client.table.side_effect = lambda name: lesson_table if name == "lesson_videos" else job_table
+
+    video_id = create_or_update_video_row(
+        client,
+        {
+            "id": "render-job-id",
+            "lesson_id": "lesson-id",
+            "object_key": "courses/course/modules/module/lessons/lesson/package.mp4",
+        },
+        {"title": "Retry-safe video"},
+        90,
+        1024,
+        "A verified teaching script.",
+    )
+
+    if video_id != "existing-video-id" or lesson_table.insert.called:
+        raise RuntimeError("A retry created duplicate lesson-video metadata.")
+    job_table.update.assert_called_once_with({"lesson_video_id": "existing-video-id"})
 
 
 def main() -> int:
+    verify_video_metadata_retry_is_idempotent()
     script = (
         "A spreadsheet stores information in rows and columns. "
         "Each cell is identified by a column letter and a row number. "
