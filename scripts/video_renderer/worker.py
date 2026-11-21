@@ -438,7 +438,6 @@ def create_or_update_video_row(
     client: Client,
     job: dict[str, Any],
     lesson: dict[str, Any],
-    bucket: str,
     duration: int,
     file_size: int,
     script: str,
@@ -456,6 +455,18 @@ def create_or_update_video_row(
         "transcript_text": script,
     }
     existing_id = job.get("lesson_video_id")
+    if not existing_id:
+        existing = (
+            client.table("lesson_videos")
+            .select("id")
+            .eq("lesson_id", job["lesson_id"])
+            .eq("provider", "cloudflare")
+            .eq("storage_path", job["object_key"])
+            .maybe_single()
+            .execute()
+        ).data
+        existing_id = existing.get("id") if existing else None
+
     if existing_id:
         client.table("lesson_videos").update(row).eq("id", existing_id).execute()
         video_id = str(existing_id)
@@ -464,9 +475,10 @@ def create_or_update_video_row(
         if not result.data:
             raise RuntimeError("Supabase did not return the inserted lesson-video record.")
         video_id = str(result.data[0]["id"])
-        client.table("learnora_video_render_jobs").update(
-            {"lesson_video_id": video_id}
-        ).eq("id", job["id"]).execute()
+
+    client.table("learnora_video_render_jobs").update(
+        {"lesson_video_id": video_id}
+    ).eq("id", job["id"]).execute()
     return video_id
 
 
@@ -522,7 +534,6 @@ def process_job(client: Client, job: dict[str, Any], tts: Kokoro) -> None:
             client,
             job,
             lesson,
-            os.environ["R2_BUCKET_NAME"],
             duration,
             file_size,
             str(package.get("teaching_script") or ""),
