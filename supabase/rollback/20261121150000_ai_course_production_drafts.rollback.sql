@@ -1,7 +1,10 @@
 -- Rollback for 20261121150000_ai_course_production_drafts.sql.
 -- This migration is additive and must only be rolled back before any generated
 -- course drafts or lesson production packages are relied upon.
+DROP FUNCTION IF EXISTS public.complete_learnora_video_render_job(uuid, uuid, integer, bigint, text);
+DROP FUNCTION IF EXISTS public.claim_next_learnora_video_render_job();
 DROP FUNCTION IF EXISTS public.create_course_from_generation_job(uuid);
+DROP TABLE IF EXISTS public.learnora_video_render_jobs;
 DROP TABLE IF EXISTS public.learnora_lesson_production_packages;
 DROP TABLE IF EXISTS public.learnora_course_generation_jobs;
 DROP FUNCTION IF EXISTS public.touch_course_production_updated_at();
