@@ -92,6 +92,10 @@ export default function TeamCourseStudioPage() {
   const [createDraftBusy, setCreateDraftBusy] = useState(false);
   const [createDraftError, setCreateDraftError] = useState("");
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
+  const [canPublish, setCanPublish] = useState(false);
+  const [publishedCourse, setPublishedCourse] = useState(false);
+  const [publishBusy, setPublishBusy] = useState(false);
+  const [publishError, setPublishError] = useState("");
   const [renderJobs, setRenderJobs] = useState<Array<{id:string;status:string;attempt_count:number;max_attempts:number;error_summary?:string}>>([]);
   const [renderJobsQueued, setRenderJobsQueued] = useState<number | null>(null);
   const [curriculumBusy, setCurriculumBusy] = useState(false);
@@ -108,7 +112,7 @@ export default function TeamCourseStudioPage() {
   useEffect(() => {
     let active = true;
     internalRequest("/course-studio/access")
-      .then(async data => { if (active) setStaff(data.staff); try { const trackData = await internalRequest("/course-studio/tracks"); if (active) setTracks(trackData.tracks || []); } catch {} })
+      .then(async data => { if (active) setStaff(data.staff); try { const trackData = await internalRequest("/course-studio/tracks"); if (active) setTracks(trackData.tracks || []); } catch {} try { await internalRequest("/course-studio/publish-access"); if (active) setCanPublish(true); } catch { if (active) setCanPublish(false); } })
       .catch((error: any) => {
         if (!active) return;
         if (error.status === 401) router.replace("/team-studio/login");
@@ -159,7 +163,8 @@ export default function TeamCourseStudioPage() {
           }
         }
         setPackages(Object.fromEntries(Object.entries(latest).map(([key, value]) => [key, value.package])));
-        setCreatedCourseId(job.status === "created" ? job.created_course_id : null);
+        setCreatedCourseId(["created", "published"].includes(job.status) ? job.created_course_id : null);
+        setPublishedCourse(job.status === "published");
         setRenderJobs(data.render_jobs || []);
         setRenderJobsQueued((data.render_jobs || []).filter((job:any) => job.status === "queued" || job.status === "processing").length);
       })
@@ -180,6 +185,8 @@ export default function TeamCourseStudioPage() {
     setPackageErrors({});
     setJobId(null);
     setCreatedCourseId(null);
+    setPublishedCourse(false);
+    setPublishError("");
     setRenderJobs([]);
     setRenderJobsQueued(null);
     setCreateDraftError("");
@@ -252,6 +259,26 @@ export default function TeamCourseStudioPage() {
     setBatchBusy(false);
   }
 
+  async function publishCourse() {
+    if (!jobId || !createdCourseId || !canPublish || publishedCourse || publishBusy) return;
+    setPublishBusy(true);
+    setPublishError("");
+    try {
+      const result = await internalRequest("/course-studio/jobs/" + encodeURIComponent(jobId) + "/publish", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      setPublishedCourse(result.status === "published");
+      const refreshed = await internalRequest("/course-studio/jobs/" + encodeURIComponent(jobId));
+      setRenderJobs(refreshed.render_jobs || []);
+      setRenderJobsQueued((refreshed.render_jobs || []).filter((job: any) => job.status === "queued" || job.status === "processing").length);
+    } catch (error: any) {
+      setPublishError(error.message || "The course could not be published.");
+    } finally {
+      setPublishBusy(false);
+    }
+  }
+
   async function createDraftCourse() {
     if (!jobId || !curriculum || Object.keys(packages).length !== lessonCount || Object.values(packageBusy).some(Boolean) || createdCourseId) return;
     setCreateDraftBusy(true);
@@ -262,6 +289,8 @@ export default function TeamCourseStudioPage() {
         body: JSON.stringify({}),
       });
       setCreatedCourseId(result.course_id);
+      setPublishedCourse(false);
+      setPublishError("");
       setRenderJobsQueued(result.render_jobs_queued ?? 0);
       const refreshed = await internalRequest("/course-studio/jobs/" + jobId);
       setRenderJobs(refreshed.render_jobs || []);
@@ -302,7 +331,7 @@ export default function TeamCourseStudioPage() {
             </div>
 
             {curriculum && <section className="space-y-4">
-              <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Step 2</p><h2 className="mt-2 text-2xl font-semibold">Curriculum proposal</h2><p className="mt-1 text-sm text-slate-400">{curriculum.modules.length} modules · {lessonCount} lessons · review before accepting</p></div><button disabled={batchBusy || Object.values(packageBusy).some(Boolean)} onClick={() => { setCurriculum(null); setPackages({}); setJobId(null); setCreatedCourseId(null); setRenderJobs([]); setRenderJobsQueued(null); setCreateDraftError(""); router.replace("/team-studio"); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400">Discard proposal</button></div>
+              <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-slate-500">Step 2</p><h2 className="mt-2 text-2xl font-semibold">Curriculum proposal</h2><p className="mt-1 text-sm text-slate-400">{curriculum.modules.length} modules · {lessonCount} lessons · review before accepting</p></div><button disabled={batchBusy || Object.values(packageBusy).some(Boolean)} onClick={() => { setCurriculum(null); setPackages({}); setJobId(null); setCreatedCourseId(null); setPublishedCourse(false); setPublishError(""); setRenderJobs([]); setRenderJobsQueued(null); setCreateDraftError(""); router.replace("/team-studio"); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400">Discard proposal</button></div>
               <div className="rounded-2xl border border-white/10 bg-white/[.025] p-5"><h3 className="text-xl font-semibold">{curriculum.course_title}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{curriculum.short_description}</p><p className="mt-3 text-sm leading-6 text-slate-300">{curriculum.course_description}</p><div className="mt-4 grid gap-4 sm:grid-cols-2"><div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Learning outcomes</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">{curriculum.learning_outcomes.map((x,i)=><li key={i}>{x}</li>)}</ul></div><div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Prerequisites</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">{(curriculum.prerequisites||[]).map((x,i)=><li key={i}>{x}</li>)}</ul></div></div></div>
               {curriculum.modules.map((module, mi) => <article key={mi} className="rounded-2xl border border-white/10 bg-white/[.025] p-5"><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#d7ad35]">Module {mi+1}</p><h3 className="mt-2 text-lg font-semibold">{module.title}</h3><p className="mt-1 text-sm text-slate-400">{module.description}</p><div className="mt-4 space-y-3">{module.lessons.map((lesson, li) => { const key = mi + ":" + li; const pkg = packages[key]; return <div key={key} className="rounded-xl border border-white/[.08] bg-black/20 p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1"><h4 className="font-medium">{lesson.title}</h4><p className="mt-1 text-xs leading-5 text-slate-400">{lesson.description}</p><p className="mt-2 text-[11px] text-slate-500">{lesson.lesson_format.replaceAll("_"," ")} · {lesson.estimated_minutes} min · {lesson.learning_objective}</p></div><button onClick={() => void generateLessonPackage(mi,li)} disabled={Boolean(packageBusy[key]) || Boolean(createdCourseId) || batchBusy} className="shrink-0 rounded-lg border border-[#d7ad35]/30 px-3 py-2 text-xs font-semibold text-[#e7c76d] disabled:opacity-50">{packageBusy[key] ? "Generating…" : pkg ? "Regenerate package" : "Generate lesson package"}</button></div>{packageErrors[key] && <p role="alert" className="mt-3 text-xs text-red-200">{packageErrors[key]}</p>}{pkg && <div className="mt-4 border-t border-white/10 pt-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold uppercase tracking-wider text-[#d7ad35]">Teaching package</p><span className="text-[11px] text-slate-500">{formatDuration(pkg.estimated_duration_seconds)}</span></div><h5 className="mt-3 text-sm font-semibold">Teaching script</h5><p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-300">{pkg.teaching_script}</p><h5 className="mt-4 text-sm font-semibold">Short learner note</h5><p className="mt-2 whitespace-pre-wrap rounded-lg bg-white/[.035] p-3 text-sm leading-6 text-slate-300">{pkg.concise_note}</p>{pkg.practice_activity && <><h5 className="mt-4 text-sm font-semibold">Practical activity</h5><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">{pkg.practice_activity}</p></>}{pkg.video_plan?.length>0 && <><h5 className="mt-4 text-sm font-semibold">Video storyboard</h5><div className="mt-2 grid gap-2">{pkg.video_plan.map((scene,i)=><div key={i} className="rounded-lg border border-white/[.07] p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">Scene {i+1} · {scene.visual_type.replaceAll("_"," ")}</p><p className="mt-2 text-xs leading-5 text-slate-300">{scene.visual_direction}</p><p className="mt-1 text-xs leading-5 text-slate-500">Narration: {scene.narration}</p>{scene.on_screen_text?.length>0 && <p className="mt-1 text-xs text-slate-400">On screen: {scene.on_screen_text.join(" · ")}</p>}</div>)}</div></>}{pkg.knowledge_check?.length>0 && <><h5 className="mt-4 text-sm font-semibold">Knowledge check draft</h5><ol className="mt-2 list-decimal space-y-3 pl-5 text-sm text-slate-300">{pkg.knowledge_check.map((q,i)=><li key={i}><p>{q.question}</p><ul className="mt-1 list-disc pl-5 text-xs text-slate-400">{q.options.map((option,j)=><li key={j}>{option}{j===q.correct_option?" — answer":""}</li>)}</ul><p className="mt-1 text-xs text-slate-500">{q.explanation}</p></li>)}</ol></>}{pkg.fact_check_notes?.length>0 && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[.04] p-3"><p className="text-xs font-semibold text-amber-200">Needs fact-checking</p><ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-100/80">{pkg.fact_check_notes.map((x,i)=><li key={i}>{x}</li>)}</ul></div>}</div>}</div>})}</div></article>)}
               {curriculum.quality_review?.length>0 && <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[.04] p-5"><h3 className="font-semibold text-amber-200">Curriculum review notes</h3><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-100/80">{curriculum.quality_review.map((x,i)=><li key={i}>{x}</li>)}</ul></div>}
@@ -312,7 +341,7 @@ export default function TeamCourseStudioPage() {
                   <button onClick={() => void createDraftCourse()} disabled={!jobId || Object.keys(packages).length !== lessonCount || lessonCount === 0 || Object.values(packageBusy).some(Boolean) || batchBusy || createDraftBusy || Boolean(createdCourseId)} className="rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{createDraftBusy ? "Creating draft…" : "I have reviewed the packages — create draft course"}</button>
                 </div>
                 {createDraftError && <p role="alert" className="mt-3 rounded-lg border border-red-400/20 bg-red-400/5 p-3 text-sm text-red-200">{createDraftError}</p>}
-                {createdCourseId && <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[.04] p-3"><p className="text-sm font-semibold text-emerald-200">Draft course created</p><p className="mt-1 text-xs text-slate-400">Course ID: {createdCourseId}. Target track: {targetTrackId ? (tracks.find(track => track.id === targetTrackId)?.name || "Selected Learnora ME track") : "Standalone course"}. It remains unpublished and is not visible in the learner catalogue.</p><p className="mt-2 text-xs text-slate-300">{renderJobsQueued ?? renderJobs.length} video render job(s) still queued or processing. Video production runs in the background.</p><div className="mt-3 flex flex-wrap items-center gap-2"><button type="button" onClick={async()=>{try{const latest=await internalRequest("/course-studio/jobs/"+jobId);setRenderJobs(latest.render_jobs||[]);setRenderJobsQueued((latest.render_jobs||[]).filter((job:any) => job.status === "queued" || job.status === "processing").length);}catch(error:any){setCreateDraftError(error.message||"Could not refresh video status.");}}} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300">Refresh video status</button>{renderJobs.map(job=><span key={job.id} className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-slate-400">{job.status}</span>)}</div>{renderJobs.some(job=>job.status==="failed")&&<p className="mt-2 text-xs text-amber-200">One or more videos need attention. The course remains unpublished.</p>}</div>}
+                {createdCourseId && <div className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/[.04] p-3"><p className="text-sm font-semibold text-emerald-200">{publishedCourse ? "Course published" : "Draft course created"}</p><p className="mt-1 text-xs text-slate-400">Course ID: {createdCourseId}. Track: {targetTrackId ? (tracks.find(track => track.id === targetTrackId)?.name || "Selected Learnora ME track") : "Standalone course"}.</p><p className="mt-2 text-xs text-slate-300">{publishedCourse ? "The course is now published and available according to its course and track access settings." : "The course remains unpublished until an authorised staff member completes the final review and publication step."}</p><p className="mt-2 text-xs text-slate-300">{renderJobsQueued ?? renderJobs.filter(job => job.status === "queued" || job.status === "processing").length} video render job(s) still queued or processing.</p><div className="mt-3 flex flex-wrap items-center gap-2"><button type="button" onClick={async()=>{try{const latest=await internalRequest("/course-studio/jobs/"+jobId);setRenderJobs(latest.render_jobs||[]);setRenderJobsQueued((latest.render_jobs||[]).filter((job:any) => job.status === "queued" || job.status === "processing").length);}catch(error:any){setCreateDraftError(error.message||"Could not refresh video status.");}}} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300">Refresh video status</button>{renderJobs.map(job=><span key={job.id} className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-slate-400">{job.status}</span>)}</div>{renderJobs.some(job=>job.status==="failed")&&<p className="mt-2 text-xs text-amber-200">One or more videos need attention. Retry the failed video before publication.</p>}{canPublish && !publishedCourse && <div className="mt-4 border-t border-white/10 pt-4"><button type="button" onClick={() => void publishCourse()} disabled={publishBusy || renderJobs.some(job => job.status !== "completed")} className="rounded-xl bg-[#d7ad35] px-4 py-3 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40">{publishBusy ? "Publishing course…" : "Publish course"}</button>{publishError && <p role="alert" className="mt-3 text-xs text-red-200">{publishError}</p>}</div>}{publishedCourse && <p className="mt-3 text-xs font-semibold text-emerald-200">Published successfully.</p>}</div>}
               </div>
             </section>}
           </div>
