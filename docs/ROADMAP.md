@@ -758,3 +758,8 @@ No deployment, CI run, SQL migration or live database mutation was performed for
 - [x] Filter archived tracks from Course Studio selection and validate track availability before saving the course draft.
 - [x] Recheck all linked track enrolment locks during final publication so a course cannot silently change a learner's locked track sequence.
 - [x] Require 2–4 knowledge-check questions in every generated lesson package and preserve the existing assessment unlock rules.
+
+
+## Deferred: Learnora Teams website
+
+- [ ] When the separate Teams website rebuild resumes, connect its media manager to the same private R2 upload and preview flow for new Course Studio courses; preserve the legacy Supabase media path for existing courses.
