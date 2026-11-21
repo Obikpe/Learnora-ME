@@ -91,8 +91,7 @@ export default function TeamCourseStudioPage() {
   const [packages, setPackages] = useState<Record<string, LessonPackage>>({});
   const [packageBusy, setPackageBusy] = useState<Record<string, boolean>>({});
   const [packageErrors, setPackageErrors] = useState<Record<string, string>>({});
-  const [expanded, setExpanded] = useState<string>("");
-
+  
   const outline = useMemo(() => parseOutline(outlineText), [outlineText]);
   const lessonCount = useMemo(() => curriculum?.modules.reduce((sum, module) => sum + module.lessons.length, 0) || 0, [curriculum]);
 
@@ -153,7 +152,6 @@ export default function TeamCourseStudioPage() {
     const currentIndex = allLessons.indexOf(lesson.title);
     setPackageBusy(old => ({ ...old, [key]: true }));
     setPackageErrors(old => ({ ...old, [key]: "" }));
-    setExpanded(key);
     try {
       const result = await internalRequest("/course-studio/lesson-package", {
         method: "POST",
@@ -173,7 +171,7 @@ export default function TeamCourseStudioPage() {
       });
       setPackages(old => ({ ...old, [key]: result.lesson_package }));
     } catch (error: any) {
-      setPackageErrors(old => ({ ...old, [key]: error.message || "Lesson package generation failed.") }));
+      setPackageErrors(old => ({ ...old, [key]: error.message || "Lesson package generation failed." }));
     } finally {
       setPackageBusy(old => ({ ...old, [key]: false }));
     }
