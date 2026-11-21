@@ -1,11 +1,11 @@
-# Learnora — Pheonix Analytics
+# Learnora — Multi-Application Learning Platform
 
-Learnora is maintained as a multi-application repository. The product and engineering documents under `docs/` define the intended product boundaries, data invariants, security requirements, and acceptance gates. The additive free-launch plan defines the current implementation sequence while preserving the original paid-platform plan.
+Learnora is maintained as a multi-application repository. The product and engineering documents under `docs/` define the intended product boundaries, data invariants, security requirements, and acceptance gates. Start with the [documentation guide](docs/README.md) and [authoritative product decision register](docs/PRODUCT_DECISIONS.md). The free-launch plan preserves the commercial/free-access rules but its 31 October execution sequence has been superseded by the current product sequence in the decision register.
 
 ## Active applications
 
-- **Learnora ME** — learner and creator-facing application: `frontend-v02/`
-- **Learnora Teams** — organisation and internal operations interface: `frontend-team/`
+- **Learnora ME** — customer-facing learner website: `frontend-v02/`
+- **Learnora Teams** — separate internal workforce website and intended home for authorised course/content production, AI orchestration, review, acceptance and publishing: `frontend-team/`
 - **FastAPI backend** — API and access-control boundary: `backend-python/`
 - **Supabase SQL** — migration history, schema snapshots, and operational SQL: `supabase/` (Learnora uses the already-active Pheonix Supabase project; do not create or switch to a separate Learnora project)
 - **Engineering documents** — product specification, roadmap, decisions, and migration reconciliation: `docs/`
@@ -55,10 +55,13 @@ Requirements: Node.js/npm and Python 3.11 or newer.
 
 Do not infer production readiness from this README or a successful frontend build. Browser access to protected data must be mediated by the backend and database permissions. Migration files must be reconciled and tested against disposable databases before any production migration is approved. Changes to this repository do not themselves authorise production database changes or deployments.
 
-Current product sequencing is documented in [the Free Launch → Paid Expansion Plan](docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md). It is an additive plan and does not replace the original paid-platform, organisation, instructor, security, or migration work. Known release gates are tracked in [the engineering roadmap](docs/ROADMAP.md) and [active schema/migration reconciliation](docs/active-pheonix-migration-reconciliation.md). The documented managed-role default-ACL issue and migration provenance gaps must remain open until verified with appropriate evidence.
+Current product sequencing is governed by [the Product Decision Register](docs/PRODUCT_DECISIONS.md). The [Free Launch → Paid Expansion Plan](docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md) retains the free-access and paid-system preservation rules, but its older sequencing is historical. Known release gates are tracked in [the engineering roadmap](docs/ROADMAP.md) and [active schema/migration reconciliation](docs/active-pheonix-migration-reconciliation.md). The documented managed-role default-ACL issue and migration provenance gaps must remain open until verified with appropriate evidence.
 
 ## Engineering documents
 
+- [Documentation Guide](docs/README.md)
+- [Product Decision Register](docs/PRODUCT_DECISIONS.md)
+- [Account, Organisation and Cohort Architecture](docs/ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md)
 - [Free Launch → Paid Expansion Plan](docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md)
 - [Learner Journey Phases 1–5](docs/LEARNER_JOURNEY_PHASES_1_5.md)
 - [Product engineering specification](docs/PRODUCT_ENGINEERING_SPEC.md)
@@ -73,6 +76,6 @@ Current product sequencing is documented in [the Free Launch → Paid Expansion 
 
 ## AI course production
 
-The current AI-assisted course-production architecture, existing video/media capabilities and implementation gates are documented in [AI Course Production and Media Architecture Audit](docs/AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md). Learnora Teams remains a separate internal website; AI course production is restricted to authorised internal staff and is not a creator or customer-organisation feature.
+The AI course-production target architecture places authorised internal production, review, acceptance and publishing in Learnora Teams. Normal Learnora ME delivers accepted/published learning content to learners. A Course Studio prototype currently present in Learnora ME is transitional implementation history, not the target product boundary. See [AI Course Production and Media Architecture Audit](docs/AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md) and PD-003 in the decision register.
 
 Initial Data Analytics, Excel Fundamentals and Front-end Web Development production briefs are documented in [Initial Pilot Course Production Briefs](docs/INITIAL_PILOT_COURSE_PRODUCTION_BRIEFS.md). Private video storage, R2 CORS, signed playback and the scheduled rendering worker setup are documented in [R2 Video Bucket Setup](docs/R2_VIDEO_BUCKET_SETUP.md).
