@@ -102,9 +102,6 @@ jobs:
           API_TEST_DATABASE_URL: postgresql://postgres:cohort-ci-only@localhost:5432/cohort_api_staging
         run: |
           psql "$API_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/baselines/active-pheonix-public-schema.sql
-          # Replay applied database migrations needed by the current API staging fixture.
-          # Storage-bucket DDL is excluded because this Postgres-only fixture has no Supabase Storage schema.
-          # The pending Course Studio migration is rehearsed separately by production checks.
           for migration in \
             supabase/migrations/20261021220303_revoke_browser_table_grants.sql \
             supabase/migrations/20261021220321_process_creator_payout_atomically.sql \
