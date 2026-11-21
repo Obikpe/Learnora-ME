@@ -315,7 +315,6 @@ export default function TeamCourseStudioPage() {
     try {
       const result = await internalRequest("/course-studio/jobs/" + encodeURIComponent(jobId) + "/publish", {
         method: "POST",
-        body: JSON.stringify({}),
       });
       setPublishedCourse(result.status === "published");
     } catch (error: any) {
