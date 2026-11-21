@@ -4,11 +4,15 @@ Progress is stored in Supabase, never in the ephemeral Vercel filesystem.
 All writes are scoped to the authenticated learner and an actual enrolment.
 """
 
+import os
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Any, Optional
 from uuid import UUID
 
+import boto3
+from botocore.config import Config
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -93,25 +97,63 @@ def _lesson_context(lesson_id: str, user_id: str):
     return lesson, course_id
 
 
-def _sign_lesson_assets(rows: list[dict], require_supabase_provider: bool = False):
-    for row in rows:
-        row["signed_url"] = None
-        if not row.get("storage_path"):
-            continue
-        if require_supabase_provider and row.get("provider") != "supabase":
-            continue
-        try:
-            signed = supabase.storage.from_("learnora-course-media").create_signed_url(
-                row["storage_path"],
-                3600,
-            )
-            data = getattr(signed, "data", None) or signed
-            if isinstance(data, dict):
-                row["signed_url"] = data.get("signedUrl") or data.get("signed_url")
-        except Exception:
-            row["signed_url"] = None
-    return rows
+@lru_cache(maxsize=1)
+def _r2_s3_client():
+    account_id = os.getenv("R2_ACCOUNT_ID")
+    access_key = os.getenv("R2_ACCESS_KEY_ID")
+    secret_key = os.getenv("R2_SECRET_ACCESS_KEY")
+    if not all((account_id, access_key, secret_key)):
+        return None
+    return boto3.client(
+        "s3",
+        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        region_name="auto",
+        config=Config(signature_version="s3v4"),
+    )
 
+
+def _sign_lesson_assets(rows: list[dict], require_private_provider: bool = False) -> list[dict]:
+    """Attach short-lived playback URLs without persisting bearer URLs in Supabase."""
+    signed = []
+    r2_bucket = os.getenv("R2_BUCKET_NAME")
+    for row in rows or []:
+        item = dict(row)
+        provider = (item.get("provider") or "supabase").lower()
+        if require_private_provider and provider not in {"supabase", "cloudflare"}:
+            continue
+        storage_path = item.get("storage_path")
+        if not storage_path:
+            signed.append(item)
+            continue
+
+        try:
+            if provider == "cloudflare":
+                client = _r2_s3_client()
+                if not client or not r2_bucket:
+                    item["signed_url"] = None
+                else:
+                    item["signed_url"] = client.generate_presigned_url(
+                        "get_object",
+                        Params={"Bucket": r2_bucket, "Key": storage_path},
+                        ExpiresIn=3600,
+                    )
+            elif provider == "supabase":
+                bucket = item.get("storage_bucket") or "course-resources"
+                result = supabase.storage.from_(bucket).create_signed_url(storage_path, 3600)
+                data = result.get("data") if isinstance(result, dict) else getattr(result, "data", None)
+                item["signed_url"] = (
+                    data.get("signedUrl") or data.get("signedURL")
+                    if isinstance(data, dict)
+                    else None
+                )
+            else:
+                item["signed_url"] = None
+        except Exception:
+            item["signed_url"] = None
+        signed.append(item)
+    return signed
 
 def _course_for_lesson(lesson_id: str):
     result = (
@@ -937,6 +979,7 @@ def get_lesson_workspace(
         supabase.table("lesson_videos")
         .select("*")
         .eq("lesson_id", lesson_id)
+        .eq("status", "ready")
         .order("created_at", desc=True)
         .execute()
     ).data or []
@@ -947,7 +990,7 @@ def get_lesson_workspace(
         .order("created_at", desc=True)
         .execute()
     ).data or []
-    _sign_lesson_assets(videos, require_supabase_provider=True)
+    _sign_lesson_assets(videos, require_private_provider=True)
     _sign_lesson_assets(resources)
     return {
         "success": True,
