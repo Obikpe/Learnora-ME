@@ -134,8 +134,8 @@ export default function TeamCourseStudioPage() {
         setOutcomes((requestData.learning_outcomes || []).join("\n"));
         setTargetTrackId(job.target_track_id || "");
         setOutlineText((requestData.outline || []).map((module: any, index: number) =>
-          "Module " + (index + 1) + ": " + module.title + "\\n" + (module.lessons || []).map((lesson: string) => "- " + lesson).join("\n")
-        ).join("\\n\\n"));
+          "Module " + (index + 1) + ": " + module.title + "\n" + (module.lessons || []).map((lesson: string) => "- " + lesson).join("\n")
+        ).join("\n\n"));
         const latest: Record<string, {version:number; package:LessonPackage}> = {};
         for (const row of data.packages || []) {
           const key = row.module_order + ":" + row.lesson_order;
