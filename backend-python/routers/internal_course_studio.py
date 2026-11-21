@@ -4,6 +4,7 @@ The route is deliberately staff-only. Generated output is a draft proposal;
 it is not written to the public catalogue or published by these endpoints.
 """
 import json
+import os
 import re
 from datetime import datetime, timezone
 from typing import Literal, Optional
@@ -759,6 +760,15 @@ def publish_generated_course(
             status_code=409,
             detail="The course is not ready to publish. Finish or retry every lesson video first.",
         )
+
+    if render_jobs:
+        from routers.progress import _r2_s3_client
+
+        if not os.getenv("R2_BUCKET_NAME") or _r2_s3_client() is None:
+            raise HTTPException(
+                status_code=409,
+                detail="Private lesson-video playback is not configured. Complete the backend video-storage setup before publishing.",
+            )
 
     try:
         result = supabase.rpc(
