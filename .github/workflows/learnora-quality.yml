@@ -76,6 +76,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes postgresql-client
           psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/baselines/active-pheonix-public-schema.sql
+          # The plain Postgres rehearsal does not include Supabase Storage's managed schema.
+          # Provide the minimal bucket catalog required by the private-resource-bucket migration.
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE SCHEMA IF NOT EXISTS storage;
+          CREATE TABLE IF NOT EXISTS storage.buckets (
+            id text PRIMARY KEY,
+            name text NOT NULL,
+            public boolean NOT NULL DEFAULT false,
+            file_size_limit bigint,
+            allowed_mime_types text[]
+          );
+          SQL
           for migration in \
             supabase/migrations/20261103041002_add_lesson_video_transcript_text.sql \
             supabase/migrations/20261109160440_learner_account_deletion_lifecycle.sql \
