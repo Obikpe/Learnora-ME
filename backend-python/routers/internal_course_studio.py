@@ -137,7 +137,7 @@ async def _generate_json(system_prompt: str, user_payload: dict, *, max_tokens: 
         "model": result.get("model"),
         "latency_ms": result.get("latency_ms"),
         "usage": result.get("usage") or {},
-        "fallback_used": bool(result.get("fallback_used")),
+        "fallback_used": result.get("attempt_type") == "fallback",
     }
 
 
@@ -204,6 +204,7 @@ async def generate_curriculum(
             "provider": provider.get("provider"),
             "model": provider.get("model"),
             "latency_ms": provider.get("latency_ms"),
+            "usage": provider.get("usage") or {},
         },
     )
     return {"success": True, "curriculum": output.model_dump(), "generation": provider, "status": "draft_proposal"}
