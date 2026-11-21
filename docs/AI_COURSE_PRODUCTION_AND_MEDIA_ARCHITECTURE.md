@@ -270,3 +270,6 @@ This corrects the earlier tentative statement that the track might be locked: it
 
 
 The Learnora ME public footer now includes a **Staff access** entry pointing to `/team-studio/login`. This makes the internal workspace discoverable within the Learnora ME website; the page and every generation endpoint still require the separate internal staff session and backend permission.
+
+
+A further read-only dependency check found **2 issued certificates** for the test course, alongside its 2 completed self-enrolments and 2 lesson-progress records. It has no course purchases, quizzes, assignments or projects. This makes hard deletion especially inappropriate: both certificates and the completion history must remain verifiable. The planned retirement operation must preserve certificate rows and their course reference; archive the old course only after confirming the certificate verification/download path still works for archived courses.
