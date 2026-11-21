@@ -57,6 +57,9 @@ BEGIN
        OR has_function_privilege('anon', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
        OR has_function_privilege('authenticated', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
        OR NOT has_function_privilege('service_role', 'public.claim_next_learnora_video_render_job()', 'EXECUTE')
+       OR has_function_privilege('anon', 'public.requeue_stale_learnora_video_render_jobs(integer)', 'EXECUTE')
+       OR has_function_privilege('authenticated', 'public.requeue_stale_learnora_video_render_jobs(integer)', 'EXECUTE')
+       OR NOT has_function_privilege('service_role', 'public.requeue_stale_learnora_video_render_jobs(integer)', 'EXECUTE')
        OR has_function_privilege('anon', 'public.complete_learnora_video_render_job(uuid,uuid,integer,bigint,text)', 'EXECUTE')
        OR has_function_privilege('authenticated', 'public.complete_learnora_video_render_job(uuid,uuid,integer,bigint,text)', 'EXECUTE')
        OR NOT has_function_privilege('service_role', 'public.complete_learnora_video_render_job(uuid,uuid,integer,bigint,text)', 'EXECUTE') THEN
