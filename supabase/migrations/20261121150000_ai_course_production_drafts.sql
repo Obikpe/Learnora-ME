@@ -639,6 +639,19 @@ BEGIN
         RAISE EXCEPTION 'Every knowledge-check question must have valid options and a correct answer';
     END IF;
 
+    IF EXISTS (
+        SELECT 1
+          FROM public.learnora_learning_path_courses course_link
+          JOIN public.learnora_learning_path_courses track_link
+            ON track_link.path_id = course_link.path_id
+          JOIN public.learnora_enrolments e ON e.course_id = track_link.course_id
+         WHERE course_link.course_id = v_course_id
+           AND e.source_type = 'track_enrolment:' || course_link.path_id::text
+           AND e.status IN ('active', 'completed')
+    ) THEN
+        RAISE EXCEPTION 'A linked track curriculum has been locked by learner enrolments; create a successor track instead';
+    END IF;
+
     IF v_job.target_track_id IS NOT NULL THEN
         IF EXISTS (
             SELECT 1
