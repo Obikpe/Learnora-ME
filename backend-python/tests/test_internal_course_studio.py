@@ -12,6 +12,8 @@ from routers.internal_course_studio import (
     CurriculumOutput,
     LessonPackageOutput,
     LessonPackageRequest,
+    HumanVideoUploadRequest,
+    HumanVideoFinalizeRequest,
     generate_curriculum,
     _extract_json,
 )
@@ -27,6 +29,36 @@ class CourseStudioContractTests(unittest.TestCase):
         self.assertIn("short_description", source)
         self.assertIn("course_description", source)
         self.assertIn("quality_review", source)
+
+    def test_human_video_uploads_are_limited_to_five_minutes(self):
+        upload = HumanVideoUploadRequest(
+            filename="lesson.mp4",
+            file_size_bytes=1024,
+            duration_seconds=300,
+            title="Lesson video",
+        )
+        finalize = HumanVideoFinalizeRequest(
+            object_key="courses/course/modules/module/lessons/lesson/video.mp4",
+            file_size_bytes=1024,
+            duration_seconds=300,
+            title="Lesson video",
+        )
+        self.assertEqual(upload.duration_seconds, 300)
+        self.assertEqual(finalize.duration_seconds, 300)
+        with self.assertRaises(ValidationError):
+            HumanVideoUploadRequest(
+                filename="long.mp4",
+                file_size_bytes=1024,
+                duration_seconds=301,
+                title="Long lesson video",
+            )
+        with self.assertRaises(ValidationError):
+            HumanVideoFinalizeRequest(
+                object_key="courses/course/modules/module/lessons/lesson/long.mp4",
+                file_size_bytes=1024,
+                duration_seconds=301,
+                title="Long lesson video",
+            )
 
     def test_lesson_package_video_source_defaults_to_ai(self):
         request = LessonPackageRequest(
