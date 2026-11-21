@@ -161,6 +161,45 @@ class InternalContentUploadTests(unittest.TestCase):
             job_id = internal_content._course_studio_job_for_lesson("10000000-0000-4000-8000-000000000001")
         self.assertEqual(job_id, "40000000-0000-4000-8000-000000000001")
 
+    def test_course_studio_job_resolver_rejects_non_ai_courses(self):
+        class CourseQuery:
+            def select(self, *_args, **_kwargs): return self
+            def eq(self, *_args, **_kwargs): return self
+            def maybe_single(self): return self
+            def execute(self):
+                return SimpleNamespace(data={"id": "course-1", "settings": {"ai_generated": False}})
+        class CourseDatabase:
+            def table(self, _name): return CourseQuery()
+
+        with patch.object(internal_content, "_module_for_lesson", return_value={"id": "lesson-1", "module_id": "module-1"}), patch.object(
+            internal_content, "_course_for_module", return_value={"id": "module-1", "course_id": "course-1"}
+        ), patch.object(internal_content, "supabase", CourseDatabase()):
+            with self.assertRaises(HTTPException) as raised:
+                internal_content._course_studio_job_for_lesson("lesson-1")
+        self.assertEqual(raised.exception.status_code, 409)
+
+    def test_course_studio_job_resolver_rejects_non_draft_generation_jobs(self):
+        class ResolverQuery:
+            def __init__(self, table): self.table = table; self.fields = ""
+            def select(self, fields): self.fields = fields; return self
+            def eq(self, *_args, **_kwargs): return self
+            def maybe_single(self): return self
+            def execute(self):
+                if self.table == "learnora_courses":
+                    data = {"id": "course-1", "settings": {"ai_generated": True, "generation_job_id": "job-1"}}
+                else:
+                    data = {"id": "job-1", "created_course_id": "course-1", "status": "published"}
+                return SimpleNamespace(data=data)
+        class ResolverDatabase:
+            def table(self, name): return ResolverQuery(name)
+
+        with patch.object(internal_content, "_module_for_lesson", return_value={"id": "lesson-1", "module_id": "module-1"}), patch.object(
+            internal_content, "_course_for_module", return_value={"id": "module-1", "course_id": "course-1"}
+        ), patch.object(internal_content, "supabase", ResolverDatabase()):
+            with self.assertRaises(HTTPException) as raised:
+                internal_content._course_studio_job_for_lesson("lesson-1")
+        self.assertEqual(raised.exception.status_code, 409)
+
     def test_course_studio_team_upload_finalization_uses_course_studio_verification(self):
         from routers import internal_course_studio
         payload = internal_content.CourseStudioVideoFinalizeRequest(
