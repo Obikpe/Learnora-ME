@@ -155,6 +155,16 @@ BEGIN
         RAISE EXCEPTION 'Course generation job must be explicitly approved before course creation';
     END IF;
 
+    IF v_job.target_track_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1
+          FROM public.learnora_learning_paths lp
+         WHERE lp.id = v_job.target_track_id
+           AND lp.owner_user_id IS NULL
+           AND lp.organisation_id IS NULL
+    ) THEN
+        RAISE EXCEPTION 'Only a global Learnora ME track can be the target of this course draft';
+    END IF;
+
     IF jsonb_typeof(v_job.curriculum_data->'modules') IS DISTINCT FROM 'array'
        OR jsonb_array_length(v_job.curriculum_data->'modules') = 0 THEN
         RAISE EXCEPTION 'Course generation job has no valid module structure';
