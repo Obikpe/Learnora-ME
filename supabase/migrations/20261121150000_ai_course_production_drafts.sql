@@ -346,7 +346,7 @@ BEGIN
                     VALUES (
                         v_quiz_id,
                         v_question->>'question',
-                        'single_choice',
+                        'multiple_choice',
                         v_question->'options',
                         to_jsonb(v_correct_answer),
                         v_question->>'explanation',
