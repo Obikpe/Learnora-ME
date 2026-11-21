@@ -80,13 +80,49 @@ CREATE INDEX IF NOT EXISTS idx_lesson_production_packages_lesson
 CREATE INDEX IF NOT EXISTS idx_lesson_production_packages_status
     ON public.learnora_lesson_production_packages (status, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS public.learnora_video_render_jobs (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    generation_job_id uuid NOT NULL REFERENCES public.learnora_course_generation_jobs(id) ON DELETE CASCADE,
+    production_package_id uuid NOT NULL REFERENCES public.learnora_lesson_production_packages(id) ON DELETE CASCADE,
+    lesson_id uuid NOT NULL REFERENCES public.learnora_lessons(id) ON DELETE CASCADE,
+    lesson_video_id uuid REFERENCES public.lesson_videos(id) ON DELETE SET NULL,
+    object_key text NOT NULL UNIQUE,
+    voice_id text NOT NULL DEFAULT 'bf_emma',
+    status text NOT NULL DEFAULT 'queued'
+        CHECK (status IN ('queued', 'processing', 'completed', 'failed', 'cancelled')),
+    priority integer NOT NULL DEFAULT 0,
+    attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+    max_attempts integer NOT NULL DEFAULT 3 CHECK (max_attempts BETWEEN 1 AND 5),
+    duration_seconds integer CHECK (duration_seconds IS NULL OR duration_seconds BETWEEN 1 AND 300),
+    file_size_bytes bigint CHECK (file_size_bytes IS NULL OR file_size_bytes > 0),
+    checksum_sha256 text,
+    error_summary text,
+    queued_by_staff_id uuid REFERENCES public.learnora_staff_accounts(id) ON DELETE SET NULL,
+    claimed_at timestamptz,
+    started_at timestamptz,
+    completed_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT learnora_video_render_jobs_package_key UNIQUE (production_package_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_learnora_video_render_jobs_queue
+    ON public.learnora_video_render_jobs (status, priority DESC, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_learnora_video_render_jobs_generation_job
+    ON public.learnora_video_render_jobs (generation_job_id);
+CREATE INDEX IF NOT EXISTS idx_learnora_video_render_jobs_lesson
+    ON public.learnora_video_render_jobs (lesson_id);
+
 ALTER TABLE public.learnora_course_generation_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.learnora_lesson_production_packages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.learnora_video_render_jobs ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON TABLE public.learnora_course_generation_jobs FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON TABLE public.learnora_lesson_production_packages FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.learnora_video_render_jobs FROM PUBLIC, anon, authenticated;
 GRANT ALL ON TABLE public.learnora_course_generation_jobs TO service_role;
 GRANT ALL ON TABLE public.learnora_lesson_production_packages TO service_role;
+GRANT ALL ON TABLE public.learnora_video_render_jobs TO service_role;
 
 CREATE OR REPLACE FUNCTION public.touch_course_production_updated_at()
 RETURNS trigger
@@ -112,6 +148,12 @@ DROP TRIGGER IF EXISTS trg_lesson_production_packages_updated_at
     ON public.learnora_lesson_production_packages;
 CREATE TRIGGER trg_lesson_production_packages_updated_at
     BEFORE UPDATE ON public.learnora_lesson_production_packages
+    FOR EACH ROW EXECUTE FUNCTION public.touch_course_production_updated_at();
+
+DROP TRIGGER IF EXISTS trg_video_render_jobs_updated_at
+    ON public.learnora_video_render_jobs;
+CREATE TRIGGER trg_video_render_jobs_updated_at
+    BEFORE UPDATE ON public.learnora_video_render_jobs
     FOR EACH ROW EXECUTE FUNCTION public.touch_course_production_updated_at();
 
 CREATE OR REPLACE FUNCTION public.create_course_from_generation_job(p_job_id uuid)
@@ -355,6 +397,28 @@ BEGIN
                     );
                 END LOOP;
             END IF;
+
+            IF v_package.lesson_format <> 'text_practice'
+               AND jsonb_typeof(v_package.video_plan) = 'array'
+               AND jsonb_array_length(v_package.video_plan) > 0 THEN
+                INSERT INTO public.learnora_video_render_jobs (
+                    generation_job_id, production_package_id, lesson_id,
+                    object_key, voice_id, status, queued_by_staff_id
+                )
+                VALUES (
+                    p_job_id,
+                    v_package.id,
+                    v_lesson_id,
+                    'courses/' || v_course_id::text ||
+                    '/modules/' || v_module_id::text ||
+                    '/lessons/' || v_lesson_id::text ||
+                    '/' || v_package.id::text || '.mp4',
+                    'bf_emma',
+                    'queued',
+                    v_job.approved_by_staff_id
+                )
+                ON CONFLICT (production_package_id) DO NOTHING;
+            END IF;
         END LOOP;
     END LOOP;
 
@@ -369,6 +433,118 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.create_course_from_generation_job(uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_course_from_generation_job(uuid) TO service_role;
+
+
+CREATE OR REPLACE FUNCTION public.claim_next_learnora_video_render_job()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+    v_job public.learnora_video_render_jobs%ROWTYPE;
+BEGIN
+    SELECT *
+      INTO v_job
+      FROM public.learnora_video_render_jobs
+     WHERE status = 'queued'
+       AND attempt_count < max_attempts
+     ORDER BY priority DESC, created_at ASC
+     FOR UPDATE SKIP LOCKED
+     LIMIT 1;
+
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+
+    UPDATE public.learnora_video_render_jobs
+       SET status = 'processing',
+           attempt_count = attempt_count + 1,
+           claimed_at = now(),
+           started_at = COALESCE(started_at, now()),
+           error_summary = NULL
+     WHERE id = v_job.id
+     RETURNING * INTO v_job;
+
+    UPDATE public.learnora_lesson_production_packages
+       SET status = 'rendering'
+     WHERE id = v_job.production_package_id
+       AND status IN ('approved', 'failed', 'rendering');
+
+    RETURN to_jsonb(v_job);
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.claim_next_learnora_video_render_job() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_next_learnora_video_render_job() TO service_role;
+
+
+CREATE OR REPLACE FUNCTION public.complete_learnora_video_render_job(
+    p_job_id uuid,
+    p_lesson_video_id uuid,
+    p_duration_seconds integer,
+    p_file_size_bytes bigint,
+    p_checksum_sha256 text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+    v_job public.learnora_video_render_jobs%ROWTYPE;
+BEGIN
+    SELECT *
+      INTO v_job
+      FROM public.learnora_video_render_jobs
+     WHERE id = p_job_id
+     FOR UPDATE;
+
+    IF NOT FOUND OR v_job.status <> 'processing' THEN
+        RAISE EXCEPTION 'Video render job is not currently processing';
+    END IF;
+
+    IF p_duration_seconds IS NULL OR p_duration_seconds < 1 OR p_duration_seconds > 300
+       OR p_file_size_bytes IS NULL OR p_file_size_bytes <= 0
+       OR p_checksum_sha256 IS NULL OR length(p_checksum_sha256) <> 64 THEN
+        RAISE EXCEPTION 'Rendered video metadata is invalid';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+          FROM public.lesson_videos lv
+         WHERE lv.id = p_lesson_video_id
+           AND lv.lesson_id = v_job.lesson_id
+           AND lv.provider = 'cloudflare'
+           AND lv.storage_path = v_job.object_key
+           AND lv.status = 'processing'
+    ) THEN
+        RAISE EXCEPTION 'Uploaded video row does not match the render job';
+    END IF;
+
+    UPDATE public.lesson_videos
+       SET status = 'ready'
+     WHERE id = p_lesson_video_id;
+
+    UPDATE public.learnora_video_render_jobs
+       SET status = 'completed',
+           lesson_video_id = p_lesson_video_id,
+           duration_seconds = p_duration_seconds,
+           file_size_bytes = p_file_size_bytes,
+           checksum_sha256 = p_checksum_sha256,
+           completed_at = now(),
+           error_summary = NULL
+     WHERE id = p_job_id;
+
+    UPDATE public.learnora_lesson_production_packages
+       SET status = 'ready'
+     WHERE id = v_job.production_package_id
+       AND status = 'rendering';
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.complete_learnora_video_render_job(uuid, uuid, integer, bigint, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.complete_learnora_video_render_job(uuid, uuid, integer, bigint, text) TO service_role;
 
 INSERT INTO public.learnora_permissions (permission_key, name, description, category)
 VALUES (
@@ -394,3 +570,5 @@ COMMENT ON TABLE public.learnora_course_generation_jobs IS
     'Private internal Learnora ME AI course-generation jobs and curriculum drafts; never learner-visible.';
 COMMENT ON TABLE public.learnora_lesson_production_packages IS
     'Private teaching scripts, concise notes, activities and video storyboards generated for a course draft.';
+COMMENT ON TABLE public.learnora_video_render_jobs IS
+    'Private asynchronous rendering queue for approved Learnora ME lesson videos; workers claim jobs through a service-role-only RPC.';
