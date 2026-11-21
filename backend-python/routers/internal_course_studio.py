@@ -277,7 +277,9 @@ def get_course_video_previews(
             supabase.table("lesson_videos")
             .select("id,lesson_id,title,duration_seconds,status,provider,storage_path,external_video_id")
             .in_("lesson_id", lesson_ids)
+            .in_("provider", ["supabase", "cloudflare"])
             .eq("status", "ready")
+            .eq("is_private", True)
             .execute()
             .data or []
         )
