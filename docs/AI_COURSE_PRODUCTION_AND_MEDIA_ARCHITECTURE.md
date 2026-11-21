@@ -330,4 +330,4 @@ The exact 56-to-56 filename reconciliation above was completed before the Course
 
 
 - Staff can preview rendered lesson videos in Course Studio after the render jobs complete. The preview endpoint uses the same private-media signer but requires the internal `content.generate` permission; learners still use the normal course-access-checked lesson endpoint.
-- The final publish endpoint checks that the backend can create R2 playback signatures before invoking the atomic publication RPC. This prevents a course from being published with ready media records that the learner website cannot play.
+- The final publish endpoint checks that the backend has R2 read credentials and performs a `HEAD` request for every rendered video object before invoking the atomic publication RPC. This prevents a course from being published with ready media records that the learner website cannot read.
