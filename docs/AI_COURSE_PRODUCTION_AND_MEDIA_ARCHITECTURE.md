@@ -270,3 +270,8 @@ The Learnora ME public footer now includes a **Staff access** entry pointing to 
 
 
 A further read-only dependency check found **2 issued certificates** for the test course, alongside its 2 completed self-enrolments and 2 lesson-progress records. It has no course purchases, quizzes, assignments or projects. This makes hard deletion especially inappropriate: both certificates and the completion history must remain verifiable. The planned retirement operation must preserve certificate rows and their course reference; archive the old course only after confirming the certificate verification/download path still works for archived courses.
+
+
+## 17. Migration gate update — 21 November 2026
+
+The active migration filename mismatch has been resolved in the repository: all 56 live Pheonix migration versions now have exactly matching source filenames in `supabase/migrations/`, with no extra active migration. The previously pending browser-privilege/default-ACL migration is preserved outside the active chain at `supabase/pending_migrations/`. A new production-draft schema migration can now be prepared and CI-rehearsed without inheriting the old timestamp mismatch. This repository reconciliation did not apply any migration to the live database.
