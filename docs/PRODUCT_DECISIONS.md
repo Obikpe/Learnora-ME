@@ -243,7 +243,7 @@ The following items are deliberately unresolved. They are not implementation per
 | UR-005 | Independent tutor model | Define the independent tutor product context and lifecycle separately from cohort tutors and organisation tutors. |
 | UR-006 | Customer authoring | Define what selected corporate organisations may author, whether any AI capability is allowed, and the distinct non-AI authoring/upload/review/publishing rules for tutors and cohort teams. |
 | UR-007 | Transitional Course Studio | Define the eventual transition from the current Learnora ME Course Studio prototype to Learnora Teams, including shared APIs, data ownership, media upload, review and publishing. Do not move code until dependencies and acceptance criteria are documented. |
-| UR-008 | Roadmap alignment | Rewrite older roadmap/phase sequencing so it follows PD-001 while preserving security, migration and release gates that remain prerequisites to safe individual learner delivery. |
+
 | UR-009 | Current implementation versus live state | Revalidate dated code/schema/CI/deployment claims before presenting them as current. Historical audit snapshots must retain their dates and limitations. |
 | UR-010 | Contract-end data lifecycle | Implement the approved outcome safely: retain the organisation record and numeric learner count at contract end; delete the covered learner identities, roster, team membership and associated learner data; deny access without a renewed contract. Specify atomic erasure, backup/log/processor expiry, narrow legal/financial exceptions and non-identifying security audit retention. A later cohort is a new cohort and does not restore deleted data. |
 
