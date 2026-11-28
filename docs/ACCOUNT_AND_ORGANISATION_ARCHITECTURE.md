@@ -61,7 +61,7 @@ The target model has one exclusive account class for a canonicalised email addre
 | Account class | Purpose | Permitted scope |
 |---|---|---|
 | Individual learner | Self-registered Learnora learner | Public Learnora catalogue, personal enrolments and individual learning |
-| Organisation-managed | Learner, organisation owner/admin, or organisation tutor provisioned/invited by one organisation | One organisation; assigned cohorts, tracks, courses and organisation workspaces |
+| Organisation-managed | Learner, organisation owner/admin, or organisation tutor provisioned/invited by an organisation | The organisation context(s), cohorts, tracks, courses and workspaces the account is authorised to access; whether one managed identity may belong to multiple organisations or cohorts remains unresolved |
 | Independent tutor | Tutor using Learnora independently | Independent creator/tutor workspace and own creator resources |
 | Platform administrator / internal staff | Platform operations | Explicit platform/internal permissions only |
 
@@ -143,7 +143,7 @@ The separate 30-day recovery and erasure rule documented for individual learner 
 
 ## 5. Organisation, cohort and tutor model — incomplete domain specification
 
-The following sections contain an earlier organisation-centred model and source audit. They do not fully specify the cohort product. Cohorts have their own teams; those teams can include tutors assigned to tracks created by that cohort, as well as learners and other cohort-specific operations. Cohort and corporate organisation team structures, responsibilities, tutor relationships, dashboards, assignments and permissions must be documented separately. The detailed cohort team model remains unresolved under UR-001. Do not assume that the organisation admin/team workflow below is the cohort workflow.
+The following sections contain an earlier organisation-centred model and source audit. They do not fully specify the cohort product. The approved cohort model now distinguishes tracks from teams: tracks are learning/teaching structures, not teams; cohort team members may be assigned to tracks. The management account oversees all tracks. Tutors are invited to specific tracks and can see only learners and learning data in their assigned tracks, never other tracks. Cohort and corporate organisation team structures, responsibilities, dashboards and workflows remain distinct. The remaining cohort team taxonomy and detailed membership/permission rules are recorded as unresolved under UR-001. Do not assume that the organisation admin/team workflow below is the cohort workflow.
 
 ### 5.1 Organisation roles
 
@@ -577,10 +577,12 @@ Do not infer that the current database schema, legacy cohort login flow or exist
 The cohort-specific operating model is detailed in [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md) and governed by PD-012 in [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md).
 
 - Every learning track in a cohort must have at least one tutor.
-- A tutor may be assigned to more than one track. If the coordinator attempts an additional track assignment for a tutor who already has an assignment, the system must warn the coordinator, identify the existing course/assignment and require explicit confirmation before proceeding.
-- A track may have more than one tutor. If the coordinator attempts to add another tutor to a track that already has a tutor, the system must warn and require explicit confirmation before proceeding.
-- These warnings are confirmation gates, not assignment prohibitions.
-- Tutor access remains scoped to the cohort, assigned track(s), courses and responsibilities.
+- Tracks are separate from teams. Cohort team members may be assigned to tracks; team membership alone does not grant access to all tracks.
+- The management account oversees all tracks in the cohort.
+- Tutors are invited to specific tracks through track-specific invitation links. A tutor may teach multiple tracks, and a track may have multiple tutors/co-tutors.
+- Before sending an additional track invitation, management must see a confirmation warning if the tutor already has an active track assignment, if the selected track already has a tutor, or both. The warning identifies the existing assignment(s) and requires explicit confirmation before the invitation is sent.
+- The warnings are confirmation gates, not prohibitions.
+- Tutors can see only learners and learning information in their explicitly assigned track(s). They cannot see learners or learner data in another track, including through roster, profile, search, progress, submission, assessment, report or export features. Team membership does not widen this access.
 
 A cohort coordinator may revoke a learner's or tutor's access. Revocation of an organisation/cohort-managed learner or tutor means deleting that managed account and its associated learner/tutor data. It is not merely removing a membership or disabling access while retaining the person's account and learning history.
 
