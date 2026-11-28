@@ -49,7 +49,7 @@ Tutor onboarding for cohort teaching follows an invitation-link model similar to
 
 1. The coordinator selects the tutor and the specific track they are being invited to teach.
 2. Management initiates an invitation for that track. The tutor receives an invitation link and completes the required account activation themselves; management does not create the tutor's password or completed login credentials.
-3. The invitation identifies the cohort and the track teaching context. It is an invitation to teach that track, not an invitation to see the entire cohort.
+3. The invitation identifies the cohort and the track teaching context. It is an invitation to teach that track, not an invitation to see the entire cohort. The invitation link expires 48 hours after issue, consistent with the shared organisation invitation rule in PD-011.
 4. If the tutor is already actively assigned to another track, management must see a warning before sending the additional track invitation. The warning identifies the existing track/course assignment and asks management to confirm that it intends to invite the tutor to teach another track.
 5. If the selected track already has an assigned tutor, management must see a warning before sending an invitation to another tutor for that track. The warning asks management to confirm that it intends to add a co-tutor.
 6. If both conditions apply, the confirmation must make both relevant existing assignment facts clear before the invitation is sent.
