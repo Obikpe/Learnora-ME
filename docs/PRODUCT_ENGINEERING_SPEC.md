@@ -1,7 +1,7 @@
 # Learnora Product Engineering Specification
 
 **Status:** Engineering source of truth (living document)  
-**Last reviewed:** 21 November 2026  
+**Last reviewed:** 28 November 2026  
 **Repository:** `Obikpe/Learnora-ME`  
 **Default and requested working branch:** `main`  
 **Products covered:** Learnora ME and Learnora Teams  
@@ -24,8 +24,8 @@ The current Course Studio prototype's placement inside Learnora ME is transition
 
 1. Use actual API records for operational metrics and public claims.
 2. Tenant boundaries are enforced by backend scope checks and database constraints, not merely by hiding UI controls.
-3. A learner's cohort/track assignment is governed by the cohort's own model and remains fixed for that cohort. The repository historically uses cohort-specific login identities; whether that remains the target identity model is unresolved (see PD-005 and UR-003 in the decision register).
-4. A learner's historical user record remains for reference/statistics after cohort closure, while cohort membership and account access are deactivated according to lifecycle rules.
+3. A cohort learner is assigned exactly one fixed track for that cohort; the learner cannot change track during that cohort. The cohort's track, team and tutor operating model remains distinct from corporate organisation workflows.
+4. Email identity is mutually exclusive between normal individual learner accounts and organisation/cohort-managed accounts in both directions. Revoking access to an organisation/cohort-managed learner or tutor account means deleting that managed account and its associated data; the email becomes available for a new account only after deletion. A cohort ending does not itself delete the parent organisation. At organisation contract end, retain the organisation record and the numeric learner count at that time, and delete the covered learner identities, roster, team membership and associated learner data. See PD-012 and `COHORT_OPERATING_MODEL.md`; technical erasure and audit controls remain unresolved.
 5. Cohort teams and corporate organisation teams are distinct domain models. Team/cohort-scoped access must not silently become organisation-wide access.
 6. Loading, empty, validation, error, success, and permission-denied states are first-class UI states.
 7. Avoid paid dependencies when the existing stack is sufficient; do not add a design/component library without a clear need.
@@ -149,11 +149,13 @@ Target lifecycle:
 
 A scoped team/cohort entitlement is not an organisation-wide grant. A learner who loses active membership or assignment must lose the corresponding content access even if a stale enrolment row remains.
 
-### 5.4 Cohort account and login — current implementation; target identity unresolved
+### 5.4 Cohort account and login — current implementation and approved product constraints
 
-**Current repository behaviour:** cohort learner identities are stored separately from `public.users`, with the cohort login implementation in `backend-python/routers/cohort_learners.py`. Relevant tests include `test_cohort_login_security.py`, `test_cohort_learner_workflow.py`, `test_cohort_archive_lifecycle.py`, and `test_cohort_api_lifecycle.py`.
+**Current repository behaviour (historical source observation):** cohort learner identities are stored separately from `public.users`, with the cohort login implementation in `backend-python/routers/cohort_learners.py`. Relevant tests include `test_cohort_login_security.py`, `test_cohort_learner_workflow.py`, `test_cohort_archive_lifecycle.py`, and `test_cohort_api_lifecycle.py`. This describes the repository snapshot, not proof of current live database state.
 
-This describes the historical/current implementation only. It does not settle the target global identity model. The account architecture's proposed identity convergence conflicts with older cohort-specific identity assumptions; PD-005 requires preservation of existing cohort access and data, while UR-003 remains unresolved. Do not convert identities or design an identity migration until the product owner has approved the target model and a preservation plan.
+**Approved product behaviour:** an email address cannot be used simultaneously by a normal individual learner account and an organisation/cohort-managed account; the restriction applies in both directions and includes managed tutors. Revoking an organisation/cohort-managed learner's or tutor's access deletes that managed account and its associated data. After deletion, the email is no longer reserved and may be used for a new account through the ordinary registration/invitation checks; no deleted data is transferred. A cohort learner remains on one fixed track for that cohort.
+
+**Still unresolved:** the canonical identity registry (if any), race-safe global uniqueness mechanism, reconciliation of existing duplicate/legacy identities, and the safe migration/transition design. Preserve existing cohort accounts and historical data until a separately approved transition plan exists. Do not infer that the approved product-level exclusivity rule settles the technical identity architecture or authorises a migration.
 
 Cohorts have their own teams. Cohort teams can include tutors assigned to tracks created by that cohort, alongside learners and other cohort-specific operations. Their exact types, responsibilities, membership rules, dashboard behaviour and permission matrix remain to be specified. Do not substitute the corporate organisation team model for this missing cohort detail.
 
