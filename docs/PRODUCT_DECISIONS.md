@@ -1,7 +1,7 @@
 # Learnora Product Decision Register
 
 **Status:** CURRENT — authoritative record of explicit product-owner decisions  
-**Last reviewed:** 21 November 2026  
+**Last reviewed:** 28 November 2026  
 **Repository:** `Obikpe/Learnora-ME`  
 **Applies to:** Learnora ME, Learnora Teams, cohorts, corporate organisations and independent tutors
 
@@ -257,11 +257,11 @@ The following documents have been checked against the approved decisions in this
 | `docs/PRODUCT_ENGINEERING_SPEC.md` | Updated to remove the obsolete claim that cohort learner records are retained after cohort closure and to distinguish approved email exclusivity/deletion outcomes from unresolved identity architecture. |
 | `docs/ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md` | Updated to replace the account-release implementation sequence with the current product sequence and approved deletion outcomes. Historical source observations and proposals remain labelled as historical. |
 | `docs/COHORT_OPERATING_MODEL.md` | Records approved cohort track/tutor rules, account deletion on revocation, contract-end aggregate retention and the remaining technical/domain questions. |
-| `docs/ROADMAP.md` | Current sequence follows PD-001. Historical launch ordering remains labelled as historical; one legacy account-release instruction is being corrected in this reconciliation. |
+| `docs/ROADMAP.md` | Current sequence follows PD-001. Historical launch ordering and the former account-release wording are labelled as superseded; the current product outcome is managed-account deletion. |
 | `docs/LEARNER_JOURNEY_PHASES_1_5.md` | Historical implementation record explicitly states that it does not override the current individual learner → Teams → corporate organisation → independent tutor sequence. |
 | `docs/AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md` | Retains the separate Teams production and learner-delivery boundary, including Teams video uploads. Existing Course Studio placement remains transitional; migration/transition is not authorised. |
 | `docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md` | Its 31 October sequence is explicitly historical; free-access and paid-system preservation requirements remain subject to PD-001 and later decisions. |
-| `docs/ENGINEERING_HISTORY_AND_DECISIONS.md` | Historical chronology is preserved. Older cohort-closure retention wording must be visibly marked superseded by PD-012, not treated as current product behaviour. |
+| `docs/ENGINEERING_HISTORY_AND_DECISIONS.md` | Historical chronology is preserved. The older cohort-closure retention proposal is now explicitly marked superseded by PD-012. |
 
 ### Still open before the affected future features can be implemented
 
