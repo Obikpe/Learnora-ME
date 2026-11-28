@@ -68,7 +68,7 @@ This decision does not authorise a storage migration, provider change, productio
 ### PD-004 — Cohorts and corporate organisations are distinct domain models
 
 **Status:** APPROVED  
-**Confirmed:** 21 November 2026
+**Confirmed:** 21 November 2026; track/team and tutor-invitation clarification: 28 November 2026
 
 A cohort is not merely a corporate organisation with a different label. Cohorts and corporate organisations may both have teams, members and learning resources, but their team structures, responsibilities, tutor relationships, assignments, dashboards, permissions and operating workflows are distinct.
 
@@ -198,14 +198,14 @@ These actor categories and domain concepts define the scope that the architectur
 ### PD-012 — Cohort tutor assignment, organisation-managed account deletion and contract-end lifecycle
 
 **Status:** APPROVED for the product behaviours below; technical erasure, audit and retention controls remain to be specified  
-**Confirmed:** 21 November 2026; identity and deletion clarification: 21 November 2026
+**Confirmed:** 21 November 2026; identity/deletion clarification: 21 November 2026; track/team and tutor-invitation clarification: 28 November 2026
 
 #### Cohort track tutor assignments
 
 - Every learning track configured for a cohort must have at least one tutor assigned.
 - Tracks and teams are separate structures. Team members may be assigned to tracks; a track is not itself a team.
 - The cohort management account oversees all tracks. Other members, including tutors, receive access according to their explicit track assignments and responsibilities.
-- Tutors are invited to teach specific tracks through track-specific invitation links. Each additional track requires a separate explicit invitation/assignment.
+- Tutors are invited to teach specific tracks through track-specific invitation links, which follow the 48-hour activation-link expiry rule in PD-011. Each additional track requires a separate explicit invitation/assignment.
 - A tutor may be assigned to more than one track, and a track may have multiple tutors/co-tutors.
 - Before sending an invitation, management must see a confirmation warning if the tutor already has an active track assignment, if the selected track already has a tutor, or both. The warning identifies the relevant existing assignment(s) and requires explicit confirmation before the invitation is sent.
 - These warnings are confirmation gates, not prohibitions. The invitation must not be sent until management confirms.
