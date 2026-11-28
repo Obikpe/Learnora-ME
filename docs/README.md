@@ -2,7 +2,7 @@
 
 **Status:** Product documentation governance and reading guide  
 **Applies to:** The complete Learnora product and its application, service, data and operational boundaries  
-**Last reviewed:** 21 November 2026
+**Last reviewed:** 28 November 2026
 
 ## 1. Why this guide exists
 
@@ -139,24 +139,27 @@ When a product decision changes:
 
 Engineering history must remain historical. Do not rewrite historical entries to make the past appear consistent with a later decision.
 
-## 10. Initial documentation reconciliation register
+## 10. Documentation reconciliation status — 28 November 2026
 
-The following issues were identified during the documentation review on 21 November 2026. They must be resolved in the relevant specifications before implementation relies on the affected areas:
+This register records the status of the documentation alignment work. “Documented” means the product rule is recorded in the named specification; it does not mean the feature is implemented or verified in production.
 
-| Topic | Reconciliation required |
+| Topic | Current documentation status |
 |---|---|
-| Cohort and corporate organisation models | Document both complete operating models separately, including their team structures, tutor relationships, track ownership, assignments, dashboards and workflows. The approved cohort tutor-coverage, confirmation, access-revocation and contract-end requirements are recorded in [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md); remaining taxonomy and lifecycle details are explicitly unresolved. |
-| Cohort and organisation management | Both cohorts and corporate organisations have an active manager and a formal management team. The manager creates other teams and appoints role-scoped administrators. Cohort and corporate coordinator responsibilities differ; see [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) and the approved management/invitation addendum in [ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md](ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md). |
-| Account identity, deletion and invitations | The current approved rule is two-way email exclusivity between individual learner and organisation/cohort-managed accounts. Revoking organisation/cohort learner or tutor access deletes the managed account and its associated data; the deleted identity no longer reserves the email. At contract end, retain the organisation record and numeric learner count, not the covered learner roster or data. New organisation onboarding remains invitation-based, with recipient-created passwords and a 48-hour activation link. See PD-012 and the cohort/account architecture specifications. |
-| Learnora Teams boundary | Make Teams the authoritative home of internal AI/content production, review, acceptance and publishing; identify any temporary or legacy Learnora ME implementation. |
-| Delivery sequence | Align older roadmap and learner-journey documents with the currently approved individual learner → Teams → corporate organisation → independent tutor sequence. |
-| Customer authoring | Separately specify future corporate-team authoring, cohort tutor capabilities and independent tutor capabilities. Do not assume they share permissions or AI access. |
-| WitStart | Treat it as a historical example/context unless current product-owner-approved evidence says otherwise. Preserve historical records and migrations; do not imply an active product organisation or grant. |
-| Live state vs intended design | Clearly label repository code observations, documented target architecture and verified live Supabase/Vercel state as separate evidence categories. |
-| Conflicting audit reports | Reconcile overlapping scalability and security reports, retaining dated findings and recording which observations remain current. |
-| Database/migration status | Maintain a single current migration reconciliation record and do not treat old audit snapshots as current live state. |
+| Cohort operating model | The approved cohort model is documented in [COHORT_OPERATING_MODEL.md](COHORT_OPERATING_MODEL.md): fixed learner track per cohort, minimum one tutor per track, explicit confirmation for additional tutor/track assignments, scoped tutor access, managed-account deletion on revocation, and contract-end aggregate-only retention. Exact cohort team taxonomy, learner grouping/team relationships and detailed assignment/audit workflows remain unresolved. |
+| Corporate organisation operating model | The shared manager, management-team and role-scoped administrator pattern is documented. Corporate coordinator onboarding into learning teams is recorded. The complete corporate team taxonomy, workflows, permissions and customer authoring rules are not yet fully specified. Do not borrow cohort track/tutor rules as a substitute. |
+| Shared management and invitations | The manager-led management team, role-scoped administrators, distinct cohort/corporate coordinator duties, recipient-created passwords and 48-hour activation link are documented in PD-011 and the account architecture. Invitation resend/revoke/duplicate/expired-link recovery and technical token controls remain unresolved. |
+| Account identity and deletion | The approved two-way email exclusivity rule, deletion of organisation/cohort-managed learner or tutor accounts on access revocation, email availability after deletion, and no data transfer to a new account are documented in PD-012 and the account/cohort specifications. Canonical identity architecture, race-safe uniqueness, legacy conflict reconciliation and technical erasure controls remain unresolved. |
+| Contract-end retention | The organisation record and numeric learner count are retained; covered learner identities, roster, team membership and associated learner data are deleted; access is denied without a new contract. Technical deletion, backup/log/processor expiry and narrowly necessary audit/legal retention controls remain unresolved. |
+| Learnora Teams boundary | PD-002/PD-003 and the AI course-production architecture establish Teams as the separate internal production/review/acceptance/publishing workspace, including Teams-owned lesson-video uploads. Learnora ME remains the learner delivery application. |
+| Delivery sequence | PD-001, this guide and the current roadmap specify individual learner experience → Learnora Teams → corporate organisation experience → independent tutor. The learner journey phases document is explicitly historical and does not override that order. |
+| Customer authoring | Corporate-team authoring, cohort tutor authoring scope and independent tutor authoring remain separate future specifications. AI production access is not implied for all customers or tutors. |
+| WitStart | WitStart is historical context only. Preserve its historical records and migrations; do not infer an active organisation or entitlement. |
+| Live state versus intended design | Repository source observations, product requirements and live Supabase/Vercel state must remain separate evidence categories. Live production state has not been established by this documentation reconciliation. |
+| Security/audit findings | Historical security findings remain dated evidence and require current-main or live revalidation before being labelled resolved. |
+| Database/migration status | Use the active Pheonix migration reconciliation document for current migration provenance/status. Historical audits and schema snapshots are not live-state proof. No migration or database operation is authorised by this documentation work. |
 
-This register is a work queue, not a claim that the listed architecture has already been fully specified or implemented.
+This register is a status summary, not an assertion that every customer operating model or technical implementation design is complete. Unresolved items remain explicit blockers for their respective future implementation phases.
+
 
 ## 11. Reading and implementation rule
 
