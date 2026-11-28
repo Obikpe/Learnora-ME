@@ -32,7 +32,7 @@ The organisation data-model plan documents the following requirements and implem
 - Require current active learner membership plus the correct individual/team/cohort assignment for scoped course access.
 - Avoid duplicate enrolment checks across unrelated tenants.
 - Cohort-specific track does not change mid-cohort.
-- On cohort closure, deactivate the cohort-specific access and relevant active state while retaining the user record for reference/statistics.
+- **Historical/superseded cohort-closure proposal:** deactivate cohort-specific access while retaining the user record for reference/statistics. This is not the current product rule. PD-012 now distinguishes cohort end from organisation contract end; managed-account revocation deletes the managed account and associated data, while contract end retains only the organisation record and numeric learner count plus any narrowly approved non-identifying records.
 - Capacity and AI quota need atomic reservation rather than Python-only read-then-write checks.
 - Database-side tenant integrity is needed because application-only validation does not protect future alternate write paths.
 
