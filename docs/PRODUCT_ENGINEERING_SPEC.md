@@ -26,7 +26,7 @@ The current Course Studio prototype's placement inside Learnora ME is transition
 2. Tenant boundaries are enforced by backend scope checks and database constraints, not merely by hiding UI controls.
 3. A cohort learner is assigned exactly one fixed track for that cohort; the learner cannot change track during that cohort. The cohort's track, team and tutor operating model remains distinct from corporate organisation workflows.
 4. Email identity is mutually exclusive between normal individual learner accounts and organisation/cohort-managed accounts in both directions. Revoking access to an organisation/cohort-managed learner or tutor account means deleting that managed account and its associated data; the email becomes available for a new account only after deletion. A cohort ending does not itself delete the parent organisation. At organisation contract end, retain the organisation record and the numeric learner count at that time, and delete the covered learner identities, roster, team membership and associated learner data. See PD-012 and `COHORT_OPERATING_MODEL.md`; technical erasure and audit controls remain unresolved.
-5. Cohort teams and corporate organisation teams are distinct domain models. Team/cohort-scoped access must not silently become organisation-wide access.
+5. Cohort teams and corporate organisation teams are distinct domain models. Cohort tracks are separate from teams. The cohort management account oversees all tracks; tutors can see only learners and learning data in their explicitly assigned tracks. Team/cohort-scoped access must not silently become organisation-wide access.
 6. Loading, empty, validation, error, success, and permission-denied states are first-class UI states.
 7. Avoid paid dependencies when the existing stack is sufficient; do not add a design/component library without a clear need.
 8. No destructive schema/data action is justified solely to make migration history or a schema diff look clean.
@@ -93,7 +93,7 @@ Payment providers and email/notification integrations appear in the repository h
 - **Organisation owner/manager:** accesses only the organisation(s) they are authorised to manage; manages teams, cohorts, learner memberships, programmes, courses, tutors, contracts/entitlements, and progress according to grants.
 - **Organisation team manager/member:** accesses only permitted team operations and assigned learning.
 - **Cohort learner:** uses the cohort's own access and learning context, sees only assigned learning, and follows the cohort's fixed track and lifecycle.
-- **Cohort tutor/team member:** participates in a cohort team and may be assigned to specific tracks created by that cohort; access is limited to the cohort/team/resources assigned. Detailed cohort team types, responsibilities and permissions remain unresolved.
+- **Cohort tutor:** is invited to one or more specific cohort tracks; can see only learners and learning information in those assigned tracks, never learners in other tracks. Team membership does not expand track visibility. The management account oversees all tracks.
 
 ### Learnora Teams personas
 
@@ -139,7 +139,7 @@ Approved management pattern:
 1. A customer organisation request is processed and the organisation is created with its type established as either **cohort** or **corporate organisation**. These types share top-level management but have distinct team structures and workflows.
 2. Each organisation has an active manager and a formal management team led by that manager.
 3. The manager creates other teams and appoints administrators with defined, role-scoped responsibilities. Administrators do not inherit the manager's full access automatically.
-4. In a corporate organisation, the coordinator onboards learners/employees into the relevant learning teams. In a cohort, the coordinator places learners into the cohort's configured tracks and assigns tutors to those tracks.
+4. In a corporate organisation, the coordinator onboards learners/employees into the relevant learning teams. In a cohort, the coordinator places learners into the cohort's configured tracks and sends track-specific tutor invitations. The coordinator must confirm the warning shown when the tutor already has an active track assignment or the selected track already has a tutor.
 5. The intended person completes their own account activation and creates their own password through the invitation flow; the activation link expires 48 hours after issue.
 6. The manager's access is limited to the organisation's entitlements and does not grant access to another organisation or internal Learnora staff capabilities.
 
@@ -183,7 +183,7 @@ Access decisions should combine:
 - module unlock prerequisites;
 - applicable course/module/lesson progress or assessment gates.
 
-Any instructor access to learner submissions must be constrained to courses/modules the instructor is authorised to teach, not merely to all courses in the same organisation. Grade changes need an audit record and a clear policy for revisions.
+Any instructor access to learner submissions must be constrained to courses/modules the instructor is authorised to teach, not merely to all courses in the same organisation. For cohort tutors, this means strict track-level learner-data isolation across roster, profile, search, progress, submissions, assessments, reports and exports; UI filtering alone is insufficient. Grade changes need an audit record and a clear policy for revisions.
 
 ### 5.6 AI features and quota
 
