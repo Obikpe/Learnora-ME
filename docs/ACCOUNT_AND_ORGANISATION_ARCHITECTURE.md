@@ -299,7 +299,7 @@ The following is a source-level audit of the current `main` snapshot. It is not 
 
 **Findings**
 - Existing tests cover email lookup hardening, cohort login rate limits, membership lifecycle, course access guards and instructor assignment workspace.
-- The instructor workspace tests currently model an instructor with organisation membership rows in more than one organisation, which must be changed under the one-organisation identity boundary.
+- The instructor workspace tests currently model an instructor with organisation membership rows in more than one organisation. Whether one organisation-managed identity may belong to more than one customer organisation is not settled by the approved two-way email exclusivity rule; do not change this behaviour or enforce a one-organisation limit solely on the basis of the earlier proposal in Sections 1–3. Resolve the organisation-membership cardinality before that future workflow is implemented.
 - New regression coverage is required for two-way email identity exclusivity, duplicate legacy identity handling, organisation invitation reservation, managed-account deletion and delete/re-registration races, cohort identity compatibility, public catalogue denial, organisation course privacy and tutor track-level reporting boundaries.
 
 ### 7.6 Documentation and schema inventory
