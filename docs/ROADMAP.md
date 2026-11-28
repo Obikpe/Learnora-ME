@@ -610,7 +610,7 @@ Make the normal individual learner journey reliable end to end in `frontend-v02/
 
 1. Complete the source inventory and access-path reconciliation for authentication, registration, account lifecycle, course discovery/enrolment, progress, content/media, AI, evidence, credentials and the dashboard.
 2. Correct backend email identity checks, login resolution and session-state handling without changing existing learner records.
-3. Add safe provisioning guards so new individual registration cannot claim an email reserved by an existing cohort/organisation account, and new cohort provisioning cannot create another account for an email already in use. Historical duplicates must fail closed for the affected path; do not auto-merge, delete or migrate them.
+3. Add safe provisioning guards for the approved two-way exclusivity rule: individual registration cannot use an email already associated with an organisation/cohort-managed account, and organisation/cohort onboarding cannot use an email already associated with an individual learner. Whether one managed identity may belong to multiple customer organisations or cohorts is not decided here. Historical conflicts must fail closed for the affected path; do not auto-merge, delete or migrate existing records.
 4. Verify the normal learner access path from public catalogue through enrolment, course content, progress, assessment and completion. Keep organisation/cohort-specific access checks intact.
 5. Correct Learnora ME login/registration/verification/recovery flows and the authenticated learner dashboard together.
 6. Add focused regression coverage for the affected identity, session, course and dashboard contracts. Avoid broad CI runs; no GitHub Actions or Vercel deployment unless separately authorised.
@@ -618,9 +618,9 @@ Make the normal individual learner journey reliable end to end in `frontend-v02/
 
 ### Deferred, retained architecture
 
-Organisation account invitations and release, organisation/cohort administration, tutor resource assignment and analytics, independent tutor onboarding/creator workspaces, creator finance, and the full cross-table identity registry/migration remain future work. Preserve their existing source, schema, data and trust boundaries. Do not build these workflows in the individual learner launch pass.
+Organisation account invitations and the approved managed-account deletion/revocation workflow, organisation/cohort administration, tutor resource assignment and analytics, independent tutor onboarding/creator workspaces, creator finance, and the unresolved technical identity architecture/migration remain future work. Preserve their existing source, schema, data and trust boundaries. Do not build these workflows in the individual learner launch pass.
 
-The one-email/one-account-context rule remains the target. Because the live schema has separate `users`, `admins` and `cohort_accounts` identity sources and historical cohort records must be preserved, application guards are an interim safety measure only. A globally race-safe uniqueness guarantee requires a separately reviewed additive identity-reservation migration and a conflict-resolution plan; do not claim that guarantee until the migration is safely applied and verified.
+The approved identity rule is two-way email exclusivity between normal individual learner accounts and organisation/cohort-managed accounts, including managed tutors. It does not yet decide whether one managed identity may belong to multiple customer organisations or cohorts. Because the repository schema has separate `users`, `admins` and `cohort_accounts` identity sources and existing cohort records must be preserved until an approved transition plan exists, application guards are only an interim measure. A race-safe implementation requires a separately reviewed uniqueness design and legacy-conflict plan; do not claim that guarantee until it is safely implemented and verified.
 
 ## Individual learner implementation status — 9 November 2026
 
