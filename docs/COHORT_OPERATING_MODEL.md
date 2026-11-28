@@ -9,57 +9,71 @@ This document defines the cohort-specific behaviour that has been explicitly con
 
 ## 1. Cohort and parent organisation
 
-A cohort is a managed learning programme under a customer organisation. The organisation is the continuing customer-level record; an individual cohort is a distinct programme instance with its own configured tracks, learners and tutor assignments.
+A cohort is a managed learning programme under a customer organisation. The organisation is the continuing customer-level record; an individual cohort is a distinct programme instance with its own configured tracks, learners, teams and tutor assignments.
 
 - The customer organisation is classified as a cohort-type organisation when it is created.
-- It has an active manager and a formal management team under the shared management model.
-- The manager creates any additional cohort teams and appoints administrators with role-specific responsibilities.
-- The cohort coordinator manages learner placement into the cohort's configured tracks and tutor assignment to those tracks.
+- It has an active management account and a formal management team under the shared management model.
+- The management account has oversight of the entire cohort and all its tracks, subject to the organisation's entitlements.
+- The manager creates additional cohort teams and appoints administrators with role-specific responsibilities.
+- The cohort coordinator manages learner placement into tracks and sends track-specific tutor invitations.
+- Cohort teams are working groups with members and responsibilities. A track is a separate learning/teaching structure, not a team.
+- Members of cohort teams may be assigned to one or more tracks according to their responsibilities. A team membership alone does not grant access to every track.
 - A cohort can end while its parent organisation continues to exist.
 - A later cohort for the same organisation is a new cohort identity. Do not reuse the ended cohort as though it were still active.
 
-A cohort must not be modelled as a corporate organisation with a different label. Its track configuration, learner placement and tutor assignment workflow are cohort-specific.
+A cohort must not be modelled as a corporate organisation with a different label. Its track configuration, learner placement and tutor invitation/assignment workflow are cohort-specific.
 
 ## 2. Track and learner model
 
-The cohort's enabled tracks and course configuration are established for that cohort. Each learner is assigned to a track by the coordinator. The existing approved cohort rule remains that a learner has one fixed track for the lifetime of that cohort; a different track requires a new cohort membership/cohort context rather than an in-place change.
+The cohort's enabled tracks and course configuration are established for that cohort. Each learner is assigned to one track by the coordinator. The learner remains on that fixed track for the lifetime of that cohort; a different track requires a new cohort membership/cohort context rather than an in-place change.
 
-The exact learner grouping/team structure around each track is not yet approved. Do not assume that a track is itself a formal team, or that every track must have a separately named team, until that distinction is confirmed.
+Tracks and teams are distinct:
 
-## 3. Tutor coverage and assignment cardinality
+- A track represents a defined learning/teaching path with its configured courses and assigned learners.
+- A team represents a working group of people with cohort responsibilities.
+- A team member may be assigned to a track or multiple tracks where appropriate.
+- Being a member of a team does not, by itself, grant access to all cohort tracks or learners.
+- A track must not be created, displayed or permissioned as though it were a team.
 
-### 3.1 Minimum coverage
+The management account can oversee all cohort tracks. Other members' access is based on their explicit track assignments and role responsibilities.
+
+## 3. Tutor invitations, coverage and assignment scope
+
+### 3.1 Minimum tutor coverage
 
 Every learning track in a cohort must have at least one tutor assigned. An active cohort track without a tutor does not satisfy the required operating model.
 
-### 3.2 One tutor across multiple tracks
+### 3.2 Track-specific invitation flow
 
-A tutor may be assigned to more than one track. This is optional, not an automatic assignment.
+Tutor onboarding for cohort teaching follows an invitation-link model similar to Google Classroom:
 
-When a coordinator attempts to assign a tutor to another track and that tutor already has an assignment, the system must:
+1. The coordinator selects the tutor and the specific track they are being invited to teach.
+2. Management initiates an invitation for that track. The tutor receives an invitation link and completes the required account activation themselves; management does not create the tutor's password or completed login credentials.
+3. The invitation identifies the cohort and the track teaching context. It is an invitation to teach that track, not an invitation to see the entire cohort.
+4. If the tutor is already actively assigned to another track, management must see a warning before sending the additional track invitation. The warning identifies the existing track/course assignment and asks management to confirm that it intends to invite the tutor to teach another track.
+5. If the selected track already has an assigned tutor, management must see a warning before sending an invitation to another tutor for that track. The warning asks management to confirm that it intends to add a co-tutor.
+6. If both conditions apply, the confirmation must make both relevant existing assignment facts clear before the invitation is sent.
+7. The invitation is sent only after the authorised management user explicitly confirms. The warning is a confirmation gate, not a prohibition.
 
-1. Display a warning that the tutor is already assigned.
-2. Identify the course associated with the existing assignment, as specified by the product owner.
-3. Ask the coordinator to confirm the additional track assignment.
-4. Make the additional assignment only after explicit confirmation.
+A tutor may teach multiple tracks, but each additional track requires its own explicit invitation/assignment. A track may have multiple tutors, including co-tutors, but each additional tutor must be explicitly invited and confirmed through the warning flow.
 
-The warning is not a prohibition. It is a deliberate confirmation step.
+### 3.3 Tutor visibility and access boundary
 
-### 3.3 Multiple tutors on one track
+A tutor can access only the track or tracks to which that tutor has an active assignment, and only the courses, learners and teaching resources within those assigned tracks and permitted responsibilities.
 
-A track may have more than one tutor. When a coordinator attempts to assign another tutor to a track that already has a tutor, the system must:
+In particular:
 
-1. Display a warning that a tutor is already assigned.
-2. Ask the coordinator to confirm that they want to add another tutor to the track.
-3. Add the additional tutor only after explicit confirmation.
+- A tutor assigned to Track A must not see the roster, identities, profiles, progress, submissions, assessment results, reports or other learner information belonging to Track B.
+- A tutor assigned to more than one track may see the learners and learning information in each of those specifically assigned tracks, but no others.
+- Team membership does not expand a tutor's track visibility.
+- A tutor must not gain cohort-wide learner search, reporting or export access merely because they are a cohort team member or have been invited to teach one track.
+- The management account retains oversight across all tracks and may access cohort-wide management information within its authorised responsibilities.
 
-This warning is also a confirmation step, not a hard limit of one tutor per track.
+These restrictions must be enforced by the backend for every relevant list, detail, search, report, export and learner-data endpoint, not only by hiding items in the user interface.
 
-### 3.4 Assignment scope and unresolved detail
+### 3.4 Assignment confirmation and unresolved detail
 
-Tutor access must remain restricted to the relevant cohort, track, courses and responsibilities assigned to that tutor. An assignment to one track must not grant access to every track or all cohort administration.
-
-The precise warning copy, how the course is selected/displayed where several course assignments exist, whether the coordinator can select multiple tutors in one operation, and the full assignment/reassignment/removal audit workflow remain to be specified. Do not silently replace the required confirmation with a hard validation error or automatic assignment.
+The precise warning copy, how existing course/track assignments are displayed when several exist, whether a coordinator can issue multiple invitations in one operation, and the detailed assignment/reassignment/removal audit workflow remain to be specified. Do not silently replace the required confirmation with a hard validation error or automatic assignment.
 
 ## 4. Revoking access and deleting organisation-managed accounts
 
