@@ -72,7 +72,11 @@ This decision does not authorise a storage migration, provider change, productio
 
 A cohort is not merely a corporate organisation with a different label. Cohorts and corporate organisations may both have teams, members and learning resources, but their team structures, responsibilities, tutor relationships, assignments, dashboards, permissions and operating workflows are distinct.
 
-A cohort has its own teams. Cohort teams can include tutors assigned to specific tracks created by that cohort, alongside learners and other cohort-specific operations. Tutor access must be scoped to the cohort/team and the specific track, course or other resources assigned to that tutor.
+A cohort has its own teams, and its tracks are separate learning/teaching structures. A track is not a team. Cohort team members may be assigned to one or more tracks according to their responsibilities; team membership alone does not grant access to every track.
+
+The active management account oversees all tracks in the cohort. Tutors are invited to teach specific tracks through track-specific invitation links. A tutor may teach multiple tracks only through explicit additional track invitations. A track may have multiple tutors/co-tutors. Before sending an additional invitation, management must see a confirmation warning if the tutor already has an active track assignment, if the selected track already has a tutor, or both.
+
+Tutor visibility is restricted to the track(s) explicitly assigned to that tutor. A tutor must not see learners, rosters, profiles, progress, submissions, assessments, reports or exports belonging to another unassigned track. These restrictions apply even if the tutor belongs to a cohort team. The management account retains cohort-wide oversight within its authorised responsibilities.
 
 Do not model cohorts as simply:
 - an organisation with a roster;
@@ -80,7 +84,7 @@ Do not model cohorts as simply:
 - a corporate team with a different name; or
 - a single track assignment without the cohort's team and tutor operating model.
 
-The exact cohort team taxonomy, membership rules, operational responsibilities and permission matrix are not yet fully settled in this register. See the unresolved items below. Do not invent them. Earlier assistant-generated suggestions about permanent teams, time-bound cohorts, simultaneous team/cohort memberships, 70% progression gates or specific contract-capacity rules are proposals only unless independently confirmed by the product owner; do not treat them as approved requirements.
+The exact cohort team taxonomy, membership rules and operational responsibilities beyond these confirmed track/team and tutor-access rules remain unresolved. See the unresolved items below. Earlier assistant-generated suggestions about permanent teams, time-bound cohorts, simultaneous team/cohort memberships, 70% progression gates or specific contract-capacity rules are proposals only unless independently confirmed by the product owner; do not treat them as approved requirements.
 
 Corporate organisation teams and workflows must be documented independently. The existence of cohort teams does not define the corporate organisation team model, and vice versa.
 
@@ -199,11 +203,14 @@ These actor categories and domain concepts define the scope that the architectur
 #### Cohort track tutor assignments
 
 - Every learning track configured for a cohort must have at least one tutor assigned.
-- A tutor may be assigned to more than one track. This is permitted but not compulsory.
-- If a coordinator attempts to assign a tutor to another track while that tutor is already assigned, the system must first display a warning identifying the course/assignment already held by that tutor and require explicit confirmation before making the additional assignment.
-- A track may have more than one tutor. If a coordinator attempts to assign another tutor to a track that already has a tutor, the system must display a warning and require explicit confirmation before adding the additional tutor.
-- These warnings are confirmation gates, not prohibitions. The assignment must not proceed until the coordinator confirms.
-- Tutor access remains scoped to the relevant cohort, assigned track(s), courses and responsibilities.
+- Tracks and teams are separate structures. Team members may be assigned to tracks; a track is not itself a team.
+- The cohort management account oversees all tracks. Other members, including tutors, receive access according to their explicit track assignments and responsibilities.
+- Tutors are invited to teach specific tracks through track-specific invitation links. Each additional track requires a separate explicit invitation/assignment.
+- A tutor may be assigned to more than one track, and a track may have multiple tutors/co-tutors.
+- Before sending an invitation, management must see a confirmation warning if the tutor already has an active track assignment, if the selected track already has a tutor, or both. The warning identifies the relevant existing assignment(s) and requires explicit confirmation before the invitation is sent.
+- These warnings are confirmation gates, not prohibitions. The invitation must not be sent until management confirms.
+- A tutor can see only learners and learning information in their explicitly assigned track(s). They cannot see learners in another, unassigned track, including through rosters, profiles, search, progress, submissions, assessments, reports or exports.
+- Team membership does not expand a tutor's track visibility.
 
 #### Exclusive email identity across individual and organisation-managed accounts
 
@@ -236,10 +243,10 @@ The following items are deliberately unresolved. They are not implementation per
 
 | ID | Topic | What must be resolved |
 |---|---|---|
-| UR-001 | Cohort operating/team model | The cohort has a management team led by its active manager. The manager creates other cohort teams and appoints role-scoped administrators. The coordinator places learners into configured tracks and assigns tutors. Every track requires at least one tutor; multiple tutors per track and one tutor across multiple tracks are allowed only after the specified confirmation warnings. The formal relationship between tracks, teaching groups/teams and learner groups, the complete team taxonomy, membership rules, dashboards and detailed permissions remain unresolved. Do not create separate support, assessment, operations or reporting teams by default. |
+| UR-001 | Cohort operating/team model | The cohort has a management team led by its active manager, who oversees all tracks and appoints role-scoped administrators. Tracks are separate from teams; team members may be assigned to tracks. The coordinator places each learner on one fixed track and invites tutors to specific tracks through track-specific invitation links. Every track requires at least one tutor. A tutor may teach multiple tracks and a track may have multiple tutors, but management must confirm warnings before sending an additional invitation where the tutor already has an active track or the selected track already has a tutor. Tutors can see learners and learning data only in their assigned tracks, never other tracks. The complete team taxonomy, membership rules and remaining detailed permissions remain unresolved. Do not create separate support, assessment, operations or reporting teams by default. |
 | UR-002 | Corporate organisation model | Corporate organisations have an active manager and management team. The manager creates other teams and appoints role-scoped administrators. The corporate coordinator onboards learners/employees into the relevant learning teams. Corporate team taxonomy, team managers, cohort-based/employee/other contexts, programmes, tutor relationships, contracts/entitlements, dashboards and detailed permissions still require specification. |
 | UR-003 | Exclusive email identity and activation | The target rule is one mutually exclusive email identity: an email used by an individual learner cannot be used by an organisation/cohort-managed account, and vice versa. Deleting an organisation/cohort-managed account releases that email for a new registration/invitation; no account data is transferred. The canonical identity registry, race-safe uniqueness, legacy conflict reconciliation, organisation/cohort membership cardinality (including whether one managed identity may belong to more than one customer organisation or cohort), and migration plan remain unresolved. Preserve existing records until an approved migration/transition plan exists. |
-| UR-004 | Invitation and account-deletion mechanics | Specify invitation resend/revoke/duplicate/recovery; tutor joining and assignment lifecycle; the dependent-record inventory and atomic deletion process for organisation/cohort-managed learner/tutor accounts; security audit evidence that may remain without retaining learner data; backup/log/processor expiry; and legally required exceptions. The product outcome is settled: revocation deletes the managed account and its associated data. |
+| UR-004 | Invitation and account-deletion mechanics | Specify invitation resend/revoke/duplicate/recovery; technical tutor invitation acceptance, expiry and revocation lifecycle; the dependent-record inventory and atomic deletion process for organisation/cohort-managed learner/tutor accounts; security audit evidence that may remain without retaining learner data; backup/log/processor expiry; and legally required exceptions. The product outcome is settled: revocation deletes the managed account and its associated data. |
 | UR-005 | Independent tutor model | Define the independent tutor product context and lifecycle separately from cohort tutors and organisation tutors. |
 | UR-006 | Customer authoring | Define what selected corporate organisations may author, whether any AI capability is allowed, and the distinct non-AI authoring/upload/review/publishing rules for tutors and cohort teams. |
 | UR-007 | Transitional Course Studio | Define the eventual transition from the current Learnora ME Course Studio prototype to Learnora Teams, including shared APIs, data ownership, media upload, review and publishing. Do not move code until dependencies and acceptance criteria are documented. |
