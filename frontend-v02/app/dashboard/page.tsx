@@ -54,7 +54,7 @@ function CourseCard({ row, completed }: { row: any; completed: boolean }) {
     <div className="min-w-0">
       <div className="mb-2 flex items-center gap-2 text-xs text-[var(--text-muted)]">
         <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--bg-soft)] text-[var(--primary)]"><GraduationCap size={16}/></span>
-        <span>{course.ownership === "learnora" ? "Learnora ME" : "Organisation course"}</span>
+        <span>{course.ownership === "creator" ? "Creator course" : course.ownership === "organisation" ? "Organisation course" : "Learnora ME"}</span>
         {completed && <span className="inline-flex items-center gap-1 rounded-md bg-[var(--success-tint)] px-2 py-1 text-[10px] font-semibold text-[var(--success)]"><CheckCircle2 size={12}/> Completed</span>}
       </div>
       <h2 className="text-base font-bold leading-6 text-[var(--text-heading)]">{course.title || "Learnora course"}</h2>
