@@ -247,17 +247,35 @@ The following items are deliberately unresolved. They are not implementation per
 | UR-009 | Current implementation versus live state | Revalidate dated code/schema/CI/deployment claims before presenting them as current. Historical audit snapshots must retain their dates and limitations. |
 | UR-010 | Contract-end data lifecycle | Implement the approved outcome safely: retain the organisation record and numeric learner count at contract end; delete the covered learner identities, roster, team membership and associated learner data; deny access without a renewed contract. Specify atomic erasure, backup/log/processor expiry, narrow legal/financial exceptions and non-identifying security audit retention. A later cohort is a new cohort and does not restore deleted data. |
 
-## 4. Required document alignment
+## 4. Documentation alignment status — 28 November 2026
 
-The following documents must be reviewed against this register. This is a reconciliation list, not a claim that they have already been corrected.
+The following documents have been checked against the approved decisions in this register. This is documentation status only; it is not evidence that the corresponding code, database or live product behaviour has been implemented.
 
-- `docs/README.md` — authority, status and reading rules.
-- `docs/PRODUCT_ENGINEERING_SPEC.md` — product boundaries, personas, cohort identity, current phase and deferred scope.
-- `docs/ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md` — account/identity proposals, cohort and organisation separation, tutor scope and preservation.
-- `docs/AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md` — Teams ownership, transitional Course Studio placement and delivery boundary.
-- `docs/ROADMAP.md` — current sequence, release gates and deferred work.
-- `docs/LEARNER_JOURNEY_PHASES_1_5.md` and `docs/LEARNER_OUTCOMES_PHASES_6_8.md` — scope and sequence, without erasing historical phase records.
-- `docs/ENGINEERING_HISTORY_AND_DECISIONS.md` — preserve chronology; label superseded product directions rather than rewriting history.
+| Document | Alignment status |
+|---|---|
+| `docs/README.md` | Updated with current product boundaries, sequence and a status register that separates documented decisions from unresolved specifications and live-state evidence. |
+| `docs/PRODUCT_ENGINEERING_SPEC.md` | Updated to remove the obsolete claim that cohort learner records are retained after cohort closure and to distinguish approved email exclusivity/deletion outcomes from unresolved identity architecture. |
+| `docs/ACCOUNT_AND_ORGANISATION_ARCHITECTURE.md` | Updated to replace the account-release implementation sequence with the current product sequence and approved deletion outcomes. Historical source observations and proposals remain labelled as historical. |
+| `docs/COHORT_OPERATING_MODEL.md` | Records approved cohort track/tutor rules, account deletion on revocation, contract-end aggregate retention and the remaining technical/domain questions. |
+| `docs/ROADMAP.md` | Current sequence follows PD-001. Historical launch ordering remains labelled as historical; one legacy account-release instruction is being corrected in this reconciliation. |
+| `docs/LEARNER_JOURNEY_PHASES_1_5.md` | Historical implementation record explicitly states that it does not override the current individual learner → Teams → corporate organisation → independent tutor sequence. |
+| `docs/AI_COURSE_PRODUCTION_AND_MEDIA_ARCHITECTURE.md` | Retains the separate Teams production and learner-delivery boundary, including Teams video uploads. Existing Course Studio placement remains transitional; migration/transition is not authorised. |
+| `docs/FREE_LAUNCH_AND_PAID_EXPANSION_PLAN.md` | Its 31 October sequence is explicitly historical; free-access and paid-system preservation requirements remain subject to PD-001 and later decisions. |
+| `docs/ENGINEERING_HISTORY_AND_DECISIONS.md` | Historical chronology is preserved. Older cohort-closure retention wording must be visibly marked superseded by PD-012, not treated as current product behaviour. |
+
+### Still open before the affected future features can be implemented
+
+- Cohort team taxonomy and the exact relationship between tracks, teaching groups/teams and learner groups.
+- Complete corporate organisation team taxonomy, operating workflows and permission matrix.
+- Invitation resend, revoke, duplicate-invitation and expired-link recovery behaviour.
+- Canonical identity architecture, race-safe uniqueness and legacy identity conflict/migration plan.
+- Complete managed-account deletion inventory, atomicity/failure handling, sessions/tokens/invitations, non-identifying audit evidence, backup/log/cache/export/processor expiry and narrowly required legal/financial exceptions.
+- Contract renewal/reactivation/grace-period and manager-visibility rules.
+- Tutor assignment warning copy and detailed bulk/reassignment/removal audit behaviour.
+- Current live Supabase/Vercel state and historical security/migration findings requiring separate evidence-based verification.
+
+Do not resolve these by inventing defaults. Keep them unresolved until the product owner or the appropriate technical/legal review supplies the missing decision.
+
 
 ## 5. Implementation rule
 
