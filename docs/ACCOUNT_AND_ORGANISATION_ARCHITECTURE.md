@@ -24,7 +24,7 @@ The account and tenant architecture above is the long-term contract, not a reque
 
 ### Explicitly deferred
 
-Do not attempt to complete the organisation portal, organisation invitations, organisation account release UI, organisation admin/cohort management, track-scoped tutor workspaces, independent tutor onboarding/creator tools, creator finance/payouts, or the full cross-identity migration now. Keep their existing code/schema and the documented future architecture intact; do not delete or weaken their boundaries.
+Do not attempt to complete the organisation portal, organisation invitations, organisation-managed account revocation/deletion UI, organisation admin/cohort management, track-scoped tutor workspaces, independent tutor onboarding/creator tools, creator finance/payouts, or the full cross-identity migration now. Keep their existing code/schema and the documented future architecture intact; do not delete or weaken their boundaries.
 
 For this pass, make only the compatibility and security changes needed to ensure that normal individual learner registration/sign-in cannot accidentally create or authenticate a second identity where a reserved organisation/cohort identity already exists. Preserve existing cohort accounts and progress. Do not convert or migrate historical cohort identities as part of the individual learner release.
 
@@ -300,7 +300,7 @@ The following is a source-level audit of the current `main` snapshot. It is not 
 **Findings**
 - Existing tests cover email lookup hardening, cohort login rate limits, membership lifecycle, course access guards and instructor assignment workspace.
 - The instructor workspace tests currently model an instructor with organisation membership rows in more than one organisation, which must be changed under the one-organisation identity boundary.
-- New regression coverage is required for cross-table email uniqueness, duplicate legacy identities, organisation invitation reservation, account release, release-vs-registration races, cohort reuse of one organisation identity, public catalogue denial, organisation course privacy and tutor track-level reporting boundaries.
+- New regression coverage is required for two-way email identity exclusivity, duplicate legacy identity handling, organisation invitation reservation, managed-account deletion and delete/re-registration races, cohort identity compatibility, public catalogue denial, organisation course privacy and tutor track-level reporting boundaries.
 
 ### 7.6 Documentation and schema inventory
 
@@ -327,14 +327,14 @@ The read-only source inspection was extended to the relevant Supabase schema bas
 - The same baseline shows `cohort_members` can point to either `user_id` or `cohort_account_id`, and the learning evidence table `cohort_account_lesson_progress` is keyed to the cohort account. This is the historical split that the future migration must reconcile without losing progress.
 - `supabase/migrations/20261021112845_cohort_account_track_assignment.sql` explicitly creates cohort-specific credentials and unique email only within each cohort. It also establishes track-scoped course mappings and immutable cohort track assignment.
 - `supabase/migrations/20261021113310_allow_cohort_only_membership.sql` deliberately allows cohort-only identities, while the legacy-user path requires an active learner organisation membership. This is a valid historical compatibility rule but not the final one-identity model.
-- `supabase/migrations/20261102130000_learner_account_deletion.sql` implements deletion for users whose role is `normal`. It blocks deletion of an active organisation owner, suspends active organisation memberships and team memberships, anonymises the email and clears credentials. It is **not** an organisation-account release workflow: it does not require an organisation release approval, does not cover `cohort_accounts`, and its function does not explicitly deactivate `cohort_members` rows for the user. This must be reconciled before the new release flow can safely reuse or replace it.
+- `supabase/migrations/20261102130000_learner_account_deletion.sql` is a historical implementation observation for individual accounts whose role was `normal`. It blocks deletion of an active organisation owner, suspends active organisation memberships and team memberships, anonymises the email and clears credentials. It does not implement the currently approved organisation/cohort-managed account deletion outcome and does not cover `cohort_accounts`. Do not reuse its retention or anonymisation behaviour as the managed-account target. The approved target is deletion of the managed account and associated data on access revocation; the exact dependent-record inventory and safe erasure design remain unresolved.
 - The current baseline includes both `cohort_track_courses` (track-level configuration) and `cohort_member_course_assignments` / `cohort_member_lesson_assignments` (per-learner exceptions). The normal product flow should derive learner course access from the track mapping; any legacy individual assignment rows must be inventoried and preserved before the per-learner UI/path is retired.
 - The baseline includes `learnora_creator_accounts`, creator ownership and finance tables, so independent creator identity and creator commercial data must be handled separately from organisation tutor membership.
 - `supabase/legacy_migrations/002_learnora_v1_foundation.sql` and `003_learnora_identity_bridge.sql` document the historical organisation bridge and cohort membership for the former pilot. These files are historical and must remain untouched.
 - `docs/PRODUCT_ENGINEERING_SPEC.md` currently describes cohort-specific identities as intentionally distinct from `public.users`; that statement is superseded by this architecture. The roadmap and engineering history also retain historical role and migration notes; update current-state guidance without erasing the audit trail.
 - The legacy `backend-python-v0/` and `frontend/` trees still contain product-specific role and route implementations. The current `backend-python/` and `frontend-v02/` trees are the primary implementation surfaces identified for this work, but deployment/configuration references must be checked before deciding whether the older trees are inert, archival or still consumed by any workflow. Do not delete them based on directory naming alone.
 
-These findings make the global email uniqueness and account-release work a schema-level prerequisite. An application-only pre-check cannot close races between individual registration and organisation/cohort provisioning.
+These findings show that the approved two-way email exclusivity rule cannot be guaranteed safely by application-only pre-checks under concurrent registration and organisation/cohort provisioning. The global uniqueness mechanism, legacy-conflict reconciliation and migration design remain unresolved. Managed-account access revocation must result in deletion, not account release with retained learning history. No schema or production change is authorised by this audit.
 
 ### 7.9 Active versus legacy application surfaces and remaining source work
 
@@ -358,37 +358,38 @@ Additional source findings:
 
 **Remaining before implementation:** the current pass has inspected the identity-critical backend, organisation/cohort/course services, active frontend login/registration and organisation/cohort dashboards, Teams entry points, targeted security tests, relevant migration DDL and the schema baseline. It has not yet inspected every one of the 462 identity-/organisation-/cohort-/course-related source, test, configuration and document paths identified by the repository-tree filter. Continue that targeted inventory (including all auth callers, course/content/media/AI/report routes and affected tests), then reconcile the live schema read-only. The GitHub code-search endpoint was unavailable in this connector context, so no claim of a successful repository-wide text search is made.
 
-## 8. Target data model and migration direction
+## 8. Approved identity and managed-account lifecycle outcomes; technical model unresolved
 
-The final schema must enforce a globally unique canonical email identity and one account class. The exact DDL is deferred until the current live schema and all relevant migration dependencies have been reconciled.
+The approved product outcomes are:
 
-The likely target is a canonical account identity record with:
-- immutable account ID;
-- canonical email and verified-email state;
-- exclusive account class;
-- account lifecycle status (invited, pending activation, active, suspended, released/closed);
-- credential reference/hash or provider identity;
-- organisation ID for organisation-managed accounts only;
-- timestamps and security/audit metadata.
+- A normal individual learner email and an organisation/cohort-managed account email are mutually exclusive in both directions. The rule also covers organisation-managed tutors and other organisation-managed users.
+- Revoking an organisation/cohort-managed learner's or tutor's access means deleting that managed account and its associated data. It is not suspension, soft deactivation or release while preserving personal learning history.
+- After deletion, the deleted account no longer reserves the email. The email may be used for a new account through ordinary registration/invitation checks. No deleted account data, progress, entitlement or history is transferred.
+- At organisation contract end, retain the organisation record and numeric learner count at that time; delete the covered learner identities, roster, team membership and associated learner data. Deny organisation access if no new contract is signed.
 
-Organisation membership/roles should be account attributes or scoped relationships under the single organisation, not an additional independent identity. Cohort membership should reference the canonical organisation account ID. A cohort account must not be created as a second identity for the same email.
+These are product outcomes, not a decision about the technical identity architecture. The following remain unresolved and must not be assumed:
+- Whether to introduce a canonical identity registry or enforce exclusivity through another database design.
+- Canonical email normalisation details and race-safe cross-account uniqueness enforcement.
+- How duplicate/conflicting legacy identities and existing cohort-specific accounts are reconciled.
+- How existing memberships, progress, assessments and other historical records are handled during any approved transition; no migration may silently transfer deleted managed-account data to a new individual account.
+- Exact deletion dependencies, atomicity, failure/retry handling, session/token/invitation revocation, non-identifying audit evidence, backup/log/cache/export/processor expiry and narrow legal/financial retention exceptions.
 
-Before implementation, inspect the live schema and baseline to determine whether this can be achieved by safely extending existing tables or requires a new identity registry. Do not assume a proposed table exists. Do not modify any existing WitStart rows. Use additive, reversible migrations with explicit compatibility and verification steps; never rewrite applied migration history.
+Preserve existing records until a separately approved transition plan exists. Do not modify WitStart records or applied migration history. Do not infer that a proposed identity table or lifecycle status exists in the current schema. Any future migration must be additive where feasible, evidence-backed, tested on disposable data and separately authorised before production use.
 
-## 9. Implementation sequence after this architecture
+## 9. Current product sequence and deferred implementation boundary
 
-1. **Repository-wide audit completion:** search all active code, tests, docs, configuration and route trees for legacy product-specific roles, names, redirects, permissions and identity paths. Classify historical migration references separately.
-2. **Schema reconciliation:** compare the current Supabase baseline, migration history, verification scripts and live schema read-only. Identify uniqueness constraints, foreign keys, RLS policies, token/session storage and all references to `users`, `cohort_accounts`, `organisation_members` and `cohort_members`.
-3. **Identity guard:** implement one canonical email resolver and a database-enforced uniqueness/reservation strategy. Fail closed on duplicate legacy identities.
-4. **Organisation invitation lifecycle:** implement invite, activation, re-invite, revoke, suspend, offboard and release states without creating individual learner identities.
-5. **Cohort identity convergence:** make cohort memberships reference one organisation-managed account; move authentication to canonical email; preserve old account/progress data through a verified compatibility migration.
-6. **Account release:** implement atomic release, session/token revocation, evidence retention and safe independent registration after release.
-7. **Role and permission cleanup:** remove legacy product-specific role/permission branches from active application code; retain generic organisation roles and platform trust boundaries.
-8. **Track-first cohort access:** make track course configuration the authoritative source of learner course access and remove the repeated individual assignment workflow.
-9. **Organisation tutor scoping:** enforce organisation + assigned track/course constraints for course authoring, rosters, performance, reports and exports.
-10. **Course visibility hardening:** verify organisation ownership/assignment on every catalogue, course, lesson, assessment, media, AI and search path.
-11. **Frontend cleanup:** remove legacy routes and context inference; provide distinct, clear login/activation journeys and account-release messaging.
-12. **Tests and static verification:** add focused regression tests and run a small, merged test selection. Do not trigger unnecessary GitHub Actions or Vercel deployments.
+The current approved product implementation sequence is governed by PD-001:
+
+1. Complete only the normal individual learner experience in Learnora ME.
+2. Build the separate Learnora Teams website, including internal course/content production, review, acceptance, publishing and Teams-owned lesson-video uploads.
+3. Return to Learnora ME to implement the corporate organisation experience.
+4. Build independent tutor functionality separately.
+
+During the current individual learner phase, preserve existing cohort functionality, accounts, access paths, assignments, progress and historical records. Do not implement deferred Teams, corporate organisation or independent tutor workflows as part of the individual learner phase. Shared changes are limited to what is necessary for individual learner work, security, compatibility or regression prevention.
+
+Cohort and corporate organisation workflows remain distinct. The approved cohort requirements include a fixed learner track per cohort, at least one tutor per track, confirmation warnings for additional tutor/track assignments, two-way email exclusivity, managed-account deletion on access revocation, and aggregate-only learner retention at organisation contract end. The cohort team taxonomy and detailed technical identity/deletion design remain unresolved in the linked domain specifications.
+
+No implementation sequence for the deferred identity, invitation, cohort or corporate workflows is authorised by this architecture document. Before those phases begin, complete the relevant source/live-schema review, resolve the documented product and technical questions, prepare a compatibility/deletion design and obtain separate implementation approval. Do not implement an account-release workflow that preserves managed learner history.
 
 ## 10. Explicit preservation and operational constraints
 
@@ -423,7 +424,7 @@ This section supersedes earlier status statements above where they described the
 - `backend-python/routers/cohort_learners.py` blocks cohort provisioning when an individual/admin identity or another cohort's managed account already uses the email. Existing same-cohort inactive records can be considered for controlled re-provisioning; active duplicates are rejected.
 - The individual login page verifies the newly established session with `/auth/me` before routing. Failed verification clears the local session marker. The frontend continues to use the HttpOnly cookie rather than persisting the JWT in browser storage.
 - The `/auth/me` endpoint now fails with HTTP 503 if it cannot resolve organisation memberships, instead of silently returning an empty membership list. This prevents transient database failures from making a managed account appear to have no organisation context.
-- The individual course page no longer presents a misleading “Switch to individual learning” link for an organisation-managed identity. It explains that the organisation must release the managed account before an individual account can be created.
+- The individual course page no longer presents a misleading “Switch to individual learning” link for an organisation-managed identity. The historical copy says the organisation must release the managed account before an individual account can be created; that wording is superseded. The approved product rule is that the managed account must first be deleted through the authorised access-revocation process.
 - Single-course self-enrolment now queries only personal rows (`organisation_id IS NULL` and `cohort_id IS NULL`), returns existing active/completed enrolments, reactivates a withdrawn personal enrolment in place, and rejects ambiguous duplicate or suspended/invited records instead of attempting a conflicting insert.
 - Learner progress/content access now checks course, module and lesson publication state. Draft courses, draft modules and draft lessons are not served by the shared lesson-content resolver; lesson content, workspace, notes, media and progress endpoints use that resolver. Quiz/assignment module checks also validate that the current module and its course remain published or reviewable as archived.
 - The AI tutor's lesson-context path now calls the same scope-aware enrolment resolver as progress/content APIs instead of querying `learnora_enrolments` directly. This closes a path where a personal enrolment could otherwise be mistaken for an organisation learner's assignment.
