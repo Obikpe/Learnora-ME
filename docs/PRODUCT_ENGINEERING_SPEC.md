@@ -134,20 +134,18 @@ Corporate organisation workflows belong to Learnora ME but are deferred until af
 
 The eventual corporate organisation scope includes organisation owners/managers, teams, programmes, tutors, learners, course access, contracts/entitlements, AI use, and progression.
 
-Target lifecycle:
+Approved management pattern:
 
-1. Organisation enquiry/request and organisation creation or activation.
-2. Verify the acting user's active membership and role for the target organisation.
-3. Set up teams and team memberships; team managers must be active members of the same organisation.
-4. Set up programmes and ordered course relationships where used.
-5. Create a cohort, assign its programme/track and eligible courses, and configure capacity/contract constraints.
-6. Provision cohort learners and validate membership/identity consistency.
-7. Assign courses at the correct scope: organisation-wide, team, cohort, or individual.
-8. Confirm access only when both the assignment and the corresponding active membership are valid.
-9. Track learning, assessment and progress using real records.
-10. Archive/close the cohort using the lifecycle rules; deactivate the cohort-specific access and active state without deleting the historical user record required for reference/statistics.
+1. A customer organisation request is processed and the organisation is created with its type established as either **cohort** or **corporate organisation**. These types share top-level management but have distinct team structures and workflows.
+2. Each organisation has an active manager and a formal management team led by that manager.
+3. The manager creates other teams and appoints administrators with defined, role-scoped responsibilities. Administrators do not inherit the manager's full access automatically.
+4. In a corporate organisation, the coordinator onboards learners/employees into the relevant learning teams. In a cohort, the coordinator places learners into the cohort's configured tracks and assigns tutors to those tracks.
+5. The intended person completes their own account activation and creates their own password through the invitation flow; the activation link expires 48 hours after issue.
+6. The manager's access is limited to the organisation's entitlements and does not grant access to another organisation or internal Learnora staff capabilities.
 
-A scoped team/cohort entitlement is not an organisation-wide grant. A learner who loses active membership or assignment must lose the corresponding content access even if a stale enrolment row remains.
+The complete corporate team taxonomy, team-manager roles, course/programme assignment model, tutor responsibilities, dashboard/analytics scope, contracts/entitlements and detailed permissions remain unresolved. Do not fill these gaps by importing the cohort track/tutor model into corporate organisations or by treating a corporate organisation as a cohort.
+
+A scoped team/cohort entitlement is not an organisation-wide grant. A learner who loses active membership or assignment must lose the corresponding content access even if a stale enrolment row remains. Cohort end and organisation contract end are distinct lifecycle events; follow PD-012 and `COHORT_OPERATING_MODEL.md` for the approved account deletion and contract-end retention outcomes.
 
 ### 5.4 Cohort account and login — current implementation and approved product constraints
 
