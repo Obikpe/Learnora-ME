@@ -82,7 +82,7 @@ Documentation must state explicitly:
 - Which teams and resources the account is assigned to.
 - Which actions are permitted within each scope.
 - How context is resolved and how ambiguity or conflicting memberships are handled.
-- How existing accounts, progress and historical records are preserved during any future identity-model transition.
+- How unaffected existing accounts, progress and historical records are preserved until an approved identity transition; data belonging to a managed account deleted under the approved revocation rule is not transferred to a new account.
 - The email identity is mutually exclusive between normal individual learner and organisation/cohort-managed accounts in both directions. Revoking an organisation/cohort learner's or tutor's access deletes that managed account and its associated data; after deletion, the email is no longer reserved by that account.
 
 Do not infer an active customer organisation, cohort or access grant from the existence of a route, role constant, migration, schema table or historical record. Source-code capability, documented intended behaviour and verified live account/data state are different kinds of evidence and must be reported separately.
