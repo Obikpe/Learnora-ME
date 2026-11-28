@@ -155,7 +155,7 @@ A scoped team/cohort entitlement is not an organisation-wide grant. A learner wh
 
 **Still unresolved:** the canonical identity registry (if any), race-safe global uniqueness mechanism, reconciliation of existing duplicate/legacy identities, whether one managed identity may participate in multiple cohorts or customer organisations, and the safe migration/transition design. Preserve existing cohort accounts and historical data until a separately approved transition plan exists. Do not infer that the approved product-level exclusivity rule settles the technical identity architecture or authorises a migration.
 
-Cohorts have their own teams. Cohort teams can include tutors assigned to tracks created by that cohort, alongside learners and other cohort-specific operations. Their exact types, responsibilities, membership rules, dashboard behaviour and permission matrix remain to be specified. Do not substitute the corporate organisation team model for this missing cohort detail.
+Cohort tracks and teams are separate structures: a track is not a team, and team members may be assigned to tracks according to their responsibilities. The cohort management account oversees all tracks. Tutors are invited to specific tracks and can see only learners and learning information in their assigned tracks; they cannot see learners in other tracks. Team membership does not widen tutor visibility. The remaining cohort team taxonomy and responsibilities are documented in `COHORT_OPERATING_MODEL.md`. Do not substitute the corporate organisation team model for this cohort model.
 
 Security requirements:
 
